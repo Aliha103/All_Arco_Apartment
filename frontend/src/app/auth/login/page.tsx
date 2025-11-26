@@ -200,9 +200,13 @@ export default function LoginPage() {
         <div className="px-6 md:px-8">
           <div className="flex items-center justify-between h-20">
             <Link href="/" className="flex items-center gap-3 focus:outline-none">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                AA
-              </div>
+              <Image
+                src="/logos/logo-icon.svg"
+                alt="All'Arco Apartment Logo"
+                width={56}
+                height={56}
+                className="object-contain"
+              />
               <span className="text-gray-900 text-xl font-semibold hidden sm:block">All&apos;Arco Apartment</span>
             </Link>
 
@@ -631,9 +635,13 @@ export default function LoginPage() {
                 transition={{ duration: 0.2 }}
                 className="inline-block"
               >
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center text-white font-bold text-3xl mx-auto lg:mx-0 mb-4">
-                  AA
-                </div>
+                <Image
+                  src="/logos/logo-icon.svg"
+                  alt="All'Arco Apartment Logo"
+                  width={96}
+                  height={96}
+                  className="object-contain mx-auto lg:mx-0 mb-4"
+                />
               </motion.div>
               <p className="text-sm text-gray-500 leading-relaxed max-w-[300px] mx-auto lg:mx-0">
                 Authentic Venetian hospitality in the heart of Italy&apos;s most romantic city

@@ -1,0 +1,11 @@
+<svg width="512" height="640" viewBox="0 0 512 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Arch Icon -->
+  <path d="M170 120C170 74.9807 206.981 38 252 38H260C305.019 38 342 74.9807 342 120V200H170V120Z" stroke="#C4A572" stroke-width="20" fill="none"/>
+  <line x1="170" y1="200" x2="342" y2="200" stroke="#C4A572" stroke-width="20"/>
+
+  <!-- ALL'ARCO Text -->
+  <text x="256" y="340" font-family="Georgia, serif" font-size="72" fill="#C4A572" text-anchor="middle" font-weight="400" letter-spacing="8">ALL'ARCO</text>
+
+  <!-- APARTMENT Text -->
+  <text x="256" y="400" font-family="Georgia, serif" font-size="36" fill="#C4A572" text-anchor="middle" font-weight="300" letter-spacing="16">APARTMENT</text>
+</svg>

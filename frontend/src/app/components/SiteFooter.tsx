@@ -13,7 +13,7 @@ const SiteFooter = () => {
           <div className="space-y-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10 lg:max-w-3xl">
               <div className="flex items-start gap-3 lg:flex-1">
-                <Image src="/brand-logo.png" alt="All'Arco Apartment" width={64} height={64} />
+                <Image src="/logos/logo-icon.svg" alt="All'Arco Apartment" width={64} height={64} className="object-contain" />
                 <div className="space-y-2 lg:max-w-lg">
                   <p className="text-lg font-semibold text-gray-900 leading-tight">All&apos;Arco Apartment</p>
                   <p className="text-base text-gray-700 leading-relaxed">

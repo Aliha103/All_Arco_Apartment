@@ -1,0 +1,5 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Arch Icon Only -->
+  <path d="M40 70C40 42.3858 62.3858 20 90 20H110C137.614 20 160 42.3858 160 70V140H40V70Z" stroke="#C4A572" stroke-width="12" fill="none"/>
+  <line x1="40" y1="140" x2="160" y2="140" stroke="#C4A572" stroke-width="12"/>
+</svg>

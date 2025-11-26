@@ -35,11 +35,11 @@ const SiteNav = () => {
       <div className="flex items-center justify-between">
         <a href="/" className="flex items-center gap-3 focus:outline-none">
           <Image
-            src="/brand-logo.png"
+            src="/logos/logo-icon.svg"
             alt="All'Arco Apartment"
             width={88}
             height={88}
-            className="rounded-lg"
+            className="object-contain"
           />
           <span className="text-white text-2xl font-semibold">All&apos;Arco Apartment</span>
         </a>
