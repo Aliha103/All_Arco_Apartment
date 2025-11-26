@@ -12,7 +12,7 @@ import {
   LogOut, Sparkles, Facebook, Instagram, Heart
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores/authStore';
 
 // Reviews data
 const REVIEWS = [

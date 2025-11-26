@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 import { User, LoginCredentials, RegisterData } from '@/types';
 import { useRouter } from 'next/navigation';
