@@ -69,14 +69,13 @@ const SiteNav = () => {
         <div className="flex items-center justify-between h-20">
           <Link href="/" className="flex items-center gap-3 focus:outline-none">
             <Image
-              src="/logos/logo-icon.svg"
+              src="/logos/logo-horizontal.svg"
               alt="All'Arco Apartment Logo"
-              width={56}
-              height={56}
+              width={200}
+              height={60}
               className="object-contain"
               priority
             />
-            <span className="text-gray-900 text-xl font-semibold hidden sm:block">All&apos;Arco Apartment</span>
           </Link>
 
           {/* Mobile Menu Button */}
