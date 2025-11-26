@@ -293,11 +293,11 @@ export default function Home() {
             className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0"
           >
             <Button href="/#about" variant="primary" className="group w-full sm:w-auto">
-              Explore Apartment
+              Discover More
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button href="/book" variant="outline" className="w-full sm:w-auto">
-              Book Your Stay
+            <Button href="/#gallery" variant="outline" className="w-full sm:w-auto">
+              View Gallery
             </Button>
           </motion.div>
 

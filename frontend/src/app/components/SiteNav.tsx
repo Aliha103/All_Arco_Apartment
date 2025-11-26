@@ -136,9 +136,9 @@ const SiteNav = () => {
               <Image
                 src="/allarco-logo.png"
                 alt="All'Arco Apartment"
-                width={140}
-                height={52}
-                className="object-contain h-10 sm:h-12 w-auto"
+                width={180}
+                height={65}
+                className="object-contain h-12 sm:h-14 lg:h-16 w-auto"
                 priority
               />
             </Link>
@@ -307,70 +307,72 @@ const SiteNav = () => {
                 </motion.button>
               </div>
 
-              {/* Navigation Links */}
-              <div className="flex-1 overflow-y-auto py-4">
-                <nav className="px-3">
-                  {navLinks.map(({ href, label, icon: Icon }, index) => (
-                    <motion.div
-                      key={href}
-                      initial={{ opacity: 0, x: 30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.08, duration: 0.4, ease: smoothEase }}
-                    >
-                      <Link
-                        href={href}
-                        onClick={handleNavClick}
-                        className="flex items-center gap-4 px-4 py-4 text-gray-900 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100 touch-manipulation"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
-                          <Icon className="w-5 h-5 text-[#C4A572]" />
-                        </div>
-                        <span className="text-base font-medium">{label}</span>
-                        <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
-                      </Link>
-                    </motion.div>
-                  ))}
-                </nav>
-
-                {/* Divider */}
-                <div className="mx-6 my-4 border-t border-gray-100" />
-
-                {/* Account Section */}
+              {/* Account Section */}
+              <div className="flex-1 overflow-y-auto py-6">
                 <div className="px-3">
-                  <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</p>
                   {isAuthenticated ? (
                     <>
-                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>
-                        <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                          <User className="w-5 h-5 text-gray-400" />
-                          <span>Dashboard</span>
+                      {/* User Info */}
+                      <div className="px-4 py-3 mb-4 bg-gray-50 rounded-xl">
+                        <p className="font-medium text-gray-900">{user?.first_name} {user?.last_name}</p>
+                        <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+                      </div>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                        <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                            <User className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <span className="font-medium">Dashboard</span>
+                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
                         </Link>
                       </motion.div>
-                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
-                        <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                          <Calendar className="w-5 h-5 text-gray-400" />
-                          <span>My Reservations</span>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
+                        <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                            <Calendar className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <span className="font-medium">My Reservations</span>
+                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
                         </Link>
                       </motion.div>
-                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }}>
-                        <button onClick={() => { logout(); handleNavClick(); }} className="flex items-center gap-4 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full">
-                          <LogOut className="w-5 h-5" />
-                          <span>Sign Out</span>
+                      <div className="mx-4 my-4 border-t border-gray-100" />
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+                        <button onClick={() => { logout(); handleNavClick(); }} className="flex items-center gap-4 px-4 py-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full">
+                          <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+                            <LogOut className="w-5 h-5 text-red-500" />
+                          </div>
+                          <span className="font-medium">Sign Out</span>
                         </button>
                       </motion.div>
                     </>
                   ) : (
                     <>
-                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>
-                        <Link href="/auth/login" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                          <LogIn className="w-5 h-5 text-gray-400" />
-                          <span>Sign In</span>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                        <Link href="/auth/login" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                            <LogIn className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <span className="font-medium">Sign In</span>
+                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
                         </Link>
                       </motion.div>
-                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
-                        <Link href="/auth/register" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                          <UserPlus className="w-5 h-5 text-gray-400" />
-                          <span>Create Account</span>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
+                        <Link href="/auth/register" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                            <UserPlus className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <span className="font-medium">Create Account</span>
+                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
+                        </Link>
+                      </motion.div>
+                      <div className="mx-4 my-4 border-t border-gray-100" />
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+                        <Link href="/bookings/find" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-[#C4A572] hover:bg-[#C4A572]/5 rounded-xl transition-colors">
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                            <Calendar className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <span className="font-medium">Find Booking</span>
+                          <ChevronRight className="w-5 h-5 text-[#C4A572]/50 ml-auto" />
                         </Link>
                       </motion.div>
                     </>
