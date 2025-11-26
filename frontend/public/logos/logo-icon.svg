@@ -1,5 +1,12 @@
-<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Arch Icon Only -->
-  <path d="M40 70C40 42.3858 62.3858 20 90 20H110C137.614 20 160 42.3858 160 70V140H40V70Z" stroke="#C4A572" stroke-width="12" fill="none"/>
-  <line x1="40" y1="140" x2="160" y2="140" stroke="#C4A572" stroke-width="12"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title">
+  <title id="title">All'Arco Apartment icon</title>
+  <path
+    d="M64 132V92c0-40.868 33.132-74 74-74h8c40.868 0 74 33.132 74 74v40H64Z"
+    stroke="#c4a572"
+    stroke-width="18"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <line x1="64" y1="132" x2="220" y2="132" stroke="#c4a572" stroke-width="18" stroke-linecap="square" />
 </svg>
