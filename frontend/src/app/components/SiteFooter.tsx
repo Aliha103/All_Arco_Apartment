@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart } from 'lucide-react';
+import { Heart, Mail } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -10,9 +10,9 @@ const SiteFooter = () => {
   return (
     <footer className="bg-[#1a1a1a]">
       <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16 py-6">
-        {/* Single Row Layout */}
+        {/* Main Row */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Logo & Copyright */}
+          {/* Logo & Location */}
           <div className="flex items-center gap-4">
             <Image
               src="/allarco-logo.png"
@@ -44,13 +44,47 @@ const SiteFooter = () => {
             </Link>
           </nav>
 
-          {/* Made in Venice */}
-          <div className="flex items-center gap-1.5 text-sm text-gray-500">
-            <span>&copy; {currentYear}</span>
-            <span className="hidden sm:inline">·</span>
-            <span className="hidden sm:flex items-center gap-1">
-              Made with <Heart className="w-3 h-3 text-[#C4A572] fill-[#C4A572]" /> in Venice
-            </span>
+          {/* Email Contact */}
+          <a
+            href="mailto:support@allarcoapartment.com"
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#C4A572] transition-colors"
+          >
+            <Mail className="w-4 h-4" />
+            <span className="hidden sm:inline">support@allarcoapartment.com</span>
+            <span className="sm:hidden">Contact</span>
+          </a>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-800 mt-5 pt-5">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Policy Links */}
+            <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm">
+              <Link href="/privacy-policy" className="text-gray-500 hover:text-[#C4A572] transition-colors">
+                Privacy Policy
+              </Link>
+              <span className="text-gray-700">·</span>
+              <Link href="/terms-of-service" className="text-gray-500 hover:text-[#C4A572] transition-colors">
+                Terms of Service
+              </Link>
+              <span className="text-gray-700">·</span>
+              <Link href="/cancellation-policy" className="text-gray-500 hover:text-[#C4A572] transition-colors">
+                Cancellation Policy
+              </Link>
+              <span className="text-gray-700">·</span>
+              <Link href="/cookie-policy" className="text-gray-500 hover:text-[#C4A572] transition-colors">
+                Cookie Policy
+              </Link>
+            </nav>
+
+            {/* Copyright & Made in Venice */}
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+              <span>&copy; {currentYear} All&apos;Arco Apartment</span>
+              <span className="hidden sm:inline">·</span>
+              <span className="hidden sm:flex items-center gap-1">
+                Made with <Heart className="w-3 h-3 text-[#C4A572] fill-[#C4A572]" /> in Venice
+              </span>
+            </div>
           </div>
         </div>
       </div>
