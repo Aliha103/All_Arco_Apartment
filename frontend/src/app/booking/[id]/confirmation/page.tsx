@@ -1,10 +1,6 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tantml:parameter>
-<parameter name="content">'use client';
-
-import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Booking } from '@/types';
