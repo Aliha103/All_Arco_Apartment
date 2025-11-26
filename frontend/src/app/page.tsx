@@ -1,28 +1,13 @@
 import Link from "next/link";
+import SiteNav from "./components/SiteNav";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">All'Arco Apartment</h1>
-          <nav className="flex gap-4">
-            <Link href="/auth/login" className="text-gray-700 hover:text-blue-600">
-              Login
-            </Link>
-            <Link
-              href="/auth/register"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Register
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+      <SiteNav />
 
       {/* Hero Section */}
-      <main className="container mx-auto px-4 py-16">
+      <main className="container mx-auto px-4 pt-28 pb-16 flex-1">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-5xl font-bold text-gray-900 mb-6">
             Your Perfect Stay in Venice
@@ -86,7 +71,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 mt-20">
+      <footer className="bg-gray-900 text-white py-12 mt-10">
         <div className="container mx-auto px-4 text-center">
           <h3 className="text-2xl font-bold mb-4">All'Arco Apartment</h3>
           <p className="text-gray-400 mb-4">Venice, Italy</p>
