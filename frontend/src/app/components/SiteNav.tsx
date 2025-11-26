@@ -119,10 +119,10 @@ const SiteNav = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 focus:outline-none group">
             <Image
-              src="/logos/logo-horizontal.svg"
+              src="/allarco-logo.png"
               alt="All'Arco Apartment"
-              width={180}
-              height={50}
+              width={160}
+              height={60}
               className={`object-contain transition-all duration-500 ${logoFilter}`}
               priority
             />
@@ -333,10 +333,10 @@ const SiteNav = () => {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-100">
                 <Image
-                  src="/logos/logo-horizontal.svg"
+                  src="/allarco-logo.png"
                   alt="All'Arco Apartment"
-                  width={140}
-                  height={40}
+                  width={120}
+                  height={45}
                   className="object-contain"
                 />
                 <button

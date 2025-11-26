@@ -12,7 +12,7 @@ const SiteFooter = () => {
         <div className="grid gap-10 lg:gap-14 md:grid-cols-[2.4fr_1fr_1fr] lg:grid-cols-[3fr_1fr_1fr_1fr] items-start">
           <div className="space-y-4">
             <div className="flex flex-col gap-6">
-              <Image src="/logos/logo-horizontal.svg" alt="All'Arco Apartment" width={200} height={56} className="object-contain" />
+              <Image src="/allarco-logo.png" alt="All'Arco Apartment" width={150} height={56} className="object-contain" />
               <p className="text-base text-gray-600 leading-relaxed max-w-md">
                 Boutique canal-view apartment in the heart of Venice. Focused on elevated stays and clear communication.
               </p>
