@@ -1,70 +1,118 @@
+'use client';
+
 import { motion } from 'framer-motion';
-import { Heart } from 'lucide-react';
+import { Heart, Mail, MapPin } from 'lucide-react';
 import Image from 'next/image';
-import { FOOTER_LINKS, SOCIAL_LINKS } from '@/app/components/siteData';
+import Link from 'next/link';
+import { SOCIAL_LINKS } from '@/app/components/siteData';
 
 const SiteFooter = () => {
   const currentYear = new Date().getFullYear();
 
+  const quickLinks = [
+    { label: 'The Apartment', href: '/#about' },
+    { label: 'Amenities', href: '/#features' },
+    { label: 'Gallery', href: '/#gallery' },
+    { label: 'Location', href: '/#location' },
+  ];
+
+  const legalLinks = [
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
+    { label: 'Cancellation Policy', href: '/cancellation' },
+  ];
+
   return (
-    <footer className="bg-white border-t border-gray-100">
-      <div className="w-full px-6 md:px-8 lg:px-12 py-12 mx-auto">
-        <div className="grid gap-10 lg:gap-14 md:grid-cols-[2.4fr_1fr_1fr] lg:grid-cols-[3fr_1fr_1fr_1fr] items-start">
-          <div className="space-y-4">
-            <div className="flex flex-col gap-6">
-              <Image src="/allarco-logo.png" alt="All'Arco Apartment" width={150} height={56} className="object-contain" />
-              <p className="text-base text-gray-600 leading-relaxed max-w-md">
-                Boutique canal-view apartment in the heart of Venice. Focused on elevated stays and clear communication.
-              </p>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>support@allarcoapartment.com</p>
-                <p>Venice, Italy</p>
-              </div>
-            </div>
-            <div className="flex gap-3 pt-2">
-              {SOCIAL_LINKS.map(({ icon: Icon, href, label }) => (
-                <motion.a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-900 hover:text-white transition-all duration-200"
-                  whileHover={{ y: -2 }}
-                >
-                  <Icon className="w-4 h-4" />
-                </motion.a>
-              ))}
+    <footer className="bg-gray-900 text-white">
+      {/* Main Footer */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8">
+          {/* Brand */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <Image
+              src="/allarco-logo.png"
+              alt="All'Arco Apartment"
+              width={120}
+              height={45}
+              className="object-contain brightness-0 invert"
+            />
+            <div className="hidden sm:block w-px h-8 bg-gray-700" />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">
+              <span className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Venice, Italy
+              </span>
+              <span className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                support@allarcoapartment.com
+              </span>
             </div>
           </div>
 
-          {Object.entries(FOOTER_LINKS).map(([title, links]) => (
-            <div key={title} className="space-y-3">
-              <h4 className="text-sm font-semibold text-gray-900">{title}</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                {links.map((link) => (
-                  <li key={link.label}>
-                    {link.href ? (
-                      <a href={link.href} className="hover:text-gray-900 transition-colors">{link.label}</a>
-                    ) : (
-                      <span>{link.label}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-8 mt-10 border-t border-gray-100 text-sm text-gray-500">
-          <span>© {currentYear} All&apos;Arco Apartment</span>
-          <span className="flex items-center gap-1">
-            <motion.span
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
+          {/* Navigation */}
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            {quickLinks.map(({ label, href }) => (
+              <Link
+                key={label}
+                href={href}
+                className="text-gray-400 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572] rounded"
+              >
+                {label}
+              </Link>
+            ))}
+            <Link
+              href="/book"
+              className="text-[#C4A572] hover:text-[#D4B582] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572] rounded"
             >
-              <Heart className="w-3 h-3 text-red-500 fill-red-500" />
-            </motion.span>
-            Made in Venice
-          </span>
+              Book Now
+            </Link>
+          </nav>
+
+          {/* Social Links */}
+          <div className="flex items-center gap-2">
+            {SOCIAL_LINKS.map(({ icon: Icon, href, label }) => (
+              <motion.a
+                key={label}
+                href={href}
+                aria-label={label}
+                className="flex items-center justify-center w-9 h-9 rounded-lg bg-gray-800 text-gray-400 hover:bg-[#C4A572] hover:text-white transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]"
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Icon className="w-4 h-4" />
+              </motion.a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Bar */}
+      <div className="border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <span>&copy; {currentYear} All&apos;Arco Apartment</span>
+              {legalLinks.map(({ label, href }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="hover:text-gray-300 transition-colors"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+            <span className="flex items-center gap-1.5">
+              Made with
+              <motion.span
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Heart className="w-3 h-3 text-red-500 fill-red-500" />
+              </motion.span>
+              in Venice
+            </span>
+          </div>
         </div>
       </div>
     </footer>

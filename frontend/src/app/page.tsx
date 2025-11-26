@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
@@ -12,41 +12,39 @@ import {
   Bath,
   MapPin,
   Star,
-  ChevronRight,
   Play,
   ArrowRight,
-  Check,
-  Phone,
   Mail,
-  Clock,
   Users,
   Maximize,
   BedDouble,
   Coffee,
   Waves,
   Building,
-  Heart,
   Quote,
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
 
-// Animation variants
-const fadeInUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as const } },
-};
+// Smooth easing for all animations
+const smoothEase = [0.25, 0.1, 0.25, 1] as const;
+const springTransition = { type: 'spring', stiffness: 100, damping: 20 };
 
-const fadeIn = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 1 } },
+// Animation variants with improved smoothness
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: smoothEase }
+  },
 };
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.15, delayChildren: 0.2 },
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
   },
 };
 
@@ -74,36 +72,36 @@ const reviews = [
     name: 'Sarah & Michael',
     location: 'New York, USA',
     rating: 5,
-    text: 'An absolutely magical stay in Venice! The apartment exceeded all expectations. The location is perfect - quiet yet close to everything. We\'ll definitely be back.',
+    text: 'An absolutely magical stay in Venice! The apartment exceeded all expectations. The location is perfect - quiet yet close to everything.',
     date: 'October 2024',
   },
   {
     name: 'Emma Laurent',
     location: 'Paris, France',
     rating: 5,
-    text: 'Bellissimo! The attention to detail is remarkable. Waking up to canal views with my morning espresso was unforgettable. A true Venetian experience.',
+    text: 'Bellissimo! The attention to detail is remarkable. Waking up to canal views with my morning espresso was unforgettable.',
     date: 'September 2024',
   },
   {
     name: 'Hans & Greta',
     location: 'Munich, Germany',
     rating: 5,
-    text: 'Perfect for our honeymoon. The hosts were incredibly helpful and the apartment is beautifully designed. We felt at home from the moment we arrived.',
+    text: 'Perfect for our honeymoon. The hosts were incredibly helpful and the apartment is beautifully designed.',
     date: 'August 2024',
   },
 ];
 
 const nearbyAttractions = [
-  { name: 'Rialto Bridge', distance: '17 min walk' },
-  { name: 'St. Mark\'s Square', distance: '20 min walk' },
-  { name: 'Teatro La Fenice', distance: '15 min walk' },
-  { name: 'Doge\'s Palace', distance: '22 min walk' },
+  { name: 'Rialto Bridge', distance: '17 min' },
+  { name: 'St. Mark\'s Square', distance: '20 min' },
+  { name: 'Teatro La Fenice', distance: '15 min' },
+  { name: 'Doge\'s Palace', distance: '22 min' },
 ];
 
-// Section component with scroll animation
+// Animated section with scroll reveal
 const AnimatedSection = ({ children, className = '', id }: { children: React.ReactNode; className?: string; id?: string }) => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
 
   return (
     <motion.section
@@ -119,6 +117,55 @@ const AnimatedSection = ({ children, className = '', id }: { children: React.Rea
   );
 };
 
+// Reusable button component with proper accessibility
+const Button = ({
+  href,
+  variant = 'primary',
+  children,
+  className = '',
+  onClick,
+  external = false
+}: {
+  href?: string;
+  variant?: 'primary' | 'secondary' | 'outline';
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  external?: boolean;
+}) => {
+  const baseStyles = `
+    inline-flex items-center justify-center gap-2
+    min-h-[48px] px-6 sm:px-8
+    font-medium rounded-full
+    transition-all duration-300 ease-out
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+    active:scale-[0.98] touch-manipulation
+  `;
+
+  const variants = {
+    primary: 'bg-[#C4A572] text-white hover:bg-[#B39562] focus-visible:ring-[#C4A572] hover:shadow-lg',
+    secondary: 'bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-gray-400 hover:shadow-lg',
+    outline: 'bg-white/10 backdrop-blur-sm text-white border border-white/30 hover:bg-white/20 focus-visible:ring-white',
+  };
+
+  const combinedStyles = `${baseStyles} ${variants[variant]} ${className}`;
+
+  if (href) {
+    const linkProps = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+    return (
+      <Link href={href} className={combinedStyles} {...linkProps}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button onClick={onClick} className={combinedStyles}>
+      {children}
+    </button>
+  );
+};
+
 export default function Home() {
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -126,188 +173,191 @@ export default function Home() {
     offset: ['start start', 'end start'],
   });
 
-  const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.05]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 50]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white antialiased">
       <SiteNav />
 
       {/* Hero Section */}
-      <section ref={heroRef} className="relative h-screen overflow-hidden">
-        {/* Background Image with Parallax */}
+      <section ref={heroRef} className="relative h-[100svh] min-h-[600px] overflow-hidden">
+        {/* Background with subtle parallax */}
         <motion.div
           style={{ scale: heroScale, y: heroY }}
-          className="absolute inset-0"
+          className="absolute inset-0 will-change-transform"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 z-10" />
           <Image
             src="https://images.unsplash.com/photo-1514890547357-a9ee288728e0?q=80&w=2940&auto=format&fit=crop"
             alt="Venice Canal View"
             fill
             className="object-cover"
             priority
+            sizes="100vw"
           />
         </motion.div>
 
         {/* Hero Content */}
         <motion.div
           style={{ opacity: heroOpacity }}
-          className="relative z-20 h-full flex flex-col justify-center items-center text-center px-6"
+          className="relative z-20 h-full flex flex-col justify-center items-center text-center px-4 sm:px-6"
         >
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
+          <motion.span
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="mb-6"
+            transition={{ duration: 0.6, delay: 0.3, ease: smoothEase }}
+            className="inline-block px-4 py-2 mb-4 sm:mb-6 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-xs sm:text-sm font-medium tracking-wider uppercase"
           >
-            <span className="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-sm font-medium tracking-wider uppercase">
-              Luxury Apartment in Venice
-            </span>
-          </motion.div>
+            Luxury Apartment in Venice
+          </motion.span>
 
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.7 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-light text-white mb-6 tracking-tight"
+            transition={{ duration: 0.6, delay: 0.5, ease: smoothEase }}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-white mb-4 sm:mb-6 tracking-tight"
           >
-            Ca' All'Arco
+            Ca&apos; All&apos;Arco
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.9 }}
-            className="text-xl md:text-2xl text-white/80 font-light max-w-2xl mb-8"
+            transition={{ duration: 0.6, delay: 0.7, ease: smoothEase }}
+            className="text-base sm:text-lg md:text-xl text-white/80 font-light max-w-xl mb-6 sm:mb-8 px-4"
           >
             An exquisite canal-view apartment in the heart of Castello, Venice
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 1.1 }}
-            className="flex flex-col sm:flex-row gap-4"
+            transition={{ duration: 0.6, delay: 0.9, ease: smoothEase }}
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0"
           >
-            <Link
-              href="/book"
-              className="px-8 py-4 bg-[#C4A572] text-white font-medium rounded-full hover:bg-[#B39562] transition-all duration-300 hover:shadow-2xl hover:shadow-[#C4A572]/30 flex items-center gap-2 group"
-            >
+            <Button href="/book" variant="primary" className="group w-full sm:w-auto">
               Check Availability
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <button className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-medium rounded-full hover:bg-white/20 transition-all duration-300 border border-white/20 flex items-center gap-2">
+            </Button>
+            <Button variant="outline" className="w-full sm:w-auto">
               <Play className="w-4 h-4" />
               Virtual Tour
-            </button>
+            </Button>
           </motion.div>
 
           {/* Rating Badge */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 1.5 }}
-            className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full"
+            transition={{ duration: 0.6, delay: 1.2 }}
+            className="absolute bottom-20 sm:bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-3 rounded-full"
           >
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-[#C4A572] text-[#C4A572]" />
+                <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 fill-[#C4A572] text-[#C4A572]" />
               ))}
             </div>
-            <span className="text-white font-semibold">9.8</span>
-            <span className="text-white/70">Exceptional · 59 reviews</span>
+            <span className="text-white font-semibold text-sm sm:text-base">9.8</span>
+            <span className="text-white/70 text-xs sm:text-sm hidden sm:inline">Exceptional</span>
           </motion.div>
-        </motion.div>
 
-        {/* Scroll Indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
-        >
+          {/* Scroll Indicator */}
           <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5 }}
+            className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 hidden sm:block"
           >
-            <motion.div className="w-1 h-2 bg-white/60 rounded-full mt-2" />
+            <motion.div
+              animate={{ y: [0, 8, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+              className="w-5 h-8 border-2 border-white/30 rounded-full flex justify-center"
+            >
+              <motion.div className="w-1 h-1.5 bg-white/60 rounded-full mt-1.5" />
+            </motion.div>
           </motion.div>
         </motion.div>
       </section>
 
       {/* About Section */}
-      <AnimatedSection className="py-24 lg:py-32">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Content */}
+      <AnimatedSection className="py-16 sm:py-20 lg:py-28" id="about">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <motion.div variants={fadeInUp}>
-              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-sm">The Apartment</span>
-              <h2 className="text-4xl lg:text-5xl font-light text-gray-900 mt-4 mb-6 leading-tight">
+              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">The Apartment</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-5 leading-tight">
                 Your Private Sanctuary in Venice
               </h2>
-              <p className="text-lg text-gray-600 leading-relaxed mb-6">
-                Nestled in the historic Castello district, Ca' All'Arco offers an authentic Venetian experience
+              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6">
+                Nestled in the historic Castello district, Ca&apos; All&apos;Arco offers an authentic Venetian experience
                 with modern luxury. This beautifully appointed 70m² apartment combines traditional Venetian
-                architecture with contemporary design, creating the perfect retreat after a day exploring the city.
+                architecture with contemporary design.
               </p>
-              <p className="text-lg text-gray-600 leading-relaxed mb-8">
+              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-6 sm:mb-8">
                 Wake up to enchanting canal views, enjoy your morning espresso on the terrace, and experience
-                Venice like a true local. Just a 17-minute walk from the iconic Rialto Bridge, you're perfectly
-                positioned to discover all that Venice has to offer.
+                Venice like a true local. Just 17 minutes from the iconic Rialto Bridge.
               </p>
 
-              {/* Highlights */}
-              <div className="grid grid-cols-4 gap-4">
+              {/* Highlights Grid */}
+              <div className="grid grid-cols-4 gap-2 sm:gap-4">
                 {highlights.map(({ icon: Icon, value, unit, label }) => (
-                  <div key={label} className="text-center p-4 bg-gray-50 rounded-2xl">
-                    <Icon className="w-5 h-5 text-[#C4A572] mx-auto mb-2" />
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {value}<span className="text-sm">{unit}</span>
+                  <motion.div
+                    key={label}
+                    className="text-center p-3 sm:p-4 bg-gray-50 rounded-xl sm:rounded-2xl hover:bg-gray-100 transition-colors"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#C4A572] mx-auto mb-1 sm:mb-2" />
+                    <div className="text-xl sm:text-2xl font-semibold text-gray-900">
+                      {value}<span className="text-xs sm:text-sm">{unit}</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">{label}</div>
-                  </div>
+                    <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{label}</div>
+                  </motion.div>
                 ))}
               </div>
             </motion.div>
 
             {/* Image Grid */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div className="relative h-64 rounded-2xl overflow-hidden">
+            <motion.div variants={fadeInUp} className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
                   <Image
                     src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=2000&auto=format&fit=crop"
                     alt="Living Room"
                     fill
-                    className="object-cover hover:scale-110 transition-transform duration-700"
+                    className="object-cover hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                   />
                 </div>
-                <div className="relative h-48 rounded-2xl overflow-hidden">
+                <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
                   <Image
                     src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2000&auto=format&fit=crop"
                     alt="Kitchen"
                     fill
-                    className="object-cover hover:scale-110 transition-transform duration-700"
+                    className="object-cover hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                   />
                 </div>
               </div>
-              <div className="space-y-4 pt-8">
-                <div className="relative h-48 rounded-2xl overflow-hidden">
+              <div className="space-y-3 sm:space-y-4 pt-6 sm:pt-8">
+                <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
                   <Image
                     src="https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=2000&auto=format&fit=crop"
                     alt="Bedroom"
                     fill
-                    className="object-cover hover:scale-110 transition-transform duration-700"
+                    className="object-cover hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                   />
                 </div>
-                <div className="relative h-64 rounded-2xl overflow-hidden">
+                <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
                   <Image
                     src="https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?q=80&w=2000&auto=format&fit=crop"
                     alt="Venice View"
                     fill
-                    className="object-cover hover:scale-110 transition-transform duration-700"
+                    className="object-cover hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                   />
                 </div>
               </div>
@@ -317,33 +367,37 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Amenities Section */}
-      <AnimatedSection className="py-24 lg:py-32 bg-gray-50" id="features">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div variants={fadeInUp} className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-sm">Amenities</span>
-            <h2 className="text-4xl lg:text-5xl font-light text-gray-900 mt-4 mb-6">
+      <AnimatedSection className="py-16 sm:py-20 lg:py-28 bg-gray-50" id="features">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Amenities</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
               Everything You Need
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-base sm:text-lg text-gray-600">
               Thoughtfully curated amenities for an exceptional stay
             </p>
           </motion.div>
 
           <motion.div
             variants={staggerContainer}
-            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
           >
             {amenities.map(({ icon: Icon, label, description }) => (
               <motion.div
                 key={label}
                 variants={fadeInUp}
-                className="bg-white p-6 rounded-2xl hover:shadow-xl transition-all duration-500 group cursor-pointer border border-gray-100"
+                className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl hover:shadow-lg transition-all duration-300 group cursor-pointer border border-gray-100 focus-within:ring-2 focus-within:ring-[#C4A572]"
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                tabIndex={0}
+                role="article"
               >
-                <div className="w-12 h-12 bg-[#C4A572]/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#C4A572] transition-colors duration-300">
-                  <Icon className="w-6 h-6 text-[#C4A572] group-hover:text-white transition-colors duration-300" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#C4A572]/10 rounded-lg sm:rounded-xl flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-[#C4A572] transition-colors duration-300">
+                  <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#C4A572] group-hover:text-white transition-colors duration-300" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{label}</h3>
-                <p className="text-sm text-gray-500">{description}</p>
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5 sm:mb-1">{label}</h3>
+                <p className="text-xs sm:text-sm text-gray-500">{description}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -351,16 +405,16 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Gallery Section */}
-      <AnimatedSection className="py-24 lg:py-32" id="gallery">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div variants={fadeInUp} className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-sm">Gallery</span>
-            <h2 className="text-4xl lg:text-5xl font-light text-gray-900 mt-4 mb-6">
+      <AnimatedSection className="py-16 sm:py-20 lg:py-28" id="gallery">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Gallery</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
               A Visual Journey
             </h2>
           </motion.div>
 
-          <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
             {[
               'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=2000',
               'https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2000',
@@ -371,78 +425,81 @@ export default function Home() {
               'https://images.unsplash.com/photo-1498307833015-e7b400441eb8?q=80&w=2000',
               'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000',
             ].map((src, i) => (
-              <div
+              <motion.div
                 key={i}
-                className={`relative overflow-hidden rounded-2xl ${
-                  i === 0 || i === 5 ? 'md:col-span-2 md:row-span-2 h-64 md:h-full' : 'h-48'
+                className={`relative overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl cursor-pointer ${
+                  i === 0 || i === 5 ? 'md:col-span-2 md:row-span-2 h-48 sm:h-64 md:h-full min-h-[200px]' : 'h-32 sm:h-40 lg:h-48'
                 }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                tabIndex={0}
+                role="button"
+                aria-label={`View gallery image ${i + 1}`}
               >
                 <Image
                   src={src}
                   alt={`Gallery image ${i + 1}`}
                   fill
-                  className="object-cover hover:scale-110 transition-transform duration-700 cursor-pointer"
+                  className="object-cover hover:scale-110 transition-transform duration-500"
+                  sizes="(max-width: 768px) 50vw, 25vw"
                 />
-              </div>
+              </motion.div>
             ))}
           </motion.div>
         </div>
       </AnimatedSection>
 
       {/* Location Section */}
-      <AnimatedSection className="py-24 lg:py-32 bg-gray-900 text-white" id="location">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+      <AnimatedSection className="py-16 sm:py-20 lg:py-28 bg-gray-900 text-white" id="location">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <motion.div variants={fadeInUp}>
-              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-sm">Location</span>
-              <h2 className="text-4xl lg:text-5xl font-light mt-4 mb-6">
+              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Location</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light mt-3 mb-5">
                 In the Heart of Venice
               </h2>
-              <p className="text-lg text-gray-400 leading-relaxed mb-8">
-                Located in the prestigious Castello district, Ca' All'Arco offers the perfect base for
-                exploring Venice. Away from the tourist crowds yet minutes from major attractions,
-                you'll experience the authentic side of this magical city.
+              <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-6 sm:mb-8">
+                Located in the prestigious Castello district, Ca&apos; All&apos;Arco offers the perfect base for
+                exploring Venice. Away from the tourist crowds yet minutes from major attractions.
               </p>
 
-              <div className="space-y-4 mb-8">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 {nearbyAttractions.map(({ name, distance }) => (
-                  <div key={name} className="flex items-center justify-between py-3 border-b border-gray-800">
-                    <span className="flex items-center gap-3">
-                      <MapPin className="w-4 h-4 text-[#C4A572]" />
-                      {name}
-                    </span>
-                    <span className="text-gray-500">{distance}</span>
+                  <div key={name} className="flex items-center gap-2 sm:gap-3 py-2 sm:py-3">
+                    <MapPin className="w-4 h-4 text-[#C4A572] flex-shrink-0" />
+                    <div>
+                      <span className="text-sm sm:text-base text-white">{name}</span>
+                      <span className="text-xs sm:text-sm text-gray-500 ml-2">{distance}</span>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-gray-400">
+              <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
                 <div className="flex items-center gap-2">
                   <Building className="w-4 h-4" />
-                  <span>Castello 2739/A</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>Venice, Italy</span>
+                  <span>Castello 2739/A, Venice, Italy</span>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div variants={fadeInUp} className="relative h-[500px] rounded-2xl overflow-hidden">
+            <motion.div variants={fadeInUp} className="relative h-[300px] sm:h-[400px] lg:h-[450px] rounded-xl sm:rounded-2xl overflow-hidden">
               <Image
                 src="https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2000&auto=format&fit=crop"
                 alt="Venice Map Area"
                 fill
                 className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6">
+              <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
                 <a
                   href="https://maps.google.com/?q=Castello+2739/A+Venice+Italy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-4 bg-white text-gray-900 font-medium rounded-xl hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-center gap-2 w-full py-3 sm:py-4 bg-white text-gray-900 font-medium rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
-                  <MapPin className="w-5 h-5" />
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                   View on Google Maps
                 </a>
               </div>
@@ -452,44 +509,45 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Reviews Section */}
-      <AnimatedSection className="py-24 lg:py-32">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div variants={fadeInUp} className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-sm">Reviews</span>
-            <h2 className="text-4xl lg:text-5xl font-light text-gray-900 mt-4 mb-6">
+      <AnimatedSection className="py-16 sm:py-20 lg:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Reviews</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
               What Our Guests Say
             </h2>
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-[#C4A572] text-[#C4A572]" />
+                  <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-[#C4A572] text-[#C4A572]" />
                 ))}
               </div>
-              <span className="text-2xl font-semibold text-gray-900">9.8</span>
-              <span className="text-gray-500">from 59 reviews</span>
+              <span className="text-xl sm:text-2xl font-semibold text-gray-900">9.8</span>
+              <span className="text-sm sm:text-base text-gray-500">from 59 reviews</span>
             </div>
           </motion.div>
 
-          <motion.div variants={staggerContainer} className="grid md:grid-cols-3 gap-8">
+          <motion.div variants={staggerContainer} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {reviews.map((review, i) => (
               <motion.div
                 key={i}
                 variants={fadeInUp}
-                className="bg-gray-50 p-8 rounded-2xl relative"
+                className="bg-gray-50 p-5 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl relative"
+                whileHover={{ y: -4 }}
               >
-                <Quote className="w-10 h-10 text-[#C4A572]/20 absolute top-6 right-6" />
-                <div className="flex items-center gap-1 mb-4">
+                <Quote className="w-8 h-8 sm:w-10 sm:h-10 text-[#C4A572]/20 absolute top-4 sm:top-6 right-4 sm:right-6" />
+                <div className="flex items-center gap-0.5 mb-3 sm:mb-4">
                   {[...Array(review.rating)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-[#C4A572] text-[#C4A572]" />
+                    <Star key={j} className="w-3 h-3 sm:w-4 sm:h-4 fill-[#C4A572] text-[#C4A572]" />
                   ))}
                 </div>
-                <p className="text-gray-600 leading-relaxed mb-6">"{review.text}"</p>
+                <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6">&ldquo;{review.text}&rdquo;</p>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-gray-900">{review.name}</p>
-                    <p className="text-sm text-gray-500">{review.location}</p>
+                    <p className="text-sm sm:text-base font-semibold text-gray-900">{review.name}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">{review.location}</p>
                   </div>
-                  <span className="text-xs text-gray-400">{review.date}</span>
+                  <span className="text-[10px] sm:text-xs text-gray-400">{review.date}</span>
                 </div>
               </motion.div>
             ))}
@@ -498,30 +556,24 @@ export default function Home() {
       </AnimatedSection>
 
       {/* CTA Section */}
-      <AnimatedSection className="py-24 lg:py-32 bg-[#C4A572]">
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center">
+      <AnimatedSection className="py-16 sm:py-20 lg:py-24 bg-[#C4A572]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div variants={fadeInUp}>
-            <h2 className="text-4xl lg:text-5xl font-light text-white mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-white mb-4 sm:mb-6">
               Ready to Experience Venice?
             </h2>
-            <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-white/80 mb-6 sm:mb-8 max-w-xl mx-auto">
               Book directly for the best rates and a complimentary welcome basket with local Venetian treats.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/book"
-                className="px-8 py-4 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-100 transition-all duration-300 flex items-center justify-center gap-2 group"
-              >
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Button href="/book" variant="secondary" className="group">
                 Book Your Stay
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <a
-                href="mailto:support@allarcoapartment.com"
-                className="px-8 py-4 bg-transparent text-white font-medium rounded-full border-2 border-white/30 hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2"
-              >
+              </Button>
+              <Button href="mailto:support@allarcoapartment.com" variant="outline" external>
                 <Mail className="w-4 h-4" />
                 Contact Us
-              </a>
+              </Button>
             </div>
           </motion.div>
         </div>
