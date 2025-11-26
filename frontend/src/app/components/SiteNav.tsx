@@ -63,10 +63,7 @@ const SiteNav = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)]"
-      style={{
-        background: 'linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.7))',
-      }}
+      className="fixed top-0 left-0 right-0 z-50 bg-transparent"
     >
       <div className="px-6 md:px-8">
         <div className="flex items-center justify-between h-20">
@@ -84,7 +81,7 @@ const SiteNav = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2.5 text-gray-600 hover:text-gray-900 bg-white/50 hover:bg-white/80 backdrop-blur-md rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50 border border-white/30"
+            className="md:hidden p-2.5 text-gray-800 hover:text-gray-900 bg-white/30 hover:bg-white/50 backdrop-blur-sm rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
           >
@@ -92,12 +89,12 @@ const SiteNav = () => {
           </button>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-2 text-gray-600 text-sm">
+          <nav className="hidden md:flex items-center gap-2 text-gray-800 text-sm">
             {navLinks.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
-                className="relative px-4 py-2 rounded-full hover:text-gray-900 hover:bg-white/60 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50"
+                className="relative px-4 py-2 rounded-full hover:text-gray-900 hover:bg-white/40 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50"
               >
                 {label}
               </Link>
@@ -107,7 +104,7 @@ const SiteNav = () => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/80 hover:shadow-lg transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50 border border-white/30"
+                className="flex items-center gap-2 bg-white/40 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/60 transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50"
                 aria-label="Account menu"
                 aria-expanded={dropdownOpen}
                 aria-haspopup="true"
