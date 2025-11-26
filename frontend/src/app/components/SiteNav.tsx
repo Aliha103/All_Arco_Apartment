@@ -11,7 +11,6 @@ import {
   LogIn,
   LogOut,
   Menu,
-  Phone,
   Settings,
   Sparkles,
   User,
@@ -113,7 +112,7 @@ const SiteNav = () => {
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       className={headerClasses}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16">
         <div className="flex items-center justify-between h-20 lg:h-24">
 
           {/* Logo */}
@@ -151,19 +150,6 @@ const SiteNav = () => {
 
           {/* Right Section - CTA & Account */}
           <div className="hidden lg:flex items-center gap-4">
-            {/* Contact */}
-            <a
-              href="tel:+39123456789"
-              className={`
-                flex items-center gap-2 text-sm font-medium
-                transition-all duration-300
-                ${textClasses} ${textHoverClasses}
-              `}
-            >
-              <Phone className="w-4 h-4" />
-              <span className="hidden xl:inline">+39 123 456 789</span>
-            </a>
-
             {/* Book Now CTA */}
             <Link
               href="/book"
@@ -268,13 +254,13 @@ const SiteNav = () => {
                             <span>Create Account</span>
                           </Link>
                           <div className="p-4 bg-gradient-to-br from-[#C4A572]/10 to-transparent">
-                            <p className="text-xs text-gray-600 mb-2">Book directly for exclusive rates</p>
+                            <p className="text-xs text-gray-600 mb-2">Already have a reservation?</p>
                             <Link
-                              href="/book"
+                              href="/bookings/find"
                               className="block text-center py-2 bg-[#C4A572] text-white text-sm font-medium rounded-lg hover:bg-[#B39562] transition-colors"
                               onClick={() => setDropdownOpen(false)}
                             >
-                              Check Availability
+                              Find Booking
                             </Link>
                           </div>
                         </>
@@ -383,22 +369,6 @@ const SiteNav = () => {
                   >
                     Book Your Stay
                   </Link>
-                </motion.div>
-
-                {/* Contact */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="mt-4"
-                >
-                  <a
-                    href="tel:+39123456789"
-                    className="flex items-center justify-center gap-2 w-full py-4 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    <Phone className="w-5 h-5" />
-                    +39 123 456 789
-                  </a>
                 </motion.div>
 
                 {/* Account Section */}
