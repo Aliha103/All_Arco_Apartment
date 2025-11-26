@@ -9,7 +9,7 @@ export interface User {
   first_name: string;
   last_name: string;
   phone?: string;
-  role: 'guest' | 'team' | 'admin';
+  role: 'guest' | 'team' | 'admin' | 'super_admin';
   is_active: boolean;
   date_joined: string;
 }
