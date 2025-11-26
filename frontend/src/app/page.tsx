@@ -12,7 +12,6 @@ import {
   Bath,
   MapPin,
   Star,
-  Play,
   ArrowRight,
   Mail,
   Users,
@@ -293,13 +292,12 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.9, ease: smoothEase }}
             className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0"
           >
-            <Button href="/book" variant="primary" className="group w-full sm:w-auto">
-              Check Availability
+            <Button href="/#about" variant="primary" className="group w-full sm:w-auto">
+              Explore Apartment
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Play className="w-4 h-4" />
-              Virtual Tour
+            <Button href="/book" variant="outline" className="w-full sm:w-auto">
+              Book Your Stay
             </Button>
           </motion.div>
 
