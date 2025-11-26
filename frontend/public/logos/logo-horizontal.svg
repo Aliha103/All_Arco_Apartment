@@ -1,24 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="80" viewBox="0 0 360 80" fill="none" role="img" aria-labelledby="title desc">
-  <title id="title">All'Arco Apartment horizontal logo</title>
-  <desc id="desc">Gold arch icon with dark wordmark All'Arco Apartment.</desc>
-  <defs>
-    <style>
-      .wordmark {
-        fill: #1f2937;
-        font-family: "Playfair Display", "Times New Roman", serif;
-        font-weight: 600;
-      }
-    </style>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="70" viewBox="0 0 320 70" fill="none">
+  <!-- Arch Icon -->
   <path
-    d="M18 54V30c0-16.016 12.984-29 29-29h6c16.016 0 29 12.984 29 29v24H18Z"
-    stroke="#c4a572"
+    d="M12 56V28c0-15.464 12.536-28 28-28h0c15.464 0 28 12.536 28 28v28"
+    stroke="#C4A572"
     stroke-width="6"
-    stroke-linecap="round"
-    stroke-linejoin="round"
     fill="none"
   />
-  <line x1="18" y1="54" x2="82" y2="54" stroke="#c4a572" stroke-width="6" stroke-linecap="square" />
-  <text class="wordmark" x="104" y="34" font-size="26" letter-spacing="1">All'Arco</text>
-  <text class="wordmark" x="104" y="60" font-size="18" letter-spacing="3" style="text-transform: uppercase;">Apartment</text>
+  <line x1="12" y1="56" x2="68" y2="56" stroke="#C4A572" stroke-width="6"/>
+
+  <!-- ALL'ARCO Text -->
+  <text x="88" y="38" font-family="Georgia, 'Times New Roman', serif" font-size="28" fill="#C4A572" font-weight="400" letter-spacing="2">ALL'ARCO</text>
+
+  <!-- APARTMENT Text -->
+  <text x="88" y="58" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#C4A572" font-weight="300" letter-spacing="5">APARTMENT</text>
 </svg>

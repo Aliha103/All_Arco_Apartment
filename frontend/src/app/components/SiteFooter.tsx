@@ -11,18 +11,12 @@ const SiteFooter = () => {
       <div className="w-full px-6 md:px-8 lg:px-12 py-12 mx-auto">
         <div className="grid gap-10 lg:gap-14 md:grid-cols-[2.4fr_1fr_1fr] lg:grid-cols-[3fr_1fr_1fr_1fr] items-start">
           <div className="space-y-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-10 lg:max-w-3xl">
-              <div className="flex items-start gap-3 lg:flex-1">
-                <Image src="/logos/logo-horizontal.svg" alt="All'Arco Apartment" width={160} height={60} className="object-contain" />
-                <div className="space-y-2 lg:max-w-lg">
-                  <p className="text-lg font-semibold text-gray-900 leading-tight">All&apos;Arco Apartment</p>
-                  <p className="text-base text-gray-700 leading-relaxed">
-                    Boutique canal-view apartment in the heart of Venice. Focused on elevated stays and clear communication.
-                  </p>
-                </div>
-              </div>
-              <div className="text-sm text-gray-800 space-y-1 lg:min-w-[240px]">
-                <p className="font-semibold text-gray-900">Contact</p>
+            <div className="flex flex-col gap-6">
+              <Image src="/logos/logo-horizontal.svg" alt="All'Arco Apartment" width={200} height={56} className="object-contain" />
+              <p className="text-base text-gray-600 leading-relaxed max-w-md">
+                Boutique canal-view apartment in the heart of Venice. Focused on elevated stays and clear communication.
+              </p>
+              <div className="text-sm text-gray-600 space-y-1">
                 <p>support@allarcoapartment.com</p>
                 <p>Venice, Italy</p>
               </div>
