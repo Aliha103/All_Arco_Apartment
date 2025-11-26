@@ -1,85 +1,54 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Mail, Lock, ArrowRight, Eye, EyeOff, User as UserIcon, Phone, MapPin,
-  ChevronLeft, Menu, X, User, ChevronDown, LogIn, Settings, LogOut,
-  Sparkles, Calendar, UserPlus, Facebook, Instagram, Heart, CheckCircle2,
-  Shield, Clock, CreditCard, Headphones
+  Mail, Lock, ArrowRight, Eye, EyeOff, User as UserIcon, Phone,
+  ChevronLeft, CheckCircle2, Shield, Clock, CreditCard, MapPin
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
+import SiteNav from '@/app/components/SiteNav';
+import SiteFooter from '@/app/components/SiteFooter';
+
+// Smooth easing
+const smoothEase = [0.25, 0.1, 0.25, 1] as const;
 
 // Benefits data
-const BENEFITS = [
+const benefits = [
   {
     icon: CheckCircle2,
     title: 'Instant Booking',
-    description: 'Book your stay in seconds with our streamlined process'
+    description: 'Book your stay in seconds'
   },
   {
     icon: Shield,
     title: 'Secure Payments',
-    description: 'Your payment information is always safe and encrypted'
+    description: 'Your data is always protected'
   },
   {
     icon: Clock,
     title: '24/7 Support',
-    description: 'Our team is here to help you anytime you need assistance'
+    description: 'We\'re here to help anytime'
   },
   {
     icon: CreditCard,
     title: 'Best Price Guarantee',
-    description: 'Get the best rates when you book directly with us'
+    description: 'Book direct for best rates'
   },
-];
-
-// Footer links
-const FOOTER_LINKS = {
-  Explore: [
-    { label: 'About', href: '/#about' },
-    { label: 'Features', href: '/#features' },
-    { label: 'Gallery', href: '/' },
-  ],
-  Support: [
-    { label: 'Contact', href: '/#contact' },
-    { label: 'FAQ', href: '/faq' },
-    { label: 'Help', href: '/help' },
-  ],
-  Legal: [
-    { label: 'Privacy', href: '/privacy' },
-    { label: 'Terms', href: '/terms' },
-    { label: 'Cookies', href: '/cookies' },
-  ],
-  Connect: [
-    { label: 'Facebook', href: '#' },
-    { label: 'Instagram', href: '#' },
-    { label: 'Email', href: 'mailto:info@allarcoapartment.com' },
-  ],
-};
-
-const SOCIAL_LINKS = [
-  { icon: Facebook, href: '#', label: 'Facebook' },
-  { icon: Instagram, href: '#', label: 'Instagram' },
-  { icon: Mail, href: 'mailto:info@allarcoapartment.com', label: 'Email' },
 ];
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { user, setUser, setIsAuthenticated, isAuthenticated, logout } = useAuthStore();
+  const { setUser, setIsAuthenticated, isAuthenticated } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const currentYear = new Date().getFullYear();
 
   // Form data
   const [formData, setFormData] = useState({
@@ -87,10 +56,8 @@ export default function RegisterPage() {
     lastName: '',
     email: '',
     phone: '',
-    country: '',
     password: '',
     confirmPassword: '',
-    referralCode: '',
   });
 
   // Redirect if already authenticated
@@ -99,41 +66,6 @@ export default function RegisterPage() {
       router.push('/dashboard');
     }
   }, [isAuthenticated, router]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setMobileMenuOpen(false);
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [mobileMenuOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -232,317 +164,128 @@ export default function RegisterPage() {
   const progressPercentage = (currentStep / 2) * 100;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Navbar */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100"
-      >
-        <div className="px-6 md:px-8">
-          <div className="flex items-center justify-between h-20">
-            <Link href="/" className="flex items-center gap-3 focus:outline-none">
-              <Image
-                src="/logos/logo-horizontal.svg"
-                alt="All'Arco Apartment Logo"
-                width={200}
-                height={60}
-                className="object-contain"
-              />
-            </Link>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileMenuOpen}
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6 text-gray-600 text-sm">
-              <Link href="/#about" className="hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 rounded px-2 py-1">About</Link>
-              <Link href="/#features" className="hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 rounded px-2 py-1">Features</Link>
-
-              {/* User Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full hover:bg-gray-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                  aria-label="Account menu"
-                  aria-expanded={dropdownOpen}
-                  aria-haspopup="true"
-                >
-                  <User className="w-4 h-4" />
-                  <span>{isAuthenticated ? user?.first_name || 'Account' : 'Account'}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                <AnimatePresence>
-                  {dropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg overflow-hidden z-50 border border-gray-200"
-                      role="menu"
-                    >
-                      <div className="py-1">
-                        {isAuthenticated ? (
-                          <>
-                            <Link href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <User className="w-4 h-4 text-gray-500" />
-                              <span>Dashboard</span>
-                            </Link>
-                            <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <Settings className="w-4 h-4 text-gray-500" />
-                              <span>Profile</span>
-                            </Link>
-                            <Link href="/bookings" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <Calendar className="w-4 h-4 text-gray-500" />
-                              <span>My Bookings</span>
-                            </Link>
-                            {(user?.role === 'admin' || user?.role === 'super_admin') && (
-                              <Link href="/admin" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                                <Sparkles className="w-4 h-4 text-gray-500" />
-                                <span>Admin Panel</span>
-                              </Link>
-                            )}
-                            <div className="my-1 border-t border-gray-100" />
-                            <button
-                              onClick={() => { logout(); setDropdownOpen(false); }}
-                              className="flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
-                              role="menuitem"
-                            >
-                              <LogOut className="w-4 h-4" />
-                              <span>Sign Out</span>
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <Link href="/auth/login" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <LogIn className="w-4 h-4 text-gray-500" />
-                              <span>Login</span>
-                            </Link>
-                            <Link href="/auth/register" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <UserPlus className="w-4 h-4 text-gray-500" />
-                              <span>Sign Up</span>
-                            </Link>
-                            <Link href="/bookings" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <Calendar className="w-4 h-4 text-gray-500" />
-                              <span>My Bookings</span>
-                            </Link>
-                          </>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </nav>
-          </div>
-        </div>
-      </motion.header>
-
-      {/* Mobile Navigation Drawer */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-40 md:hidden"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-
-            {/* Drawer */}
-            <motion.nav
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'tween', duration: 0.3 }}
-              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white z-50 md:hidden overflow-y-auto"
-              role="dialog"
-              aria-label="Mobile navigation"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-8">
-                  <span className="text-xl font-semibold text-gray-900">Menu</span>
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
-                    aria-label="Close menu"
-                  >
-                    <X className="w-6 h-6 text-gray-600" />
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <Link href="/#about" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    About
-                  </Link>
-                  <Link href="/#features" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    Features
-                  </Link>
-
-                  <div className="pt-4 border-t border-gray-100">
-                    {isAuthenticated ? (
-                      <>
-                        <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                          <User className="w-4 h-4" />
-                          Dashboard
-                        </Link>
-                        <Link href="/bookings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                          <Calendar className="w-4 h-4" />
-                          My Bookings
-                        </Link>
-                        <button
-                          onClick={() => { logout(); setMobileMenuOpen(false); }}
-                          className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full text-left"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Sign Out
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                          <LogIn className="w-4 h-4" />
-                          Login
-                        </Link>
-                        <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                          <UserPlus className="w-4 h-4" />
-                          Sign Up
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.nav>
-          </>
-        )}
-      </AnimatePresence>
+    <div className="min-h-screen flex flex-col bg-[#0a0a0a]">
+      <SiteNav />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col lg:flex-row pt-20">
+      <main className="flex-1 flex pt-20">
         {/* Left Side - Benefits (Hidden on mobile) */}
-        <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden bg-gradient-to-br from-blue-600 to-blue-900">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-          </div>
+        <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
+          {/* Background Image */}
+          <Image
+            src="https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=2940&auto=format&fit=crop"
+            alt="Venice"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/80" />
 
-          {/* Content */}
-          <div className="relative z-10 flex flex-col justify-center p-8 lg:p-12 w-full">
+          {/* Content Overlay */}
+          <div className="relative z-10 flex flex-col justify-center p-10 xl:p-14 w-full">
+            {/* Top - Location */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center gap-2 text-white/70 mb-12"
+            >
+              <MapPin className="w-4 h-4 text-[#C4A572]" />
+              <span className="text-sm tracking-wider uppercase">Venice, Italy</span>
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.4 }}
               className="mb-12"
             >
-              <h1 className="text-4xl xl:text-5xl font-light text-white mb-4">
+              <h1 className="text-4xl xl:text-5xl font-light text-white mb-4 leading-tight">
                 Join Our Community
-                <span className="block font-semibold">Book Your Perfect Stay</span>
+                <span className="block text-[#C4A572] font-medium">Book Your Perfect Stay</span>
               </h1>
-              <p className="text-white/70 max-w-md">
+              <p className="text-white/60 max-w-md text-lg">
                 Create an account to unlock exclusive benefits and streamline your booking experience
               </p>
             </motion.div>
 
             {/* Benefits List */}
-            <div className="space-y-6">
-              {BENEFITS.map((benefit, index) => (
+            <div className="space-y-5">
+              {benefits.map((benefit, index) => (
                 <motion.div
                   key={benefit.title}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
                   className="flex items-start gap-4"
                 >
-                  <div className="flex-shrink-0 w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
-                    <benefit.icon className="w-6 h-6 text-white" />
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#C4A572]/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-[#C4A572]/20">
+                    <benefit.icon className="w-6 h-6 text-[#C4A572]" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold mb-1">{benefit.title}</h3>
-                    <p className="text-white/70 text-sm leading-relaxed">{benefit.description}</p>
+                    <h3 className="text-white font-medium mb-0.5">{benefit.title}</h3>
+                    <p className="text-white/50 text-sm">{benefit.description}</p>
                   </div>
                 </motion.div>
               ))}
             </div>
-
-            {/* Location Badge */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="mt-12 flex items-center gap-2 text-white/80"
-            >
-              <MapPin className="w-4 h-4" />
-              <span className="text-sm tracking-wide">Venice, Italy</span>
-            </motion.div>
           </div>
         </div>
 
         {/* Right Side - Registration Form */}
-        <div className="flex-1 lg:w-1/2 xl:w-2/5 flex items-center justify-center p-6 sm:p-8 lg:p-12">
+        <div className="flex-1 lg:w-1/2 xl:w-2/5 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-[#0a0a0a]">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.6, ease: smoothEase }}
             className="w-full max-w-md"
           >
-            {/* Mobile Hero */}
-            <div className="lg:hidden mb-8 text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Create Your Account
-              </h1>
-              <p className="text-gray-500 text-sm">
-                Join us for exclusive benefits
-              </p>
+            {/* Mobile Logo */}
+            <div className="lg:hidden flex justify-center mb-8">
+              <Image
+                src="/allarco-logo.png"
+                alt="All'Arco Apartment"
+                width={150}
+                height={55}
+                className="object-contain"
+              />
             </div>
 
             {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-400">
                   Step {currentStep} of 2
                 </span>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-600">
                   {currentStep === 1 ? 'Personal Info' : 'Security'}
                 </span>
               </div>
-              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: '50%' }}
                   animate={{ width: `${progressPercentage}%` }}
                   transition={{ duration: 0.3 }}
-                  className="h-full bg-gradient-to-r from-blue-600 to-blue-800"
+                  className="h-full bg-[#C4A572]"
                 />
               </div>
             </div>
 
             {/* Form Header */}
             <div className="text-center mb-8">
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                {currentStep === 1 ? 'Tell Us About You' : 'Secure Your Account'}
+              <h2 className="text-3xl font-light text-white mb-2">
+                {currentStep === 1 ? 'Create Account' : 'Secure Your Account'}
               </h2>
-              <p className="text-gray-500 mt-2">
+              <p className="text-gray-500">
                 {currentStep === 1
-                  ? 'Enter your personal information to get started'
-                  : 'Create a strong password for your account'
+                  ? 'Enter your details to get started'
+                  : 'Create a strong password'
                 }
               </p>
             </div>
 
             {/* Registration Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* Error Message */}
               <AnimatePresence>
                 {error && (
@@ -550,7 +293,7 @@ export default function RegisterPage() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm border border-red-100"
+                    className="bg-red-500/10 text-red-400 px-4 py-3 rounded-xl text-sm border border-red-500/20"
                   >
                     {error}
                   </motion.div>
@@ -571,11 +314,11 @@ export default function RegisterPage() {
                     {/* Name Fields */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-400 mb-2">
                           First Name
                         </label>
                         <div className="relative">
-                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                           <input
                             id="firstName"
                             name="firstName"
@@ -583,18 +326,18 @@ export default function RegisterPage() {
                             value={formData.firstName}
                             onChange={handleInputChange}
                             required
-                            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all bg-white"
+                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                             placeholder="John"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-400 mb-2">
                           Last Name
                         </label>
                         <div className="relative">
-                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                           <input
                             id="lastName"
                             name="lastName"
@@ -602,7 +345,7 @@ export default function RegisterPage() {
                             value={formData.lastName}
                             onChange={handleInputChange}
                             required
-                            className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all bg-white"
+                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                             placeholder="Doe"
                           />
                         </div>
@@ -611,11 +354,11 @@ export default function RegisterPage() {
 
                     {/* Email Field */}
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-2">
                         Email Address
                       </label>
                       <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                         <input
                           id="email"
                           name="email"
@@ -624,7 +367,7 @@ export default function RegisterPage() {
                           onChange={handleInputChange}
                           required
                           autoComplete="email"
-                          className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all bg-white"
+                          className="w-full pl-12 pr-4 py-4 bg-white/5 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                           placeholder="you@example.com"
                         />
                       </div>
@@ -632,38 +375,19 @@ export default function RegisterPage() {
 
                     {/* Phone Field */}
                     <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number (Optional)
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-400 mb-2">
+                        Phone Number <span className="text-gray-600">(Optional)</span>
                       </label>
                       <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                         <input
                           id="phone"
                           name="phone"
                           type="tel"
                           value={formData.phone}
                           onChange={handleInputChange}
-                          className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all bg-white"
+                          className="w-full pl-12 pr-4 py-4 bg-white/5 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                           placeholder="+39 123 456 7890"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Country Field */}
-                    <div>
-                      <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
-                        Country (Optional)
-                      </label>
-                      <div className="relative">
-                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                          id="country"
-                          name="country"
-                          type="text"
-                          value={formData.country}
-                          onChange={handleInputChange}
-                          className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all bg-white"
-                          placeholder="Italy"
                         />
                       </div>
                     </div>
@@ -680,11 +404,11 @@ export default function RegisterPage() {
                   >
                     {/* Password Field */}
                     <div>
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-2">
                         Password
                       </label>
                       <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                         <input
                           id="password"
                           name="password"
@@ -693,30 +417,30 @@ export default function RegisterPage() {
                           onChange={handleInputChange}
                           required
                           autoComplete="new-password"
-                          className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all bg-white"
+                          className="w-full pl-12 pr-12 py-4 bg-white/5 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                           placeholder="••••••••"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
                           {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1.5">
+                      <p className="text-xs text-gray-600 mt-1.5">
                         Must be at least 8 characters long
                       </p>
                     </div>
 
                     {/* Confirm Password Field */}
                     <div>
-                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-400 mb-2">
                         Confirm Password
                       </label>
                       <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                         <input
                           id="confirmPassword"
                           name="confirmPassword"
@@ -725,48 +449,32 @@ export default function RegisterPage() {
                           onChange={handleInputChange}
                           required
                           autoComplete="new-password"
-                          className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all bg-white"
+                          className="w-full pl-12 pr-12 py-4 bg-white/5 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                           placeholder="••••••••"
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
                           aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                         >
                           {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
                     </div>
-
-                    {/* Referral Code Field */}
-                    <div>
-                      <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700 mb-2">
-                        Referral Code (Optional)
-                      </label>
-                      <input
-                        id="referralCode"
-                        name="referralCode"
-                        type="text"
-                        value={formData.referralCode}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all bg-white"
-                        placeholder="Enter code if you have one"
-                      />
-                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Action Buttons */}
-              <div className="flex gap-4">
+              <div className="flex gap-4 pt-2">
                 {currentStep === 2 && (
                   <motion.button
                     type="button"
                     onClick={handleBack}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex items-center justify-center gap-2 px-6 py-4 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    className="flex items-center justify-center gap-2 px-6 py-4 border border-gray-800 rounded-xl font-medium text-gray-400 hover:bg-white/5 transition-all"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Back
@@ -778,7 +486,7 @@ export default function RegisterPage() {
                   disabled={loading}
                   whileHover={{ scale: loading ? 1 : 1.02 }}
                   whileTap={{ scale: loading ? 1 : 0.98 }}
-                  className="flex-1 bg-gray-900 text-white py-4 rounded-xl font-medium hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-900/20"
+                  className="flex-1 bg-[#C4A572] text-white py-4 rounded-xl font-semibold hover:bg-[#B39562] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#C4A572]/20"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
@@ -791,12 +499,22 @@ export default function RegisterPage() {
                 </motion.button>
               </div>
 
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-800"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-[#0a0a0a] text-gray-600">or</span>
+                </div>
+              </div>
+
               {/* Login Link */}
-              <p className="text-center text-sm text-gray-500">
+              <p className="text-center text-gray-500">
                 Already have an account?{' '}
                 <Link
                   href="/auth/login"
-                  className="font-medium text-gray-900 hover:underline"
+                  className="font-medium text-[#C4A572] hover:text-[#D4B582] transition-colors"
                 >
                   Sign in
                 </Link>
@@ -806,87 +524,7 @@ export default function RegisterPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 mt-auto">
-        <div className="w-full px-6 md:px-8 lg:px-12 xl:px-16 py-12">
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12">
-            {/* Brand */}
-            <div className="text-center lg:text-left">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-                className="inline-block"
-              >
-                <Image
-                  src="/logos/logo-horizontal.svg"
-                  alt="All'Arco Apartment Logo"
-                  width={200}
-                  height={60}
-                  className="object-contain mx-auto lg:mx-0 mb-4"
-                />
-              </motion.div>
-              <p className="text-sm text-gray-500 leading-relaxed max-w-[300px] mx-auto lg:mx-0">
-                Authentic Venetian hospitality in the heart of Italy&apos;s most romantic city
-              </p>
-            </div>
-
-            {/* Navigation Links */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center lg:text-left">
-              {Object.entries(FOOTER_LINKS).map(([title, links]) => (
-                <div key={title}>
-                  <h5 className="text-sm font-semibold text-gray-800 uppercase tracking-wider mb-4">
-                    {title}
-                  </h5>
-                  <div className="space-y-2">
-                    {links.map((link, i) => (
-                      <Link
-                        key={i}
-                        href={link.href}
-                        className="block text-sm text-gray-500 hover:text-gray-900 transition-colors"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-8 mt-8 border-t border-gray-100">
-            {/* Social Icons */}
-            <div className="flex gap-3">
-              {SOCIAL_LINKS.map(({ icon: Icon, href, label }) => (
-                <motion.a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-900 hover:text-white transition-all duration-200"
-                  whileHover={{ y: -2 }}
-                >
-                  <Icon className="w-4 h-4" />
-                </motion.a>
-              ))}
-            </div>
-
-            {/* Copyright */}
-            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-sm text-gray-400">
-              <span>© {currentYear} All&apos;Arco Apartment</span>
-              <span className="flex items-center gap-1">
-                <motion.span
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Heart className="w-3 h-3 text-red-500 fill-red-500" />
-                </motion.span>
-                Made in Venice
-              </span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
