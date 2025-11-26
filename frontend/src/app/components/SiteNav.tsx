@@ -19,7 +19,7 @@ import {
   X,
   Home,
   MapPin,
-  Images,
+  Image as GalleryIcon,
   Bed,
 } from 'lucide-react';
 
@@ -30,7 +30,7 @@ const smoothEase = [0.22, 1, 0.36, 1] as const;
 const navLinks = [
   { href: '/#about', label: 'The Apartment', icon: Bed },
   { href: '/#features', label: 'Amenities', icon: Home },
-  { href: '/#gallery', label: 'Gallery', icon: Images },
+  { href: '/#gallery', label: 'Gallery', icon: GalleryIcon },
   { href: '/#location', label: 'Venice', icon: MapPin },
 ];
 
