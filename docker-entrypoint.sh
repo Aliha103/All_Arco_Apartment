@@ -13,7 +13,7 @@ echo "PostgreSQL is up"
 
 # Wait for Redis
 echo "Waiting for Redis..."
-until redis-cli -u "$REDIS_URL" ping 2>/dev/null; do
+until python -c "import redis; r = redis.from_url('$REDIS_URL'); r.ping()" 2>/dev/null; do
   echo "Redis is unavailable - sleeping"
   sleep 2
 done
