@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion';
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/authStore';
 import {
   Calendar,
   ChevronDown,
+  ChevronRight,
   LogIn,
   LogOut,
   Menu,
@@ -16,14 +17,21 @@ import {
   User,
   UserPlus,
   X,
+  Home,
+  MapPin,
+  Images,
+  Bed,
 } from 'lucide-react';
 
-// Navigation structure for hospitality
+// Smooth easing
+const smoothEase = [0.22, 1, 0.36, 1] as const;
+
+// Navigation structure
 const navLinks = [
-  { href: '/#about', label: 'The Apartment' },
-  { href: '/#features', label: 'Amenities' },
-  { href: '/#gallery', label: 'Gallery' },
-  { href: '/#location', label: 'Venice' },
+  { href: '/#about', label: 'The Apartment', icon: Bed },
+  { href: '/#features', label: 'Amenities', icon: Home },
+  { href: '/#gallery', label: 'Gallery', icon: Images },
+  { href: '/#location', label: 'Venice', icon: MapPin },
 ];
 
 const SiteNav = () => {
@@ -42,11 +50,9 @@ const SiteNav = () => {
   useMotionValueEvent(scrollY, 'change', (latest) => {
     const previous = lastScrollY.current;
 
-    // Determine scroll direction and visibility
-    if (latest > 100) {
+    if (latest > 80) {
       setIsScrolled(true);
-      // Hide navbar when scrolling down, show when scrolling up
-      if (latest > previous && latest > 200) {
+      if (latest > previous && latest > 150) {
         setIsVisible(false);
       } else {
         setIsVisible(true);
@@ -84,215 +90,183 @@ const SiteNav = () => {
 
   // Lock body scroll when mobile menu open
   useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : 'unset';
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     };
   }, [mobileMenuOpen]);
 
-  // Dynamic styles based on scroll state
-  const headerClasses = `
-    fixed top-0 left-0 right-0 z-50
-    transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
-    ${isScrolled
-      ? 'bg-white/95 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] border-b border-gray-100/50'
-      : 'bg-transparent'
-    }
-    ${isVisible ? 'translate-y-0' : '-translate-y-full'}
-  `;
+  // Close menu on route change
+  const handleNavClick = () => {
+    setMobileMenuOpen(false);
+    setDropdownOpen(false);
+  };
 
   const textClasses = isScrolled ? 'text-gray-800' : 'text-white';
-  const textHoverClasses = isScrolled ? 'hover:text-gray-900' : 'hover:text-white/80';
-  // Keep golden logo visible - no filter needed
+  const textHoverClasses = isScrolled ? 'hover:text-[#C4A572]' : 'hover:text-[#C4A572]';
 
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className={headerClasses}
-    >
-      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16">
-        <div className="flex items-center justify-between h-20 lg:h-24">
+    <>
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: smoothEase }}
+        className={`
+          fixed top-0 left-0 right-0 z-50
+          transition-all duration-500 ease-out
+          ${isScrolled
+            ? 'bg-white/98 backdrop-blur-xl shadow-lg shadow-black/5'
+            : 'bg-gradient-to-b from-black/30 to-transparent'
+          }
+          ${isVisible ? 'translate-y-0' : '-translate-y-full'}
+        `}
+      >
+        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16">
+          <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 focus:outline-none group">
-            <Image
-              src="/allarco-logo.png"
-              alt="All'Arco Apartment"
-              width={160}
-              height={60}
-              className="object-contain transition-all duration-500"
-              priority
-            />
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`
-                  relative px-4 py-2 text-sm font-medium tracking-wide
-                  transition-all duration-300 rounded-full
-                  ${textClasses} ${textHoverClasses}
-                  hover:bg-white/10
-                  focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50
-                  group
-                `}
-              >
-                {label}
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-[#C4A572] transition-all duration-300 group-hover:w-1/2" />
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right Section - CTA & Account */}
-          <div className="hidden lg:flex items-center gap-4">
-            {/* Book Now CTA */}
-            <Link
-              href="/book"
-              className="
-                px-6 py-2.5 text-sm font-semibold tracking-wide
-                bg-[#C4A572] text-white rounded-full
-                hover:bg-[#B39562] hover:shadow-lg hover:shadow-[#C4A572]/25
-                transition-all duration-300 ease-out
-                focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2
-              "
-            >
-              Book Now
+            {/* Logo */}
+            <Link href="/" className="flex-shrink-0 focus:outline-none" onClick={handleNavClick}>
+              <Image
+                src="/allarco-logo.png"
+                alt="All'Arco Apartment"
+                width={140}
+                height={52}
+                className="object-contain h-10 sm:h-12 w-auto"
+                priority
+              />
             </Link>
 
-            {/* Account Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className={`
-                  flex items-center gap-2 px-3 py-2 rounded-full
-                  transition-all duration-300
-                  ${isScrolled
-                    ? 'text-gray-700 hover:bg-gray-100'
-                    : 'text-white/90 hover:bg-white/10'
-                  }
-                  focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50
-                `}
-                aria-label="Account menu"
-                aria-expanded={dropdownOpen}
-                aria-haspopup="true"
+            {/* Desktop & Tablet Navigation (md and up) */}
+            <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+              {navLinks.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={handleNavClick}
+                  className={`
+                    relative px-3 lg:px-4 py-2 text-sm font-medium
+                    transition-all duration-300 rounded-full
+                    ${textClasses} ${textHoverClasses}
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]
+                  `}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Right Section */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Book Now - Desktop & Tablet */}
+              <Link
+                href="/book"
+                className="hidden sm:flex px-4 lg:px-6 py-2 lg:py-2.5 text-sm font-semibold
+                  bg-[#C4A572] text-white rounded-full
+                  hover:bg-[#B39562] hover:shadow-lg hover:shadow-[#C4A572]/20
+                  transition-all duration-300 ease-out
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572] focus-visible:ring-offset-2"
               >
-                <div className={`
-                  w-8 h-8 rounded-full flex items-center justify-center
-                  ${isScrolled ? 'bg-gray-100' : 'bg-white/20'}
-                  transition-colors duration-300
-                `}>
-                  <User className="w-4 h-4" />
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
+                Book Now
+              </Link>
 
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-50 border border-gray-100"
-                    role="menu"
-                  >
-                    {/* User Info Header */}
-                    {isAuthenticated && (
-                      <div className="px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
-                        <p className="font-semibold text-gray-900">{user?.first_name} {user?.last_name}</p>
-                        <p className="text-sm text-gray-500">{user?.email}</p>
-                      </div>
-                    )}
+              {/* Account Dropdown - Desktop */}
+              <div className="hidden md:block relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className={`
+                    flex items-center gap-1.5 p-2 rounded-full
+                    transition-all duration-300
+                    ${isScrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]
+                  `}
+                  aria-label="Account menu"
+                  aria-expanded={dropdownOpen}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isScrolled ? 'bg-gray-100' : 'bg-white/20'}`}>
+                    <User className="w-4 h-4" />
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
 
-                    <div className="py-2">
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: smoothEase }}
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl shadow-black/10 overflow-hidden border border-gray-100"
+                    >
                       {isAuthenticated ? (
                         <>
-                          <Link href="/dashboard" className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                            <User className="w-4 h-4 text-gray-400" />
-                            <span>Dashboard</span>
-                          </Link>
-                          <Link href="/bookings" className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span>My Reservations</span>
-                          </Link>
-                          <Link href="/profile" className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                            <Settings className="w-4 h-4 text-gray-400" />
-                            <span>Settings</span>
-                          </Link>
-                          {(user?.role === 'admin' || user?.role === 'super_admin') && (
-                            <Link href="/admin" className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                              <Sparkles className="w-4 h-4 text-[#C4A572]" />
-                              <span>Admin Panel</span>
+                          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                            <p className="font-medium text-gray-900 text-sm">{user?.first_name} {user?.last_name}</p>
+                            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                          </div>
+                          <div className="py-1">
+                            <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                              <User className="w-4 h-4 text-gray-400" /> Dashboard
                             </Link>
-                          )}
-                          <div className="my-1 mx-4 border-t border-gray-100" />
-                          <button
-                            onClick={() => { logout(); setDropdownOpen(false); }}
-                            className="flex items-center gap-3 px-5 py-3 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
-                            role="menuitem"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Sign Out</span>
-                          </button>
+                            <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                              <Calendar className="w-4 h-4 text-gray-400" /> My Reservations
+                            </Link>
+                            {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                              <Link href="/admin" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                <Sparkles className="w-4 h-4 text-[#C4A572]" /> Admin Panel
+                              </Link>
+                            )}
+                            <hr className="my-1 border-gray-100" />
+                            <button onClick={() => { logout(); handleNavClick(); }} className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full">
+                              <LogOut className="w-4 h-4" /> Sign Out
+                            </button>
+                          </div>
                         </>
                       ) : (
-                        <>
-                          <div className="px-5 py-3 border-b border-gray-100">
-                            <p className="text-sm text-gray-500">Welcome to All&apos;Arco</p>
-                          </div>
-                          <Link href="/auth/login" className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                            <LogIn className="w-4 h-4 text-gray-400" />
-                            <span>Sign In</span>
+                        <div className="py-1">
+                          <Link href="/auth/login" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                            <LogIn className="w-4 h-4 text-gray-400" /> Sign In
                           </Link>
-                          <Link href="/auth/register" className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                            <UserPlus className="w-4 h-4 text-gray-400" />
-                            <span>Create Account</span>
+                          <Link href="/auth/register" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                            <UserPlus className="w-4 h-4 text-gray-400" /> Create Account
                           </Link>
-                          <div className="p-4 bg-gradient-to-br from-[#C4A572]/10 to-transparent">
-                            <p className="text-xs text-gray-600 mb-2">Already have a reservation?</p>
-                            <Link
-                              href="/bookings/find"
-                              className="block text-center py-2 bg-[#C4A572] text-white text-sm font-medium rounded-lg hover:bg-[#B39562] transition-colors"
-                              onClick={() => setDropdownOpen(false)}
-                            >
-                              Find Booking
-                            </Link>
-                          </div>
-                        </>
+                          <hr className="my-1 border-gray-100" />
+                          <Link href="/bookings/find" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#C4A572] hover:bg-[#C4A572]/5">
+                            <Calendar className="w-4 h-4" /> Find Booking
+                          </Link>
+                        </div>
                       )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Mobile Menu Button */}
+              <motion.button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className={`
+                  md:hidden p-2 rounded-xl touch-manipulation
+                  transition-colors duration-300
+                  ${isScrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]
+                `}
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Menu className="w-6 h-6" />
+              </motion.button>
             </div>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`
-              lg:hidden p-2.5 rounded-xl
-              transition-all duration-300
-              focus:outline-none focus:ring-2 focus:ring-[#C4A572]/50
-              ${isScrolled
-                ? 'text-gray-700 hover:bg-gray-100'
-                : 'text-white hover:bg-white/10'
-              }
-            `}
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
         </div>
-      </div>
+      </motion.header>
 
-      {/* Mobile Navigation Drawer */}
+      {/* Mobile Menu - Full Screen Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
@@ -302,138 +276,129 @@ const SiteNav = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
 
-            {/* Drawer */}
-            <motion.nav
+            {/* Mobile Menu Panel */}
+            <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed top-0 right-0 h-full w-full max-w-sm bg-white z-50 lg:hidden overflow-y-auto"
-              role="dialog"
-              aria-label="Mobile navigation"
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 w-full max-w-[320px] bg-white z-[70] md:hidden overflow-hidden flex flex-col"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <Image
                   src="/allarco-logo.png"
                   alt="All'Arco Apartment"
-                  width={120}
-                  height={45}
+                  width={110}
+                  height={40}
                   className="object-contain"
                 />
-                <button
+                <motion.button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                  whileTap={{ scale: 0.95 }}
                   aria-label="Close menu"
                 >
                   <X className="w-6 h-6" />
-                </button>
+                </motion.button>
               </div>
 
               {/* Navigation Links */}
-              <div className="p-6">
-                <nav className="space-y-1">
-                  {navLinks.map(({ href, label }, index) => (
+              <div className="flex-1 overflow-y-auto py-4">
+                <nav className="px-3">
+                  {navLinks.map(({ href, label, icon: Icon }, index) => (
                     <motion.div
                       key={href}
-                      initial={{ opacity: 0, x: 20 }}
+                      initial={{ opacity: 0, x: 30 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: index * 0.08, duration: 0.4, ease: smoothEase }}
                     >
                       <Link
                         href={href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center px-4 py-4 text-lg font-medium text-gray-900 hover:bg-gray-50 rounded-xl transition-colors"
+                        onClick={handleNavClick}
+                        className="flex items-center gap-4 px-4 py-4 text-gray-900 hover:bg-gray-50 rounded-xl transition-colors active:bg-gray-100 touch-manipulation"
                       >
-                        {label}
+                        <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                          <Icon className="w-5 h-5 text-[#C4A572]" />
+                        </div>
+                        <span className="text-base font-medium">{label}</span>
+                        <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
                       </Link>
                     </motion.div>
                   ))}
                 </nav>
 
-                {/* CTA */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="mt-8"
-                >
-                  <Link
-                    href="/book"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center w-full py-4 bg-[#C4A572] text-white font-semibold rounded-xl hover:bg-[#B39562] transition-colors"
-                  >
-                    Book Your Stay
-                  </Link>
-                </motion.div>
+                {/* Divider */}
+                <div className="mx-6 my-4 border-t border-gray-100" />
 
                 {/* Account Section */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="mt-8 pt-8 border-t border-gray-100"
-                >
-                  <p className="text-sm font-medium text-gray-500 mb-4">Account</p>
-                  <div className="space-y-1">
-                    {isAuthenticated ? (
-                      <>
-                        <Link
-                          href="/dashboard"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
-                        >
+                <div className="px-3">
+                  <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</p>
+                  {isAuthenticated ? (
+                    <>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>
+                        <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
                           <User className="w-5 h-5 text-gray-400" />
-                          Dashboard
+                          <span>Dashboard</span>
                         </Link>
-                        <Link
-                          href="/bookings"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
-                        >
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+                        <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
                           <Calendar className="w-5 h-5 text-gray-400" />
-                          My Reservations
+                          <span>My Reservations</span>
                         </Link>
-                        <button
-                          onClick={() => { logout(); setMobileMenuOpen(false); }}
-                          className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full text-left"
-                        >
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }}>
+                        <button onClick={() => { logout(); handleNavClick(); }} className="flex items-center gap-4 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full">
                           <LogOut className="w-5 h-5" />
-                          Sign Out
+                          <span>Sign Out</span>
                         </button>
-                      </>
-                    ) : (
-                      <>
-                        <Link
-                          href="/auth/login"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
-                        >
+                      </motion.div>
+                    </>
+                  ) : (
+                    <>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>
+                        <Link href="/auth/login" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
                           <LogIn className="w-5 h-5 text-gray-400" />
-                          Sign In
+                          <span>Sign In</span>
                         </Link>
-                        <Link
-                          href="/auth/register"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
-                        >
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+                        <Link href="/auth/register" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
                           <UserPlus className="w-5 h-5 text-gray-400" />
-                          Create Account
+                          <span>Create Account</span>
                         </Link>
-                      </>
-                    )}
-                  </div>
-                </motion.div>
+                      </motion.div>
+                    </>
+                  )}
+                </div>
               </div>
-            </motion.nav>
+
+              {/* Bottom CTA */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.4, ease: smoothEase }}
+                className="p-4 border-t border-gray-100 bg-gray-50"
+              >
+                <Link
+                  href="/book"
+                  onClick={handleNavClick}
+                  className="flex items-center justify-center gap-2 w-full py-4 bg-[#C4A572] text-white font-semibold rounded-xl hover:bg-[#B39562] transition-colors active:scale-[0.98] touch-manipulation"
+                >
+                  Book Your Stay
+                  <ChevronRight className="w-5 h-5" />
+                </Link>
+              </motion.div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   );
 };
 
