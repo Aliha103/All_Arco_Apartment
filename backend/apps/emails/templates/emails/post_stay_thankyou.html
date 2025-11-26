@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Thank You</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }
+        .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .cta-button { display: inline-block; background: #0066cc; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>❤️ Thank You for Staying With Us!</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ booking.guest_name }},</p>
+            <p>Thank you for choosing All'Arco Apartment for your stay in Venice! We hope you had a wonderful experience.</p>
+            <p><strong>We'd Love Your Feedback!</strong></p>
+            <p>Your review helps us improve and helps future guests make informed decisions. Would you mind taking a moment to share your experience?</p>
+            <center style="margin: 30px 0;">
+                <a href="{{ review_url }}" class="cta-button">Leave a Review</a>
+            </center>
+            <p><strong>Come Back Soon!</strong></p>
+            <p>We'd be delighted to host you again. As a returning guest, you'll receive a special discount on your next booking.</p>
+            <p>If you have any feedback or concerns about your stay, please don't hesitate to reach out at {{ company.email }}.</p>
+            <p>Warmest regards,<br><strong>The All'Arco Apartment Team</strong></p>
+        </div>
+        <div class="footer">
+            <p>All'Arco Apartment | Venice, Italy</p>
+            <p style="font-size: 12px;">Booking ID: {{ booking.booking_id }}</p>
+        </div>
+    </div>
+</body>
+</html>

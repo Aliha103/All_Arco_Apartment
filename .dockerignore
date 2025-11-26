@@ -1,0 +1,42 @@
+# Documentation
+*.md
+docs/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+backend/.pytest_cache/
+backend/htmlcov/
+backend/.coverage
+backend/*.log
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.cache/
+frontend/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.yml
+Dockerfile.dev

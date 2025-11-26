@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .booking-details {
+            background: #f8f9fa;
+            border-left: 4px solid #0066cc;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .detail-value {
+            color: #333;
+        }
+        .pricing-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        .pricing-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .pricing-table .total-row {
+            font-weight: bold;
+            font-size: 18px;
+            background: #f8f9fa;
+        }
+        .cta-button {
+            display: inline-block;
+            background: #0066cc;
+            color: white !important;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+        .footer a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Booking Confirmed!</h1>
+            <p>Your stay at All'Arco Apartment is confirmed</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ booking.guest_name }},</p>
+
+            <p>Thank you for choosing All'Arco Apartment! We're delighted to confirm your booking for our beautiful apartment in Venice, Italy.</p>
+
+            <div class="booking-details">
+                <h3 style="margin-top: 0; color: #0066cc;">Booking Details</h3>
+
+                <div class="detail-row">
+                    <span class="detail-label">Booking ID:</span>
+                    <span class="detail-value">{{ booking.booking_id }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Check-in:</span>
+                    <span class="detail-value">{{ booking.check_in_date|date:"F d, Y" }} at {{ settings.check_in_time|time:"H:i" }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Check-out:</span>
+                    <span class="detail-value">{{ booking.check_out_date|date:"F d, Y" }} at {{ settings.check_out_time|time:"H:i" }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Nights:</span>
+                    <span class="detail-value">{{ booking.nights }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Guests:</span>
+                    <span class="detail-value">{{ booking.guests }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value" style="color: #28a745; font-weight: bold;">{{ booking.get_status_display }}</span>
+                </div>
+            </div>
+
+            <h3 style="color: #0066cc;">Pricing Summary</h3>
+            <table class="pricing-table">
+                <tr>
+                    <td>Accommodation ({{ booking.nights }} nights)</td>
+                    <td style="text-align: right;">€{{ booking.total_price }}</td>
+                </tr>
+                <tr>
+                    <td>Cleaning Fee</td>
+                    <td style="text-align: right;">€{{ settings.cleaning_fee }}</td>
+                </tr>
+                <tr>
+                    <td>Tourist Tax</td>
+                    <td style="text-align: right;">€{{ booking.nights|multiply:booking.guests|multiply:settings.tourist_tax_per_person_per_night }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td>Total Amount</td>
+                    <td style="text-align: right;">€{{ booking.total_price }}</td>
+                </tr>
+            </table>
+
+            <h3 style="color: #0066cc;">What's Next?</h3>
+            <ul>
+                <li>You'll receive check-in instructions 48 hours before your arrival</li>
+                <li>If you have any questions, feel free to contact us at {{ company.check_in_email }}</li>
+                <li>Please review our house rules and cancellation policy</li>
+            </ul>
+
+            <center>
+                <a href="https://allarcoapartment.com/bookings/{{ booking.booking_id }}" class="cta-button">
+                    View Booking Details
+                </a>
+            </center>
+
+            <p>We look forward to welcoming you to Venice!</p>
+
+            <p>Warm regards,<br>
+            <strong>The All'Arco Apartment Team</strong></p>
+        </div>
+
+        <div class="footer">
+            <p>Need help? Contact us at <a href="mailto:{{ company.email }}">{{ company.email }}</a></p>
+            <p style="margin: 10px 0;">All'Arco Apartment | Venice, Italy</p>
+            <p style="font-size: 12px; color: #999;">
+                This email was sent to {{ booking.guest_email }} regarding your booking {{ booking.booking_id }}
+            </p>
+        </div>
+    </div>
+</body>
+</html>
