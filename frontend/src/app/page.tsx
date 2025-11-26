@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, useScroll, useTransform, useInView } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import {
   Wifi,
   Wind,
@@ -28,7 +28,6 @@ import SiteFooter from './components/SiteFooter';
 
 // Smooth easing for all animations
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
-const springTransition = { type: 'spring', stiffness: 100, damping: 20 };
 
 // Animation variants with improved smoothness
 const fadeInUp = {
@@ -47,6 +46,26 @@ const staggerContainer = {
     transition: { staggerChildren: 0.1, delayChildren: 0.1 },
   },
 };
+
+// Hero images for auto-scroll carousel
+const heroImages = [
+  {
+    src: 'https://images.unsplash.com/photo-1514890547357-a9ee288728e0?q=80&w=2940&auto=format&fit=crop',
+    alt: 'Venice Canal View'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=2940&auto=format&fit=crop',
+    alt: 'Venice Grand Canal'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2940&auto=format&fit=crop',
+    alt: 'Venice Architecture'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2940&auto=format&fit=crop',
+    alt: 'Italian Scenery'
+  },
+];
 
 // Property data
 const amenities = [
@@ -168,6 +187,8 @@ const Button = ({
 
 export default function Home() {
   const heroRef = useRef(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
@@ -177,27 +198,62 @@ export default function Home() {
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.05]);
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 50]);
 
+  // Auto-scroll hero images every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white antialiased">
       <SiteNav />
 
-      {/* Hero Section */}
+      {/* Hero Section with Auto-Scrolling Images */}
       <section ref={heroRef} className="relative h-[100svh] min-h-[600px] overflow-hidden">
-        {/* Background with subtle parallax */}
+        {/* Background Images Carousel */}
         <motion.div
           style={{ scale: heroScale, y: heroY }}
           className="absolute inset-0 will-change-transform"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 z-10" />
-          <Image
-            src="https://images.unsplash.com/photo-1514890547357-a9ee288728e0?q=80&w=2940&auto=format&fit=crop"
-            alt="Venice Canal View"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentImageIndex}
+              initial={{ opacity: 0, scale: 1.1 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.5, ease: smoothEase }}
+              className="absolute inset-0"
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 z-10" />
+              <Image
+                src={heroImages[currentImageIndex].src}
+                alt={heroImages[currentImageIndex].alt}
+                fill
+                className="object-cover"
+                priority={currentImageIndex === 0}
+                sizes="100vw"
+              />
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
+
+        {/* Image Indicators */}
+        <div className="absolute bottom-32 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+          {heroImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentImageIndex(index)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index === currentImageIndex
+                  ? 'bg-white w-6'
+                  : 'bg-white/40 hover:bg-white/60'
+              }`}
+              aria-label={`Go to image ${index + 1}`}
+            />
+          ))}
+        </div>
 
         {/* Hero Content */}
         <motion.div
@@ -219,7 +275,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.5, ease: smoothEase }}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-white mb-4 sm:mb-6 tracking-tight"
           >
-            Ca&apos; All&apos;Arco
+            All&apos;Arco Apartment
           </motion.h1>
 
           <motion.p
@@ -291,7 +347,7 @@ export default function Home() {
                 Your Private Sanctuary in Venice
               </h2>
               <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6">
-                Nestled in the historic Castello district, Ca&apos; All&apos;Arco offers an authentic Venetian experience
+                Nestled in the historic Castello district, All&apos;Arco Apartment offers an authentic Venetian experience
                 with modern luxury. This beautifully appointed 70m² apartment combines traditional Venetian
                 architecture with contemporary design.
               </p>
@@ -459,7 +515,7 @@ export default function Home() {
                 In the Heart of Venice
               </h2>
               <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-6 sm:mb-8">
-                Located in the prestigious Castello district, Ca&apos; All&apos;Arco offers the perfect base for
+                Located in the prestigious Castello district, All&apos;Arco Apartment offers the perfect base for
                 exploring Venice. Away from the tourist crowds yet minutes from major attractions.
               </p>
 

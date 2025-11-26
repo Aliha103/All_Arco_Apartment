@@ -103,7 +103,7 @@ const SiteNav = () => {
 
   const textClasses = isScrolled ? 'text-gray-800' : 'text-white';
   const textHoverClasses = isScrolled ? 'hover:text-gray-900' : 'hover:text-white/80';
-  const logoFilter = isScrolled ? '' : 'brightness-0 invert';
+  // Keep golden logo visible - no filter needed
 
   return (
     <motion.header
@@ -122,7 +122,7 @@ const SiteNav = () => {
               alt="All'Arco Apartment"
               width={160}
               height={60}
-              className={`object-contain transition-all duration-500 ${logoFilter}`}
+              className="object-contain transition-all duration-500"
               priority
             />
           </Link>

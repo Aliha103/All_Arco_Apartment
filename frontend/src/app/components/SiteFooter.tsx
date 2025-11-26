@@ -34,7 +34,7 @@ const SiteFooter = () => {
               alt="All'Arco Apartment"
               width={120}
               height={45}
-              className="object-contain brightness-0 invert"
+              className="object-contain"
             />
             <div className="hidden sm:block w-px h-8 bg-gray-700" />
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-400">
