@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" fill="none">
-  <path
-    d="M50 140V70c0-33.137 26.863-60 60-60h0c33.137 0 60 26.863 60 60v70"
-    stroke="#C4A572"
-    stroke-width="12"
-    fill="none"
-  />
-  <line x1="50" y1="140" x2="170" y2="140" stroke="#C4A572" stroke-width="12"/>
-</svg>
