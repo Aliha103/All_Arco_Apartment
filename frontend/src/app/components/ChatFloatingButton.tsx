@@ -1,29 +1,44 @@
-'use client';
-
-import { motion } from 'framer-motion';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 
 interface ChatFloatingButtonProps {
-  anchor?: 'left' | 'right';
   onClick?: () => void;
+  anchor?: 'left' | 'right';
 }
 
-export default function ChatFloatingButton({ anchor = 'right', onClick }: ChatFloatingButtonProps) {
-  const positionClass = anchor === 'left'
-    ? 'left-[max(16px,env(safe-area-inset-left))]'
-    : 'right-[max(16px,env(safe-area-inset-right))]';
+export const ChatFloatingButton: React.FC<ChatFloatingButtonProps> = ({ onClick, anchor = 'right' }) => {
+  const [isVisible, setIsVisible] = useState(true);
+
+  // In this stripped version we just always show for guests; hide logic can be added later
+  const shouldShow = useMemo(() => true, []);
+
+  useEffect(() => {
+    setIsVisible(shouldShow);
+  }, [shouldShow]);
+
+  if (!isVisible) return null;
+
+  const anchorStyle =
+    anchor === 'left'
+      ? { left: 'max(16px, env(safe-area-inset-left))' }
+      : { right: 'max(16px, env(safe-area-inset-right))' };
 
   return (
-    <motion.button
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      aria-label="Chat with us"
-      className={`fixed bottom-6 ${positionClass} w-14 h-14 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:shadow-xl transition-shadow`}
+    <div
+      className="fixed bottom-[max(16px,env(safe-area-inset-bottom))] z-50"
+      style={anchorStyle}
     >
-      <MessageCircle className="w-6 h-6" />
-    </motion.button>
+      <button
+        onClick={onClick}
+        aria-label="Chat with us"
+        className="relative inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 px-4 py-3 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 transition duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-white"
+      >
+        <span className="absolute inset-0 rounded-full bg-indigo-500/20 blur-md opacity-70" aria-hidden="true" />
+        <MessageCircle className="w-5 h-5 relative z-10" />
+        <span className="relative z-10">Chat with us</span>
+      </button>
+    </div>
   );
-}
+};
+
+export default ChatFloatingButton;

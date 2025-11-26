@@ -1,167 +1,142 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, User, ChevronDown, LogIn, UserPlus, Calendar, Settings, LogOut, Sparkles } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import {
+  User,
+  LogIn,
+  LogOut,
+  Menu,
+  X,
+  Settings,
+  Calendar,
+  Sparkles,
+  UserPlus,
+  ChevronDown,
+} from 'lucide-react';
 
-export default function SiteNav() {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+const SITE_URL = 'https://www.allarcoapartment.com';
+
+const SiteNav = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setMobileMenuOpen(false);
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [mobileMenuOpen]);
+  const { user, isAuthenticated, logout } = useAuthStore();
 
   return (
-    <>
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100"
-      >
-        <div className="px-6 md:px-8">
-          <div className="flex items-center justify-between h-20">
-            <Link href="/" className="flex items-center gap-3 focus:outline-none">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                AA
-              </div>
-              <span className="text-gray-900 text-xl font-semibold hidden sm:block">All&apos;Arco Apartment</span>
-            </Link>
+    <motion.header
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="p-6 md:p-8"
+    >
+      <div className="flex items-center justify-between">
+        <a href="/" className="flex items-center gap-3 focus:outline-none">
+          <Image
+            src="/brand-logo.png"
+            alt="All'Arco Apartment"
+            width={88}
+            height={88}
+            className="rounded-lg"
+          />
+          <span className="text-white text-2xl font-semibold">All&apos;Arco Apartment</span>
+        </a>
 
-            {/* Mobile Menu Button */}
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-6 text-white/90 text-sm">
+          <a href={`${SITE_URL}/#about`} className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 rounded px-2 py-1">About</a>
+          <a href={`${SITE_URL}/#features`} className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 rounded px-2 py-1">Features</a>
+
+          {/* User Dropdown */}
+          <div className="relative" ref={dropdownRef}>
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileMenuOpen}
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/20 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
+              aria-label="Account menu"
+              aria-expanded={dropdownOpen}
+              aria-haspopup="true"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <User className="w-4 h-4" />
+              <span>{isAuthenticated ? user?.first_name || 'Account' : 'Account'}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6 text-gray-600 text-sm">
-              <Link href="/#about" className="hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 rounded px-2 py-1">About</Link>
-              <Link href="/#features" className="hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 rounded px-2 py-1">Features</Link>
-
-              {/* User Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full hover:bg-gray-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                  aria-label="Account menu"
-                  aria-expanded={dropdownOpen}
-                  aria-haspopup="true"
+            <AnimatePresence>
+              {dropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg overflow-hidden z-50 border border-gray-200"
+                  role="menu"
                 >
-                  <User className="w-4 h-4" />
-                  <span>{isAuthenticated ? user?.first_name || 'Account' : 'Account'}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                <AnimatePresence>
-                  {dropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg overflow-hidden z-50 border border-gray-200"
-                      role="menu"
-                    >
-                      <div className="py-1">
-                        {isAuthenticated ? (
-                          <>
-                            <Link href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <User className="w-4 h-4 text-gray-500" />
-                              <span>Dashboard</span>
-                            </Link>
-                            <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <Settings className="w-4 h-4 text-gray-500" />
-                              <span>Profile</span>
-                            </Link>
-                            <Link href="/bookings" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <Calendar className="w-4 h-4 text-gray-500" />
-                              <span>My Bookings</span>
-                            </Link>
-                            {(user?.role === 'admin' || user?.role === 'super_admin') && (
-                              <Link href="/admin" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                                <Sparkles className="w-4 h-4 text-gray-500" />
-                                <span>Admin Panel</span>
-                              </Link>
-                            )}
-                            <div className="my-1 border-t border-gray-100" />
-                            <button
-                              onClick={() => { logout(); setDropdownOpen(false); }}
-                              className="flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
-                              role="menuitem"
-                            >
-                              <LogOut className="w-4 h-4" />
-                              <span>Sign Out</span>
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <Link href="/auth/login" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <LogIn className="w-4 h-4 text-gray-500" />
-                              <span>Login</span>
-                            </Link>
-                            <Link href="/auth/register" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <UserPlus className="w-4 h-4 text-gray-500" />
-                              <span>Sign Up</span>
-                            </Link>
-                            <Link href="/bookings" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
-                              <Calendar className="w-4 h-4 text-gray-500" />
-                              <span>My Bookings</span>
-                            </Link>
-                          </>
+                  <div className="py-1">
+                    {isAuthenticated ? (
+                      <>
+                        <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                          <User className="w-4 h-4 text-gray-500" />
+                          <span>Dashboard</span>
+                        </a>
+                        <a href="/profile" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                          <Settings className="w-4 h-4 text-gray-500" />
+                          <span>Profile</span>
+                        </a>
+                        <a href="/bookings" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                          <span>My Bookings</span>
+                        </a>
+                        {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                          <a href="/admin" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                            <Sparkles className="w-4 h-4 text-gray-500" />
+                            <span>Admin Panel</span>
+                          </a>
                         )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </nav>
+                        <div className="my-1 border-t border-gray-100" />
+                        <button
+                          onClick={() => { logout(); setDropdownOpen(false); }}
+                          className="flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
+                          role="menuitem"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Sign Out</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <a href="/login" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                          <LogIn className="w-4 h-4 text-gray-500" />
+                          <span>Login</span>
+                        </a>
+                        <a href="/register" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                          <UserPlus className="w-4 h-4 text-gray-500" />
+                          <span>Sign Up</span>
+                        </a>
+                        <a href="/my-reservation" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                          <span>My Reservation</span>
+                        </a>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
-      </motion.header>
+        </nav>
+      </div>
 
       {/* Mobile Navigation Drawer */}
       <AnimatePresence>
@@ -197,44 +172,28 @@ export default function SiteNav() {
                     <X className="w-6 h-6 text-gray-600" />
                   </button>
                 </div>
-
-                <div className="space-y-2">
-                  <Link href="/#about" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    About
-                  </Link>
-                  <Link href="/#features" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    Features
-                  </Link>
-
-                  <div className="pt-4 border-t border-gray-100">
+                <div className="space-y-3">
+                  <a href={`${SITE_URL}/#about`} className="block text-gray-800 text-sm font-medium">About</a>
+                  <a href={`${SITE_URL}/#features`} className="block text-gray-800 text-sm font-medium">Features</a>
+                  <a href={`${SITE_URL}/#booking`} className="block text-gray-800 text-sm font-medium">Reservations</a>
+                  <a href={isAuthenticated ? '/bookings' : '/my-reservation'} className="block text-gray-800 text-sm font-medium">My Reservation</a>
+                  <div className="border-t border-gray-200 pt-3 space-y-2">
                     {isAuthenticated ? (
                       <>
-                        <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                          <User className="w-4 h-4" />
-                          Dashboard
-                        </Link>
-                        <Link href="/bookings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                          <Calendar className="w-4 h-4" />
-                          My Bookings
-                        </Link>
+                        <a href="/dashboard" className="block text-gray-800 text-sm font-medium">Dashboard</a>
+                        <a href="/profile" className="block text-gray-800 text-sm font-medium">Profile</a>
+                        <a href="/bookings" className="block text-gray-800 text-sm font-medium">My Bookings</a>
                         <button
                           onClick={() => { logout(); setMobileMenuOpen(false); }}
-                          className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full text-left"
+                          className="block text-left text-red-600 text-sm font-medium"
                         >
-                          <LogOut className="w-4 h-4" />
                           Sign Out
                         </button>
                       </>
                     ) : (
                       <>
-                        <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                          <LogIn className="w-4 h-4" />
-                          Login
-                        </Link>
-                        <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                          <UserPlus className="w-4 h-4" />
-                          Sign Up
-                        </Link>
+                        <a href="/login" className="block text-gray-800 text-sm font-medium">Login</a>
+                        <a href="/register" className="block text-gray-800 text-sm font-medium">Sign Up</a>
                       </>
                     )}
                   </div>
@@ -244,6 +203,8 @@ export default function SiteNav() {
           </>
         )}
       </AnimatePresence>
-    </>
+    </motion.header>
   );
-}
+};
+
+export default SiteNav;
