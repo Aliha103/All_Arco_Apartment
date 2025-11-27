@@ -48,6 +48,10 @@ else:
     print("Settings already exist")
 PYTHON_EOF
 
+# Create super admin if not exists
+echo "Creating super admin user..."
+python manage.py create_super_admin --email=support@allarcoapartment.com --password=admin123 --first-name=Super --last-name=Admin
+
 echo "Initialization complete. Starting services..."
 
 # Execute CMD
