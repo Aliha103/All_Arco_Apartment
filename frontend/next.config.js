@@ -13,6 +13,17 @@ const nextConfig = {
     ignoreBuildErrors: false, // Keep TS checking enabled
   },
 
+  // Image optimization for external images
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+    ],
+  },
+
   // API rewrite for Docker
   async rewrites() {
     return [
