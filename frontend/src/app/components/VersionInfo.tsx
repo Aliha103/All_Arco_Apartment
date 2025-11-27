@@ -2,21 +2,45 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { HelpCircle, X, Sparkles, Calendar, Shield, Globe } from 'lucide-react';
+import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Zap, Wrench } from 'lucide-react';
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.4';
 
 const updates = [
   {
-    version: '1.0.0',
+    version: '1.0.4',
     date: 'November 2025',
-    icon: Sparkles,
-    title: 'Initial Release',
+    icon: Wrench,
+    title: 'Infrastructure & Fixes',
     changes: [
-      'Luxury apartment booking system',
-      'Secure payment processing',
-      'Guest dashboard & reservations',
-      'Mobile-responsive design',
+      'Celery background tasks enabled',
+      'Fixed favicon display issue',
+      'Cleaner homepage design',
+      'All services running smoothly',
+    ],
+  },
+  {
+    version: '1.0.3',
+    date: 'November 2025',
+    icon: Zap,
+    title: 'Major Upgrades',
+    changes: [
+      'Node.js 25, React 19.2, Next.js 16',
+      'Django 5.1.4 backend',
+      'Zeptomail multi-sender emails',
+      'Latest dependencies',
+    ],
+  },
+  {
+    version: '1.0.2',
+    date: 'November 2025',
+    icon: Globe,
+    title: 'UX Improvements',
+    changes: [
+      'Smooth mobile navigation',
+      'Auto-scrolling hero images',
+      'Improved footer design',
+      'Professional animations',
     ],
   },
   {
@@ -32,15 +56,15 @@ const updates = [
     ],
   },
   {
-    version: '1.0.2',
+    version: '1.0.0',
     date: 'November 2025',
-    icon: Globe,
-    title: 'UX Improvements',
+    icon: Sparkles,
+    title: 'Initial Release',
     changes: [
-      'Smooth mobile navigation',
-      'Auto-scrolling hero images',
-      'Improved footer design',
-      'Professional animations',
+      'Luxury apartment booking system',
+      'Secure payment processing',
+      'Guest dashboard & reservations',
+      'Mobile-responsive design',
     ],
   },
 ];
