@@ -52,6 +52,7 @@ WORKDIR /app
 # Copy Python dependencies from builder
 COPY --from=backend-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=backend-builder /usr/local/bin/gunicorn /usr/local/bin/gunicorn
+COPY --from=backend-builder /usr/local/bin/celery /usr/local/bin/celery
 
 # Copy backend code
 COPY backend/ ./backend/
