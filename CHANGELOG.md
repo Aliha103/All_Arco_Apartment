@@ -2,6 +2,52 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.0.3] - 2025-11-27
+
+### Upgraded
+- **Node.js**: 18 → 25.x (Current)
+- **React**: 18.3.1 → 19.1.0+ (supports 19.2)
+- **Next.js**: 15.1.0 → 16.0.5
+- **Django**: 5.0.1 → 5.1.4
+- **All dependencies** updated to latest stable versions
+
+### Added
+- **Zeptomail Multi-Sender**: 3 dedicated email addresses with separate tokens
+  - `reservations@allarcoapartment.com` - Booking confirmations, payment receipts
+  - `support@allarcoapartment.com` - General support, welcome emails, team invites
+  - `check-in@allarcoapartment.com` - Check-in instructions, arrival info
+- Auto-detection of sender type based on from_email
+- EU region Zeptomail endpoint (api.zeptomail.eu)
+
+### Fixed
+- Django version compatibility with django-celery-beat
+- Package lock file sync issues
+- Dockerfile Node.js version for Next.js 16 compatibility
+
+---
+
+## [1.0.2] - 2025-11-27
+
+### Fixed
+- TypeScript type errors for RBAC User model
+- API method calls in team page
+- Form state type mismatches
+- Django admin RBAC field configuration
+
+---
+
+## [1.0.1] - 2025-11-27
+
+### Added
+- Super admin creation management command
+- Version control files (VERSION, CHANGELOG.md)
+
+### Changed
+- Apartment specs: 85m², 2 bedrooms, 5 guests
+- Host profile: Ali Hassan Cheema
+
+---
+
 ## [1.0.0] - 2025-11-27
 
 ### Added
