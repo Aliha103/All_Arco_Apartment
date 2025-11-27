@@ -2,6 +2,25 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.0.4] - 2025-11-27
+
+### Fixed
+- **Celery Background Tasks**: Added celery binary to Docker image
+  - celery-worker now running for async tasks
+  - celery-beat now running for scheduled jobs
+- **Favicon**: Replaced corrupted ICO with SVG icon
+
+### Changed
+- Removed CTA section from homepage (cleaner design)
+
+### Technical
+- Node.js 25.x (Current)
+- React 19.2
+- Next.js 16.0.5
+- Django 5.1.4
+
+---
+
 ## [1.0.3] - 2025-11-27
 
 ### Upgraded
