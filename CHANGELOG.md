@@ -2,6 +2,29 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.0.5] - 2025-11-27
+
+### Added
+- **Gallery Management System**: Admin can now manage hero and gallery images
+  - New Django gallery app with HeroImage model
+  - PMS gallery page at `/pms/gallery` for image management
+  - Upload images via file upload or external URL
+  - Image types: Hero Carousel, Gallery, or Both
+  - Reorder images with display order controls
+  - Toggle active/inactive status
+  - RBAC permissions (gallery.view, gallery.manage)
+- **Dynamic Homepage Images**: Homepage now fetches images from API
+  - Hero carousel uses admin-uploaded images
+  - Gallery section uses admin-uploaded images
+  - Fallback to default Unsplash images when empty
+
+### Technical
+- Public API endpoint for guest-facing pages
+- React Query caching for image data
+- FormData support for file uploads
+
+---
+
 ## [1.0.4] - 2025-11-27
 
 ### Fixed

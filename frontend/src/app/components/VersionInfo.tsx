@@ -2,11 +2,23 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Zap, Wrench } from 'lucide-react';
+import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Zap, Wrench, Image } from 'lucide-react';
 
-const APP_VERSION = '1.0.4';
+const APP_VERSION = '1.0.5';
 
 const updates = [
+  {
+    version: '1.0.5',
+    date: 'November 2025',
+    icon: Image,
+    title: 'Gallery Management',
+    changes: [
+      'Admin gallery management dashboard',
+      'Upload hero & gallery images',
+      'Dynamic homepage images from API',
+      'Image ordering & status controls',
+    ],
+  },
   {
     version: '1.0.4',
     date: 'November 2025',
