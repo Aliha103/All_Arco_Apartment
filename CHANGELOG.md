@@ -2,6 +2,40 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.0.8] - 2025-11-27
+
+### Enhanced
+- **Premium Booking Widget**: Complete redesign with always-visible 2-month calendar
+  - Side-by-side calendar layout (responsive: stacked on mobile)
+  - Smooth date range selection with react-day-picker
+  - Premium styling with gold accent highlights
+
+- **Guest Types**: Adults, Children, Infants
+  - Adults (13+) and Children (2-12) count toward max 5 guests
+  - Infants (under 2) stay free and don't count
+  - Visual icons for each guest type
+
+- **Dynamic Cleaning Fees**:
+  - €25 for stays ≤2 nights
+  - €35 for stays >2 nights
+
+- **Pet Option**: Yes/No toggle
+  - €15 pet cleaning fee for ≤2 nights
+  - €25 pet cleaning fee for >2 nights
+
+- **City Tax Display**:
+  - €4 per adult per night (max 5 nights)
+  - Shown separately as "Pay at property"
+  - Amber info box for visibility
+
+### Technical
+- Always-visible calendar (no dropdown toggle needed)
+- Animated price breakdown with Framer Motion
+- Premium guest counter components with icons
+- Full booking URL with all parameters
+
+---
+
 ## [1.0.7] - 2025-11-27
 
 ### Enhanced

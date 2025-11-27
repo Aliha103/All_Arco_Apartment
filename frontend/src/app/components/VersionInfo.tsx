@@ -4,9 +4,21 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Zap, Wrench, Image } from 'lucide-react';
 
-const APP_VERSION = '1.0.7';
+const APP_VERSION = '1.0.8';
 
 const updates = [
+  {
+    version: '1.0.8',
+    date: 'November 2025',
+    icon: Calendar,
+    title: 'Advanced Booking',
+    changes: [
+      'Always-visible 2-month calendar',
+      'Adults, children & infants selection',
+      'Dynamic cleaning & pet fees',
+      'City tax calculation display',
+    ],
+  },
   {
     version: '1.0.7',
     date: 'November 2025',
