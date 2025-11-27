@@ -131,7 +131,7 @@ echo ""
 
 # Push to main
 echo "⬆️  Pushing to GitHub main branch..."
-git push "https://${TOKEN}@${REPO}" HEAD:compyle/allarco-pms-implementation
+git push "https://${TOKEN}@${REPO}" HEAD:main
 
 if [ $? -eq 0 ]; then
     echo ""
