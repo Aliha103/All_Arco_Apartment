@@ -638,36 +638,37 @@ export default function Home() {
       </section>
 
       {/* About Section - Premium Hospitality Design */}
-      <AnimatedSection className="py-20 sm:py-28 lg:py-36 relative overflow-hidden" id="about">
+      <AnimatedSection className="py-12 sm:py-20 lg:py-28 relative overflow-hidden" id="about">
         {/* Subtle background pattern */}
         <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23C4A572\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+            {/* Text Content */}
             <motion.div variants={fadeInUp} className="order-2 lg:order-1">
               {/* Premium badge */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#C4A572]/10 rounded-full mb-6"
+                className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#C4A572]/10 rounded-full mb-4 sm:mb-6"
               >
-                <Award className="w-4 h-4 text-[#C4A572]" />
-                <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs">Superhost Property</span>
+                <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C4A572]" />
+                <span className="text-[#C4A572] font-medium tracking-wider uppercase text-[10px] sm:text-xs">Superhost Property</span>
               </motion.div>
 
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-light text-gray-900 mb-6 leading-[1.1]">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-gray-900 mb-4 sm:mb-6 leading-tight">
                 Your Private
                 <span className="block text-[#C4A572] italic font-serif">Sanctuary</span>
                 in Venice
               </h2>
 
-              <div className="space-y-4 mb-8">
-                <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">
+              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
                   Nestled in the historic <strong className="text-gray-900">Castello district</strong>, All&apos;Arco Apartment
                   offers an authentic Venetian experience with modern luxury.
                 </p>
-                <p className="text-base sm:text-lg text-gray-500 leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-500 leading-relaxed">
                   This spacious 85m² apartment features two elegantly appointed bedrooms, comfortably
                   accommodating up to 5 guests while combining traditional Venetian architecture with
                   contemporary design. Wake up to enchanting canal views, enjoy your morning espresso
@@ -675,66 +676,88 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Premium Host Card */}
+              {/* Premium Host Card - Responsive */}
               <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="flex items-center gap-4 p-5 bg-gradient-to-r from-[#C4A572]/5 to-transparent rounded-2xl border border-[#C4A572]/20 mb-8"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gradient-to-r from-[#C4A572]/5 to-transparent rounded-xl sm:rounded-2xl border border-[#C4A572]/20 mb-6 sm:mb-8 touch-manipulation"
               >
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-xl">AH</span>
+                <div className="relative flex-shrink-0">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-base sm:text-lg">AH</span>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                    <CheckCircle className="w-3 h-3 text-white" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 sm:w-6 sm:h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                    <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                   </div>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-gray-900 text-lg">Ali Hassan Cheema</p>
-                    <Shield className="w-4 h-4 text-[#C4A572]" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">Ali Hassan Cheema</p>
+                    <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C4A572] flex-shrink-0" />
                   </div>
-                  <p className="text-sm text-gray-500">Superhost · Identity verified</p>
-                  <div className="flex items-center gap-1 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-500">Superhost · Identity verified</p>
+                  <div className="flex items-center gap-0.5 mt-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 fill-[#C4A572] text-[#C4A572]" />
+                      <Star key={i} className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-[#C4A572] text-[#C4A572]" />
                     ))}
-                    <span className="text-xs text-gray-500 ml-1">5.0 · 59 reviews</span>
+                    <span className="text-[10px] sm:text-xs text-gray-500 ml-1">5.0 · 59 reviews</span>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Premium Highlights Grid */}
-              <div className="grid grid-cols-4 gap-3 sm:gap-4">
+              {/* Premium Highlights Grid - Responsive 2x2 on mobile, 4x1 on larger */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {highlights.map(({ icon: Icon, value, unit, label }, index) => (
                   <motion.div
                     key={label}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.05 }}
                     className="relative group"
                   >
-                    <div className="text-center p-4 sm:p-5 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-[#C4A572]/30 transition-all duration-300">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-[#C4A572]/10 to-[#C4A572]/5 flex items-center justify-center group-hover:from-[#C4A572]/20 group-hover:to-[#C4A572]/10 transition-colors">
-                        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#C4A572]" />
+                    <div className="text-center p-3 sm:p-4 bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-[#C4A572]/30 transition-all duration-300 touch-manipulation">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#C4A572]/10 to-[#C4A572]/5 flex items-center justify-center group-hover:from-[#C4A572]/20 group-hover:to-[#C4A572]/10 transition-colors">
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#C4A572]" />
                       </div>
-                      <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                        {value}<span className="text-sm sm:text-base font-normal text-gray-400">{unit}</span>
+                      <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                        {value}<span className="text-xs sm:text-sm font-normal text-gray-400">{unit}</span>
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">{label}</div>
+                      <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 font-medium">{label}</div>
                     </div>
                   </motion.div>
                 ))}
               </div>
             </motion.div>
 
-            {/* Premium Image Grid */}
+            {/* Premium Image Grid - Simplified responsive layout */}
             <motion.div variants={fadeInUp} className="order-1 lg:order-2">
-              <div className="grid grid-cols-6 gap-3 sm:gap-4">
-                {/* Large featured image */}
+              {/* Mobile: 2x2 simple grid, Desktop: Complex grid */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:hidden">
+                {galleryImages.slice(0, 4).map((image: { src: string; alt: string }, i: number) => (
+                  <motion.div
+                    key={i}
+                    className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      fill
+                      className="object-cover"
+                      sizes="50vw"
+                      unoptimized
+                    />
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Desktop: Original complex grid */}
+              <div className="hidden lg:grid grid-cols-6 gap-3">
                 {galleryImages[0] && (
                   <motion.div
-                    className="col-span-4 row-span-2 relative h-[280px] sm:h-[380px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl"
+                    className="col-span-4 row-span-2 relative h-[320px] rounded-2xl overflow-hidden shadow-xl"
                     whileHover={{ scale: 1.02 }}
                     transition={{ duration: 0.4, ease: luxuryEase }}
                   >
@@ -743,87 +766,81 @@ export default function Home() {
                       alt={galleryImages[0].alt}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 70vw, 40vw"
+                      sizes="40vw"
                       unoptimized
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
                   </motion.div>
                 )}
-                {/* Side images */}
                 {galleryImages[1] && (
                   <motion.div
-                    className="col-span-2 relative h-[130px] sm:h-[180px] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3, ease: luxuryEase }}
+                    className="col-span-2 relative h-[152px] rounded-xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.03 }}
                   >
                     <Image
                       src={galleryImages[1].src}
                       alt={galleryImages[1].alt}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 30vw, 15vw"
+                      sizes="15vw"
                       unoptimized
                     />
                   </motion.div>
                 )}
                 {galleryImages[2] && (
                   <motion.div
-                    className="col-span-2 relative h-[130px] sm:h-[180px] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3, ease: luxuryEase }}
+                    className="col-span-2 relative h-[152px] rounded-xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.03 }}
                   >
                     <Image
                       src={galleryImages[2].src}
                       alt={galleryImages[2].alt}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 30vw, 15vw"
+                      sizes="15vw"
                       unoptimized
                     />
                   </motion.div>
                 )}
-                {/* Bottom row */}
                 {galleryImages[3] && (
                   <motion.div
-                    className="col-span-3 relative h-[120px] sm:h-[160px] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg"
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3, ease: luxuryEase }}
+                    className="col-span-3 relative h-[140px] rounded-xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.02 }}
                   >
                     <Image
                       src={galleryImages[3].src}
                       alt={galleryImages[3].alt}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 50vw, 25vw"
+                      sizes="25vw"
                       unoptimized
                     />
                   </motion.div>
                 )}
                 {galleryImages[4] && (
                   <motion.div
-                    className="col-span-3 relative h-[120px] sm:h-[160px] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg"
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3, ease: luxuryEase }}
+                    className="col-span-3 relative h-[140px] rounded-xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.02 }}
                   >
                     <Image
                       src={galleryImages[4].src}
                       alt={galleryImages[4].alt}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 50vw, 25vw"
+                      sizes="25vw"
                       unoptimized
                     />
                   </motion.div>
                 )}
               </div>
+
               {/* Trust badge */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="flex items-center justify-center gap-2 mt-6 text-sm text-gray-500"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 mt-4 sm:mt-6 text-xs sm:text-sm text-gray-500"
               >
-                <Shield className="w-4 h-4 text-green-500" />
+                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                 <span>Verified property · 17 min to Rialto Bridge</span>
               </motion.div>
             </motion.div>
@@ -832,37 +849,38 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Amenities Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-28 bg-gray-50" id="features">
+      <AnimatedSection className="py-12 sm:py-16 lg:py-24 bg-gray-50" id="features">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Amenities</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
+          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-[10px] sm:text-xs">Amenities</span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-900 mt-2 sm:mt-3 mb-2 sm:mb-3">
               Everything You Need
             </h2>
-            <p className="text-base sm:text-lg text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Thoughtfully curated amenities for an exceptional stay
             </p>
           </motion.div>
 
           <motion.div
             variants={staggerContainer}
-            className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
+            className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4"
           >
             {amenities.map(({ icon: Icon, label, description }) => (
               <motion.div
                 key={label}
                 variants={fadeInUp}
-                className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl hover:shadow-lg transition-all duration-300 group cursor-pointer border border-gray-100 focus-within:ring-2 focus-within:ring-[#C4A572]"
-                whileHover={{ y: -4 }}
+                className="bg-white p-3 sm:p-4 lg:p-5 rounded-lg sm:rounded-xl hover:shadow-lg transition-all duration-300 group cursor-pointer border border-gray-100 focus-within:ring-2 focus-within:ring-[#C4A572] focus:outline-none touch-manipulation"
+                whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 tabIndex={0}
                 role="article"
+                aria-label={`${label}: ${description}`}
               >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#C4A572]/10 rounded-lg sm:rounded-xl flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-[#C4A572] transition-colors duration-300">
-                  <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#C4A572] group-hover:text-white transition-colors duration-300" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 bg-[#C4A572]/10 rounded-lg flex items-center justify-center mb-2 sm:mb-3 group-hover:bg-[#C4A572] transition-colors duration-300">
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#C4A572] group-hover:text-white transition-colors duration-300" />
                 </div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-0.5 sm:mb-1">{label}</h3>
-                <p className="text-xs sm:text-sm text-gray-500">{description}</p>
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-0.5 leading-tight">{label}</h3>
+                <p className="text-[10px] sm:text-xs text-gray-500 leading-snug">{description}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -870,14 +888,14 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Book Your Stay Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-28" id="book">
+      <AnimatedSection className="py-12 sm:py-16 lg:py-24" id="book">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Book Your Stay</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
+          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-[10px] sm:text-xs">Book Your Stay</span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-900 mt-2 sm:mt-3 mb-2 sm:mb-3">
               Reserve Your Venetian Escape
             </h2>
-            <p className="text-base sm:text-lg text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Select your dates and guests to check availability and pricing
             </p>
           </motion.div>
@@ -888,21 +906,21 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Gallery Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-28" id="gallery">
+      <AnimatedSection className="py-12 sm:py-16 lg:py-24" id="gallery">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Gallery</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
+          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-[10px] sm:text-xs">Gallery</span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-900 mt-2 sm:mt-3 mb-2">
               A Visual Journey
             </h2>
           </motion.div>
 
-          <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+          <motion.div variants={fadeInUp} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
             {galleryImages.slice(0, 8).map((image: { src: string; alt: string }, i: number) => (
               <motion.div
                 key={i}
-                className={`relative overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl cursor-pointer ${
-                  i === 0 || i === 5 ? 'md:col-span-2 md:row-span-2 h-48 sm:h-64 md:h-full min-h-[200px]' : 'h-32 sm:h-40 lg:h-48'
+                className={`relative overflow-hidden rounded-lg sm:rounded-xl cursor-pointer touch-manipulation ${
+                  i === 0 ? 'col-span-2 row-span-2 aspect-square sm:aspect-[4/3]' : 'aspect-[4/3]'
                 }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -914,8 +932,8 @@ export default function Home() {
                   src={image.src}
                   alt={image.alt}
                   fill
-                  className="object-cover hover:scale-110 transition-transform duration-500"
-                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   unoptimized
                 />
               </motion.div>
@@ -925,40 +943,38 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Location Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-28 bg-gray-900 text-white" id="location">
+      <AnimatedSection className="py-12 sm:py-16 lg:py-24 bg-gray-900 text-white" id="location">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <motion.div variants={fadeInUp}>
-              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Location</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light mt-3 mb-5">
+              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-[10px] sm:text-xs">Location</span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light mt-2 sm:mt-3 mb-3 sm:mb-4">
                 In the Heart of Venice
               </h2>
-              <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-6 sm:mb-8">
+              <p className="text-sm sm:text-base text-gray-400 leading-relaxed mb-5 sm:mb-6">
                 Located in the prestigious Castello district, All&apos;Arco Apartment offers the perfect base for
                 exploring Venice. Away from the tourist crowds yet minutes from major attractions.
               </p>
 
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-5 sm:mb-6">
                 {nearbyAttractions.map(({ name, distance }) => (
-                  <div key={name} className="flex items-center gap-2 sm:gap-3 py-2 sm:py-3">
-                    <MapPin className="w-4 h-4 text-[#C4A572] flex-shrink-0" />
-                    <div>
-                      <span className="text-sm sm:text-base text-white">{name}</span>
-                      <span className="text-xs sm:text-sm text-gray-500 ml-2">{distance}</span>
+                  <div key={name} className="flex items-center gap-2 py-2 touch-manipulation">
+                    <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C4A572] flex-shrink-0" />
+                    <div className="min-w-0">
+                      <span className="text-xs sm:text-sm text-white block truncate">{name}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-500">{distance}</span>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Building className="w-4 h-4" />
-                  <span>Castello 2739/A, Venice, Italy</span>
-                </div>
+              <div className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-400">
+                <Building className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span>Castello 2739/A, Venice, Italy</span>
               </div>
             </motion.div>
 
-            <motion.div variants={fadeInUp} className="relative h-[300px] sm:h-[400px] lg:h-[450px] rounded-xl sm:rounded-2xl overflow-hidden">
+            <motion.div variants={fadeInUp} className="relative h-[240px] sm:h-[320px] lg:h-[380px] rounded-xl sm:rounded-2xl overflow-hidden">
               <Image
                 src={heroImages[0]?.src || defaultHeroImages[0].src}
                 alt="Venice Location"
@@ -968,14 +984,14 @@ export default function Home() {
                 unoptimized
               />
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
-              <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
+              <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4">
                 <a
                   href="https://maps.google.com/?q=Castello+2739/A+Venice+Italy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 sm:py-4 bg-white text-gray-900 font-medium rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-white text-gray-900 font-medium text-sm rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white touch-manipulation"
                 >
-                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <MapPin className="w-4 h-4" />
                   View on Google Maps
                 </a>
               </div>
@@ -985,23 +1001,23 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Reviews Section - Premium Hospitality Standard */}
-      <AnimatedSection className="py-20 sm:py-28 lg:py-36 bg-gradient-to-b from-white via-gray-50/50 to-white">
+      <AnimatedSection className="py-12 sm:py-16 lg:py-24 bg-gradient-to-b from-white via-gray-50/50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <motion.div variants={fadeInUp} className="text-center max-w-3xl mx-auto mb-16">
+          <motion.div variants={fadeInUp} className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#C4A572]/10 rounded-full mb-6"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-[#C4A572]/10 rounded-full mb-4 sm:mb-6"
             >
-              <Award className="w-4 h-4 text-[#C4A572]" />
-              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs">Guest Favorite</span>
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C4A572]" />
+              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-[10px] sm:text-xs">Guest Favorite</span>
             </motion.div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-900 mb-2 sm:mb-3">
               Loved by <span className="text-[#C4A572] italic font-serif">Travelers</span>
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               One of the most loved homes on the platform, according to guests
             </p>
           </motion.div>
@@ -1009,9 +1025,9 @@ export default function Home() {
           {/* Rating Overview - Premium Layout */}
           <motion.div
             variants={fadeInUp}
-            className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 sm:p-10 lg:p-12 mb-16"
+            className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 lg:p-10 mb-8 sm:mb-12"
           >
-            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div className="grid lg:grid-cols-12 gap-6 lg:gap-10 items-center">
               {/* Main Score */}
               <div className="lg:col-span-4 flex justify-center">
                 <RatingScoreDisplay score={9.8} totalReviews={59} />
@@ -1019,8 +1035,8 @@ export default function Home() {
 
               {/* Category Breakdown */}
               <div className="lg:col-span-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Rating Breakdown</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-4">Rating Breakdown</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   {ratingCategories.map((category, index) => {
                     const Icon = category.icon;
                     return (
@@ -1029,24 +1045,24 @@ export default function Home() {
                         initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                        transition={{ delay: index * 0.05 }}
+                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
-                          <Icon className="w-5 h-5 text-[#C4A572]" />
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-4 h-4 text-[#C4A572]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-gray-700">{category.label}</span>
-                            <span className="text-sm font-bold text-gray-900">{category.score}</span>
+                          <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                            <span className="text-[10px] sm:text-xs font-medium text-gray-700 truncate">{category.label}</span>
+                            <span className="text-[10px] sm:text-xs font-bold text-gray-900 ml-1">{category.score}</span>
                           </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 sm:h-2 bg-gray-100 rounded-full overflow-hidden">
                             <motion.div
                               className="h-full bg-gradient-to-r from-[#C4A572] to-[#D4B582] rounded-full"
                               initial={{ width: 0 }}
                               whileInView={{ width: `${(category.score / 10) * 100}%` }}
                               viewport={{ once: true }}
-                              transition={{ duration: 1, delay: index * 0.1, ease: luxuryEase }}
+                              transition={{ duration: 1, delay: index * 0.05, ease: luxuryEase }}
                             />
                           </div>
                         </div>
@@ -1059,64 +1075,65 @@ export default function Home() {
           </motion.div>
 
           {/* Review Cards - Premium Design */}
-          <motion.div variants={staggerContainer} className="grid md:grid-cols-3 gap-6 lg:gap-8">
+          <motion.div variants={staggerContainer} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {reviews.map((review, i) => (
               <motion.div
                 key={i}
                 variants={fadeInUp}
-                whileHover={{ y: -8, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)' }}
-                className="group bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-100 relative overflow-hidden"
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.99 }}
+                className="group bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 relative overflow-hidden touch-manipulation"
               >
                 {/* Decorative gradient */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#C4A572]/5 to-transparent rounded-bl-full" />
+                <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-[#C4A572]/5 to-transparent rounded-bl-full" />
 
                 {/* Quote icon */}
-                <Quote className="w-10 h-10 text-[#C4A572]/10 absolute top-6 right-6" />
+                <Quote className="w-8 h-8 sm:w-10 sm:h-10 text-[#C4A572]/10 absolute top-4 right-4 sm:top-6 sm:right-6" />
 
                 {/* Header with avatar */}
-                <div className="flex items-start gap-4 mb-5 relative z-10">
-                  <div className="relative">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center shadow-md">
-                      <span className="text-white font-bold text-lg">{review.avatar}</span>
+                <div className="flex items-start gap-3 mb-4 relative z-10">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center shadow-md">
+                      <span className="text-white font-bold text-sm sm:text-base">{review.avatar}</span>
                     </div>
                     {review.verified && (
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
-                        <CheckCircle className="w-3 h-3 text-white" />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
+                        <CheckCircle className="w-2 h-2 sm:w-3 sm:h-3 text-white" />
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-gray-900">{review.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{review.name}</p>
                       {review.verified && (
-                        <span className="text-xs text-blue-500 font-medium">Verified</span>
+                        <span className="text-[10px] text-blue-500 font-medium">Verified</span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500">{review.location}</p>
-                    <p className="text-xs text-[#C4A572] font-medium mt-1">{review.stayType}</p>
+                    <p className="text-xs text-gray-500 truncate">{review.location}</p>
+                    <p className="text-[10px] text-[#C4A572] font-medium mt-0.5">{review.stayType}</p>
                   </div>
                 </div>
 
                 {/* Rating stars */}
-                <div className="flex items-center gap-1 mb-4">
+                <div className="flex items-center gap-0.5 mb-3">
                   {[...Array(review.rating)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-[#C4A572] text-[#C4A572]" />
+                    <Star key={j} className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-[#C4A572] text-[#C4A572]" />
                   ))}
-                  <span className="text-sm text-gray-500 ml-2">{review.date}</span>
+                  <span className="text-[10px] sm:text-xs text-gray-500 ml-2">{review.date}</span>
                 </div>
 
                 {/* Review text */}
-                <p className="text-gray-600 leading-relaxed mb-5">
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-4 line-clamp-4">
                   &ldquo;{review.text}&rdquo;
                 </p>
 
                 {/* Helpful indicator */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#C4A572] transition-colors">
-                    <ThumbsUp className="w-4 h-4" />
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <button className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 hover:text-[#C4A572] transition-colors touch-manipulation">
+                    <ThumbsUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     <span>Helpful ({review.helpful})</span>
                   </button>
-                  <span className="text-xs text-gray-400">Stayed {review.date}</span>
+                  <span className="text-[10px] text-gray-400 hidden sm:inline">Stayed {review.date}</span>
                 </div>
               </motion.div>
             ))}
@@ -1127,18 +1144,18 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex flex-wrap items-center justify-center gap-6 mt-12 pt-8 border-t border-gray-100"
+            className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-gray-100"
           >
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Shield className="w-5 h-5 text-green-500" />
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500">
+              <Shield className="w-4 h-4 text-green-500" />
               <span>All reviews verified</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Award className="w-5 h-5 text-[#C4A572]" />
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500">
+              <Award className="w-4 h-4 text-[#C4A572]" />
               <span>Guest Favorite 2024</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <CheckCircle className="w-5 h-5 text-blue-500" />
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500">
+              <CheckCircle className="w-4 h-4 text-blue-500" />
               <span>Superhost since 2023</span>
             </div>
           </motion.div>

@@ -2,6 +2,46 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.0.9] - 2025-11-27
+
+### Enhanced
+- **Full Responsive Design**: Complete mobile-first responsive overhaul
+  - All sections fit perfectly on all screen sizes (320px to 4K)
+  - Touch-friendly interactions with `touch-manipulation` CSS
+  - Keyboard accessible with proper focus states
+  - Simplified mobile layouts with smart breakpoints
+
+- **About Section**: Mobile-optimized layout
+  - 2x2 highlights grid on mobile, 4x1 on desktop
+  - Simple 2x2 image grid on mobile, complex grid on desktop
+  - Compact host card with proper text truncation
+  - Reduced padding and font sizes for mobile
+
+- **Amenities Section**: Compact 2-column mobile grid
+  - Smaller padding and icons on mobile
+  - Proper text sizing for small screens
+
+- **Reviews Section**: Mobile-friendly cards
+  - 2-column rating breakdown on mobile, 3-column on tablet
+  - Compact review cards with truncated text
+  - Line-clamped review text (max 4 lines)
+
+- **Gallery Section**: Responsive aspect ratios
+  - 2-column grid on mobile with featured first image
+  - Proper aspect ratios to prevent layout shifts
+
+- **Location Section**: Compact attractions list
+  - Truncated text for long attraction names
+  - Smaller map image on mobile
+
+### Technical
+- Added `touch-manipulation` for smoother touch interactions
+- Consistent responsive breakpoints (sm:640px, lg:1024px)
+- Proper `min-w-0` for flex text truncation
+- `line-clamp-4` for review text overflow
+
+---
+
 ## [1.0.8] - 2025-11-27
 
 ### Enhanced

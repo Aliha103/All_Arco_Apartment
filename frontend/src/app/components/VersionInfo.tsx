@@ -4,9 +4,21 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Zap, Wrench, Image } from 'lucide-react';
 
-const APP_VERSION = '1.0.8';
+const APP_VERSION = '1.0.9';
 
 const updates = [
+  {
+    version: '1.0.9',
+    date: 'November 2025',
+    icon: Globe,
+    title: 'Full Responsive',
+    changes: [
+      'Mobile-first responsive design',
+      'Touch-friendly interactions',
+      'Keyboard accessible components',
+      'Optimized for all screen sizes',
+    ],
+  },
   {
     version: '1.0.8',
     date: 'November 2025',
