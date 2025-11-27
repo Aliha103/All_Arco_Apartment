@@ -4,9 +4,21 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Zap, Wrench, Image } from 'lucide-react';
 
-const APP_VERSION = '1.0.5';
+const APP_VERSION = '1.0.6';
 
 const updates = [
+  {
+    version: '1.0.6',
+    date: 'November 2025',
+    icon: Calendar,
+    title: 'Booking Widget',
+    changes: [
+      'Interactive date range calendar',
+      'Guest selector (adults & children)',
+      'Real-time price breakdown',
+      'Direct booking from homepage',
+    ],
+  },
   {
     version: '1.0.5',
     date: 'November 2025',

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
+import BookingWidget from '@/components/booking/BookingWidget';
 import api from '@/lib/api';
 import { HeroImagePublic } from '@/types';
 
@@ -529,6 +530,24 @@ export default function Home() {
                 <p className="text-xs sm:text-sm text-gray-500">{description}</p>
               </motion.div>
             ))}
+          </motion.div>
+        </div>
+      </AnimatedSection>
+
+      {/* Book Your Stay Section */}
+      <AnimatedSection className="py-16 sm:py-20 lg:py-28" id="book">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Book Your Stay</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
+              Reserve Your Venetian Escape
+            </h2>
+            <p className="text-base sm:text-lg text-gray-600">
+              Select your dates and guests to check availability and pricing
+            </p>
+          </motion.div>
+          <motion.div variants={fadeInUp}>
+            <BookingWidget />
           </motion.div>
         </div>
       </AnimatedSection>

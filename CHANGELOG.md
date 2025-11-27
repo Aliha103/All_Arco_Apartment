@@ -2,6 +2,26 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.0.6] - 2025-11-27
+
+### Added
+- **Booking Widget**: Hospitality-grade booking component on homepage
+  - Interactive date range picker using react-day-picker
+  - Guest selector with Adults (13+) and Children (2-12)
+  - Real-time price breakdown (nightly rate, cleaning fee, service fee)
+  - Minimum 2-night stay validation
+  - Direct booking link with query parameters
+  - Trust indicators (free cancellation, charge disclaimer)
+- New "Book Your Stay" section after Amenities on homepage
+- Smooth animations with Framer Motion
+
+### Technical
+- BookingWidget component with TypeScript
+- Calendar component using react-day-picker library
+- Responsive design (2-month calendar on desktop, 1 on mobile)
+
+---
+
 ## [1.0.5] - 2025-11-27
 
 ### Added
