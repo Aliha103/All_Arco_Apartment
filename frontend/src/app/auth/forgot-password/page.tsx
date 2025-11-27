@@ -232,10 +232,10 @@ export default function ForgotPasswordPage() {
                               <Calendar className="w-4 h-4 text-gray-500" />
                               <span>My Bookings</span>
                             </Link>
-                            {(user?.role === 'admin' || user?.role === 'super_admin') && (
-                              <Link href="/admin" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
+                            {(user?.is_super_admin || user?.is_team_member) && (
+                              <Link href="/pms" className="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors" role="menuitem">
                                 <Sparkles className="w-4 h-4 text-gray-500" />
-                                <span>Admin Panel</span>
+                                <span>PMS Dashboard</span>
                               </Link>
                             )}
                             <div className="my-1 border-t border-gray-100" />

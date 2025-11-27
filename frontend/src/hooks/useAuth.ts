@@ -41,7 +41,7 @@ export function useAuth() {
     onSuccess: (data) => {
       setUser(data.user || data);
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      router.push(data.user?.role === 'guest' ? '/dashboard' : '/pms');
+      router.push(data.user?.is_team_member ? '/pms' : '/dashboard');
     },
   });
 

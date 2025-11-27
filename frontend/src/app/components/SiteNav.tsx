@@ -217,9 +217,9 @@ const SiteNav = () => {
                             <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                               <Calendar className="w-4 h-4 text-gray-400" /> My Reservations
                             </Link>
-                            {(user?.role === 'admin' || user?.role === 'super_admin') && (
-                              <Link href="/admin" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                                <Sparkles className="w-4 h-4 text-[#C4A572]" /> Admin Panel
+                            {(user?.is_super_admin || user?.is_team_member) && (
+                              <Link href="/pms" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                <Sparkles className="w-4 h-4 text-[#C4A572]" /> PMS Dashboard
                               </Link>
                             )}
                             <hr className="my-1 border-gray-100" />
