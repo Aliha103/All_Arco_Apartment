@@ -267,3 +267,30 @@ export interface AvailabilityCheck {
   available: boolean;
   message?: string;
 }
+
+// Gallery types
+export interface HeroImage {
+  id: string;
+  title: string;
+  alt_text: string;
+  image?: string;
+  image_url?: string;
+  url: string;
+  image_type: 'hero' | 'gallery' | 'both';
+  image_type_display?: string;
+  order: number;
+  is_active: boolean;
+  uploaded_by?: string;
+  uploaded_by_name?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HeroImagePublic {
+  id: string;
+  title: string;
+  alt_text: string;
+  url: string;
+  image_type: 'hero' | 'gallery' | 'both';
+  order: number;
+}

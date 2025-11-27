@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import {
   Wifi,
   Wind,
@@ -24,6 +25,8 @@ import {
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
+import api from '@/lib/api';
+import { HeroImagePublic } from '@/types';
 
 // Smooth easing for all animations
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
@@ -46,8 +49,8 @@ const staggerContainer = {
   },
 };
 
-// Hero images for auto-scroll carousel
-const heroImages = [
+// Fallback hero images (used when no images from API)
+const defaultHeroImages = [
   {
     src: 'https://images.unsplash.com/photo-1514890547357-a9ee288728e0?q=80&w=2940&auto=format&fit=crop',
     alt: 'Venice Canal View'
@@ -64,6 +67,18 @@ const heroImages = [
     src: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2940&auto=format&fit=crop',
     alt: 'Italian Scenery'
   },
+];
+
+// Fallback gallery images
+const defaultGalleryImages = [
+  'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=2000',
+  'https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2000',
+  'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?q=80&w=2000',
+  'https://images.unsplash.com/photo-1518560299355-d7c6bb1e6d48?q=80&w=2000',
+  'https://images.unsplash.com/photo-1549918864-48ac978761a4?q=80&w=2000',
+  'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2000',
+  'https://images.unsplash.com/photo-1498307833015-e7b400441eb8?q=80&w=2000',
+  'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000',
 ];
 
 // Property data
@@ -188,6 +203,43 @@ export default function Home() {
   const heroRef = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Fetch hero images from API (type: hero or both)
+  const { data: heroImagesData } = useQuery({
+    queryKey: ['public-hero-images'],
+    queryFn: async () => {
+      try {
+        const response = await api.gallery.public('hero');
+        return response.data;
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch gallery images from API (type: gallery or both)
+  const { data: galleryImagesData } = useQuery({
+    queryKey: ['public-gallery-images'],
+    queryFn: async () => {
+      try {
+        const response = await api.gallery.public('gallery');
+        return response.data;
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Use API images or fallback to defaults
+  const heroImages = heroImagesData && heroImagesData.length > 0
+    ? heroImagesData.map((img: HeroImagePublic) => ({ src: img.url, alt: img.alt_text }))
+    : defaultHeroImages;
+
+  const galleryImages = galleryImagesData && galleryImagesData.length > 0
+    ? galleryImagesData.map((img: HeroImagePublic) => ({ src: img.url, alt: img.alt_text }))
+    : defaultGalleryImages.map((src, i) => ({ src, alt: `Gallery image ${i + 1}` }));
+
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
@@ -203,7 +255,7 @@ export default function Home() {
       setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroImages.length]);
 
   return (
     <div className="min-h-screen bg-white antialiased">
@@ -479,16 +531,7 @@ export default function Home() {
           </motion.div>
 
           <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-            {[
-              'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=2000',
-              'https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2000',
-              'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?q=80&w=2000',
-              'https://images.unsplash.com/photo-1518560299355-d7c6bb1e6d48?q=80&w=2000',
-              'https://images.unsplash.com/photo-1549918864-48ac978761a4?q=80&w=2000',
-              'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2000',
-              'https://images.unsplash.com/photo-1498307833015-e7b400441eb8?q=80&w=2000',
-              'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000',
-            ].map((src, i) => (
+            {galleryImages.slice(0, 8).map((image: { src: string; alt: string }, i: number) => (
               <motion.div
                 key={i}
                 className={`relative overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl cursor-pointer ${
@@ -498,11 +541,11 @@ export default function Home() {
                 whileTap={{ scale: 0.98 }}
                 tabIndex={0}
                 role="button"
-                aria-label={`View gallery image ${i + 1}`}
+                aria-label={`View ${image.alt}`}
               >
                 <Image
-                  src={src}
-                  alt={`Gallery image ${i + 1}`}
+                  src={image.src}
+                  alt={image.alt}
                   fill
                   className="object-cover hover:scale-110 transition-transform duration-500"
                   sizes="(max-width: 768px) 50vw, 25vw"

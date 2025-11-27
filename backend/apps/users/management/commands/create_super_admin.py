@@ -117,6 +117,9 @@ class Command(BaseCommand):
             # Calendar
             ('calendar.view', 'calendar', 'View calendar'),
             ('calendar.block_dates', 'calendar', 'Block dates on calendar'),
+            # Gallery
+            ('gallery.view', 'gallery', 'View gallery images'),
+            ('gallery.manage', 'gallery', 'Manage gallery images'),
         ]
 
         # Create permissions
@@ -149,6 +152,7 @@ class Command(BaseCommand):
                     'guests.view', 'guests.update', 'guests.notes',
                     'calendar.view', 'calendar.block_dates',
                     'invoices.view', 'invoices.send',
+                    'gallery.view', 'gallery.manage',
                 ],
             },
             {

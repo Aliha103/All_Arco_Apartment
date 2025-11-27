@@ -20,9 +20,9 @@ urlpatterns = [
     path('api/payments/', include('apps.payments.urls')),
     path('api/invoices/', include('apps.invoices.urls')),
     path('api/pricing/', include('apps.pricing.urls')),
+    path('api/gallery/', include('apps.gallery.urls')),
     path('api/', include('apps.users.urls')),  # For /api/guests/ and /api/team/
 ]
 
-# Serve media files in development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files (both dev and production for uploaded images)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -15,6 +15,7 @@ const navigation = [
   { name: 'Guests', href: '/pms/guests', icon: '👥', permission: 'guests.view' },
   { name: 'Pricing', href: '/pms/pricing', icon: '💰', permission: 'pricing.view' },
   { name: 'Calendar', href: '/pms/calendar', icon: '📆', permission: 'bookings.view' },
+  { name: 'Gallery', href: '/pms/gallery', icon: '🖼️', permission: 'gallery.view' },
   { name: 'Team', href: '/pms/team', icon: '👨‍💼', permission: 'team.view' },
   { name: 'Reports', href: '/pms/reports', icon: '📈', permission: 'reports.view' },
 ];

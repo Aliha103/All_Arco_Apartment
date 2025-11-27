@@ -161,6 +161,24 @@ export const api = {
       byGroup: () => apiClient.get('/users/permissions/by-group/'),
     },
   },
+
+  // Gallery
+  gallery: {
+    list: (params?: any) => apiClient.get('/gallery/images/', { params }),
+    get: (id: string) => apiClient.get(`/gallery/images/${id}/`),
+    create: (data: FormData) => apiClient.post('/gallery/images/', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+    update: (id: string, data: FormData | any) => {
+      const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {};
+      return apiClient.patch(`/gallery/images/${id}/`, data, { headers });
+    },
+    delete: (id: string) => apiClient.delete(`/gallery/images/${id}/`),
+    reorder: (id: string, order: number) => apiClient.post(`/gallery/images/${id}/reorder/`, { order }),
+    toggleActive: (id: string) => apiClient.post(`/gallery/images/${id}/toggle_active/`),
+    // Public endpoint (no auth required)
+    public: (type?: 'hero' | 'gallery') => apiClient.get('/gallery/images/public/', { params: { type } }),
+  },
 };
 
 export default api;
