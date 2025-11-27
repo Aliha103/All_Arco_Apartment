@@ -49,7 +49,7 @@ export default function TeamPage() {
   const { data: roles } = useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
-      const response = await api.get('/users/roles/');
+      const response = await api.users.roles.list();
       return response.data;
     },
     enabled: hasPermission('roles.manage'),
@@ -58,7 +58,7 @@ export default function TeamPage() {
   const { data: permissions } = useQuery({
     queryKey: ['permissions'],
     queryFn: async () => {
-      const response = await api.get('/users/permissions/by-group/');
+      const response = await api.users.permissions.byGroup();
       return response.data;
     },
     enabled: hasPermission('roles.manage'),
@@ -116,7 +116,7 @@ export default function TeamPage() {
 
   // Role management mutations
   const createRole = useMutation({
-    mutationFn: (data: any) => api.post('/users/roles/', data),
+    mutationFn: (data: any) => api.users.roles.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsRoleModalOpen(false);
@@ -126,7 +126,7 @@ export default function TeamPage() {
   });
 
   const updateRole = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => api.patch(`/users/roles/${id}/`, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.users.roles.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsRoleModalOpen(false);
@@ -136,7 +136,7 @@ export default function TeamPage() {
   });
 
   const deleteRole = useMutation({
-    mutationFn: (id: string) => api.delete(`/users/roles/${id}/`),
+    mutationFn: (id: string) => api.users.roles.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       alert('Role deleted successfully');
@@ -145,7 +145,7 @@ export default function TeamPage() {
 
   const assignPermissions = useMutation({
     mutationFn: ({ roleId, permissionCodes }: { roleId: string; permissionCodes: string[] }) =>
-      api.post(`/users/roles/${roleId}/assign-permissions/`, { permission_codes: permissionCodes }),
+      api.users.roles.assignPermissions(roleId, permissionCodes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsPermissionModalOpen(false);
