@@ -79,9 +79,9 @@ const amenities = [
 ];
 
 const highlights = [
-  { icon: Maximize, value: '70', unit: 'm²', label: 'Living Space' },
-  { icon: BedDouble, value: '1', unit: '', label: 'Bedroom' },
-  { icon: Users, value: '4', unit: '', label: 'Guests' },
+  { icon: Maximize, value: '85', unit: 'm²', label: 'Living Space' },
+  { icon: BedDouble, value: '2', unit: '', label: 'Bedrooms' },
+  { icon: Users, value: '5', unit: '', label: 'Guests' },
   { icon: Bath, value: '1', unit: '', label: 'Bathroom' },
 ];
 
@@ -346,13 +346,23 @@ export default function Home() {
               </h2>
               <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6">
                 Nestled in the historic Castello district, All&apos;Arco Apartment offers an authentic Venetian experience
-                with modern luxury. This beautifully appointed 70m² apartment combines traditional Venetian
-                architecture with contemporary design.
+                with modern luxury. This spacious 85m² apartment features two elegantly appointed bedrooms,
+                comfortably accommodating up to 5 guests while combining traditional Venetian architecture
+                with contemporary design.
               </p>
-              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-6 sm:mb-8">
+              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6">
                 Wake up to enchanting canal views, enjoy your morning espresso on the terrace, and experience
                 Venice like a true local. Just 17 minutes from the iconic Rialto Bridge.
               </p>
+              <div className="flex items-center gap-3 mb-6 sm:mb-8 p-4 bg-[#C4A572]/5 rounded-xl border border-[#C4A572]/20">
+                <div className="w-12 h-12 rounded-full bg-[#C4A572]/20 flex items-center justify-center">
+                  <span className="text-[#C4A572] font-semibold text-lg">AH</span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Your Host</p>
+                  <p className="font-semibold text-gray-900">Ali Hassan Cheema</p>
+                </div>
+              </div>
 
               {/* Highlights Grid */}
               <div className="grid grid-cols-4 gap-2 sm:gap-4">
