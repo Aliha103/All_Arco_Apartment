@@ -1,5 +1,11 @@
 """
 Email service using Zeptomail API.
+Supports multiple sender addresses with their own tokens.
+
+Email Types:
+- reservations: reservations@allarcoapartment.com - Booking confirmations, payment receipts
+- support: support@allarcoapartment.com - General support, welcome emails, team invites
+- checkin: check-in@allarcoapartment.com - Check-in instructions, arrival info
 """
 import requests
 from django.conf import settings
@@ -8,23 +14,51 @@ from .models import EmailLog
 
 
 class ZeptomailService:
-    """Service for sending emails via Zeptomail."""
-    
+    """Service for sending emails via Zeptomail with multiple sender support."""
+
     API_URL = settings.ZEPTOMAIL_API_URL
-    API_KEY = settings.ZEPTOMAIL_API_KEY
-    
+    TOKENS = getattr(settings, 'ZEPTOMAIL_TOKENS', {})
+
     @classmethod
-    def send_email(cls, to_email, from_email, from_name, subject, html_body, booking=None):
-        """Send email via Zeptomail API."""
-        
+    def get_sender_config(cls, sender_type='support'):
+        """Get sender configuration based on email type."""
+        return cls.TOKENS.get(sender_type, cls.TOKENS.get('support', {}))
+
+    @classmethod
+    def send_email(cls, to_email, from_email, from_name, subject, html_body, booking=None, sender_type=None):
+        """
+        Send email via Zeptomail API.
+
+        Args:
+            to_email: Recipient email address
+            from_email: Sender email (used for logging, actual sender determined by sender_type)
+            from_name: Sender display name
+            subject: Email subject
+            html_body: HTML content
+            booking: Optional booking reference for logging
+            sender_type: 'reservations', 'support', or 'checkin' (auto-detected if not provided)
+        """
+        # Auto-detect sender type from from_email if not provided
+        if sender_type is None:
+            if 'reservations' in from_email:
+                sender_type = 'reservations'
+            elif 'check-in' in from_email or 'checkin' in from_email:
+                sender_type = 'checkin'
+            else:
+                sender_type = 'support'
+
+        config = cls.get_sender_config(sender_type)
+        token = config.get('token', settings.ZEPTOMAIL_API_KEY)
+        sender_email = config.get('email', from_email)
+
         headers = {
-            'Authorization': f'Zoho-enczapikey {cls.API_KEY}',
+            'Authorization': token,  # Token already includes "Zoho-enczapikey" prefix
             'Content-Type': 'application/json'
         }
-        
+
         payload = {
             'from': {
-                'address': from_email,
+                'address': sender_email,
                 'name': from_name
             },
             'to': [
@@ -33,28 +67,28 @@ class ZeptomailService:
             'subject': subject,
             'htmlbody': html_body
         }
-        
+
         try:
-            response = requests.post(cls.API_URL, headers=headers, json=payload)
-            
+            response = requests.post(cls.API_URL, headers=headers, json=payload, timeout=30)
+
             # Log email
             EmailLog.objects.create(
                 recipient_email=to_email,
-                from_email=from_email,
+                from_email=sender_email,
                 subject=subject,
                 template_name='custom',
                 booking=booking,
                 status='sent' if response.status_code == 200 else 'failed',
                 error_message=response.text if response.status_code != 200 else None
             )
-            
+
             return response.status_code == 200
-        
+
         except Exception as e:
             # Log failed email
             EmailLog.objects.create(
                 recipient_email=to_email,
-                from_email=from_email,
+                from_email=sender_email,
                 subject=subject,
                 template_name='custom',
                 booking=booking,
@@ -75,7 +109,7 @@ def send_booking_confirmation(booking):
         'nights': booking.nights,
         'total': booking.total_price,
     }
-    
+
     html_body = f"""
     <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -83,7 +117,7 @@ def send_booking_confirmation(booking):
                 <h1 style="color: #2563eb;">Booking Confirmed!</h1>
                 <p>Dear {booking.guest_name},</p>
                 <p>Your booking at All'Arco Apartment has been confirmed.</p>
-                
+
                 <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h2 style="margin-top: 0;">Booking Details</h2>
                     <p><strong>Booking ID:</strong> {booking.booking_id}</p>
@@ -92,16 +126,16 @@ def send_booking_confirmation(booking):
                     <p><strong>Nights:</strong> {booking.nights}</p>
                     <p><strong>Total Paid:</strong> €{booking.total_price}</p>
                 </div>
-                
+
                 <p>Check-in instructions will be sent 48 hours before your arrival.</p>
                 <p>If you have any questions, please contact us at support@allarcoapartment.com</p>
-                
+
                 <p style="margin-top: 30px;">Best regards,<br>All'Arco Apartment Team</p>
             </div>
         </body>
     </html>
     """
-    
+
     return ZeptomailService.send_email(
         to_email=booking.guest_email,
         from_email='reservations@allarcoapartment.com',
@@ -115,7 +149,7 @@ def send_booking_confirmation(booking):
 def send_payment_receipt(payment):
     """Send payment receipt email."""
     booking = payment.booking
-    
+
     html_body = f"""
     <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -123,7 +157,7 @@ def send_payment_receipt(payment):
                 <h1 style="color: #2563eb;">Payment Receipt</h1>
                 <p>Dear {booking.guest_name},</p>
                 <p>Thank you for your payment. Here are the details:</p>
-                
+
                 <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h2 style="margin-top: 0;">Payment Details</h2>
                     <p><strong>Amount Paid:</strong> €{payment.amount}</p>
@@ -131,13 +165,13 @@ def send_payment_receipt(payment):
                     <p><strong>Transaction ID:</strong> {payment.stripe_payment_intent_id}</p>
                     <p><strong>Date:</strong> {payment.paid_at}</p>
                 </div>
-                
+
                 <p>Best regards,<br>All'Arco Apartment Team</p>
             </div>
         </body>
     </html>
     """
-    
+
     return ZeptomailService.send_email(
         to_email=booking.guest_email,
         from_email='reservations@allarcoapartment.com',
@@ -164,7 +198,7 @@ def send_welcome_email(user):
         </body>
     </html>
     """
-    
+
     return ZeptomailService.send_email(
         to_email=user.email,
         from_email='support@allarcoapartment.com',
@@ -183,20 +217,20 @@ def send_team_invitation(user, temporary_password):
                 <h1 style="color: #2563eb;">You've Been Invited!</h1>
                 <p>Dear {user.first_name},</p>
                 <p>You have been invited to join the All'Arco Apartment team as a <strong>{user.role}</strong>.</p>
-                
+
                 <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h2 style="margin-top: 0;">Login Details</h2>
                     <p><strong>Email:</strong> {user.email}</p>
                     <p><strong>Temporary Password:</strong> {temporary_password}</p>
                 </div>
-                
+
                 <p>Please log in and change your password immediately.</p>
                 <p style="margin-top: 30px;">Best regards,<br>All'Arco Apartment Team</p>
             </div>
         </body>
     </html>
     """
-    
+
     return ZeptomailService.send_email(
         to_email=user.email,
         from_email='support@allarcoapartment.com',

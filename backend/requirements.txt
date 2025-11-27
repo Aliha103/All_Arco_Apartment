@@ -1,36 +1,36 @@
 # Core Django
-Django==5.0.1
-djangorestframework==3.14.0
+Django==5.2.1
+djangorestframework==3.15.2
 python-decouple==3.8
 
 # Database
 psycopg2-binary==2.9.9
 
 # CORS handling
-django-cors-headers==4.3.1
+django-cors-headers==4.6.0
 
 # API enhancements
-django-filter==23.5
-drf-spectacular==0.27.0
+django-filter==24.3
+drf-spectacular==0.28.0
 
 # Caching & Tasks
-redis==5.0.1
+redis==5.2.1
 django-redis==5.4.0
-celery==5.3.4
-django-celery-beat==2.6.0
+celery==5.4.0
+django-celery-beat==2.7.0
 
 # Payments
-stripe==7.10.0
+stripe==11.4.1
 
 # Emails
-requests==2.31.0
+requests==2.32.3
 
 # PDF Generation
-weasyprint==60.2
+weasyprint==63.1
 
 # Development
-django-debug-toolbar==4.2.0
+django-debug-toolbar==4.4.6
 
 # Production server
-gunicorn==21.2.0
-whitenoise==6.6.0
+gunicorn==23.0.0
+whitenoise==6.8.2
