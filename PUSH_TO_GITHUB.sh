@@ -5,7 +5,7 @@ echo "🚀 Committing and Pushing All'Arco Apartment RBAC System to GitHub..."
 echo ""
 
 # Your GitHub token
-TOKEN="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"
+TOKEN="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"
 REPO="github.com/Aliha103/All_Arco_Apartment.git"
 
 echo "📍 Current directory: $(pwd)"
@@ -131,7 +131,7 @@ echo ""
 
 # Push to main
 echo "⬆️  Pushing to GitHub main branch..."
-git push "https://${TOKEN}@${REPO}" HEAD:main
+git push "https://${TOKEN}@${REPO}" HEAD:compyle/allarco-pms-implementation
 
 if [ $? -eq 0 ]; then
     echo ""
