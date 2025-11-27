@@ -1,5 +1,0 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Minimal Arch for Favicon -->
-  <path d="M8 12C8 8.68629 10.6863 6 14 6H18C21.3137 6 24 8.68629 24 12V22H8V12Z" stroke="#C4A572" stroke-width="2" fill="none"/>
-  <line x1="8" y1="22" x2="24" y2="22" stroke="#C4A572" stroke-width="2"/>
-</svg>
