@@ -2,13 +2,13 @@
 # Combines Next.js frontend + Django backend + Nginx
 
 # Stage 1: Build Next.js Frontend
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
 # Copy frontend package files
-COPY frontend/package*.json ./
-RUN npm ci --legacy-peer-deps
+COPY frontend/package.json ./
+RUN npm install --legacy-peer-deps
 
 # Copy frontend source
 COPY frontend/ ./
@@ -63,7 +63,7 @@ COPY --from=frontend-builder /app/frontend/package*.json ./frontend/
 COPY --from=frontend-builder /app/frontend/node_modules ./frontend/node_modules
 
 # Install Node.js for Next.js server
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
