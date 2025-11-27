@@ -99,7 +99,7 @@ export interface Payment {
   stripe_payment_intent_id: string;
   amount: string;
   currency: string;
-  status: 'pending' | 'succeeded' | 'failed' | 'cancelled' | 'refunded';
+  status: 'pending' | 'succeeded' | 'failed' | 'cancelled' | 'refunded' | 'partially_refunded';
   payment_method?: string;
   created_at: string;
   updated_at: string;
