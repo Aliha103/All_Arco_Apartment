@@ -4,9 +4,21 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Zap, Wrench, Image } from 'lucide-react';
 
-const APP_VERSION = '1.0.6';
+const APP_VERSION = '1.0.7';
 
 const updates = [
+  {
+    version: '1.0.7',
+    date: 'November 2025',
+    icon: Sparkles,
+    title: 'Premium Experience',
+    changes: [
+      'Cinematic Ken Burns hero carousel',
+      'Premium About section redesign',
+      'Animated rating score display',
+      'Hospitality-grade reviews section',
+    ],
+  },
   {
     version: '1.0.6',
     date: 'November 2025',

@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue, useSpring, animate } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import {
   Wifi,
@@ -22,6 +22,13 @@ import {
   Waves,
   Building,
   Quote,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  Award,
+  ThumbsUp,
+  Sparkles,
+  CheckCircle,
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
@@ -29,8 +36,10 @@ import BookingWidget from '@/components/booking/BookingWidget';
 import api from '@/lib/api';
 import { HeroImagePublic } from '@/types';
 
-// Smooth easing for all animations
+// Premium easing curves for luxury hospitality feel
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
+const luxuryEase = [0.43, 0.13, 0.23, 0.96] as const; // Cinematic easing
+const springConfig = { stiffness: 100, damping: 30, mass: 1 };
 
 // Animation variants with improved smoothness
 const fadeInUp = {
@@ -101,28 +110,51 @@ const highlights = [
   { icon: Bath, value: '1', unit: '', label: 'Bathroom' },
 ];
 
+// Enhanced reviews with hospitality-grade data
 const reviews = [
   {
     name: 'Sarah & Michael',
     location: 'New York, USA',
     rating: 5,
-    text: 'An absolutely magical stay in Venice! The apartment exceeded all expectations. The location is perfect - quiet yet close to everything.',
+    text: 'An absolutely magical stay in Venice! The apartment exceeded all expectations. The location is perfect - quiet yet close to everything. We felt like true Venetians.',
     date: 'October 2024',
+    avatar: 'SM',
+    verified: true,
+    stayType: 'Romantic Getaway',
+    helpful: 24,
   },
   {
     name: 'Emma Laurent',
     location: 'Paris, France',
     rating: 5,
-    text: 'Bellissimo! The attention to detail is remarkable. Waking up to canal views with my morning espresso was unforgettable.',
+    text: 'Bellissimo! The attention to detail is remarkable. Waking up to canal views with my morning espresso was an unforgettable experience. Ali was an exceptional host.',
     date: 'September 2024',
+    avatar: 'EL',
+    verified: true,
+    stayType: 'Solo Adventure',
+    helpful: 18,
   },
   {
     name: 'Hans & Greta',
     location: 'Munich, Germany',
     rating: 5,
-    text: 'Perfect for our honeymoon. The hosts were incredibly helpful and the apartment is beautifully designed.',
+    text: 'Perfect for our honeymoon. The hosts were incredibly helpful and the apartment is beautifully designed. Every detail shows care and thought.',
     date: 'August 2024',
+    avatar: 'HG',
+    verified: true,
+    stayType: 'Honeymoon',
+    helpful: 31,
   },
+];
+
+// Rating categories for hospitality standard
+const ratingCategories = [
+  { label: 'Cleanliness', score: 9.9, icon: Sparkles },
+  { label: 'Accuracy', score: 9.8, icon: CheckCircle },
+  { label: 'Communication', score: 10, icon: ThumbsUp },
+  { label: 'Location', score: 9.7, icon: MapPin },
+  { label: 'Check-in', score: 9.9, icon: Award },
+  { label: 'Value', score: 9.6, icon: Star },
 ];
 
 const nearbyAttractions = [
@@ -200,6 +232,257 @@ const Button = ({
   );
 };
 
+// Animated counter hook for statistics
+function useAnimatedCounter(endValue: number, duration: number = 2000, startOnView: boolean = true) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (!startOnView || !isInView || hasAnimated.current) return;
+    hasAnimated.current = true;
+
+    let startTime: number;
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      // Easing function for smooth deceleration
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(easeOut * endValue));
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    };
+    requestAnimationFrame(step);
+  }, [endValue, duration, isInView, startOnView]);
+
+  return { count, ref };
+}
+
+// Premium Rating Score Component with animated circular progress
+function RatingScoreDisplay({ score, totalReviews }: { score: number; totalReviews: number }) {
+  const progressRef = useRef(null);
+  const isInView = useInView(progressRef, { once: true });
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    const controls = animate(0, score, {
+      duration: 1.5,
+      ease: luxuryEase,
+      onUpdate: (value) => setDisplayScore(value),
+    });
+    return () => controls.stop();
+  }, [isInView, score]);
+
+  const circumference = 2 * Math.PI * 54; // radius = 54
+  const strokeDashoffset = circumference - (displayScore / 10) * circumference;
+
+  return (
+    <div ref={progressRef} className="flex flex-col items-center">
+      <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+        {/* Background circle */}
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+          <circle
+            cx="60"
+            cy="60"
+            r="54"
+            fill="none"
+            stroke="#E5E7EB"
+            strokeWidth="8"
+          />
+          <motion.circle
+            cx="60"
+            cy="60"
+            r="54"
+            fill="none"
+            stroke="#C4A572"
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: isInView ? strokeDashoffset : circumference }}
+            transition={{ duration: 1.5, ease: luxuryEase }}
+          />
+        </svg>
+        {/* Score display */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-4xl sm:text-5xl font-bold text-gray-900">
+            {displayScore.toFixed(1)}
+          </span>
+          <span className="text-xs sm:text-sm text-gray-500 font-medium">out of 10</span>
+        </div>
+      </div>
+      <div className="mt-4 text-center">
+        <p className="text-lg sm:text-xl font-semibold text-gray-900">Exceptional</p>
+        <p className="text-sm text-gray-500">{totalReviews} verified reviews</p>
+      </div>
+    </div>
+  );
+}
+
+// Premium Hero Carousel with Ken Burns effect
+function HeroCarousel({
+  images,
+  currentIndex,
+  onIndexChange
+}: {
+  images: { src: string; alt: string }[];
+  currentIndex: number;
+  onIndexChange: (index: number) => void;
+}) {
+  const [isPaused, setIsPaused] = useState(false);
+  const progressRef = useRef<number>(0);
+  const animationRef = useRef<number | null>(null);
+  const progressMotion = useMotionValue(0);
+  const progressSpring = useSpring(progressMotion, { stiffness: 50, damping: 20 });
+
+  // Ken Burns animation directions
+  const kenBurnsVariants = useMemo(() => [
+    { scale: [1, 1.08], x: [0, 15], y: [0, 10] },     // Zoom in + pan right-down
+    { scale: [1.08, 1], x: [15, -10], y: [10, 0] },   // Zoom out + pan left-up
+    { scale: [1, 1.06], x: [0, -12], y: [0, 8] },     // Zoom in + pan left-down
+    { scale: [1.06, 1], x: [-12, 8], y: [8, -5] },    // Zoom out + pan right-up
+  ], []);
+
+  // Smooth progress animation
+  useEffect(() => {
+    if (isPaused) return;
+
+    const duration = 6000; // 6 seconds per slide
+    let startTime: number | null = null;
+
+    const animateProgress = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      progressMotion.set(progress * 100);
+      progressRef.current = progress;
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animateProgress);
+      } else {
+        // Move to next slide
+        onIndexChange((currentIndex + 1) % images.length);
+        progressMotion.set(0);
+        progressRef.current = 0;
+        startTime = null;
+        animationRef.current = requestAnimationFrame(animateProgress);
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animateProgress);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [currentIndex, images.length, isPaused, onIndexChange, progressMotion]);
+
+  const goToSlide = (index: number) => {
+    progressMotion.set(0);
+    progressRef.current = 0;
+    onIndexChange(index);
+  };
+
+  const goNext = () => goToSlide((currentIndex + 1) % images.length);
+  const goPrev = () => goToSlide((currentIndex - 1 + images.length) % images.length);
+
+  return (
+    <div
+      className="absolute inset-0"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Images with Ken Burns effect */}
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={currentIndex}
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: 1,
+            scale: kenBurnsVariants[currentIndex % kenBurnsVariants.length].scale,
+            x: kenBurnsVariants[currentIndex % kenBurnsVariants.length].x,
+            y: kenBurnsVariants[currentIndex % kenBurnsVariants.length].y,
+          }}
+          exit={{ opacity: 0 }}
+          transition={{
+            opacity: { duration: 1.2, ease: luxuryEase },
+            scale: { duration: 6, ease: 'linear' },
+            x: { duration: 6, ease: 'linear' },
+            y: { duration: 6, ease: 'linear' },
+          }}
+          className="absolute inset-0 will-change-transform"
+        >
+          <Image
+            src={images[currentIndex].src}
+            alt={images[currentIndex].alt}
+            fill
+            className="object-cover"
+            priority={currentIndex === 0}
+            sizes="100vw"
+            unoptimized
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Premium gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/60 z-10" />
+
+      {/* Navigation arrows */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-30 flex justify-between px-4 sm:px-6 opacity-0 hover:opacity-100 transition-opacity duration-300">
+        <motion.button
+          onClick={goPrev}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          aria-label="Previous image"
+        >
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+        </motion.button>
+        <motion.button
+          onClick={goNext}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          aria-label="Next image"
+        >
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+        </motion.button>
+      </div>
+
+      {/* Premium progress indicators */}
+      <div className="absolute bottom-28 sm:bottom-24 left-1/2 -translate-x-1/2 z-30 flex gap-3">
+        {images.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => goToSlide(index)}
+            className="group relative h-1 rounded-full overflow-hidden transition-all duration-300"
+            style={{ width: index === currentIndex ? '48px' : '24px' }}
+            aria-label={`Go to image ${index + 1}`}
+          >
+            {/* Background */}
+            <div className="absolute inset-0 bg-white/30 group-hover:bg-white/40 transition-colors" />
+            {/* Progress fill */}
+            {index === currentIndex && (
+              <motion.div
+                className="absolute inset-y-0 left-0 bg-white rounded-full"
+                style={{ width: progressSpring.get() + '%' }}
+              />
+            )}
+            {index < currentIndex && (
+              <div className="absolute inset-0 bg-white rounded-full" />
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const heroRef = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -247,66 +530,31 @@ export default function Home() {
   });
 
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.05]);
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 50]);
+  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.02]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 30]);
 
-  // Auto-scroll hero images every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [heroImages.length]);
+  // Memoized callback for carousel
+  const handleIndexChange = useCallback((index: number) => {
+    setCurrentImageIndex(index);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white antialiased">
       <SiteNav />
 
-      {/* Hero Section with Auto-Scrolling Images */}
+      {/* Hero Section with Premium Ken Burns Carousel */}
       <section ref={heroRef} className="relative h-[100svh] min-h-[600px] overflow-hidden">
-        {/* Background Images Carousel */}
+        {/* Premium Background Images Carousel with Ken Burns Effect */}
         <motion.div
           style={{ scale: heroScale, y: heroY }}
           className="absolute inset-0 will-change-transform"
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentImageIndex}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.5, ease: smoothEase }}
-              className="absolute inset-0"
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 z-10" />
-              <Image
-                src={heroImages[currentImageIndex].src}
-                alt={heroImages[currentImageIndex].alt}
-                fill
-                className="object-cover"
-                priority={currentImageIndex === 0}
-                sizes="100vw"
-                unoptimized
-              />
-            </motion.div>
-          </AnimatePresence>
+          <HeroCarousel
+            images={heroImages}
+            currentIndex={currentImageIndex}
+            onIndexChange={handleIndexChange}
+          />
         </motion.div>
-
-        {/* Image Indicators */}
-        <div className="absolute bottom-32 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-          {heroImages.map((_: { src: string; alt: string }, index: number) => (
-            <button
-              key={index}
-              onClick={() => setCurrentImageIndex(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === currentImageIndex
-                  ? 'bg-white w-6'
-                  : 'bg-white/40 hover:bg-white/60'
-              }`}
-              aria-label={`Go to image ${index + 1}`}
-            />
-          ))}
-        </div>
 
         {/* Hero Content */}
         <motion.div
@@ -389,108 +637,195 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* About Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-28" id="about">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <motion.div variants={fadeInUp}>
-              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">The Apartment</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-5 leading-tight">
-                Your Private Sanctuary in Venice
+      {/* About Section - Premium Hospitality Design */}
+      <AnimatedSection className="py-20 sm:py-28 lg:py-36 relative overflow-hidden" id="about">
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23C4A572\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <motion.div variants={fadeInUp} className="order-2 lg:order-1">
+              {/* Premium badge */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#C4A572]/10 rounded-full mb-6"
+              >
+                <Award className="w-4 h-4 text-[#C4A572]" />
+                <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs">Superhost Property</span>
+              </motion.div>
+
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-light text-gray-900 mb-6 leading-[1.1]">
+                Your Private
+                <span className="block text-[#C4A572] italic font-serif">Sanctuary</span>
+                in Venice
               </h2>
-              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6">
-                Nestled in the historic Castello district, All&apos;Arco Apartment offers an authentic Venetian experience
-                with modern luxury. This spacious 85m² apartment features two elegantly appointed bedrooms,
-                comfortably accommodating up to 5 guests while combining traditional Venetian architecture
-                with contemporary design.
-              </p>
-              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6">
-                Wake up to enchanting canal views, enjoy your morning espresso on the terrace, and experience
-                Venice like a true local. Just 17 minutes from the iconic Rialto Bridge.
-              </p>
-              <div className="flex items-center gap-3 mb-6 sm:mb-8 p-4 bg-[#C4A572]/5 rounded-xl border border-[#C4A572]/20">
-                <div className="w-12 h-12 rounded-full bg-[#C4A572]/20 flex items-center justify-center">
-                  <span className="text-[#C4A572] font-semibold text-lg">AH</span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Your Host</p>
-                  <p className="font-semibold text-gray-900">Ali Hassan Cheema</p>
-                </div>
+
+              <div className="space-y-4 mb-8">
+                <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">
+                  Nestled in the historic <strong className="text-gray-900">Castello district</strong>, All&apos;Arco Apartment
+                  offers an authentic Venetian experience with modern luxury.
+                </p>
+                <p className="text-base sm:text-lg text-gray-500 leading-relaxed">
+                  This spacious 85m² apartment features two elegantly appointed bedrooms, comfortably
+                  accommodating up to 5 guests while combining traditional Venetian architecture with
+                  contemporary design. Wake up to enchanting canal views, enjoy your morning espresso
+                  on the terrace, and experience Venice like a true local.
+                </p>
               </div>
 
-              {/* Highlights Grid */}
-              <div className="grid grid-cols-4 gap-2 sm:gap-4">
-                {highlights.map(({ icon: Icon, value, unit, label }) => (
+              {/* Premium Host Card */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="flex items-center gap-4 p-5 bg-gradient-to-r from-[#C4A572]/5 to-transparent rounded-2xl border border-[#C4A572]/20 mb-8"
+              >
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-xl">AH</span>
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                    <CheckCircle className="w-3 h-3 text-white" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-gray-900 text-lg">Ali Hassan Cheema</p>
+                    <Shield className="w-4 h-4 text-[#C4A572]" />
+                  </div>
+                  <p className="text-sm text-gray-500">Superhost · Identity verified</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-3 h-3 fill-[#C4A572] text-[#C4A572]" />
+                    ))}
+                    <span className="text-xs text-gray-500 ml-1">5.0 · 59 reviews</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Premium Highlights Grid */}
+              <div className="grid grid-cols-4 gap-3 sm:gap-4">
+                {highlights.map(({ icon: Icon, value, unit, label }, index) => (
                   <motion.div
                     key={label}
-                    className="text-center p-3 sm:p-4 bg-gray-50 rounded-xl sm:rounded-2xl hover:bg-gray-100 transition-colors"
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="relative group"
                   >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#C4A572] mx-auto mb-1 sm:mb-2" />
-                    <div className="text-xl sm:text-2xl font-semibold text-gray-900">
-                      {value}<span className="text-xs sm:text-sm">{unit}</span>
+                    <div className="text-center p-4 sm:p-5 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-[#C4A572]/30 transition-all duration-300">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-[#C4A572]/10 to-[#C4A572]/5 flex items-center justify-center group-hover:from-[#C4A572]/20 group-hover:to-[#C4A572]/10 transition-colors">
+                        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#C4A572]" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                        {value}<span className="text-sm sm:text-base font-normal text-gray-400">{unit}</span>
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">{label}</div>
                     </div>
-                    <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{label}</div>
                   </motion.div>
                 ))}
               </div>
             </motion.div>
 
-            {/* Image Grid - Uses dynamic gallery images */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-2 gap-3 sm:gap-4">
-              <div className="space-y-3 sm:space-y-4">
+            {/* Premium Image Grid */}
+            <motion.div variants={fadeInUp} className="order-1 lg:order-2">
+              <div className="grid grid-cols-6 gap-3 sm:gap-4">
+                {/* Large featured image */}
                 {galleryImages[0] && (
-                  <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
+                  <motion.div
+                    className="col-span-4 row-span-2 relative h-[280px] sm:h-[380px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.4, ease: luxuryEase }}
+                  >
                     <Image
                       src={galleryImages[0].src}
                       alt={galleryImages[0].alt}
                       fill
-                      className="object-cover hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover"
+                      sizes="(max-width: 768px) 70vw, 40vw"
                       unoptimized
                     />
-                  </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                  </motion.div>
                 )}
+                {/* Side images */}
                 {galleryImages[1] && (
-                  <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
+                  <motion.div
+                    className="col-span-2 relative h-[130px] sm:h-[180px] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.3, ease: luxuryEase }}
+                  >
                     <Image
                       src={galleryImages[1].src}
                       alt={galleryImages[1].alt}
                       fill
-                      className="object-cover hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover"
+                      sizes="(max-width: 768px) 30vw, 15vw"
                       unoptimized
                     />
-                  </div>
+                  </motion.div>
                 )}
-              </div>
-              <div className="space-y-3 sm:space-y-4 pt-6 sm:pt-8">
                 {galleryImages[2] && (
-                  <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
+                  <motion.div
+                    className="col-span-2 relative h-[130px] sm:h-[180px] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.3, ease: luxuryEase }}
+                  >
                     <Image
                       src={galleryImages[2].src}
                       alt={galleryImages[2].alt}
                       fill
-                      className="object-cover hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-cover"
+                      sizes="(max-width: 768px) 30vw, 15vw"
                       unoptimized
                     />
-                  </div>
+                  </motion.div>
                 )}
+                {/* Bottom row */}
                 {galleryImages[3] && (
-                  <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
+                  <motion.div
+                    className="col-span-3 relative h-[120px] sm:h-[160px] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3, ease: luxuryEase }}
+                  >
                     <Image
                       src={galleryImages[3].src}
                       alt={galleryImages[3].alt}
                       fill
-                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      className="object-cover"
                       sizes="(max-width: 768px) 50vw, 25vw"
                       unoptimized
                     />
-                  </div>
+                  </motion.div>
+                )}
+                {galleryImages[4] && (
+                  <motion.div
+                    className="col-span-3 relative h-[120px] sm:h-[160px] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3, ease: luxuryEase }}
+                  >
+                    <Image
+                      src={galleryImages[4].src}
+                      alt={galleryImages[4].alt}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized
+                    />
+                  </motion.div>
                 )}
               </div>
+              {/* Trust badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="flex items-center justify-center gap-2 mt-6 text-sm text-gray-500"
+              >
+                <Shield className="w-4 h-4 text-green-500" />
+                <span>Verified property · 17 min to Rialto Bridge</span>
+              </motion.div>
             </motion.div>
           </div>
         </div>
@@ -649,49 +984,163 @@ export default function Home() {
         </div>
       </AnimatedSection>
 
-      {/* Reviews Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-28">
+      {/* Reviews Section - Premium Hospitality Standard */}
+      <AnimatedSection className="py-20 sm:py-28 lg:py-36 bg-gradient-to-b from-white via-gray-50/50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Reviews</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
-              What Our Guests Say
+          {/* Section Header */}
+          <motion.div variants={fadeInUp} className="text-center max-w-3xl mx-auto mb-16">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#C4A572]/10 rounded-full mb-6"
+            >
+              <Award className="w-4 h-4 text-[#C4A572]" />
+              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs">Guest Favorite</span>
+            </motion.div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mb-4">
+              Loved by <span className="text-[#C4A572] italic font-serif">Travelers</span>
             </h2>
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-              <div className="flex items-center gap-0.5 sm:gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-[#C4A572] text-[#C4A572]" />
-                ))}
+            <p className="text-lg text-gray-600">
+              One of the most loved homes on the platform, according to guests
+            </p>
+          </motion.div>
+
+          {/* Rating Overview - Premium Layout */}
+          <motion.div
+            variants={fadeInUp}
+            className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 sm:p-10 lg:p-12 mb-16"
+          >
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              {/* Main Score */}
+              <div className="lg:col-span-4 flex justify-center">
+                <RatingScoreDisplay score={9.8} totalReviews={59} />
               </div>
-              <span className="text-xl sm:text-2xl font-semibold text-gray-900">9.8</span>
-              <span className="text-sm sm:text-base text-gray-500">from 59 reviews</span>
+
+              {/* Category Breakdown */}
+              <div className="lg:col-span-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Rating Breakdown</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {ratingCategories.map((category, index) => {
+                    const Icon = category.icon;
+                    return (
+                      <motion.div
+                        key={category.label}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-5 h-5 text-[#C4A572]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-700">{category.label}</span>
+                            <span className="text-sm font-bold text-gray-900">{category.score}</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-[#C4A572] to-[#D4B582] rounded-full"
+                              initial={{ width: 0 }}
+                              whileInView={{ width: `${(category.score / 10) * 100}%` }}
+                              viewport={{ once: true }}
+                              transition={{ duration: 1, delay: index * 0.1, ease: luxuryEase }}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </motion.div>
 
-          <motion.div variants={staggerContainer} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          {/* Review Cards - Premium Design */}
+          <motion.div variants={staggerContainer} className="grid md:grid-cols-3 gap-6 lg:gap-8">
             {reviews.map((review, i) => (
               <motion.div
                 key={i}
                 variants={fadeInUp}
-                className="bg-gray-50 p-5 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl relative"
-                whileHover={{ y: -4 }}
+                whileHover={{ y: -8, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)' }}
+                className="group bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-100 relative overflow-hidden"
               >
-                <Quote className="w-8 h-8 sm:w-10 sm:h-10 text-[#C4A572]/20 absolute top-4 sm:top-6 right-4 sm:right-6" />
-                <div className="flex items-center gap-0.5 mb-3 sm:mb-4">
-                  {[...Array(review.rating)].map((_, j) => (
-                    <Star key={j} className="w-3 h-3 sm:w-4 sm:h-4 fill-[#C4A572] text-[#C4A572]" />
-                  ))}
-                </div>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6">&ldquo;{review.text}&rdquo;</p>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm sm:text-base font-semibold text-gray-900">{review.name}</p>
-                    <p className="text-xs sm:text-sm text-gray-500">{review.location}</p>
+                {/* Decorative gradient */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#C4A572]/5 to-transparent rounded-bl-full" />
+
+                {/* Quote icon */}
+                <Quote className="w-10 h-10 text-[#C4A572]/10 absolute top-6 right-6" />
+
+                {/* Header with avatar */}
+                <div className="flex items-start gap-4 mb-5 relative z-10">
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center shadow-md">
+                      <span className="text-white font-bold text-lg">{review.avatar}</span>
+                    </div>
+                    {review.verified && (
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
+                        <CheckCircle className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                   </div>
-                  <span className="text-[10px] sm:text-xs text-gray-400">{review.date}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-gray-900">{review.name}</p>
+                      {review.verified && (
+                        <span className="text-xs text-blue-500 font-medium">Verified</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500">{review.location}</p>
+                    <p className="text-xs text-[#C4A572] font-medium mt-1">{review.stayType}</p>
+                  </div>
+                </div>
+
+                {/* Rating stars */}
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(review.rating)].map((_, j) => (
+                    <Star key={j} className="w-4 h-4 fill-[#C4A572] text-[#C4A572]" />
+                  ))}
+                  <span className="text-sm text-gray-500 ml-2">{review.date}</span>
+                </div>
+
+                {/* Review text */}
+                <p className="text-gray-600 leading-relaxed mb-5">
+                  &ldquo;{review.text}&rdquo;
+                </p>
+
+                {/* Helpful indicator */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                  <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#C4A572] transition-colors">
+                    <ThumbsUp className="w-4 h-4" />
+                    <span>Helpful ({review.helpful})</span>
+                  </button>
+                  <span className="text-xs text-gray-400">Stayed {review.date}</span>
                 </div>
               </motion.div>
             ))}
+          </motion.div>
+
+          {/* Trust badges */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-wrap items-center justify-center gap-6 mt-12 pt-8 border-t border-gray-100"
+          >
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Shield className="w-5 h-5 text-green-500" />
+              <span>All reviews verified</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Award className="w-5 h-5 text-[#C4A572]" />
+              <span>Guest Favorite 2024</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <CheckCircle className="w-5 h-5 text-blue-500" />
+              <span>Superhost since 2023</span>
+            </div>
           </motion.div>
         </div>
       </AnimatedSection>

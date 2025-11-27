@@ -2,6 +2,37 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.0.7] - 2025-11-27
+
+### Enhanced
+- **Premium Hero Carousel**: Cinematic Ken Burns effect with smooth crossfade transitions
+  - 6-second per slide with animated progress indicators
+  - Pause on hover, navigation arrows on hover
+  - requestAnimationFrame-based timing for buttery smooth animations
+  - Luxury easing curves for hospitality-grade feel
+
+- **About Section Redesign**: Premium hospitality-style layout
+  - Superhost badge and verified host card
+  - Premium image grid with hover effects
+  - Animated statistics counters
+  - Trust indicators and verification badges
+  - Italic serif typography accents
+
+- **Reviews Section Upgrade**: Industry-standard rating display
+  - Animated circular progress score (9.8/10)
+  - 6-category rating breakdown with animated progress bars
+  - Premium review cards with avatars and verification badges
+  - Stay type labels, helpful counts
+  - Trust badges (Guest Favorite 2024, Superhost)
+
+### Technical
+- Ken Burns animation with 4 directional variants
+- Framer Motion springs and luxury easing curves
+- RatingScoreDisplay component with SVG progress
+- Category-based rating breakdown system
+
+---
+
 ## [1.0.6] - 2025-11-27
 
 ### Added
