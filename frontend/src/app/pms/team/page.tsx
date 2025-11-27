@@ -88,7 +88,7 @@ export default function TeamPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       setIsInviteModalOpen(false);
-      setInviteFormData({ email: '', first_name: '', last_name: '', role: 'team' });
+      setInviteFormData({ email: '', first_name: '', last_name: '', assigned_role_id: '' });
       alert('Team member invited successfully. Invitation email sent.');
     },
     onError: (error: any) => {
@@ -170,7 +170,7 @@ export default function TeamPage() {
   const handleEdit = (member: any) => {
     setSelectedMember(member);
     setEditFormData({
-      role: member.role,
+      assigned_role_id: member.role_info?.id || '',
       is_active: member.is_active,
     });
     setIsEditModalOpen(true);
