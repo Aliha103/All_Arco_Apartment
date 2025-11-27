@@ -59,7 +59,7 @@ export default function GuestDetailPage() {
   // Add note mutation
   const addNote = useMutation({
     mutationFn: (note: string) =>
-      api.post(`/guests/${guestId}/notes/`, { note }),
+      api.users.guests.addNote(guestId, note),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guest-notes', guestId] });
       setIsAddNoteModalOpen(false);

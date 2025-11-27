@@ -138,6 +138,7 @@ export const api = {
       list: (params?: any) => apiClient.get('/guests/', { params }),
       get: (id: string) => apiClient.get(`/guests/${id}/`),
       notes: (id: string) => apiClient.get(`/guests/${id}/notes/`),
+      addNote: (id: string, note: string) => apiClient.post(`/guests/${id}/notes/`, { note }),
     },
     team: {
       list: (params?: any) => apiClient.get('/team/', { params }),
