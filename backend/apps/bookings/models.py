@@ -16,6 +16,7 @@ class Booking(models.Model):
         ('checked_in', 'Checked In'),
         ('checked_out', 'Checked Out'),
         ('cancelled', 'Cancelled'),
+        ('no_show', 'No-Show'),
     ]
     
     PAYMENT_STATUS_CHOICES = [
@@ -71,6 +72,12 @@ class Booking(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     cancellation_reason = models.TextField(blank=True, null=True)
+
+    # No-show handling: marks the date from which nights are released
+    # For full no-show: equals check_in_date (all nights released)
+    # For partial no-show: equals the date guest disappeared (remaining nights released)
+    # Nights before this date are still considered occupied/unavailable
+    released_from_date = models.DateField(null=True, blank=True)
     
     class Meta:
         db_table = 'bookings_booking'
@@ -140,6 +147,50 @@ class Booking(models.Model):
             self.check_in_date < check_out and
             self.check_out_date > check_in
         )
+
+    def blocks_dates(self):
+        """
+        Determine if this booking currently blocks dates from being booked.
+
+        Returns True if this booking prevents new bookings, False otherwise.
+
+        Rules:
+        - cancelled: Does NOT block (dates immediately available)
+        - checked_out: Does NOT block (stay completed)
+        - no_show: Partially blocks (only nights before released_from_date)
+        - All others (pending, confirmed, paid, checked_in): BLOCKS all dates
+        """
+        if self.status in ['cancelled', 'checked_out']:
+            return False
+        return True
+
+    def get_blocked_date_range(self):
+        """
+        Get the actual date range blocked by this booking.
+
+        Returns tuple (start_date, end_date) of blocked dates, or None if not blocking.
+
+        For no_show bookings with released_from_date:
+        - Only blocks from check_in_date to released_from_date
+        - Dates from released_from_date onward are available
+
+        For all other active bookings:
+        - Blocks full range from check_in_date to check_out_date
+        """
+        if not self.blocks_dates():
+            return None
+
+        # No-show bookings with released_from_date only block partial range
+        if self.status == 'no_show' and self.released_from_date:
+            # Only block dates before released_from_date
+            if self.released_from_date <= self.check_in_date:
+                # All dates released
+                return None
+            # Block from check_in to released_from_date
+            return (self.check_in_date, self.released_from_date)
+
+        # All other active bookings block full range
+        return (self.check_in_date, self.check_out_date)
 
 
 class BlockedDate(models.Model):

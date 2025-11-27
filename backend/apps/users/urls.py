@@ -5,6 +5,8 @@ from . import views
 router = DefaultRouter()
 router.register(r'guests', views.GuestViewSet, basename='guest')
 router.register(r'team', views.TeamViewSet, basename='team')
+router.register(r'permissions', views.PermissionViewSet, basename='permission')
+router.register(r'roles', views.RoleViewSet, basename='role')
 
 urlpatterns = [
     # Authentication
@@ -12,7 +14,10 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('me/', views.me_view, name='me'),
-    
+
+    # RBAC Setup
+    path('seed-rbac/', views.seed_rbac_data, name='seed_rbac'),
+
     # Router URLs
     path('', include(router.urls)),
 ]

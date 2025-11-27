@@ -1,36 +1,38 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 const navigation = [
-  { name: 'Dashboard', href: '/pms', icon: '📊' },
-  { name: 'Bookings', href: '/pms/bookings', icon: '📅' },
-  { name: 'Payments', href: '/pms/payments', icon: '💳' },
-  { name: 'Invoices', href: '/pms/invoices', icon: '📄' },
-  { name: 'Guests', href: '/pms/guests', icon: '👥' },
-  { name: 'Pricing', href: '/pms/pricing', icon: '💰' },
-  { name: 'Calendar', href: '/pms/calendar', icon: '📆' },
-  { name: 'Team', href: '/pms/team', icon: '👨‍💼', adminOnly: true },
-  { name: 'Reports', href: '/pms/reports', icon: '📈' },
+  { name: 'Dashboard', href: '/pms', icon: '📊', permission: null }, // Always visible
+  { name: 'Bookings', href: '/pms/bookings', icon: '📅', permission: 'bookings.view' },
+  { name: 'Payments', href: '/pms/payments', icon: '💳', permission: 'payments.view' },
+  { name: 'Invoices', href: '/pms/invoices', icon: '📄', permission: 'payments.view' },
+  { name: 'Guests', href: '/pms/guests', icon: '👥', permission: 'guests.view' },
+  { name: 'Pricing', href: '/pms/pricing', icon: '💰', permission: 'pricing.view' },
+  { name: 'Calendar', href: '/pms/calendar', icon: '📆', permission: 'bookings.view' },
+  { name: 'Team', href: '/pms/team', icon: '👨‍💼', permission: 'team.view' },
+  { name: 'Reports', href: '/pms/reports', icon: '📈', permission: 'reports.view' },
 ];
 
 export default function PMSLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
+  const { hasPermission, isTeamMember } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Redirect if not team/admin
+  // Redirect if not team member
   useEffect(() => {
-    if (!isLoading && (!user || user.role === 'guest')) {
+    if (!isLoading && (!user || !isTeamMember())) {
       router.push('/auth/login');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, isTeamMember, router]);
 
-  if (isLoading || !user || user.role === 'guest') {
+  if (isLoading || !user || !isTeamMember()) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading...</p>
@@ -38,8 +40,9 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Filter navigation based on permissions
   const filteredNav = navigation.filter(
-    (item) => !item.adminOnly || user.role === 'admin'
+    (item) => !item.permission || hasPermission(item.permission)
   );
 
   return (
@@ -60,7 +63,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
               {user.first_name} {user.last_name}
             </span>
             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-              {user.role}
+              {user.role_info.name}
             </span>
             <Button variant="outline" size="sm" onClick={() => logout()}>
               Logout

@@ -2,6 +2,39 @@
  * TypeScript types matching Django backend models
  */
 
+// RBAC types
+export interface Permission {
+  id: string;
+  code: string;
+  group: string;
+  description: string;
+  created_at: string;
+}
+
+export interface Role {
+  id: string | null;
+  name: string;
+  slug: string;
+  description: string;
+  is_super_admin: boolean;
+  is_system: boolean;
+  permissions?: Permission[];
+  permission_codes?: string[];
+  member_count?: number;
+  can_be_deleted?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RoleInfo {
+  id: string | null;
+  name: string;
+  slug: string;
+  description: string;
+  is_super_admin: boolean;
+  is_system: boolean;
+}
+
 // User types
 export interface User {
   id: string;
@@ -9,7 +42,24 @@ export interface User {
   first_name: string;
   last_name: string;
   phone?: string;
-  role: 'guest' | 'team' | 'admin' | 'super_admin';
+  role_info: RoleInfo;
+  permissions: string[];
+  is_super_admin: boolean;
+  is_team_member: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login?: string;
+}
+
+// Legacy User type (for backward compatibility during migration)
+export interface LegacyUser {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  role: 'guest' | 'team' | 'admin';
   is_active: boolean;
   date_joined: string;
 }

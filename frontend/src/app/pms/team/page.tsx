@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -13,22 +14,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/utils';
+import { Role, Permission } from '@/types';
 
 export default function TeamPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const { hasPermission } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const [activeTab, setActiveTab] = useState<'team' | 'roles'>('team');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
-  // Admin-only access check
+  // Permission check - requires roles.manage or team.view
   useEffect(() => {
-    if (!authLoading && (!user || user.role !== 'admin')) {
+    if (!authLoading && (!user || !hasPermission('team.view'))) {
       router.push('/pms');
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, hasPermission, router]);
 
   const { data: teamMembers } = useQuery({
     queryKey: ['team-members'],
@@ -36,20 +43,45 @@ export default function TeamPage() {
       const response = await api.users.team.list();
       return response.data.results || response.data;
     },
-    enabled: user?.role === 'admin',
+    enabled: hasPermission('team.view'),
+  });
+
+  const { data: roles } = useQuery({
+    queryKey: ['roles'],
+    queryFn: async () => {
+      const response = await api.get('/users/roles/');
+      return response.data;
+    },
+    enabled: hasPermission('roles.manage'),
+  });
+
+  const { data: permissions } = useQuery({
+    queryKey: ['permissions'],
+    queryFn: async () => {
+      const response = await api.get('/users/permissions/by-group/');
+      return response.data;
+    },
+    enabled: hasPermission('roles.manage'),
   });
 
   const [inviteFormData, setInviteFormData] = useState({
     email: '',
     first_name: '',
     last_name: '',
-    role: 'team',
+    assigned_role_id: '',
   });
 
   const [editFormData, setEditFormData] = useState({
-    role: '',
+    assigned_role_id: '',
     is_active: true,
   });
+
+  const [roleFormData, setRoleFormData] = useState({
+    name: '',
+    description: '',
+  });
+
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
   const inviteTeamMember = useMutation({
     mutationFn: (data: any) => api.users.team.create(data),
@@ -79,6 +111,47 @@ export default function TeamPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       alert('Team member removed successfully');
+    },
+  });
+
+  // Role management mutations
+  const createRole = useMutation({
+    mutationFn: (data: any) => api.post('/users/roles/', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      setIsRoleModalOpen(false);
+      setRoleFormData({ name: '', description: '' });
+      alert('Role created successfully');
+    },
+  });
+
+  const updateRole = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.patch(`/users/roles/${id}/`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      setIsRoleModalOpen(false);
+      setSelectedRole(null);
+      alert('Role updated successfully');
+    },
+  });
+
+  const deleteRole = useMutation({
+    mutationFn: (id: string) => api.delete(`/users/roles/${id}/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      alert('Role deleted successfully');
+    },
+  });
+
+  const assignPermissions = useMutation({
+    mutationFn: ({ roleId, permissionCodes }: { roleId: string; permissionCodes: string[] }) =>
+      api.post(`/users/roles/${roleId}/assign-permissions/`, { permission_codes: permissionCodes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      setIsPermissionModalOpen(false);
+      setSelectedRole(null);
+      setSelectedPermissions([]);
+      alert('Permissions updated successfully');
     },
   });
 
@@ -133,16 +206,49 @@ export default function TeamPage() {
     return <div className="text-center py-8">Loading...</div>;
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!user || !hasPermission('team.view')) {
     return null;
   }
+
+  const canManageRoles = hasPermission('roles.manage');
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Team Management</h1>
-        <p className="text-gray-600">Manage team members and access permissions</p>
+        <h1 className="text-3xl font-bold mb-2">Team & Roles</h1>
+        <p className="text-gray-600">Manage team members, roles, and permissions</p>
       </div>
+
+      {/* Tabs */}
+      <div className="mb-6 border-b">
+        <div className="flex gap-4">
+          <button
+            className={`px-4 py-2 font-medium border-b-2 ${
+              activeTab === 'team'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+            onClick={() => setActiveTab('team')}
+          >
+            Team Members ({teamMembers?.length || 0})
+          </button>
+          {canManageRoles && (
+            <button
+              className={`px-4 py-2 font-medium border-b-2 ${
+                activeTab === 'roles'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+              onClick={() => setActiveTab('roles')}
+            >
+              Roles ({roles?.length || 0})
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Team Members Tab */}
+      {activeTab === 'team' && (
 
       <Card>
         <CardHeader>
@@ -217,6 +323,104 @@ export default function TeamPage() {
           )}
         </CardContent>
       </Card>
+      )}
+
+      {/* Roles Tab */}
+      {activeTab === 'roles' && canManageRoles && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Roles ({roles?.length || 0})</CardTitle>
+              <Button onClick={() => setIsRoleModalOpen(true)}>
+                Create Role
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {roles && roles.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Permissions</TableHead>
+                    <TableHead>Members</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {roles.map((role: Role) => (
+                    <TableRow key={role.id}>
+                      <TableCell className="font-medium">
+                        {role.name}
+                        {role.is_system && (
+                          <Badge variant="secondary" className="ml-2">System</Badge>
+                        )}
+                        {role.is_super_admin && (
+                          <Badge variant="destructive" className="ml-2">Super Admin</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {role.description || 'No description'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedRole(role);
+                            setSelectedPermissions(role.permission_codes || []);
+                            setIsPermissionModalOpen(true);
+                          }}
+                          disabled={role.is_super_admin}
+                        >
+                          {role.is_super_admin
+                            ? 'All Permissions'
+                            : `${role.permission_codes?.length || 0} permissions`}
+                        </Button>
+                      </TableCell>
+                      <TableCell>{role.member_count || 0}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRole(role);
+                              setRoleFormData({
+                                name: role.name,
+                                description: role.description || '',
+                              });
+                              setIsRoleModalOpen(true);
+                            }}
+                            disabled={role.is_system}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm(`Delete role "${role.name}"? This cannot be undone.`)) {
+                                deleteRole.mutate(role.id!);
+                              }
+                            }}
+                            disabled={role.is_system || (role.member_count || 0) > 0}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-center py-8 text-gray-600">No custom roles yet</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Invite Team Member Modal */}
       <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
@@ -257,18 +461,23 @@ export default function TeamPage() {
               <Label>Role</Label>
               <select
                 className="w-full px-3 py-2 border rounded-lg"
-                value={inviteFormData.role}
-                onChange={(e) => setInviteFormData({ ...inviteFormData, role: e.target.value })}
+                value={inviteFormData.assigned_role_id}
+                onChange={(e) => setInviteFormData({ ...inviteFormData, assigned_role_id: e.target.value })}
                 required
               >
-                <option value="team">Team Member</option>
-                <option value="admin">Admin</option>
+                <option value="">Select a role...</option>
+                {roles?.map((role: Role) => (
+                  <option key={role.id} value={role.id || ''}>
+                    {role.name}
+                    {role.is_super_admin && ' (Full Access)'}
+                  </option>
+                ))}
               </select>
-              <p className="text-xs text-gray-600 mt-1">
-                <strong>Team Member:</strong> Can manage bookings, payments, and guests.
-                <br />
-                <strong>Admin:</strong> Full access including team management and pricing.
-              </p>
+              {inviteFormData.assigned_role_id && (
+                <p className="text-xs text-gray-600 mt-1">
+                  {roles?.find((r: Role) => r.id === inviteFormData.assigned_role_id)?.description}
+                </p>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsInviteModalOpen(false)}>
@@ -293,12 +502,16 @@ export default function TeamPage() {
               <Label>Role</Label>
               <select
                 className="w-full px-3 py-2 border rounded-lg"
-                value={editFormData.role}
-                onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                value={editFormData.assigned_role_id}
+                onChange={(e) => setEditFormData({ ...editFormData, assigned_role_id: e.target.value })}
                 required
               >
-                <option value="team">Team Member</option>
-                <option value="admin">Admin</option>
+                <option value="">Select a role...</option>
+                {roles?.map((role: Role) => (
+                  <option key={role.id} value={role.id || ''}>
+                    {role.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -319,6 +532,133 @@ export default function TeamPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Create/Edit Modal */}
+      <Dialog open={isRoleModalOpen} onOpenChange={setIsRoleModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedRole ? 'Edit Role' : 'Create Role'}</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (selectedRole) {
+                updateRole.mutate({ id: selectedRole.id!, data: roleFormData });
+              } else {
+                createRole.mutate(roleFormData);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label>Role Name</Label>
+              <Input
+                type="text"
+                value={roleFormData.name}
+                onChange={(e) => setRoleFormData({ ...roleFormData, name: e.target.value })}
+                placeholder="e.g., Front Desk, Accounting"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input
+                type="text"
+                value={roleFormData.description}
+                onChange={(e) => setRoleFormData({ ...roleFormData, description: e.target.value })}
+                placeholder="Brief description of this role"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsRoleModalOpen(false);
+                  setSelectedRole(null);
+                  setRoleFormData({ name: '', description: '' });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createRole.isPending || updateRole.isPending}>
+                {selectedRole ? 'Save Changes' : 'Create Role'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permission Assignment Modal */}
+      <Dialog open={isPermissionModalOpen} onOpenChange={setIsPermissionModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Assign Permissions: {selectedRole?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {permissions && Object.entries(permissions).map(([group, perms]: [string, any]) => (
+              <div key={group} className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-3 capitalize">
+                  {group.replace('_', ' ')}
+                </h3>
+                <div className="space-y-2">
+                  {perms.map((perm: any) => (
+                    <div key={perm.code} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={perm.code}
+                        checked={selectedPermissions.includes(perm.code)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPermissions([...selectedPermissions, perm.code]);
+                          } else {
+                            setSelectedPermissions(
+                              selectedPermissions.filter((c) => c !== perm.code)
+                            );
+                          }
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor={perm.code} className="cursor-pointer flex-1">
+                        <span className="font-mono text-sm">{perm.code}</span>
+                        <span className="text-xs text-gray-600 ml-2">
+                          - {perm.description}
+                        </span>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsPermissionModalOpen(false);
+                setSelectedRole(null);
+                setSelectedPermissions([]);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedRole) {
+                  assignPermissions.mutate({
+                    roleId: selectedRole.id!,
+                    permissionCodes: selectedPermissions,
+                  });
+                }
+              }}
+              disabled={assignPermissions.isPending}
+            >
+              Save Permissions
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

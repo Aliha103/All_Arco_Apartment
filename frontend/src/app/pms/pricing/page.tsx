@@ -10,10 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import PricingRuleModal from '@/components/pms/PricingRuleModal';
+import { PricingRule } from '@/types';
 
 export default function PricingPage() {
   const queryClient = useQueryClient();
   const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<PricingRule | null>(null);
 
   const { data: settings } = useQuery({
     queryKey: ['pricing-settings'],
@@ -62,6 +66,38 @@ export default function PricingPage() {
       });
       setIsEditingSettings(true);
     }
+  };
+
+  // Delete rule mutation
+  const deleteRule = useMutation({
+    mutationFn: (ruleId: string) => api.pricing.deleteRule(ruleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pricing-rules'] });
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Failed to delete pricing rule');
+    },
+  });
+
+  const handleCreateRule = () => {
+    setSelectedRule(null);
+    setIsRuleModalOpen(true);
+  };
+
+  const handleEditRule = (rule: PricingRule) => {
+    setSelectedRule(rule);
+    setIsRuleModalOpen(true);
+  };
+
+  const handleDeleteRule = (rule: PricingRule) => {
+    if (confirm(`Delete pricing rule "${rule.name}"? This action cannot be undone.`)) {
+      deleteRule.mutate(rule.id);
+    }
+  };
+
+  const handleRuleModalClose = () => {
+    setIsRuleModalOpen(false);
+    setSelectedRule(null);
   };
 
   return (
@@ -188,7 +224,7 @@ export default function PricingPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Seasonal Pricing Rules</CardTitle>
-            <Button>Add New Rule</Button>
+            <Button onClick={handleCreateRule}>Add New Rule</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -205,7 +241,7 @@ export default function PricingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rules.map((rule: any) => (
+                {rules.map((rule: PricingRule) => (
                   <TableRow key={rule.id}>
                     <TableCell className="font-medium">{rule.name}</TableCell>
                     <TableCell>{formatDate(rule.start_date)}</TableCell>
@@ -214,14 +250,27 @@ export default function PricingPage() {
                       {formatCurrency(rule.nightly_rate)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={rule.is_active ? 'success' : 'secondary'}>
+                      <Badge className={rule.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                         {rule.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">Edit</Button>
-                        <Button variant="outline" size="sm">Delete</Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditRule(rule)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteRule(rule)}
+                          disabled={deleteRule.isPending}
+                        >
+                          Delete
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -233,6 +282,13 @@ export default function PricingPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pricing Rule Modal */}
+      <PricingRuleModal
+        isOpen={isRuleModalOpen}
+        onClose={handleRuleModalClose}
+        rule={selectedRule}
+      />
     </div>
   );
 }
