@@ -436,51 +436,59 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Image Grid */}
+            {/* Image Grid - Uses dynamic gallery images */}
             <motion.div variants={fadeInUp} className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-3 sm:space-y-4">
-                <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=2000&auto=format&fit=crop"
-                    alt="Living Room"
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    unoptimized
-                  />
-                </div>
-                <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2000&auto=format&fit=crop"
-                    alt="Kitchen"
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    unoptimized
-                  />
-                </div>
+                {galleryImages[0] && (
+                  <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
+                    <Image
+                      src={galleryImages[0].src}
+                      alt={galleryImages[0].alt}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized
+                    />
+                  </div>
+                )}
+                {galleryImages[1] && (
+                  <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
+                    <Image
+                      src={galleryImages[1].src}
+                      alt={galleryImages[1].alt}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized
+                    />
+                  </div>
+                )}
               </div>
               <div className="space-y-3 sm:space-y-4 pt-6 sm:pt-8">
-                <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=2000&auto=format&fit=crop"
-                    alt="Bedroom"
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    unoptimized
-                  />
-                </div>
-                <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?q=80&w=2000&auto=format&fit=crop"
-                    alt="Venice View"
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    unoptimized
-                  />
-                </div>
+                {galleryImages[2] && (
+                  <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
+                    <Image
+                      src={galleryImages[2].src}
+                      alt={galleryImages[2].alt}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized
+                    />
+                  </div>
+                )}
+                {galleryImages[3] && (
+                  <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
+                    <Image
+                      src={galleryImages[3].src}
+                      alt={galleryImages[3].alt}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized
+                    />
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -598,8 +606,8 @@ export default function Home() {
 
             <motion.div variants={fadeInUp} className="relative h-[300px] sm:h-[400px] lg:h-[450px] rounded-xl sm:rounded-2xl overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2000&auto=format&fit=crop"
-                alt="Venice Map Area"
+                src={heroImages[0]?.src || defaultHeroImages[0].src}
+                alt="Venice Location"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
