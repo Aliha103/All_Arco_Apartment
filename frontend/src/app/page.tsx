@@ -293,7 +293,7 @@ export default function Home() {
 
         {/* Image Indicators */}
         <div className="absolute bottom-32 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-          {heroImages.map((_, index) => (
+          {heroImages.map((_: { src: string; alt: string }, index: number) => (
             <button
               key={index}
               onClick={() => setCurrentImageIndex(index)}
