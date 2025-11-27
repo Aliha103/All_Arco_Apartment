@@ -619,30 +619,6 @@ export default function Home() {
         </div>
       </AnimatedSection>
 
-      {/* CTA Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-24 bg-[#C4A572]">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div variants={fadeInUp}>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-white mb-4 sm:mb-6">
-              Ready to Experience Venice?
-            </h2>
-            <p className="text-base sm:text-lg text-white/80 mb-6 sm:mb-8 max-w-xl mx-auto">
-              Book directly for the best rates and a complimentary welcome basket with local Venetian treats.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Button href="/book" variant="secondary" className="group">
-                Book Your Stay
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <Button href="mailto:support@allarcoapartment.com" variant="outline" external>
-                <Mail className="w-4 h-4" />
-                Contact Us
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </AnimatedSection>
-
       {/* Footer */}
       <SiteFooter />
     </div>
