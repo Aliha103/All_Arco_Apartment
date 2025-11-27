@@ -96,12 +96,12 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Account Type</p>
-                    <p className="font-semibold capitalize">{user.role}</p>
+                    <p className="font-semibold capitalize">{user.role_info?.name || 'Guest'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Member Since</p>
                     <p className="font-semibold">
-                      {new Date(user.date_joined).toLocaleDateString()}
+                      {new Date(user.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
