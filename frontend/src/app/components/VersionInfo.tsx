@@ -4,9 +4,21 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, X, Sparkles, Calendar, Shield, Globe } from 'lucide-react';
 
-const APP_VERSION = '1.1.3';
+const APP_VERSION = '1.1.4';
 
 const updates = [
+  {
+    version: '1.1.4',
+    date: 'November 2025',
+    icon: Calendar,
+    title: 'Improved Calendar & Pricing',
+    changes: [
+      'Larger calendar day cells',
+      'Better month spacing and typography',
+      'Price breakdown popup modal',
+      'Click outside to close popup',
+    ],
+  },
   {
     version: '1.1.3',
     date: 'November 2025',

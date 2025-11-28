@@ -2,6 +2,17 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.1.4] - 2025-11-28
+
+### Improved
+- **Larger Calendar**: Increased calendar size with bigger day cells (w-10 h-10), larger month gaps, and better typography
+- **Price Breakdown Popup**: Replaced inline accordion with a modal popup that closes on outside click
+  - Click "Breakdown Price" link to open
+  - Click outside or X button to close
+  - Clean modal design with detailed price info
+
+---
+
 ## [1.1.3] - 2025-11-28
 
 ### Changed

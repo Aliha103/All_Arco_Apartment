@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { DayPicker, DateRange } from 'react-day-picker';
 import { format, differenceInDays, startOfDay } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,8 +13,8 @@ import {
   CheckCircle2,
   Shield,
   Star,
-  ChevronDown,
   Calendar,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import 'react-day-picker/dist/style.css';
@@ -162,7 +162,7 @@ export default function BookingWidget() {
             </p>
           )}
 
-          {/* 2-Month Calendar */}
+          {/* 2-Month Calendar - Larger Size */}
           <DayPicker
             mode="range"
             selected={dateRange}
@@ -174,20 +174,20 @@ export default function BookingWidget() {
             showOutsideDays={false}
             className="!font-sans"
             classNames={{
-              months: 'flex flex-col sm:flex-row gap-3',
-              month: 'space-y-2',
-              caption: 'flex justify-center pt-1 relative items-center text-sm font-semibold text-gray-900',
-              caption_label: 'text-sm font-semibold',
+              months: 'flex flex-col sm:flex-row gap-6',
+              month: 'space-y-3',
+              caption: 'flex justify-center pt-1 relative items-center text-base font-semibold text-gray-900',
+              caption_label: 'text-base font-semibold',
               nav: 'space-x-1 flex items-center',
-              nav_button: 'h-6 w-6 bg-transparent p-0 hover:bg-gray-100 rounded-full inline-flex items-center justify-center text-gray-600',
+              nav_button: 'h-8 w-8 bg-transparent p-0 hover:bg-gray-100 rounded-full inline-flex items-center justify-center text-gray-600',
               nav_button_previous: 'absolute left-0',
               nav_button_next: 'absolute right-0',
               table: 'w-full border-collapse',
               head_row: 'flex',
-              head_cell: 'text-gray-500 rounded-md w-8 font-medium text-[0.65rem] text-center',
-              row: 'flex w-full mt-0.5',
-              cell: 'text-center text-xs p-0 relative [&:has([aria-selected].day-range-start)]:rounded-l-full [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected])]:bg-[#C4A572]/10',
-              day: 'h-8 w-8 p-0 font-normal hover:bg-gray-100 rounded-full transition-colors text-xs',
+              head_cell: 'text-gray-500 rounded-md w-10 font-medium text-xs text-center',
+              row: 'flex w-full mt-1',
+              cell: 'text-center text-sm p-0 relative [&:has([aria-selected].day-range-start)]:rounded-l-full [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected])]:bg-[#C4A572]/10',
+              day: 'h-10 w-10 p-0 font-normal hover:bg-gray-100 rounded-full transition-colors text-sm',
               day_selected: 'bg-[#C4A572] text-white hover:bg-[#B39562] rounded-full',
               day_today: 'bg-gray-100 font-semibold',
               day_outside: 'text-gray-300 opacity-50',
@@ -289,49 +289,22 @@ export default function BookingWidget() {
           {/* Price Section */}
           {pricing && (
             <div className="px-4 py-3 border-b border-gray-100">
-              <button
-                type="button"
-                onClick={() => setShowPriceBreakdown(!showPriceBreakdown)}
-                className="w-full flex items-center justify-between"
-              >
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <span className="text-base font-bold text-gray-900">Total</span>
                   <span className="text-[10px] text-gray-500">for {pricing.nights} nights</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-lg font-bold text-gray-900">€{pricing.total}</span>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showPriceBreakdown ? 'rotate-180' : ''}`} />
-                </div>
-              </button>
+                <span className="text-lg font-bold text-gray-900">€{pricing.total}</span>
+              </div>
 
-              <AnimatePresence>
-                {showPriceBreakdown && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="pt-2 mt-2 border-t border-gray-100 space-y-1 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">€{PRICING.baseNightlyRate} × {pricing.nights} nights</span>
-                        <span className="text-gray-900">€{pricing.accommodationTotal}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Cleaning fee</span>
-                        <span className="text-gray-900">€{pricing.cleaningFee}</span>
-                      </div>
-                      {pricing.petFee > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Pet fee</span>
-                          <span className="text-gray-900">€{pricing.petFee}</span>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Breakdown Price Link */}
+              <button
+                type="button"
+                onClick={() => setShowPriceBreakdown(true)}
+                className="mt-1 text-xs text-[#C4A572] hover:text-[#B39562] underline underline-offset-2 transition-colors"
+              >
+                Breakdown Price
+              </button>
 
               <div className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-700 bg-amber-50 px-2 py-1.5 rounded">
                 <Info className="w-3 h-3 flex-shrink-0" />
@@ -339,6 +312,65 @@ export default function BookingWidget() {
               </div>
             </div>
           )}
+
+          {/* Price Breakdown Popup Modal */}
+          <AnimatePresence>
+            {showPriceBreakdown && pricing && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+                onClick={() => setShowPriceBreakdown(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="bg-white rounded-xl shadow-2xl p-5 mx-4 w-full max-w-sm"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Price Breakdown</h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowPriceBreakdown(false)}
+                      className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">€{PRICING.baseNightlyRate} × {pricing.nights} nights</span>
+                      <span className="font-medium text-gray-900">€{pricing.accommodationTotal}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Cleaning fee</span>
+                      <span className="font-medium text-gray-900">€{pricing.cleaningFee}</span>
+                    </div>
+                    {pricing.petFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Pet fee</span>
+                        <span className="font-medium text-gray-900">€{pricing.petFee}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-gray-200 pt-3 flex justify-between">
+                      <span className="font-semibold text-gray-900">Total</span>
+                      <span className="font-bold text-lg text-gray-900">€{pricing.total}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+                      <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>+ €{pricing.cityTax} city tax payable at property ({pricing.cityTaxNights} nights × {guests.adults} adults × €{PRICING.cityTaxPerAdult})</span>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Reserve Button */}
           <div className="px-4 py-3">
