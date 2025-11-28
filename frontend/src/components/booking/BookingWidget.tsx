@@ -22,7 +22,6 @@ import 'react-day-picker/dist/style.css';
 // Pricing configuration
 const PRICING = {
   baseNightlyRate: 189,
-  serviceFeePercent: 0.12,
   maxGuestsCountable: 5,
   minNights: 2,
   maxNights: 30,
@@ -117,13 +116,11 @@ export default function BookingWidget() {
     const accommodationTotal = PRICING.baseNightlyRate * nights;
     const cleaningFee = nights <= 2 ? PRICING.cleaningFeeShort : PRICING.cleaningFeeLong;
     const petFee = hasPet ? (nights <= 2 ? PRICING.petFeeShort : PRICING.petFeeLong) : 0;
-    const subtotal = accommodationTotal + cleaningFee + petFee;
-    const serviceFee = Math.round(subtotal * PRICING.serviceFeePercent);
-    const total = subtotal + serviceFee;
+    const total = accommodationTotal + cleaningFee + petFee;
     const cityTaxNights = Math.min(nights, PRICING.cityTaxMaxNights);
     const cityTax = guests.adults * PRICING.cityTaxPerAdult * cityTaxNights;
 
-    return { nights, accommodationTotal, cleaningFee, petFee, serviceFee, total, cityTax, cityTaxNights };
+    return { nights, accommodationTotal, cleaningFee, petFee, total, cityTax, cityTaxNights };
   }, [dateRange, hasPet, guests.adults]);
 
   const nights = dateRange?.from && dateRange?.to ? differenceInDays(dateRange.to, dateRange.from) : 0;
@@ -215,20 +212,20 @@ export default function BookingWidget() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 lg:p-6 border-b border-gray-100 bg-[#C4A572]/5"
+              className="p-4 lg:p-6 border-b border-gray-100"
             >
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="w-4 h-4 text-[#C4A572]" />
                 <h3 className="text-sm font-semibold text-gray-900">Your stay</h3>
               </div>
-              <div className="flex items-center gap-4">
-                <div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 p-3 border border-gray-200 rounded-lg bg-gray-50">
                   <p className="text-xs text-gray-500 mb-1">Check-in</p>
                   <p className="text-sm font-semibold text-gray-900">{format(dateRange.from, 'EEE, MMM d')}</p>
                 </div>
                 <div className="text-gray-300">→</div>
                 {dateRange.to && (
-                  <div>
+                  <div className="flex-1 p-3 border border-gray-200 rounded-lg bg-gray-50">
                     <p className="text-xs text-gray-500 mb-1">Check-out</p>
                     <p className="text-sm font-semibold text-gray-900">{format(dateRange.to, 'EEE, MMM d')}</p>
                   </div>
@@ -347,10 +344,6 @@ export default function BookingWidget() {
                           <span className="text-gray-900">€{pricing.petFee}</span>
                         </div>
                       )}
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Service fee</span>
-                        <span className="text-gray-900">€{pricing.serviceFee}</span>
-                      </div>
                     </div>
                   </motion.div>
                 )}
