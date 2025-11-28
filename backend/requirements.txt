@@ -17,7 +17,7 @@ drf-spectacular==0.28.0
 redis==5.2.1
 django-redis==5.4.0
 celery==5.4.0
-django-celery-beat==2.7.0
+django-celery-beat==2.8.0
 
 # Payments
 stripe==11.4.1
