@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mail, Lock, ArrowRight, Eye, EyeOff, User as UserIcon, Phone,
-  ChevronLeft, CheckCircle2, Shield, Clock, CreditCard, MapPin
+  ChevronLeft, CheckCircle2, Shield, Clock, CreditCard, MapPin, Globe
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
@@ -56,6 +56,7 @@ export default function RegisterPage() {
     lastName: '',
     email: '',
     phone: '',
+    country: '',
     password: '',
     confirmPassword: '',
   });
@@ -90,6 +91,10 @@ export default function RegisterPage() {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       setError('Please enter a valid email address');
+      return false;
+    }
+    if (!formData.country.trim()) {
+      setError('Country is required');
       return false;
     }
     return true;
@@ -147,6 +152,7 @@ export default function RegisterPage() {
         first_name: formData.firstName,
         last_name: formData.lastName,
         phone: formData.phone,
+        country: formData.country,
       });
 
       if (response.data?.user) {
@@ -370,6 +376,72 @@ export default function RegisterPage() {
                           className="w-full pl-12 pr-4 py-4 bg-white/5 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                           placeholder="you@example.com"
                         />
+                      </div>
+                    </div>
+
+                    {/* Country Field */}
+                    <div>
+                      <label htmlFor="country" className="block text-sm font-medium text-gray-400 mb-2">
+                        Country
+                      </label>
+                      <div className="relative">
+                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                        <select
+                          id="country"
+                          name="country"
+                          value={formData.country}
+                          onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                          required
+                          className="w-full pl-12 pr-4 py-4 bg-white/5 border border-gray-800 rounded-xl text-white focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                        >
+                          <option value="" className="bg-[#1a1a1a] text-gray-400">Select your country</option>
+                          <option value="Italy" className="bg-[#1a1a1a]">Italy</option>
+                          <option value="United States" className="bg-[#1a1a1a]">United States</option>
+                          <option value="United Kingdom" className="bg-[#1a1a1a]">United Kingdom</option>
+                          <option value="Germany" className="bg-[#1a1a1a]">Germany</option>
+                          <option value="France" className="bg-[#1a1a1a]">France</option>
+                          <option value="Spain" className="bg-[#1a1a1a]">Spain</option>
+                          <option value="Netherlands" className="bg-[#1a1a1a]">Netherlands</option>
+                          <option value="Belgium" className="bg-[#1a1a1a]">Belgium</option>
+                          <option value="Austria" className="bg-[#1a1a1a]">Austria</option>
+                          <option value="Switzerland" className="bg-[#1a1a1a]">Switzerland</option>
+                          <option value="Portugal" className="bg-[#1a1a1a]">Portugal</option>
+                          <option value="Poland" className="bg-[#1a1a1a]">Poland</option>
+                          <option value="Sweden" className="bg-[#1a1a1a]">Sweden</option>
+                          <option value="Norway" className="bg-[#1a1a1a]">Norway</option>
+                          <option value="Denmark" className="bg-[#1a1a1a]">Denmark</option>
+                          <option value="Finland" className="bg-[#1a1a1a]">Finland</option>
+                          <option value="Ireland" className="bg-[#1a1a1a]">Ireland</option>
+                          <option value="Greece" className="bg-[#1a1a1a]">Greece</option>
+                          <option value="Czech Republic" className="bg-[#1a1a1a]">Czech Republic</option>
+                          <option value="Hungary" className="bg-[#1a1a1a]">Hungary</option>
+                          <option value="Romania" className="bg-[#1a1a1a]">Romania</option>
+                          <option value="Croatia" className="bg-[#1a1a1a]">Croatia</option>
+                          <option value="Slovenia" className="bg-[#1a1a1a]">Slovenia</option>
+                          <option value="Canada" className="bg-[#1a1a1a]">Canada</option>
+                          <option value="Australia" className="bg-[#1a1a1a]">Australia</option>
+                          <option value="New Zealand" className="bg-[#1a1a1a]">New Zealand</option>
+                          <option value="Japan" className="bg-[#1a1a1a]">Japan</option>
+                          <option value="China" className="bg-[#1a1a1a]">China</option>
+                          <option value="South Korea" className="bg-[#1a1a1a]">South Korea</option>
+                          <option value="India" className="bg-[#1a1a1a]">India</option>
+                          <option value="Brazil" className="bg-[#1a1a1a]">Brazil</option>
+                          <option value="Mexico" className="bg-[#1a1a1a]">Mexico</option>
+                          <option value="Argentina" className="bg-[#1a1a1a]">Argentina</option>
+                          <option value="Russia" className="bg-[#1a1a1a]">Russia</option>
+                          <option value="Turkey" className="bg-[#1a1a1a]">Turkey</option>
+                          <option value="South Africa" className="bg-[#1a1a1a]">South Africa</option>
+                          <option value="UAE" className="bg-[#1a1a1a]">United Arab Emirates</option>
+                          <option value="Saudi Arabia" className="bg-[#1a1a1a]">Saudi Arabia</option>
+                          <option value="Israel" className="bg-[#1a1a1a]">Israel</option>
+                          <option value="Singapore" className="bg-[#1a1a1a]">Singapore</option>
+                          <option value="Malaysia" className="bg-[#1a1a1a]">Malaysia</option>
+                          <option value="Thailand" className="bg-[#1a1a1a]">Thailand</option>
+                          <option value="Indonesia" className="bg-[#1a1a1a]">Indonesia</option>
+                          <option value="Philippines" className="bg-[#1a1a1a]">Philippines</option>
+                          <option value="Vietnam" className="bg-[#1a1a1a]">Vietnam</option>
+                          <option value="Other" className="bg-[#1a1a1a]">Other</option>
+                        </select>
                       </div>
                     </div>
 

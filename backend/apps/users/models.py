@@ -266,6 +266,8 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     phone = models.CharField(max_length=20, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)  # Required for registration
+    date_of_birth = models.DateField(blank=True, null=True)  # Optional, can add later
 
     # New dynamic role system (FK to Role model)
     assigned_role = models.ForeignKey(

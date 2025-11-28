@@ -39,6 +39,7 @@ class Booking(models.Model):
     guest_email = models.EmailField()
     guest_name = models.CharField(max_length=100)
     guest_phone = models.CharField(max_length=20)
+    guest_country = models.CharField(max_length=100)  # Required for booking
     guest_address = models.TextField(blank=True, null=True)
     
     check_in_date = models.DateField()
@@ -191,6 +192,101 @@ class Booking(models.Model):
 
         # All other active bookings block full range
         return (self.check_in_date, self.check_out_date)
+
+
+class BookingGuest(models.Model):
+    """
+    Guest information for check-in (Italian Alloggiati Web compliance).
+
+    For primary guest: all fields required
+    For other guests: email is optional
+
+    Italian citizen requirements:
+    - Must have birth_province and birth_city
+
+    Italian-issued document requirements:
+    - Must have document_issue_province and document_issue_city
+    """
+    DOCUMENT_TYPE_CHOICES = [
+        ('passport', 'Passport'),
+        ('id_card', 'ID Card'),
+        ('driving_license', 'Driving License'),
+        ('residence_permit', 'Residence Permit'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name='guests'
+    )
+
+    # Basic info
+    is_primary = models.BooleanField(default=False)  # Primary guest or additional
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    email = models.EmailField(blank=True, null=True)  # Required for primary, optional for others
+    date_of_birth = models.DateField()
+    country_of_birth = models.CharField(max_length=100)
+
+    # Italian citizen fields (required if country_of_birth is Italy)
+    birth_province = models.CharField(max_length=100, blank=True, null=True)
+    birth_city = models.CharField(max_length=100, blank=True, null=True)
+
+    # Document information
+    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES)
+    document_number = models.CharField(max_length=50)
+    document_issue_date = models.DateField()
+    document_expire_date = models.DateField()
+    document_issue_country = models.CharField(max_length=100)
+
+    # Italian-issued document fields (required if document_issue_country is Italy)
+    document_issue_province = models.CharField(max_length=100, blank=True, null=True)
+    document_issue_city = models.CharField(max_length=100, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'bookings_bookinggguest'
+        ordering = ['-is_primary', 'created_at']
+        indexes = [
+            models.Index(fields=['booking']),
+            models.Index(fields=['is_primary']),
+        ]
+
+    def __str__(self):
+        primary_str = ' (Primary)' if self.is_primary else ''
+        return f"{self.first_name} {self.last_name}{primary_str}"
+
+    def clean(self):
+        """Validate Italian-specific requirements."""
+        # If Italian citizen, must have birth province and city
+        if self.country_of_birth and self.country_of_birth.lower() in ['italy', 'italia', 'it']:
+            if not self.birth_province:
+                raise ValidationError('Birth province is required for Italian citizens')
+            if not self.birth_city:
+                raise ValidationError('Birth city is required for Italian citizens')
+
+        # If Italian-issued document, must have issue province and city
+        if self.document_issue_country and self.document_issue_country.lower() in ['italy', 'italia', 'it']:
+            if not self.document_issue_province:
+                raise ValidationError('Document issue province is required for Italian-issued documents')
+            if not self.document_issue_city:
+                raise ValidationError('Document issue city is required for Italian-issued documents')
+
+        # Primary guest must have email
+        if self.is_primary and not self.email:
+            raise ValidationError('Email is required for primary guest')
+
+        # Document expire date must be after issue date
+        if self.document_expire_date and self.document_issue_date:
+            if self.document_expire_date <= self.document_issue_date:
+                raise ValidationError('Document expire date must be after issue date')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class BlockedDate(models.Model):
