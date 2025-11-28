@@ -287,6 +287,24 @@ class User(AbstractUser):
     )
 
     is_active = models.BooleanField(default=True)
+
+    # Invitation/Referral System
+    reference_code = models.CharField(
+        max_length=12,
+        unique=True,
+        db_index=True,
+        blank=True,
+        null=True
+    )  # e.g., "ARK-ABC123XYZ" - Unique code for this user to invite others
+
+    referred_by = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invited_guests'
+    )  # Tracks who invited this user
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -402,7 +420,45 @@ class User(AbstractUser):
         # Set username to email if not provided
         if not self.username:
             self.username = self.email
+
+        # Generate reference code if not already set
+        if not self.reference_code:
+            self.reference_code = self._generate_reference_code()
+
         super().save(*args, **kwargs)
+
+    @staticmethod
+    def _generate_reference_code():
+        """
+        Generate a unique reference code for inviting others.
+        Format: ARCO-XXXXXXXXX (13 chars total)
+        """
+        import secrets
+        import string
+
+        # Characters to use (no confusing: 0/O, 1/I/l, etc.)
+        chars = string.ascii_uppercase + string.digits.replace('0', '').replace('1', '')
+
+        while True:
+            code_suffix = ''.join(secrets.choice(chars) for _ in range(8))
+            reference_code = f"ARCO-{code_suffix}"
+
+            # Ensure uniqueness
+            if not User.objects.filter(reference_code=reference_code).exists():
+                return reference_code
+
+    def get_invited_count(self):
+        """Get count of people invited by this user."""
+        return self.invited_guests.filter(is_active=True).count()
+
+    def get_referral_credits_earned(self):
+        """
+        Get total referral credits earned from invitations.
+        Returns sum of all credits from completed bookings of invited guests.
+        """
+        return self.referral_credits.filter(
+            status='earned'
+        ).aggregate(models.Sum('amount'))['amount__sum'] or 0
 
 
 class GuestNote(models.Model):
@@ -529,3 +585,93 @@ class PasswordResetToken(models.Model):
             return None, 'Code has expired. Please request a new one.'
 
         return reset_token, None
+
+
+# ============================================================================
+# Referral/Invitation Credit System
+# ============================================================================
+
+class ReferralCredit(models.Model):
+    """
+    Tracks referral credits earned when invited guests complete bookings.
+
+    When a guest (referred_user) books and completes checkout,
+    the person who invited them (referrer) earns 5€ per night.
+
+    Status flow: pending -> earned (when booking completes)
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),  # Booking created, waiting for checkout
+        ('earned', 'Earned'),  # Booking completed/checked out
+        ('cancelled', 'Cancelled'),  # Booking was cancelled
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # The person who invited (earns the credit)
+    referrer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='referral_credits'
+    )
+
+    # The person who was invited (created the booking)
+    referred_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='referral_earnings'
+    )
+
+    # The booking that triggered this credit
+    booking = models.ForeignKey(
+        'bookings.Booking',  # Forward reference
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='referral_credits'
+    )
+
+    # Credit amount (€5 per night)
+    amount = models.DecimalField(max_digits=8, decimal_places=2)  # e.g., 15.00 for 3 nights
+
+    # Number of nights in the booking
+    nights = models.IntegerField()
+
+    # Status of the credit
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        db_index=True
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    earned_at = models.DateTimeField(null=True, blank=True)  # When booking was completed
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'users_referralcredit'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['referrer', '-created_at']),
+            models.Index(fields=['referred_user']),
+            models.Index(fields=['status']),
+            models.Index(fields=['booking']),
+        ]
+
+    def __str__(self):
+        return f"€{self.amount} credit for {self.referrer.get_full_name()} (from {self.referred_user.get_full_name()})"
+
+    def mark_earned(self):
+        """Mark credit as earned when booking is completed."""
+        from django.utils import timezone
+
+        self.status = 'earned'
+        self.earned_at = timezone.now()
+        self.save(update_fields=['status', 'earned_at', 'updated_at'])
+
+    def mark_cancelled(self):
+        """Mark credit as cancelled if booking is cancelled."""
+        self.status = 'cancelled'
+        self.save(update_fields=['status', 'updated_at'])

@@ -72,6 +72,14 @@ export const api = {
       apiClient.post('/auth/password-reset/confirm/', data),
   },
 
+  // Referral/Invitations
+  referrals: {
+    getMyStats: () => apiClient.get('/referrals/me/'),
+    getInvitedGuests: () => apiClient.get('/referrals/invited-guests/'),
+    getReferralCredits: () => apiClient.get('/referrals/credits/'),
+    getAdminStats: () => apiClient.get('/referral-stats/'), // Admin view of all referrals
+  },
+
   // Bookings
   bookings: {
     list: (params?: any) => apiClient.get('/bookings/', { params }),

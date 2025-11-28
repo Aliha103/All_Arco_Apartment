@@ -154,12 +154,54 @@ class BookingViewSet(viewsets.ModelViewSet):
             # Dates are available and locked - safe to create booking
             booking = serializer.save(created_by=self.request.user)
 
+            # Create referral credit if user was referred
+            if booking.user and booking.user.referred_by:
+                from apps.users.models import ReferralCredit
+
+                # Calculate €5 per night
+                referral_amount = booking.nights * 5
+
+                ReferralCredit.objects.create(
+                    referrer=booking.user.referred_by,
+                    referred_user=booking.user,
+                    booking=booking,
+                    amount=referral_amount,
+                    nights=booking.nights,
+                    status='pending'  # Status will change to 'earned' on checkout
+                )
+
             # TODO: Send booking confirmation email asynchronously
             # Trigger audit log entry
             # (Will be implemented when audit log integration is added)
 
         return booking
-    
+
+    def perform_update(self, serializer):
+        """
+        Update booking and handle status changes.
+
+        When status changes to 'checked_out', mark any pending referral credits as earned.
+        """
+        from django.utils import timezone
+        from apps.users.models import ReferralCredit
+
+        # Get the old status before updating
+        booking = self.get_object()
+        old_status = booking.status
+
+        # Save the updated booking
+        updated_booking = serializer.save()
+
+        # If status changed to checked_out, mark referral credits as earned
+        if old_status != 'checked_out' and updated_booking.status == 'checked_out':
+            # Mark all pending credits for this booking as earned
+            ReferralCredit.objects.filter(
+                booking=updated_booking,
+                status='pending'
+            ).update(status='earned', earned_at=timezone.now())
+
+        return updated_booking
+
     @action(detail=True, methods=['post'])
     def send_email(self, request, pk=None):
         """Send booking confirmation email."""

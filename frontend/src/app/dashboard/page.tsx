@@ -204,6 +204,9 @@ export default function DashboardPage() {
           <Link href="/book">
             <Button>New Booking</Button>
           </Link>
+          <Link href="/dashboard/referrals">
+            <Button variant="outline">View Referrals & Credits</Button>
+          </Link>
           <Link href="/dashboard/profile">
             <Button variant="outline">Edit Profile</Button>
           </Link>

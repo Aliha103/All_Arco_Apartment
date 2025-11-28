@@ -42,6 +42,18 @@ export default function ReportsPage() {
     },
   });
 
+  const { data: referralStatsData, isLoading: referralLoading } = useQuery({
+    queryKey: ['referral-stats-admin'],
+    queryFn: async () => {
+      try {
+        const response = await api.referrals.getAdminStats();
+        return response.data;
+      } catch (error) {
+        return { referral_stats: [], total_users_with_referrals: 0 };
+      }
+    },
+  });
+
   // Calculate revenue metrics
   const calculateRevenueMetrics = () => {
     if (!allBookings || allBookings.length === 0) {
@@ -472,6 +484,60 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Referral Analytics */}
+      {referralStatsData?.referral_stats && referralStatsData.referral_stats.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Referral Program Analytics</h2>
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm text-gray-600">Users with Active Referrals</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{referralStatsData.total_users_with_referrals || 0}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm text-gray-600">Total Referral Credits Earned</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold text-green-600">
+                  €{(referralStatsData.referral_stats || [])
+                    .reduce((sum: number, r: any) => sum + parseFloat(r.credits_earned || 0), 0)
+                    .toFixed(2)}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Referrers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {referralStatsData.referral_stats.slice(0, 10).map((referrer: any, index: number) => (
+                  <div key={referrer.id} className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
+                      <div>
+                        <p className="font-medium">{referrer.name}</p>
+                        <p className="text-sm text-gray-600">{referrer.email}</p>
+                        <p className="text-xs text-gray-500 mt-1">Code: {referrer.reference_code}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-600">€{parseFloat(referrer.credits_earned || 0).toFixed(2)}</p>
+                      <p className="text-sm text-gray-600">{referrer.invited_count} people invited</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

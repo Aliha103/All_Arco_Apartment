@@ -30,8 +30,8 @@ const MapComponent = dynamic(() => import('./MapComponent'), {
 // DATA
 // ============================================================================
 const PROPERTY_LOCATION = {
-  lat: 45.4973,
-  lng: 12.2444,
+  lat: 45.499831,
+  lng: 12.227004,
   address: 'Via Castellana 61',
   city: 'Venice',
   country: 'Italy',

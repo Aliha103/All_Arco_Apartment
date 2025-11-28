@@ -1,12 +1,14 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
+from . import referral_views
 
 router = DefaultRouter()
 router.register(r'guests', views.GuestViewSet, basename='guest')
 router.register(r'team', views.TeamViewSet, basename='team')
 router.register(r'permissions', views.PermissionViewSet, basename='permission')
 router.register(r'roles', views.RoleViewSet, basename='role')
+router.register(r'referrals', referral_views.ReferralStatsViewSet, basename='referral')
 
 urlpatterns = [
     # Authentication
@@ -19,6 +21,9 @@ urlpatterns = [
 
     # RBAC Setup
     path('seed-rbac/', views.seed_rbac_data, name='seed_rbac'),
+
+    # Referral stats for team/admin
+    path('referral-stats/', referral_views.referral_stats, name='referral_stats'),
 
     # Router URLs
     path('', include(router.urls)),

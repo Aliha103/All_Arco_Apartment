@@ -20,17 +20,29 @@ class UserCreateSerializer(serializers.ModelSerializer):
     Serializer for user registration.
 
     Required: email, password, first_name, last_name, country
-    Optional: phone, date_of_birth (can add later)
+    Optional: phone, date_of_birth, invitation_code (referral code)
     """
     password = serializers.CharField(write_only=True, min_length=8)
     country = serializers.CharField(required=True, max_length=100)
     date_of_birth = serializers.DateField(required=False, allow_null=True)
+    invitation_code = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'first_name', 'last_name', 'phone', 'country', 'date_of_birth', 'role']
+        fields = ['email', 'password', 'first_name', 'last_name', 'phone', 'country', 'date_of_birth', 'invitation_code', 'role']
+
+    def validate_invitation_code(self, value):
+        """Validate that the invitation code exists if provided."""
+        if value:
+            try:
+                User.objects.get(reference_code=value.strip().upper())
+            except User.DoesNotExist:
+                raise serializers.ValidationError('Invalid invitation code. Please check and try again.')
+        return value.strip().upper() if value else None
 
     def create(self, validated_data):
+        invitation_code = validated_data.pop('invitation_code', None)
+
         user = User.objects.create_user(
             email=validated_data['email'],
             username=validated_data['email'],
@@ -42,6 +54,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
             date_of_birth=validated_data.get('date_of_birth'),
             role=validated_data.get('role', 'guest')
         )
+
+        # Handle invitation code
+        if invitation_code:
+            try:
+                referrer = User.objects.get(reference_code=invitation_code)
+                user.referred_by = referrer
+                user.save(update_fields=['referred_by'])
+            except User.DoesNotExist:
+                pass  # Already validated above
+
         return user
 
 
@@ -129,17 +151,22 @@ class RoleSerializer(serializers.ModelSerializer):
 class UserWithRoleSerializer(serializers.ModelSerializer):
     """
     Enhanced user serializer for /api/me endpoint.
-    Includes full role object and permissions array.
+    Includes full role object, permissions array, and invitation info.
     """
     role_info = serializers.SerializerMethodField()
     permissions = serializers.SerializerMethodField()
     is_super_admin = serializers.SerializerMethodField()
     is_team_member = serializers.SerializerMethodField()
+    reference_code = serializers.CharField(read_only=True)
+    invited_count = serializers.SerializerMethodField()
+    referral_credits_earned = serializers.SerializerMethodField()
+    referred_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'email', 'first_name', 'last_name', 'phone', 'country', 'date_of_birth',
+            'reference_code', 'invited_count', 'referral_credits_earned', 'referred_by_name',
             'role_info', 'permissions',
             'is_super_admin', 'is_team_member',
             'is_active', 'created_at', 'updated_at', 'last_login'
@@ -183,3 +210,17 @@ class UserWithRoleSerializer(serializers.ModelSerializer):
     def get_is_team_member(self, obj):
         """Check if user is team member."""
         return obj.is_team_member()
+
+    def get_invited_count(self, obj):
+        """Get count of people this user has invited."""
+        return obj.get_invited_count()
+
+    def get_referral_credits_earned(self, obj):
+        """Get total referral credits earned."""
+        return float(obj.get_referral_credits_earned())
+
+    def get_referred_by_name(self, obj):
+        """Get name of user who referred this user."""
+        if obj.referred_by:
+            return obj.referred_by.get_full_name()
+        return None

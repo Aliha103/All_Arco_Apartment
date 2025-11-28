@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mail, Lock, ArrowRight, Eye, EyeOff, User as UserIcon, Phone,
-  ChevronLeft, CheckCircle2, Shield, Clock, CreditCard, MapPin, Globe, Star, Quote, ChevronDown
+  ChevronLeft, CheckCircle2, Shield, Clock, CreditCard, MapPin, Globe, Star, Quote, ChevronDown, Gift
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
@@ -97,6 +97,7 @@ export default function RegisterPage() {
     email: '',
     phone: '',
     country: '',
+    invitationCode: '',
     password: '',
     confirmPassword: '',
   });
@@ -224,14 +225,21 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await api.auth.register({
+      const registrationData: any = {
         email: formData.email,
         password: formData.password,
         first_name: formData.firstName,
         last_name: formData.lastName,
         phone: formData.phone,
         country: formData.country,
-      });
+      };
+
+      // Add invitation code if provided
+      if (formData.invitationCode.trim()) {
+        registrationData.invitation_code = formData.invitationCode;
+      }
+
+      const response = await api.auth.register(registrationData);
 
       if (response.data?.user) {
         setUser(response.data.user);
@@ -586,6 +594,28 @@ export default function RegisterPage() {
                           placeholder="+39 123 456 7890"
                         />
                       </div>
+                    </div>
+
+                    {/* Invitation Code Field */}
+                    <div>
+                      <label htmlFor="invitationCode" className="block text-sm font-medium text-gray-400 mb-2">
+                        Invitation Code <span className="text-gray-600">(Optional)</span>
+                      </label>
+                      <div className="relative group">
+                        <Gift className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[#C4A572] transition-colors" />
+                        <input
+                          id="invitationCode"
+                          name="invitationCode"
+                          type="text"
+                          value={formData.invitationCode}
+                          onChange={handleInputChange}
+                          className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-gray-800 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all uppercase"
+                          placeholder="ARCO-XXXXXXXX"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1.5">
+                        If a friend invited you, enter their code to earn rewards
+                      </p>
                     </div>
                   </motion.div>
                 ) : (
