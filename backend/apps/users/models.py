@@ -434,3 +434,98 @@ class GuestNote(models.Model):
     
     def __str__(self):
         return f"Note for {self.guest.get_full_name()} by {self.created_by.get_full_name()}"
+
+
+class PasswordResetToken(models.Model):
+    """
+    Secure token for password reset flow.
+
+    Security features:
+    - Expires after 10 minutes
+    - One-time use (is_used flag)
+    - Linked to specific user account
+    - 6-digit numeric code for easy typing
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='password_reset_tokens'
+    )
+    token = models.CharField(max_length=6)  # 6-digit code
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'users_passwordresettoken'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['token', 'is_used']),
+            models.Index(fields=['user', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"Reset token for {self.user.email} (expires: {self.expires_at})"
+
+    @classmethod
+    def create_token(cls, user):
+        """
+        Create a new password reset token for a user.
+        Invalidates any existing unused tokens for the same user.
+        """
+        import secrets
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Invalidate existing unused tokens for this user
+        cls.objects.filter(user=user, is_used=False).update(is_used=True)
+
+        # Generate 6-digit numeric code
+        token = ''.join([str(secrets.randbelow(10)) for _ in range(6)])
+
+        # Token expires in 10 minutes
+        expires_at = timezone.now() + timedelta(minutes=10)
+
+        return cls.objects.create(
+            user=user,
+            token=token,
+            expires_at=expires_at
+        )
+
+    def is_valid(self):
+        """Check if token is still valid (not used and not expired)."""
+        from django.utils import timezone
+        return not self.is_used and self.expires_at > timezone.now()
+
+    def mark_used(self):
+        """Mark token as used."""
+        self.is_used = True
+        self.save()
+
+    @classmethod
+    def verify_token(cls, email, token):
+        """
+        Verify a token for a specific email.
+        Returns (user, error_message) tuple.
+        """
+        from django.utils import timezone
+
+        try:
+            user = User.objects.get(email=email.lower().strip())
+        except User.DoesNotExist:
+            return None, 'Invalid email or code'
+
+        try:
+            reset_token = cls.objects.get(
+                user=user,
+                token=token,
+                is_used=False
+            )
+        except cls.DoesNotExist:
+            return None, 'Invalid or expired code'
+
+        if reset_token.expires_at < timezone.now():
+            return None, 'Code has expired. Please request a new one.'
+
+        return reset_token, None

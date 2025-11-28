@@ -363,20 +363,29 @@ export default function ForgotPasswordPage() {
                     Check Your Email
                   </h2>
                   <p className="text-gray-400 leading-relaxed">
-                    If your email address is registered with us, you will receive an email with instructions to reset your password.
+                    If your email address is registered with us, you will receive an email with a 6-digit code to reset your password.
                   </p>
                 </div>
 
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-200 text-left">
-                      Don&apos;t forget to check your spam or junk folder if you don&apos;t see the email in your inbox.
-                    </p>
+                    <div className="text-sm text-amber-200 text-left space-y-1">
+                      <p>The code expires in <strong>10 minutes</strong>.</p>
+                      <p>Don&apos;t forget to check your spam folder if you don&apos;t see the email.</p>
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
+                  <Link
+                    href={`/auth/reset-password?email=${encodeURIComponent(email)}`}
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-[#C4A572] text-white rounded-xl font-medium hover:bg-[#B39562] transition-colors"
+                  >
+                    Enter Reset Code
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+
                   <button
                     onClick={() => setSuccess(false)}
                     className="w-full py-3 border border-gray-700 text-gray-300 rounded-xl font-medium hover:bg-white/5 transition-colors"
@@ -386,7 +395,7 @@ export default function ForgotPasswordPage() {
 
                   <Link
                     href="/auth/login"
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-[#C4A572] text-white rounded-xl font-medium hover:bg-[#B39562] transition-colors"
+                    className="flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-[#C4A572] transition-colors pt-2"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Back to login

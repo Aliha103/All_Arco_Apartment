@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import login, logout
 from django.db.models import Q
-from .models import User, GuestNote, Role, Permission
+from .models import User, GuestNote, Role, Permission, PasswordResetToken
 from .serializers import (
     UserSerializer, UserCreateSerializer, LoginSerializer, GuestNoteSerializer,
     UserWithRoleSerializer, RoleSerializer, PermissionSerializer
@@ -65,32 +65,24 @@ def logout_view(request):
 @permission_classes([AllowAny])
 def password_reset_view(request):
     """
-    Password reset endpoint.
-    Checks if email exists, generates new password, and sends email.
+    Password reset request endpoint.
+    Generates a 6-digit code that expires in 10 minutes.
     Always returns success for security (don't reveal if email exists).
     """
-    import secrets
-    import string
-
     email = request.data.get('email', '').lower().strip()
 
     if not email:
-        return Response({'message': 'If your email is registered, you will receive a password reset email.'})
+        return Response({'message': 'If your email is registered, you will receive a password reset code.'})
 
     try:
         user = User.objects.get(email=email)
 
-        # Generate a secure random password
-        alphabet = string.ascii_letters + string.digits
-        new_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+        # Create a secure reset token (invalidates any existing tokens)
+        reset_token = PasswordResetToken.create_token(user)
 
-        # Set the new password
-        user.set_password(new_password)
-        user.save()
-
-        # Send password reset email
+        # Send password reset email with the code
         from apps.emails.services import send_password_reset_email
-        send_password_reset_email(user, new_password)
+        send_password_reset_email(user, reset_token.token)
 
     except User.DoesNotExist:
         # Don't reveal that the email doesn't exist
@@ -98,7 +90,72 @@ def password_reset_view(request):
 
     # Always return success message for security
     return Response({
-        'message': 'If your email is registered, you will receive a password reset email.'
+        'message': 'If your email is registered, you will receive a password reset code.'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_confirm_view(request):
+    """
+    Password reset confirmation endpoint.
+    Verifies the 6-digit code and sets the new password.
+
+    Security:
+    - Code must match the email that requested it
+    - Code expires after 10 minutes
+    - Code is one-time use only
+    """
+    email = request.data.get('email', '').lower().strip()
+    code = request.data.get('code', '').strip()
+    new_password = request.data.get('new_password', '')
+
+    # Validate required fields
+    if not email or not code or not new_password:
+        return Response(
+            {'error': 'Email, code, and new password are required.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Validate password length
+    if len(new_password) < 8:
+        return Response(
+            {'error': 'Password must be at least 8 characters.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Verify the token
+    reset_token, error = PasswordResetToken.verify_token(email, code)
+
+    if error:
+        return Response(
+            {'error': error},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Set the new password
+    user = reset_token.user
+    user.set_password(new_password)
+    user.save()
+
+    # Mark token as used (prevents reuse)
+    reset_token.mark_used()
+
+    # Create audit log entry
+    from .models import AuditLog
+    AuditLog.objects.create(
+        user=user,
+        role_at_time=user.role_name,
+        action_type='auth.password_reset',
+        resource_type='user',
+        resource_id=str(user.id),
+        metadata={'email': user.email, 'method': 'code_verification'},
+        ip_address=request.META.get('REMOTE_ADDR'),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+    )
+
+    return Response({
+        'message': 'Password has been reset successfully. You can now log in with your new password.'
     })
 
 

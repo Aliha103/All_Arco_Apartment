@@ -68,7 +68,8 @@ export const api = {
     logout: () => apiClient.post('/auth/logout/'),
     me: () => apiClient.get('/auth/me/'),
     passwordReset: (email: string) => apiClient.post('/auth/password-reset/', { email }),
-    passwordResetConfirm: (data: any) => apiClient.post('/auth/password-reset-confirm/', data),
+    passwordResetConfirm: (data: { email: string; code: string; new_password: string }) =>
+      apiClient.post('/auth/password-reset/confirm/', data),
   },
 
   // Bookings
