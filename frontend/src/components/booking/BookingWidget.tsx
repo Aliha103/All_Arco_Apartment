@@ -181,6 +181,68 @@ function GuestCounter({
   );
 }
 
+// Compact Guest Counter for smaller panels
+function GuestCounterCompact({
+  label,
+  description,
+  value,
+  min = 0,
+  max = 10,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: number;
+  min?: number;
+  max?: number;
+  onChange: (value: number) => void;
+}) {
+  const decrease = useCallback(() => onChange(Math.max(min, value - 1)), [onChange, min, value]);
+  const increase = useCallback(() => onChange(Math.min(max, value + 1)), [onChange, max, value]);
+
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-900">{label}</span>
+        <span className="text-xs text-gray-400">{description}</span>
+      </div>
+      <div className="flex items-center gap-2" role="group" aria-label={`${label} counter`}>
+        <button
+          type="button"
+          onClick={decrease}
+          disabled={value <= min}
+          aria-label={`Decrease ${label}`}
+          className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center
+                     text-gray-500 transition-all duration-150 touch-manipulation
+                     hover:border-[#C4A572] hover:text-[#C4A572]
+                     focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-1
+                     disabled:opacity-30 disabled:cursor-not-allowed
+                     active:scale-95"
+        >
+          <Minus className="w-3.5 h-3.5" strokeWidth={2} />
+        </button>
+        <span className="w-6 text-center text-sm font-semibold text-gray-900 tabular-nums">
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={increase}
+          disabled={value >= max}
+          aria-label={`Increase ${label}`}
+          className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center
+                     text-gray-500 transition-all duration-150 touch-manipulation
+                     hover:border-[#C4A572] hover:text-[#C4A572]
+                     focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-1
+                     disabled:opacity-30 disabled:cursor-not-allowed
+                     active:scale-95"
+        >
+          <Plus className="w-3.5 h-3.5" strokeWidth={2} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Price Breakdown Modal
 function PriceModal({
   isOpen,
@@ -492,30 +554,26 @@ export default function BookingWidget() {
 
           {/* Booking Details Section */}
           <div className="w-full lg:w-[360px] flex flex-col">
-            {/* Selected Dates */}
+            {/* Selected Dates - Compact */}
             <AnimatePresence>
               {dateRange?.from && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="p-6 border-b border-gray-100"
+                  className="px-5 py-4 border-b border-gray-100"
                 >
-                  <div className="flex items-center gap-2 mb-4">
-                    <Calendar className="w-5 h-5 text-[#C4A572]" />
-                    <h3 className="font-semibold text-gray-900">Your stay</h3>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-1 p-4 bg-gray-50 rounded-2xl">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Check-in</p>
-                      <p className="text-lg font-semibold text-gray-900">
+                  <div className="flex gap-3">
+                    <div className="flex-1 p-3 bg-gray-50 rounded-xl">
+                      <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Check-in</p>
+                      <p className="text-sm font-semibold text-gray-900">
                         {format(dateRange.from, 'EEE, MMM d')}
                       </p>
                     </div>
                     {dateRange.to && (
-                      <div className="flex-1 p-4 bg-gray-50 rounded-2xl">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Check-out</p>
-                        <p className="text-lg font-semibold text-gray-900">
+                      <div className="flex-1 p-3 bg-gray-50 rounded-xl">
+                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Check-out</p>
+                        <p className="text-sm font-semibold text-gray-900">
                           {format(dateRange.to, 'EEE, MMM d')}
                         </p>
                       </div>
@@ -525,159 +583,128 @@ export default function BookingWidget() {
               )}
             </AnimatePresence>
 
-            {/* Guests */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between mb-2">
+            {/* Guests - Compact */}
+            <div className="px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-[#C4A572]" />
-                  <h3 className="font-semibold text-gray-900">Guests</h3>
+                  <Users className="w-4 h-4 text-[#C4A572]" />
+                  <h3 className="text-sm font-semibold text-gray-900">Guests</h3>
                 </div>
-                <span className="text-sm text-gray-400">Max {CONFIG.guests.maxTotal}</span>
+                <span className="text-xs text-gray-400">Max {CONFIG.guests.maxTotal}</span>
               </div>
 
-              <div className="divide-y divide-gray-100">
-                <GuestCounter
+              <div className="divide-y divide-gray-50">
+                <GuestCounterCompact
                   label="Adults"
-                  description="Age 13+"
+                  description="13+"
                   value={guests.adults}
                   min={1}
                   max={maxAdults}
                   onChange={(v) => handleGuestChange('adults', v)}
                 />
-                <GuestCounter
+                <GuestCounterCompact
                   label="Children"
-                  description="Ages 2-12"
+                  description="2-12"
                   value={guests.children}
                   max={maxChildren}
                   onChange={(v) => handleGuestChange('children', v)}
                 />
-                <GuestCounter
+                <GuestCounterCompact
                   label="Infants"
-                  description="Under 2 (free)"
+                  description="Free"
                   value={guests.infants}
                   max={CONFIG.guests.maxInfants}
                   onChange={(v) => handleGuestChange('infants', v)}
                 />
               </div>
 
-              {/* Pet Toggle */}
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+              {/* Pet Toggle - Modern Switch */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                 <div className="flex items-center gap-2">
-                  <PawPrint className="w-5 h-5 text-[#C4A572]" />
-                  <span className="font-medium text-gray-900">Traveling with pet?</span>
+                  <PawPrint className="w-4 h-4 text-[#C4A572]" />
+                  <span className="text-sm font-medium text-gray-900">Pet</span>
                 </div>
-                <div className="flex rounded-xl overflow-hidden border-2 border-gray-200" role="radiogroup">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={!hasPet}
-                    onClick={() => setHasPet(false)}
-                    className={`px-5 py-2 text-sm font-semibold transition-all touch-manipulation
-                               focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-inset
-                               ${!hasPet
-                                 ? 'bg-[#C4A572] text-white'
-                                 : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                  >
-                    No
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={hasPet}
-                    onClick={() => setHasPet(true)}
-                    className={`px-5 py-2 text-sm font-semibold transition-all border-l-2 border-gray-200 touch-manipulation
-                               focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-inset
-                               ${hasPet
-                                 ? 'bg-[#C4A572] text-white'
-                                 : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                  >
-                    Yes
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={hasPet}
+                  onClick={() => setHasPet(!hasPet)}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 touch-manipulation
+                             focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2
+                             ${hasPet ? 'bg-[#C4A572]' : 'bg-gray-200'}`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm
+                               transition-transform duration-200 ${hasPet ? 'translate-x-5' : 'translate-x-0'}`}
+                  />
+                </button>
               </div>
             </div>
 
-            {/* Pricing */}
+            {/* Pricing - Compact */}
             <AnimatePresence>
               {pricing && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="p-6 border-b border-gray-100"
+                  className="px-5 py-4 border-b border-gray-100"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-xl font-bold text-gray-900">Total</span>
-                      <span className="text-sm text-gray-500 ml-2">for {pricing.nights} nights</span>
+                      <span className="text-base font-bold text-gray-900">Total</span>
+                      <span className="text-xs text-gray-400 ml-1">{pricing.nights} nights</span>
                     </div>
                     <div className="text-right">
                       {pricing.discount > 0 && (
-                        <span className="text-sm text-gray-400 line-through mr-2">€{pricing.subtotal}</span>
+                        <span className="text-xs text-gray-400 line-through mr-1">€{pricing.subtotal}</span>
                       )}
-                      <span className="text-2xl font-bold text-gray-900">€{pricing.total}</span>
+                      <span className="text-xl font-bold text-gray-900">€{pricing.total}</span>
                     </div>
                   </div>
 
-                  {pricing.discount > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="flex items-center gap-2 mb-3 text-emerald-600"
+                  <div className="flex items-center justify-between mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowPriceModal(true)}
+                      className="text-xs text-[#C4A572] hover:text-[#B39562] font-medium underline underline-offset-2
+                                 transition-colors focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2 rounded"
                     >
-                      <Percent className="w-4 h-4" />
-                      <span className="text-sm font-medium">You save €{pricing.discount} ({pricing.discountPercent}% off)</span>
-                    </motion.div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPriceModal(true)}
-                    className="text-sm text-[#C4A572] hover:text-[#B39562] font-medium underline underline-offset-4
-                               transition-colors focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2 rounded"
-                  >
-                    View price breakdown
-                  </button>
-
-                  <div className="mt-4 flex items-start gap-2 p-3 bg-amber-50 rounded-xl">
-                    <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-700">
-                      + €{pricing.cityTax} city tax at property
-                    </p>
+                      View breakdown
+                    </button>
+                    <span className="text-xs text-amber-600">+ €{pricing.cityTax} city tax</span>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Reserve Button */}
-            <div className="p-6">
+            {/* Reserve Button - Compact */}
+            <div className="px-5 py-4">
               <Link
                 href={isValidBooking ? bookingUrl : '#'}
                 onClick={(e) => !isValidBooking && e.preventDefault()}
-                className={`block w-full py-4 rounded-2xl font-semibold text-center text-lg transition-all
+                className={`block w-full py-3 rounded-xl font-semibold text-center text-base transition-all
                            focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation
                            ${isValidBooking
-                             ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white hover:shadow-xl hover:shadow-[#C4A572]/25 active:scale-[0.98] focus:ring-[#C4A572]'
+                             ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white hover:shadow-lg hover:shadow-[#C4A572]/25 active:scale-[0.98] focus:ring-[#C4A572]'
                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                            }`}
                 aria-disabled={!isValidBooking}
               >
-                {isValidBooking ? `Reserve · €${pricing?.total}` : 'Select dates to book'}
+                {isValidBooking ? `Reserve · €${pricing?.total}` : 'Select dates'}
               </Link>
 
-              {/* Trust Badges */}
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <div className="flex justify-center gap-6">
-                  {[
-                    { icon: CheckCircle2, label: 'Free cancellation', color: 'text-emerald-500' },
-                    { icon: Shield, label: 'Secure payment', color: 'text-blue-500' },
-                    { icon: Star, label: 'Best price', color: 'text-amber-500' },
-                  ].map(({ icon: Icon, label, color }) => (
-                    <div key={label} className="flex items-center gap-1.5 text-gray-500">
-                      <Icon className={`w-4 h-4 ${color}`} />
-                      <span className="text-xs font-medium">{label}</span>
-                    </div>
-                  ))}
-                </div>
+              {/* Trust Badges - Compact */}
+              <div className="flex justify-center gap-4 mt-3">
+                {[
+                  { icon: CheckCircle2, label: 'Free cancel', color: 'text-emerald-500' },
+                  { icon: Shield, label: 'Secure', color: 'text-blue-500' },
+                  { icon: Star, label: 'Best price', color: 'text-amber-500' },
+                ].map(({ icon: Icon, label, color }) => (
+                  <div key={label} className="flex items-center gap-1 text-gray-400">
+                    <Icon className={`w-3 h-3 ${color}`} />
+                    <span className="text-[10px] font-medium">{label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
