@@ -20,15 +20,7 @@ import {
   Waves,
   Building,
   Quote,
-  ShieldCheck,
-  Clock,
-  MessageCircle,
-  Globe2,
   Award,
-  KeyRound,
-  Sparkles,
-  Heart,
-  CheckCircle2,
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
@@ -84,33 +76,13 @@ const highlights = [
   { icon: Bath, value: '1', unit: '', label: 'Bathroom' },
 ];
 
-// Host information - hospitality standard
+// Host information
 const hostInfo = {
   name: 'Ali Hassan Cheema',
-  avatar: null, // Will show initials if no avatar
   isSuperhost: true,
-  responseRate: 100,
-  responseTime: 'within an hour',
-  languages: ['English', 'Italian', 'Urdu'],
-  joinedYear: 2020,
+  languages: ['English', 'Italian'],
   totalReviews: 59,
-  rating: 9.8,
 };
-
-// Guest favorites - what guests love most
-const guestFavorites = [
-  { icon: MapPin, text: 'Great location', detail: '95% of guests gave 5 stars' },
-  { icon: Sparkles, text: 'Spotless clean', detail: '98% cleanliness rating' },
-  { icon: KeyRound, text: 'Self check-in', detail: 'Smart lock access' },
-  { icon: MessageCircle, text: 'Great communication', detail: 'Fast responses' },
-];
-
-// Property certifications
-const certifications = [
-  { icon: ShieldCheck, label: 'Verified listing' },
-  { icon: Award, label: 'Superhost' },
-  { icon: CheckCircle2, label: 'Enhanced clean' },
-];
 
 const reviews = [
   {
@@ -418,227 +390,131 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* About Section - Hospitality Industry Standard */}
+      {/* About Section - Clean & Simple */}
       <AnimatedSection className="py-16 sm:py-20 lg:py-28" id="about">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Trust Badges Bar */}
-          <motion.div
-            variants={fadeInUp}
-            className="flex flex-wrap justify-center gap-4 sm:gap-8 mb-12 sm:mb-16 pb-8 border-b border-gray-100"
-          >
-            {certifications.map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2 text-gray-600">
-                <Icon className="w-5 h-5 text-[#C4A572]" />
-                <span className="text-sm font-medium">{label}</span>
-              </div>
-            ))}
-          </motion.div>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+            {/* Left - Content */}
+            <motion.div variants={fadeInUp} className="space-y-8">
+              {/* Title */}
+              <div>
+                <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">The Apartment</span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-6 leading-tight">
+                  Your Private Sanctuary in Venice
+                </h2>
 
-          <div className="grid lg:grid-cols-5 gap-10 lg:gap-12">
-            {/* Left Column - Content (3 cols) */}
-            <motion.div variants={fadeInUp} className="lg:col-span-3 space-y-8">
-              {/* Header with Host */}
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
-                <div className="flex-1">
-                  <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Entire apartment</span>
-                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-2 mb-3 leading-tight">
-                    All&apos;Arco Apartment
-                  </h2>
-                  <p className="text-gray-600 text-base sm:text-lg">
-                    {highlights.map(h => `${h.value}${h.unit} ${h.label.toLowerCase()}`).join(' · ')}
+                {/* Description */}
+                <div className="space-y-4 text-gray-600 text-base sm:text-lg leading-relaxed">
+                  <p>
+                    Nestled in the historic Castello district, All&apos;Arco Apartment offers an authentic
+                    Venetian experience with modern luxury. This beautifully appointed apartment combines
+                    traditional Venetian architecture with contemporary design.
+                  </p>
+                  <p>
+                    Wake up to enchanting canal views, enjoy your morning espresso on the terrace,
+                    and experience Venice like a true local. Just 17 minutes from the iconic Rialto Bridge.
                   </p>
                 </div>
-
-                {/* Host Avatar */}
-                <div className="flex-shrink-0">
-                  <div className="relative">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white text-xl sm:text-2xl font-semibold shadow-lg">
-                      {hostInfo.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    {hostInfo.isSuperhost && (
-                      <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md">
-                        <Award className="w-5 h-5 text-[#C4A572]" />
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
 
-              {/* Guest Favorites - What guests love */}
-              <div className="bg-gradient-to-r from-[#FBF9F6] to-[#F5F0E8] rounded-2xl p-5 sm:p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Heart className="w-5 h-5 text-rose-500" />
-                  <h3 className="font-semibold text-gray-900">Guest favorites</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {guestFavorites.map(({ icon: Icon, text, detail }) => (
-                    <div key={text} className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-5 h-5 text-[#C4A572]" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">{text}</p>
-                        <p className="text-xs text-gray-500">{detail}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-4">
-                <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-                  Nestled in the historic <span className="font-medium text-gray-900">Castello district</span>,
-                  All&apos;Arco Apartment offers an authentic Venetian experience with modern luxury.
-                  This beautifully appointed 85m² apartment with 2 bedrooms combines traditional
-                  Venetian architecture with contemporary design.
-                </p>
-                <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-                  Wake up to enchanting <span className="font-medium text-gray-900">canal views</span>,
-                  enjoy your morning espresso on the terrace, and experience Venice like a true local.
-                  Just <span className="font-medium text-gray-900">17 minutes</span> walk from the iconic Rialto Bridge.
-                </p>
-              </div>
-
-              {/* Property Highlights - Larger Cards */}
-              <div className="grid grid-cols-4 gap-3 sm:gap-4">
+              {/* Property Stats */}
+              <div className="grid grid-cols-4 gap-4">
                 {highlights.map(({ icon: Icon, value, unit, label }) => (
-                  <motion.div
-                    key={label}
-                    className="text-center p-4 sm:p-5 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md hover:border-[#C4A572]/30 transition-all"
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
+                  <div key={label} className="text-center">
                     <Icon className="w-6 h-6 text-[#C4A572] mx-auto mb-2" />
-                    <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                      {value}<span className="text-sm font-normal text-gray-500">{unit}</span>
+                    <div className="text-2xl sm:text-3xl font-semibold text-gray-900">
+                      {value}<span className="text-sm font-normal text-gray-400">{unit}</span>
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-500 mt-1">{label}</div>
-                  </motion.div>
+                    <div className="text-xs text-gray-500 mt-1">{label}</div>
+                  </div>
                 ))}
               </div>
 
-              {/* Host Card - Hospitality Standard */}
-              <motion.div
-                variants={fadeInUp}
-                className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Host Avatar */}
-                  <div className="relative flex-shrink-0">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white text-lg font-semibold">
-                      {hostInfo.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    {hostInfo.isSuperhost && (
-                      <div className="absolute -bottom-1 -right-1 bg-[#C4A572] rounded-full p-0.5">
-                        <Award className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Host Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-semibold text-gray-900">Hosted by {hostInfo.name.split(' ')[0]}</h4>
-                      {hostInfo.isSuperhost && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
-                          <Award className="w-3 h-3" />
-                          Superhost
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                      Hosting since {hostInfo.joinedYear} · {hostInfo.totalReviews} reviews
-                    </p>
-
-                    {/* Host Stats */}
-                    <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Star className="w-4 h-4 text-[#C4A572] fill-[#C4A572]" />
-                        <span className="font-medium">{hostInfo.rating}</span>
-                        <span className="text-gray-500">rating</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600">Replies {hostInfo.responseTime}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Globe2 className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600">{hostInfo.languages.join(', ')}</span>
-                      </div>
-                    </div>
-                  </div>
+              {/* Host Info - Simple */}
+              <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold">
+                  {hostInfo.name.split(' ').map(n => n[0]).join('')}
                 </div>
-              </motion.div>
+                <div>
+                  <p className="font-medium text-gray-900">Hosted by {hostInfo.name}</p>
+                  <p className="text-sm text-gray-500">{hostInfo.totalReviews} reviews · {hostInfo.languages.slice(0, 2).join(', ')}</p>
+                </div>
+                {hostInfo.isSuperhost && (
+                  <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
+                    <Award className="w-3.5 h-3.5" />
+                    Superhost
+                  </span>
+                )}
+              </div>
             </motion.div>
 
-            {/* Right Column - Images (2 cols) */}
-            <motion.div variants={fadeInUp} className="lg:col-span-2">
-              <div className="grid grid-cols-2 gap-3 sticky top-24">
+            {/* Right - Images */}
+            <motion.div variants={fadeInUp}>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-3">
-                  <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
+                  <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100">
                     {galleryImages[0] ? (
                       <Image
                         src={galleryImages[0].src}
-                        alt={galleryImages[0].alt || 'Living space'}
+                        alt={galleryImages[0].alt || 'Apartment'}
                         fill
-                        className="object-cover hover:scale-105 transition-transform duration-700"
-                        sizes="(max-width: 768px) 50vw, 20vw"
+                        className="object-cover hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 768px) 50vw, 25vw"
                         unoptimized={galleryImages[0].src.startsWith('http')}
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                        {isLoadingGallery ? 'Loading...' : 'Living Space'}
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+                        <Maximize className="w-8 h-8" />
                       </div>
                     )}
                   </div>
-                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
+                  <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100">
                     {galleryImages[1] ? (
                       <Image
                         src={galleryImages[1].src}
-                        alt={galleryImages[1].alt || 'Kitchen'}
+                        alt={galleryImages[1].alt || 'Apartment'}
                         fill
-                        className="object-cover hover:scale-105 transition-transform duration-700"
-                        sizes="(max-width: 768px) 50vw, 20vw"
+                        className="object-cover hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 768px) 50vw, 25vw"
                         unoptimized={galleryImages[1].src.startsWith('http')}
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                        {isLoadingGallery ? 'Loading...' : 'Kitchen'}
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+                        <Maximize className="w-8 h-8" />
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="space-y-3 pt-8">
-                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
+                <div className="space-y-3 pt-6">
+                  <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100">
                     {galleryImages[2] ? (
                       <Image
                         src={galleryImages[2].src}
-                        alt={galleryImages[2].alt || 'Bedroom'}
+                        alt={galleryImages[2].alt || 'Apartment'}
                         fill
-                        className="object-cover hover:scale-105 transition-transform duration-700"
-                        sizes="(max-width: 768px) 50vw, 20vw"
+                        className="object-cover hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 768px) 50vw, 25vw"
                         unoptimized={galleryImages[2].src.startsWith('http')}
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                        {isLoadingGallery ? 'Loading...' : 'Bedroom'}
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+                        <Maximize className="w-8 h-8" />
                       </div>
                     )}
                   </div>
-                  <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
+                  <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100">
                     {galleryImages[3] ? (
                       <Image
                         src={galleryImages[3].src}
-                        alt={galleryImages[3].alt || 'Venice view'}
+                        alt={galleryImages[3].alt || 'Apartment'}
                         fill
-                        className="object-cover hover:scale-105 transition-transform duration-700"
-                        sizes="(max-width: 768px) 50vw, 20vw"
+                        className="object-cover hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 768px) 50vw, 25vw"
                         unoptimized={galleryImages[3].src.startsWith('http')}
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-                        {isLoadingGallery ? 'Loading...' : 'Venice View'}
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+                        <Maximize className="w-8 h-8" />
                       </div>
                     )}
                   </div>
