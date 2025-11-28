@@ -19,12 +19,12 @@ import {
   Coffee,
   Waves,
   Building,
-  Quote,
   Award,
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
 import BookingWidget from '@/components/booking/BookingWidget';
+import ReviewsSection from '@/components/reviews/ReviewsSection';
 import { api } from '@/lib/api';
 
 // Smooth easing for all animations
@@ -83,30 +83,6 @@ const hostInfo = {
   languages: ['English', 'Italian'],
   totalReviews: 59,
 };
-
-const reviews = [
-  {
-    name: 'Sarah & Michael',
-    location: 'New York, USA',
-    rating: 5,
-    text: 'An absolutely magical stay in Venice! The apartment exceeded all expectations. The location is perfect - quiet yet close to everything.',
-    date: 'October 2024',
-  },
-  {
-    name: 'Emma Laurent',
-    location: 'Paris, France',
-    rating: 5,
-    text: 'Bellissimo! The attention to detail is remarkable. Waking up to canal views with my morning espresso was unforgettable.',
-    date: 'September 2024',
-  },
-  {
-    name: 'Hans & Greta',
-    location: 'Munich, Germany',
-    rating: 5,
-    text: 'Perfect for our honeymoon. The hosts were incredibly helpful and the apartment is beautifully designed.',
-    date: 'August 2024',
-  },
-];
 
 const nearbyAttractions = [
   { name: 'Rialto Bridge', distance: '17 min' },
@@ -691,51 +667,7 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Reviews Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeInUp} className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-            <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Reviews</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mt-3 mb-4">
-              What Our Guests Say
-            </h2>
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-              <div className="flex items-center gap-0.5 sm:gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-[#C4A572] text-[#C4A572]" />
-                ))}
-              </div>
-              <span className="text-xl sm:text-2xl font-semibold text-gray-900">9.8</span>
-              <span className="text-sm sm:text-base text-gray-500">from 59 reviews</span>
-            </div>
-          </motion.div>
-
-          <motion.div variants={staggerContainer} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-            {reviews.map((review, i) => (
-              <motion.div
-                key={i}
-                variants={fadeInUp}
-                className="bg-gray-50 p-5 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl relative"
-                whileHover={{ y: -4 }}
-              >
-                <Quote className="w-8 h-8 sm:w-10 sm:h-10 text-[#C4A572]/20 absolute top-4 sm:top-6 right-4 sm:right-6" />
-                <div className="flex items-center gap-0.5 mb-3 sm:mb-4">
-                  {[...Array(review.rating)].map((_, j) => (
-                    <Star key={j} className="w-3 h-3 sm:w-4 sm:h-4 fill-[#C4A572] text-[#C4A572]" />
-                  ))}
-                </div>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6">&ldquo;{review.text}&rdquo;</p>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm sm:text-base font-semibold text-gray-900">{review.name}</p>
-                    <p className="text-xs sm:text-sm text-gray-500">{review.location}</p>
-                  </div>
-                  <span className="text-[10px] sm:text-xs text-gray-400">{review.date}</span>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </AnimatedSection>
+      <ReviewsSection />
 
       {/* Footer */}
       <SiteFooter />
