@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, memo } from 'react';
+import { useMemo } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import dynamic from 'next/dynamic';
@@ -66,14 +66,12 @@ const FEATURES = [
 // ============================================================================
 // ANIMATION CONFIG
 // ============================================================================
-const smoothEase = [0.25, 0.1, 0.25, 1];
-
 const fadeIn = {
   hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: smoothEase }
+    transition: { duration: 0.7, ease: "easeOut" as const }
   },
 };
 
@@ -135,7 +133,7 @@ export default function LocationSection() {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ duration: 0.8, ease: smoothEase, delay: 0.2 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
             className="lg:col-span-3 relative"
           >
             <div className="relative h-[400px] sm:h-[450px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl shadow-black/10">
@@ -149,7 +147,7 @@ export default function LocationSection() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.6, duration: 0.5, ease: smoothEase }}
+                transition={{ delay: 0.6, duration: 0.5, ease: "easeOut" }}
                 className="absolute bottom-6 left-6 right-6"
               >
                 <div className="bg-white rounded-2xl p-5 shadow-xl">
@@ -201,7 +199,7 @@ export default function LocationSection() {
                     key={transport.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={isInView ? { opacity: 1, x: 0 } : {}}
-                    transition={{ delay: 0.4 + i * 0.1, duration: 0.4, ease: smoothEase }}
+                    transition={{ delay: 0.4 + i * 0.1, duration: 0.4, ease: "easeOut" }}
                     className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-300"
                   >
                     <div className={`w-10 h-10 rounded-lg ${transport.color} flex items-center justify-center`}>
@@ -232,7 +230,7 @@ export default function LocationSection() {
                     key={item.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ delay: 0.5 + i * 0.05, duration: 0.4, ease: smoothEase }}
+                    transition={{ delay: 0.5 + i * 0.05, duration: 0.4, ease: "easeOut" }}
                     className={`p-3 rounded-xl transition-all duration-300 ${
                       item.featured
                         ? 'bg-gradient-to-br from-[#C4A572]/10 to-[#C4A572]/5 border border-[#C4A572]/20'
@@ -257,7 +255,7 @@ export default function LocationSection() {
                     key={feature.title}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                    transition={{ delay: 0.7 + i * 0.1, duration: 0.4, ease: smoothEase }}
+                    transition={{ delay: 0.7 + i * 0.1, duration: 0.4, ease: "easeOut" }}
                     className="text-center"
                   >
                     <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-2">
