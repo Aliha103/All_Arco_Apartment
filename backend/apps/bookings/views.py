@@ -505,6 +505,259 @@ class BlockedDateViewSet(viewsets.ModelViewSet):
     queryset = BlockedDate.objects.all()
     serializer_class = BlockedDateSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+
+# ============================================================================
+# Public Booking Lookup API (No Authentication Required)
+# ============================================================================
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def public_booking_lookup(request):
+    """
+    Public endpoint to find a booking by confirmation number and email.
+
+    Both booking_id (confirmation) and email must match exactly.
+    Returns booking details for guest self-service.
+
+    Request body:
+    - confirmation: string (booking_id like ARK-20241128-0001)
+    - email: string (guest email)
+
+    Returns sanitized booking data (no internal notes, no user details).
+    """
+    confirmation = request.data.get('confirmation', '').strip().upper()
+    email = request.data.get('email', '').strip().lower()
+
+    if not confirmation or not email:
+        return Response(
+            {'error': 'Both confirmation number and email are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Find booking where BOTH confirmation AND email match
+    try:
+        booking = Booking.objects.get(
+            booking_id__iexact=confirmation,
+            guest_email__iexact=email
+        )
+    except Booking.DoesNotExist:
+        return Response(
+            {
+                'error': 'No booking found',
+                'message': 'We could not find a booking matching this confirmation number and email. Please verify your details and try again.'
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Return sanitized booking data (exclude internal fields)
+    return Response({
+        'booking': {
+            'id': str(booking.id),
+            'booking_id': booking.booking_id,
+            'guest_name': booking.guest_name,
+            'guest_email': booking.guest_email,
+            'guest_phone': booking.guest_phone,
+            'guest_country': booking.guest_country,
+            'check_in_date': booking.check_in_date.isoformat(),
+            'check_out_date': booking.check_out_date.isoformat(),
+            'nights': booking.nights,
+            'number_of_guests': booking.number_of_guests,
+            'status': booking.status,
+            'status_display': booking.get_status_display(),
+            'payment_status': booking.payment_status,
+            'payment_status_display': booking.get_payment_status_display(),
+            'nightly_rate': float(booking.nightly_rate),
+            'cleaning_fee': float(booking.cleaning_fee),
+            'tourist_tax': float(booking.tourist_tax),
+            'total_price': float(booking.total_price),
+            'special_requests': booking.special_requests,
+            'created_at': booking.created_at.isoformat(),
+            # Check if check-in data exists
+            'has_checkin_data': booking.guests.filter(is_primary=True).exists(),
+            'guests_count': booking.guests.count(),
+            # Check if linked to user account
+            'has_account': booking.user is not None,
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def public_booking_update(request):
+    """
+    Public endpoint to update guest details on a booking.
+
+    Requires confirmation + email verification before allowing updates.
+    Only allows updating: guest_name, guest_phone, special_requests
+
+    Request body:
+    - confirmation: string (booking_id)
+    - email: string (guest email for verification)
+    - updates: object with fields to update (guest_name, guest_phone, special_requests)
+    """
+    confirmation = request.data.get('confirmation', '').strip().upper()
+    email = request.data.get('email', '').strip().lower()
+    updates = request.data.get('updates', {})
+
+    if not confirmation or not email:
+        return Response(
+            {'error': 'Both confirmation number and email are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Find and verify booking
+    try:
+        booking = Booking.objects.get(
+            booking_id__iexact=confirmation,
+            guest_email__iexact=email
+        )
+    except Booking.DoesNotExist:
+        return Response(
+            {'error': 'Booking not found or email does not match'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Check if booking can be modified
+    if booking.status in ['cancelled', 'checked_out']:
+        return Response(
+            {'error': f'Cannot modify a {booking.get_status_display()} booking'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Allowed fields for guest self-service update
+    allowed_fields = ['guest_name', 'guest_phone', 'special_requests']
+    updated_fields = []
+
+    for field in allowed_fields:
+        if field in updates and updates[field] is not None:
+            setattr(booking, field, updates[field])
+            updated_fields.append(field)
+
+    if not updated_fields:
+        return Response(
+            {'error': 'No valid fields to update'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    booking.save(update_fields=updated_fields + ['updated_at'])
+
+    return Response({
+        'message': 'Booking updated successfully',
+        'updated_fields': updated_fields,
+        'booking': {
+            'id': str(booking.id),
+            'booking_id': booking.booking_id,
+            'guest_name': booking.guest_name,
+            'guest_phone': booking.guest_phone,
+            'special_requests': booking.special_requests,
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def public_booking_checkin(request):
+    """
+    Public endpoint for guest online check-in.
+
+    Allows guests to submit their check-in information (ID documents, etc.)
+    before arrival. Required for Italian Alloggiati Web compliance.
+
+    Request body:
+    - confirmation: string (booking_id)
+    - email: string (guest email for verification)
+    - guests: array of guest objects with check-in data
+    """
+    from .models import BookingGuest
+
+    confirmation = request.data.get('confirmation', '').strip().upper()
+    email = request.data.get('email', '').strip().lower()
+    guests_data = request.data.get('guests', [])
+
+    if not confirmation or not email:
+        return Response(
+            {'error': 'Both confirmation number and email are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if not guests_data:
+        return Response(
+            {'error': 'At least one guest is required for check-in'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Find and verify booking
+    try:
+        booking = Booking.objects.get(
+            booking_id__iexact=confirmation,
+            guest_email__iexact=email
+        )
+    except Booking.DoesNotExist:
+        return Response(
+            {'error': 'Booking not found or email does not match'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Check if booking can accept check-in data
+    if booking.status in ['cancelled', 'checked_out']:
+        return Response(
+            {'error': f'Cannot check in for a {booking.get_status_display()} booking'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Process guests
+    created_guests = []
+    errors = []
+
+    with transaction.atomic():
+        # Clear existing guests if re-submitting
+        booking.guests.all().delete()
+
+        for i, guest_data in enumerate(guests_data):
+            try:
+                guest = BookingGuest(
+                    booking=booking,
+                    is_primary=(i == 0),  # First guest is primary
+                    first_name=guest_data.get('first_name', ''),
+                    last_name=guest_data.get('last_name', ''),
+                    email=guest_data.get('email') if i == 0 else guest_data.get('email', ''),
+                    date_of_birth=guest_data.get('date_of_birth'),
+                    country_of_birth=guest_data.get('country_of_birth', ''),
+                    birth_province=guest_data.get('birth_province'),
+                    birth_city=guest_data.get('birth_city'),
+                    document_type=guest_data.get('document_type', ''),
+                    document_number=guest_data.get('document_number', ''),
+                    document_issue_date=guest_data.get('document_issue_date'),
+                    document_expire_date=guest_data.get('document_expire_date'),
+                    document_issue_country=guest_data.get('document_issue_country', ''),
+                    document_issue_province=guest_data.get('document_issue_province'),
+                    document_issue_city=guest_data.get('document_issue_city'),
+                )
+                guest.full_clean()
+                guest.save()
+                created_guests.append({
+                    'id': str(guest.id),
+                    'name': f"{guest.first_name} {guest.last_name}",
+                    'is_primary': guest.is_primary
+                })
+            except Exception as e:
+                errors.append({
+                    'guest_index': i,
+                    'error': str(e)
+                })
+
+    if errors:
+        return Response({
+            'error': 'Some guests could not be added',
+            'details': errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'message': 'Check-in information submitted successfully',
+        'guests': created_guests,
+        'booking_id': booking.booking_id
+    })

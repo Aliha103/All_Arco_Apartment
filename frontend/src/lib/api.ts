@@ -85,6 +85,13 @@ export const api = {
     calendar: (year: number, month: number) =>
       apiClient.get('/calendar/month/', { params: { year, month } }),
     statistics: () => apiClient.get('/reports/bookings-summary/'),
+    // Public booking lookup (no auth required)
+    lookup: (confirmation: string, email: string) =>
+      apiClient.post('/bookings/lookup/', { confirmation, email }),
+    lookupUpdate: (confirmation: string, email: string, updates: any) =>
+      apiClient.post('/bookings/lookup/update/', { confirmation, email, updates }),
+    lookupCheckin: (confirmation: string, email: string, guests: any[]) =>
+      apiClient.post('/bookings/lookup/checkin/', { confirmation, email, guests }),
   },
 
   // Blocked Dates
