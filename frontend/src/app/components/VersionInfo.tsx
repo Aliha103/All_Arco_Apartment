@@ -2,129 +2,69 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Zap, Wrench, Image } from 'lucide-react';
+import { HelpCircle, X, Sparkles, Calendar, Shield, Globe } from 'lucide-react';
 
-const APP_VERSION = '1.0.9';
+const APP_VERSION = '1.1.1';
 
 const updates = [
+  {
+    version: '1.1.1',
+    date: 'November 2025',
+    icon: Sparkles,
+    title: 'Improved Booking UX',
+    changes: [
+      'Compact collapsible date/guest pickers',
+      'Click-outside-to-close dropdowns',
+      'Trust badges with booking benefits',
+      'Gradient reserve button with total',
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: 'November 2025',
+    icon: Calendar,
+    title: 'Advanced Booking Widget',
+    changes: [
+      'Guest types: adults, children, infants',
+      'Dynamic cleaning & pet fees',
+      'City tax calculation (€4/adult/night)',
+      'Price breakdown with service fee',
+    ],
+  },
   {
     version: '1.0.9',
     date: 'November 2025',
     icon: Globe,
-    title: 'Full Responsive',
+    title: 'Full Responsive Design',
     changes: [
-      'Mobile-first responsive design',
+      'Mobile-first responsive layout',
       'Touch-friendly interactions',
-      'Keyboard accessible components',
-      'Optimized for all screen sizes',
+      'Keyboard accessibility',
+      'All sections fit to screen',
     ],
   },
   {
     version: '1.0.8',
     date: 'November 2025',
-    icon: Calendar,
-    title: 'Advanced Booking',
+    icon: Sparkles,
+    title: 'Premium Booking Experience',
     changes: [
-      'Always-visible 2-month calendar',
-      'Adults, children & infants selection',
-      'Dynamic cleaning & pet fees',
-      'City tax calculation display',
+      'Guest type counters with limits',
+      'Pet option with cleaning fees',
+      'Real-time price breakdown',
+      'Service fee calculations',
     ],
   },
   {
     version: '1.0.7',
     date: 'November 2025',
-    icon: Sparkles,
-    title: 'Premium Experience',
-    changes: [
-      'Cinematic Ken Burns hero carousel',
-      'Premium About section redesign',
-      'Animated rating score display',
-      'Hospitality-grade reviews section',
-    ],
-  },
-  {
-    version: '1.0.6',
-    date: 'November 2025',
-    icon: Calendar,
-    title: 'Booking Widget',
-    changes: [
-      'Interactive date range calendar',
-      'Guest selector (adults & children)',
-      'Real-time price breakdown',
-      'Direct booking from homepage',
-    ],
-  },
-  {
-    version: '1.0.5',
-    date: 'November 2025',
-    icon: Image,
-    title: 'Gallery Management',
-    changes: [
-      'Admin gallery management dashboard',
-      'Upload hero & gallery images',
-      'Dynamic homepage images from API',
-      'Image ordering & status controls',
-    ],
-  },
-  {
-    version: '1.0.4',
-    date: 'November 2025',
-    icon: Wrench,
-    title: 'Infrastructure & Fixes',
-    changes: [
-      'Celery background tasks enabled',
-      'Fixed favicon display issue',
-      'Cleaner homepage design',
-      'All services running smoothly',
-    ],
-  },
-  {
-    version: '1.0.3',
-    date: 'November 2025',
-    icon: Zap,
-    title: 'Major Upgrades',
-    changes: [
-      'Node.js 25, React 19.2, Next.js 16',
-      'Django 5.1.4 backend',
-      'Zeptomail multi-sender emails',
-      'Latest dependencies',
-    ],
-  },
-  {
-    version: '1.0.2',
-    date: 'November 2025',
-    icon: Globe,
-    title: 'UX Improvements',
-    changes: [
-      'Smooth mobile navigation',
-      'Auto-scrolling hero images',
-      'Improved footer design',
-      'Professional animations',
-    ],
-  },
-  {
-    version: '1.0.1',
-    date: 'November 2025',
     icon: Shield,
-    title: 'Policies & Legal',
+    title: 'Premium UI Enhancements',
     changes: [
-      'Privacy Policy (GDPR compliant)',
-      'Terms of Service',
-      'Cancellation Policy',
-      'Cookie Policy',
-    ],
-  },
-  {
-    version: '1.0.0',
-    date: 'November 2025',
-    icon: Sparkles,
-    title: 'Initial Release',
-    changes: [
-      'Luxury apartment booking system',
-      'Secure payment processing',
-      'Guest dashboard & reservations',
-      'Mobile-responsive design',
+      'Ken Burns effect hero carousel',
+      'Animated rating display',
+      'Enhanced reviews section',
+      'Premium About section',
     ],
   },
 ];

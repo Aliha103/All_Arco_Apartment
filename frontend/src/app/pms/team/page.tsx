@@ -170,7 +170,7 @@ export default function TeamPage() {
   const handleEdit = (member: any) => {
     setSelectedMember(member);
     setEditFormData({
-      assigned_role_id: member.role_info?.id || '',
+      assigned_role_id: member.assigned_role_id || '',
       is_active: member.is_active,
     });
     setIsEditModalOpen(true);
