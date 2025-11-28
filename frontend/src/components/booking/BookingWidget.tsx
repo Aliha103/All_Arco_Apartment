@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { DayPicker, DateRange } from 'react-day-picker';
-import { format, differenceInDays, startOfDay, addMonths } from 'date-fns';
+import { format, differenceInDays, startOfDay } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -11,6 +11,8 @@ import {
   Minus,
   Plus,
   CheckCircle2,
+  Shield,
+  Star,
 } from 'lucide-react';
 import Link from 'next/link';
 import 'react-day-picker/dist/style.css';
@@ -126,7 +128,7 @@ export default function BookingWidget() {
 
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-      {/* Header */}
+      {/* Header - Price */}
       <div className="p-5 bg-gradient-to-r from-[#1a1a2e] to-[#16213e] text-white">
         <div className="flex items-center justify-between">
           <div>
@@ -143,29 +145,30 @@ export default function BookingWidget() {
         </div>
       </div>
 
-      {/* Calendar Section - Always Visible */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900">Select your dates</h3>
-          {dateRange?.from && dateRange?.to && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-sm text-[#C4A572] font-medium"
-            >
-              {nights} night{nights !== 1 ? 's' : ''} selected
-            </motion.div>
+      {/* Main Content - Horizontal on large screens */}
+      <div className="flex flex-col lg:flex-row">
+        {/* Left: Calendar */}
+        <div className="p-4 lg:p-6 lg:border-r border-b lg:border-b-0 border-gray-100 flex-shrink-0">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-900">Select your dates</h3>
+            {dateRange?.from && dateRange?.to && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-sm text-[#C4A572] font-medium"
+              >
+                {nights} night{nights !== 1 ? 's' : ''} selected
+              </motion.div>
+            )}
+          </div>
+
+          {nights > 0 && nights < PRICING.minNights && (
+            <p className="text-xs text-red-500 mb-3 bg-red-50 p-2 rounded-lg">
+              Minimum stay: {PRICING.minNights} nights
+            </p>
           )}
-        </div>
 
-        {nights > 0 && nights < PRICING.minNights && (
-          <p className="text-xs text-red-500 mb-3 bg-red-50 p-2 rounded-lg">
-            Minimum stay: {PRICING.minNights} nights
-          </p>
-        )}
-
-        {/* 2-Month Calendar */}
-        <div className="flex justify-center">
+          {/* 2-Month Calendar - Always side by side on lg+ */}
           <DayPicker
             mode="range"
             selected={dateRange}
@@ -175,7 +178,7 @@ export default function BookingWidget() {
             onMonthChange={setCurrentMonth}
             disabled={[{ before: today }]}
             showOutsideDays={false}
-            className="!font-sans rdp-custom"
+            className="!font-sans"
             classNames={{
               months: 'flex flex-col sm:flex-row gap-4',
               month: 'space-y-3',
@@ -200,147 +203,166 @@ export default function BookingWidget() {
               day_range_middle: 'aria-selected:bg-transparent aria-selected:text-gray-900',
             }}
           />
+
+          {/* Selected Dates Display */}
+          {dateRange?.from && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 flex items-center justify-center gap-3 text-sm"
+            >
+              <div className="bg-gray-50 px-4 py-2 rounded-lg">
+                <span className="text-gray-500">Check-in:</span>{' '}
+                <span className="font-semibold text-gray-900">{format(dateRange.from, 'EEE, MMM d')}</span>
+              </div>
+              {dateRange.to && (
+                <>
+                  <span className="text-gray-300">→</span>
+                  <div className="bg-gray-50 px-4 py-2 rounded-lg">
+                    <span className="text-gray-500">Check-out:</span>{' '}
+                    <span className="font-semibold text-gray-900">{format(dateRange.to, 'EEE, MMM d')}</span>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
         </div>
 
-        {/* Selected Dates Display */}
-        {dateRange?.from && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 flex items-center justify-center gap-3 text-sm"
-          >
-            <div className="bg-gray-50 px-4 py-2 rounded-lg">
-              <span className="text-gray-500">Check-in:</span>{' '}
-              <span className="font-semibold text-gray-900">{format(dateRange.from, 'EEE, MMM d')}</span>
+        {/* Right: Guests + Pricing + Reserve */}
+        <div className="flex-1 flex flex-col min-w-[280px] lg:min-w-[320px]">
+          {/* Guests Section */}
+          <div className="p-4 lg:p-6 border-b border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="w-4 h-4 text-[#C4A572]" />
+              <h3 className="text-sm font-semibold text-gray-900">Guests</h3>
+              <span className="text-xs text-gray-400 ml-auto">Max 5 guests</span>
             </div>
-            {dateRange.to && (
-              <>
-                <span className="text-gray-300">→</span>
-                <div className="bg-gray-50 px-4 py-2 rounded-lg">
-                  <span className="text-gray-500">Check-out:</span>{' '}
-                  <span className="font-semibold text-gray-900">{format(dateRange.to, 'EEE, MMM d')}</span>
+
+            <div className="space-y-4">
+              <GuestCounter
+                label="Adults"
+                sublabel="Age 13+"
+                value={guests.adults}
+                onChange={(v) => handleGuestChange('adults', v)}
+                min={1}
+                max={maxAdults}
+              />
+              <GuestCounter
+                label="Children"
+                sublabel="Ages 2-12"
+                value={guests.children}
+                onChange={(v) => handleGuestChange('children', v)}
+                max={maxChildren}
+              />
+              <GuestCounter
+                label="Infants"
+                sublabel="Under 2 (free)"
+                value={guests.infants}
+                onChange={(v) => handleGuestChange('infants', v)}
+                max={3}
+              />
+
+              {/* Pet Toggle */}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <PawPrint className="w-4 h-4 text-[#C4A572]" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Traveling with pet?</p>
+                    <p className="text-xs text-gray-500">
+                      +€{nights <= 2 || nights === 0 ? PRICING.petFeeShort : PRICING.petFeeLong} fee
+                    </p>
+                  </div>
                 </div>
-              </>
-            )}
-          </motion.div>
-        )}
-      </div>
-
-      {/* Guests Section */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-4 h-4 text-[#C4A572]" />
-          <h3 className="text-sm font-semibold text-gray-900">Guests</h3>
-          <span className="text-xs text-gray-400 ml-auto">Max 5 guests</span>
-        </div>
-
-        <div className="space-y-4">
-          <GuestCounter
-            label="Adults"
-            sublabel="Age 13+"
-            value={guests.adults}
-            onChange={(v) => handleGuestChange('adults', v)}
-            min={1}
-            max={maxAdults}
-          />
-          <GuestCounter
-            label="Children"
-            sublabel="Ages 2-12"
-            value={guests.children}
-            onChange={(v) => handleGuestChange('children', v)}
-            max={maxChildren}
-          />
-          <GuestCounter
-            label="Infants"
-            sublabel="Under 2 (free)"
-            value={guests.infants}
-            onChange={(v) => handleGuestChange('infants', v)}
-            max={3}
-          />
-
-          {/* Pet Toggle */}
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-2">
-              <PawPrint className="w-4 h-4 text-[#C4A572]" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Traveling with pet?</p>
-                <p className="text-xs text-gray-500">
-                  +€{nights <= 2 || nights === 0 ? PRICING.petFeeShort : PRICING.petFeeLong} fee
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setHasPet(!hasPet)}
+                  className={`w-12 h-7 rounded-full transition-all duration-200 relative ${
+                    hasPet ? 'bg-[#C4A572]' : 'bg-gray-200'
+                  }`}
+                >
+                  <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
+                    hasPet ? 'translate-x-5' : 'translate-x-0.5'
+                  }`} />
+                </button>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setHasPet(!hasPet)}
-              className={`w-12 h-7 rounded-full transition-all duration-200 relative ${
-                hasPet ? 'bg-[#C4A572]' : 'bg-gray-200'
+          </div>
+
+          {/* Price Breakdown */}
+          {pricing && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="p-4 lg:p-6 border-b border-gray-100 bg-gray-50"
+            >
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Price details</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">€{PRICING.baseNightlyRate} × {pricing.nights} nights</span>
+                  <span className="text-gray-900 font-medium">€{pricing.accommodationTotal}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Cleaning fee</span>
+                  <span className="text-gray-900 font-medium">€{pricing.cleaningFee}</span>
+                </div>
+                {pricing.petFee > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Pet fee</span>
+                    <span className="text-gray-900 font-medium">€{pricing.petFee}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Service fee</span>
+                  <span className="text-gray-900 font-medium">€{pricing.serviceFee}</span>
+                </div>
+                <div className="flex justify-between pt-3 border-t border-gray-200 text-base font-bold">
+                  <span>Total</span>
+                  <span>€{pricing.total}</span>
+                </div>
+              </div>
+
+              {/* City Tax Notice */}
+              <div className="mt-3 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg">
+                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  City tax €{pricing.cityTax} ({guests.adults} × €{PRICING.cityTaxPerAdult} × {pricing.cityTaxNights} nights) payable at property
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Reserve Button - Grows to fill remaining space */}
+          <div className="p-4 lg:p-6 mt-auto">
+            <Link
+              href={isValidRange ? `/book?checkIn=${format(dateRange!.from!, 'yyyy-MM-dd')}&checkOut=${format(dateRange!.to!, 'yyyy-MM-dd')}&adults=${guests.adults}&children=${guests.children}&infants=${guests.infants}&pet=${hasPet}` : '#'}
+              onClick={(e) => !isValidRange && e.preventDefault()}
+              className={`block w-full py-4 rounded-xl font-semibold text-center text-lg transition-all ${
+                isValidRange
+                  ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white hover:shadow-lg hover:shadow-[#C4A572]/30 active:scale-[0.98]'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
-              <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                hasPet ? 'translate-x-5' : 'translate-x-0.5'
-              }`} />
-            </button>
+              {isValidRange ? `Reserve · €${pricing?.total}` : 'Select dates to book'}
+            </Link>
+            <p className="text-xs text-gray-400 text-center mt-2">You won&apos;t be charged yet</p>
+
+            {/* Trust badges */}
+            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap justify-center gap-4 text-xs text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <span>Free cancellation</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <span>Secure payment</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Star className="w-4 h-4 text-amber-500" />
+                <span>Best price</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Price Breakdown */}
-      {pricing && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="p-4 border-b border-gray-100 bg-gray-50"
-        >
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Price details</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">€{PRICING.baseNightlyRate} × {pricing.nights} nights</span>
-              <span className="text-gray-900 font-medium">€{pricing.accommodationTotal}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Cleaning fee</span>
-              <span className="text-gray-900 font-medium">€{pricing.cleaningFee}</span>
-            </div>
-            {pricing.petFee > 0 && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Pet fee</span>
-                <span className="text-gray-900 font-medium">€{pricing.petFee}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray-600">Service fee</span>
-              <span className="text-gray-900 font-medium">€{pricing.serviceFee}</span>
-            </div>
-            <div className="flex justify-between pt-3 border-t border-gray-200 text-base font-bold">
-              <span>Total</span>
-              <span>€{pricing.total}</span>
-            </div>
-          </div>
-
-          {/* City Tax Notice */}
-          <div className="mt-3 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg">
-            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span>
-              City tax €{pricing.cityTax} ({guests.adults} × €{PRICING.cityTaxPerAdult} × {pricing.cityTaxNights} nights) payable at property
-            </span>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Reserve Button */}
-      <div className="p-4">
-        <Link
-          href={isValidRange ? `/book?checkIn=${format(dateRange!.from!, 'yyyy-MM-dd')}&checkOut=${format(dateRange!.to!, 'yyyy-MM-dd')}&adults=${guests.adults}&children=${guests.children}&infants=${guests.infants}&pet=${hasPet}` : '#'}
-          onClick={(e) => !isValidRange && e.preventDefault()}
-          className={`block w-full py-4 rounded-xl font-semibold text-center text-lg transition-all ${
-            isValidRange
-              ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white hover:shadow-lg hover:shadow-[#C4A572]/30 active:scale-[0.98]'
-              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-          }`}
-        >
-          {isValidRange ? `Reserve · €${pricing?.total}` : 'Select dates to book'}
-        </Link>
-        <p className="text-xs text-gray-400 text-center mt-2">You won't be charged yet</p>
       </div>
     </div>
   );
