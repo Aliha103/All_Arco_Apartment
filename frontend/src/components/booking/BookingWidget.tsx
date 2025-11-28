@@ -145,24 +145,24 @@ export default function BookingWidget() {
 
       {/* Main Content - Horizontal on large screens */}
       <div className="flex flex-col lg:flex-row lg:items-start">
-        {/* Left: Calendar */}
-        <div className="p-4 lg:border-r border-b lg:border-b-0 border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900">Select your dates</h3>
+        {/* Left: Calendar - Large */}
+        <div className="p-5 lg:p-6 lg:border-r border-b lg:border-b-0 border-gray-100 flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-gray-900">Select your dates</h3>
             {dateRange?.from && dateRange?.to && (
-              <span className="text-xs text-[#C4A572] font-medium">
+              <span className="text-sm text-[#C4A572] font-medium">
                 {nights} night{nights !== 1 ? 's' : ''}
               </span>
             )}
           </div>
 
           {nights > 0 && nights < PRICING.minNights && (
-            <p className="text-xs text-red-500 mb-2 bg-red-50 px-2 py-1 rounded">
+            <p className="text-xs text-red-500 mb-3 bg-red-50 px-3 py-1.5 rounded">
               Min. {PRICING.minNights} nights
             </p>
           )}
 
-          {/* 2-Month Calendar - Larger Size */}
+          {/* 2-Month Calendar - Extra Large */}
           <DayPicker
             mode="range"
             selected={dateRange}
@@ -174,20 +174,20 @@ export default function BookingWidget() {
             showOutsideDays={false}
             className="!font-sans"
             classNames={{
-              months: 'flex flex-col sm:flex-row gap-6',
-              month: 'space-y-3',
-              caption: 'flex justify-center pt-1 relative items-center text-base font-semibold text-gray-900',
-              caption_label: 'text-base font-semibold',
+              months: 'flex flex-col sm:flex-row gap-8',
+              month: 'space-y-4',
+              caption: 'flex justify-center pt-1 relative items-center text-lg font-semibold text-gray-900',
+              caption_label: 'text-lg font-semibold',
               nav: 'space-x-1 flex items-center',
-              nav_button: 'h-8 w-8 bg-transparent p-0 hover:bg-gray-100 rounded-full inline-flex items-center justify-center text-gray-600',
+              nav_button: 'h-9 w-9 bg-transparent p-0 hover:bg-gray-100 rounded-full inline-flex items-center justify-center text-gray-600',
               nav_button_previous: 'absolute left-0',
               nav_button_next: 'absolute right-0',
               table: 'w-full border-collapse',
               head_row: 'flex',
-              head_cell: 'text-gray-500 rounded-md w-10 font-medium text-xs text-center',
-              row: 'flex w-full mt-1',
+              head_cell: 'text-gray-500 rounded-md w-12 font-medium text-sm text-center',
+              row: 'flex w-full mt-1.5',
               cell: 'text-center text-sm p-0 relative [&:has([aria-selected].day-range-start)]:rounded-l-full [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected])]:bg-[#C4A572]/10',
-              day: 'h-10 w-10 p-0 font-normal hover:bg-gray-100 rounded-full transition-colors text-sm',
+              day: 'h-12 w-12 p-0 font-normal hover:bg-gray-100 rounded-full transition-colors text-sm',
               day_selected: 'bg-[#C4A572] text-white hover:bg-[#B39562] rounded-full',
               day_today: 'bg-gray-100 font-semibold',
               day_outside: 'text-gray-300 opacity-50',
@@ -199,8 +199,8 @@ export default function BookingWidget() {
           />
         </div>
 
-        {/* Right: Dates + Guests + Pricing + Reserve */}
-        <div className="flex-1 flex flex-col min-w-[260px] lg:min-w-[280px]">
+        {/* Right: Dates + Guests + Pricing + Reserve - Compact */}
+        <div className="flex flex-col w-full lg:w-[260px] lg:flex-shrink-0">
           {/* Selected Dates */}
           {dateRange?.from && (
             <div className="px-4 py-3 border-b border-gray-100">
