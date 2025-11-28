@@ -2,6 +2,22 @@
 
 All notable changes to All'Arco Apartment will be documented in this file.
 
+## [1.1.3] - 2025-11-28
+
+### Changed
+- **Dynamic Images from Database**: About and Gallery sections now use database images
+  - About section image grid fetches first 4 gallery images from API
+  - Gallery section fetches all gallery images from API
+  - Placeholder boxes shown when no images available
+  - Loading state displayed while fetching
+
+### Technical
+- Removed hardcoded Unsplash image URLs
+- Added `galleryImages` state with `api.gallery.public('gallery')` fetch
+- Graceful fallback to placeholder divs
+
+---
+
 ## [1.0.9] - 2025-11-27
 
 ### Enhanced

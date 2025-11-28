@@ -178,7 +178,9 @@ export default function Home() {
   const heroRef = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [heroImages, setHeroImages] = useState<{ src: string; alt: string }[]>([]);
+  const [galleryImages, setGalleryImages] = useState<{ src: string; alt: string }[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
+  const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -201,15 +203,34 @@ export default function Home() {
             alt: img.alt_text || img.title
           })));
         }
-        // If no images, heroImages stays empty - will show gradient background
       } catch (error) {
         console.error('Failed to fetch hero images:', error);
-        // On error, heroImages stays empty - will show gradient background
       } finally {
         setIsLoadingImages(false);
       }
     };
     fetchHeroImages();
+  }, []);
+
+  // Fetch gallery images from database
+  useEffect(() => {
+    const fetchGalleryImages = async () => {
+      try {
+        const response = await api.gallery.public('gallery');
+        const images = response.data;
+        if (images && images.length > 0) {
+          setGalleryImages(images.map((img: HeroImage) => ({
+            src: img.url || img.image || img.image_url || '',
+            alt: img.alt_text || img.title
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch gallery images:', error);
+      } finally {
+        setIsLoadingGallery(false);
+      }
+    };
+    fetchGalleryImages();
   }, []);
 
   // Auto-scroll hero images every 5 seconds
@@ -401,43 +422,71 @@ export default function Home() {
             {/* Image Grid */}
             <motion.div variants={fadeInUp} className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-3 sm:space-y-4">
-                <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=2000&auto=format&fit=crop"
-                    alt="Living Room"
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
+                <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100">
+                  {galleryImages[0] ? (
+                    <Image
+                      src={galleryImages[0].src}
+                      alt={galleryImages[0].alt || 'Apartment image 1'}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized={galleryImages[0].src.startsWith('http')}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                      {isLoadingGallery ? 'Loading...' : 'Image 1'}
+                    </div>
+                  )}
                 </div>
-                <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2000&auto=format&fit=crop"
-                    alt="Kitchen"
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
+                <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100">
+                  {galleryImages[1] ? (
+                    <Image
+                      src={galleryImages[1].src}
+                      alt={galleryImages[1].alt || 'Apartment image 2'}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized={galleryImages[1].src.startsWith('http')}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                      {isLoadingGallery ? 'Loading...' : 'Image 2'}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="space-y-3 sm:space-y-4 pt-6 sm:pt-8">
-                <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=2000&auto=format&fit=crop"
-                    alt="Bedroom"
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
+                <div className="relative h-36 sm:h-48 rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100">
+                  {galleryImages[2] ? (
+                    <Image
+                      src={galleryImages[2].src}
+                      alt={galleryImages[2].alt || 'Apartment image 3'}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized={galleryImages[2].src.startsWith('http')}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                      {isLoadingGallery ? 'Loading...' : 'Image 3'}
+                    </div>
+                  )}
                 </div>
-                <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?q=80&w=2000&auto=format&fit=crop"
-                    alt="Venice View"
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
+                <div className="relative h-48 sm:h-64 rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100">
+                  {galleryImages[3] ? (
+                    <Image
+                      src={galleryImages[3].src}
+                      alt={galleryImages[3].alt || 'Apartment image 4'}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized={galleryImages[3].src.startsWith('http')}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                      {isLoadingGallery ? 'Loading...' : 'Image 4'}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -515,36 +564,38 @@ export default function Home() {
           </motion.div>
 
           <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-            {[
-              'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=2000',
-              'https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2000',
-              'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?q=80&w=2000',
-              'https://images.unsplash.com/photo-1518560299355-d7c6bb1e6d48?q=80&w=2000',
-              'https://images.unsplash.com/photo-1549918864-48ac978761a4?q=80&w=2000',
-              'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2000',
-              'https://images.unsplash.com/photo-1498307833015-e7b400441eb8?q=80&w=2000',
-              'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000',
-            ].map((src, i) => (
-              <motion.div
-                key={i}
-                className={`relative overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl cursor-pointer ${
-                  i === 0 || i === 5 ? 'md:col-span-2 md:row-span-2 h-48 sm:h-64 md:h-full min-h-[200px]' : 'h-32 sm:h-40 lg:h-48'
-                }`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                tabIndex={0}
-                role="button"
-                aria-label={`View gallery image ${i + 1}`}
-              >
-                <Image
-                  src={src}
-                  alt={`Gallery image ${i + 1}`}
-                  fill
-                  className="object-cover hover:scale-110 transition-transform duration-500"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                />
-              </motion.div>
-            ))}
+            {/* Show 8 gallery slots - use DB images if available, else placeholder */}
+            {Array.from({ length: 8 }).map((_, i) => {
+              const image = galleryImages[i];
+              return (
+                <motion.div
+                  key={i}
+                  className={`relative overflow-hidden rounded-lg sm:rounded-xl lg:rounded-2xl cursor-pointer bg-gray-100 ${
+                    i === 0 || i === 5 ? 'md:col-span-2 md:row-span-2 h-48 sm:h-64 md:h-full min-h-[200px]' : 'h-32 sm:h-40 lg:h-48'
+                  }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`View gallery image ${i + 1}`}
+                >
+                  {image ? (
+                    <Image
+                      src={image.src}
+                      alt={image.alt || `Gallery image ${i + 1}`}
+                      fill
+                      className="object-cover hover:scale-110 transition-transform duration-500"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized={image.src.startsWith('http')}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                      {isLoadingGallery ? 'Loading...' : `Image ${i + 1}`}
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </AnimatedSection>

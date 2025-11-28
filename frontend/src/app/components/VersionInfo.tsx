@@ -4,9 +4,21 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, X, Sparkles, Calendar, Shield, Globe } from 'lucide-react';
 
-const APP_VERSION = '1.1.2';
+const APP_VERSION = '1.1.3';
 
 const updates = [
+  {
+    version: '1.1.3',
+    date: 'November 2025',
+    icon: Globe,
+    title: 'Dynamic Database Images',
+    changes: [
+      'About section images from database',
+      'Gallery section images from database',
+      'Placeholder boxes when no images',
+      'Removed hardcoded Unsplash URLs',
+    ],
+  },
   {
     version: '1.1.2',
     date: 'November 2025',
