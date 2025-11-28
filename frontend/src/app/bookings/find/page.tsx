@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
-import SiteNav from '@/app/components/SiteNav';
 import SiteFooter from '@/app/components/SiteFooter';
 
 // Booking type
@@ -219,9 +218,40 @@ export default function FindBookingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
-      <SiteNav />
+      {/* Custom Navbar with Gray Background */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gray-100 shadow-sm">
+        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16">
+          <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
+            {/* Logo - Larger */}
+            <Link href="/" className="flex-shrink-0 focus:outline-none">
+              <Image
+                src="/allarco-logo.png"
+                alt="All'Arco Apartment"
+                width={220}
+                height={80}
+                className="object-contain h-16 sm:h-20 lg:h-24 w-auto"
+                priority
+              />
+            </Link>
 
-      <main className="flex-1 pt-24 pb-16">
+            {/* Right Section */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                href="/book"
+                className="hidden sm:flex px-4 lg:px-6 py-2 lg:py-2.5 text-sm font-semibold
+                  bg-[#C4A572] text-white rounded-full
+                  hover:bg-[#B39562] hover:shadow-lg hover:shadow-[#C4A572]/20
+                  transition-all duration-300 ease-out
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572] focus-visible:ring-offset-2"
+              >
+                Book Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-1 pt-28 sm:pt-32 lg:pt-36 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
