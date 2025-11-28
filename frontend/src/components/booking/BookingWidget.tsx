@@ -39,7 +39,7 @@ interface GuestCounts {
   infants: number;
 }
 
-// Guest counter component
+// Compact guest counter
 const GuestCounter = ({
   label,
   sublabel,
@@ -55,7 +55,7 @@ const GuestCounter = ({
   min?: number;
   max?: number;
 }) => (
-  <div className="flex items-center justify-between">
+  <div className="flex items-center justify-between py-2">
     <div>
       <p className="text-sm font-medium text-gray-900">{label}</p>
       <p className="text-xs text-gray-500">{sublabel}</p>
@@ -65,18 +65,18 @@ const GuestCounter = ({
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={value <= min}
-        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-[#C4A572] hover:text-[#C4A572] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-[#C4A572] hover:text-[#C4A572] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
       >
-        <Minus className="w-4 h-4" />
+        <Minus className="w-3.5 h-3.5" />
       </button>
-      <span className="w-6 text-center text-sm font-semibold text-gray-900">{value}</span>
+      <span className="w-5 text-center text-sm font-semibold text-gray-900">{value}</span>
       <button
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
-        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-[#C4A572] hover:text-[#C4A572] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-[#C4A572] hover:text-[#C4A572] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
       >
-        <Plus className="w-4 h-4" />
+        <Plus className="w-3.5 h-3.5" />
       </button>
     </div>
   </div>
@@ -129,42 +129,36 @@ export default function BookingWidget() {
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
       {/* Header - Price */}
-      <div className="p-5 bg-gradient-to-r from-[#1a1a2e] to-[#16213e] text-white">
+      <div className="px-4 py-3 bg-gradient-to-r from-[#1a1a2e] to-[#16213e] text-white">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-300 mb-1">From</p>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold">€{PRICING.baseNightlyRate}</span>
-              <span className="text-gray-300">/ night</span>
-            </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xs text-gray-400">From</span>
+            <span className="text-2xl font-bold">€{PRICING.baseNightlyRate}</span>
+            <span className="text-gray-400 text-sm">/ night</span>
           </div>
-          <div className="flex items-center gap-1.5 text-emerald-400 text-sm">
-            <CheckCircle2 className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 text-emerald-400 text-xs">
+            <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Free cancellation</span>
           </div>
         </div>
       </div>
 
       {/* Main Content - Horizontal on large screens */}
-      <div className="flex flex-col lg:flex-row">
+      <div className="flex flex-col lg:flex-row lg:items-start">
         {/* Left: Calendar */}
-        <div className="p-4 lg:p-6 lg:border-r border-b lg:border-b-0 border-gray-100 flex-shrink-0">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 lg:border-r border-b lg:border-b-0 border-gray-100">
+          <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-900">Select your dates</h3>
             {dateRange?.from && dateRange?.to && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-sm text-[#C4A572] font-medium"
-              >
+              <span className="text-xs text-[#C4A572] font-medium">
                 {nights} night{nights !== 1 ? 's' : ''}
-              </motion.div>
+              </span>
             )}
           </div>
 
           {nights > 0 && nights < PRICING.minNights && (
-            <p className="text-xs text-red-500 mb-3 bg-red-50 p-2 rounded-lg">
-              Minimum stay: {PRICING.minNights} nights
+            <p className="text-xs text-red-500 mb-2 bg-red-50 px-2 py-1 rounded">
+              Min. {PRICING.minNights} nights
             </p>
           )}
 
@@ -180,20 +174,20 @@ export default function BookingWidget() {
             showOutsideDays={false}
             className="!font-sans"
             classNames={{
-              months: 'flex flex-col sm:flex-row gap-4',
-              month: 'space-y-3',
+              months: 'flex flex-col sm:flex-row gap-3',
+              month: 'space-y-2',
               caption: 'flex justify-center pt-1 relative items-center text-sm font-semibold text-gray-900',
               caption_label: 'text-sm font-semibold',
               nav: 'space-x-1 flex items-center',
-              nav_button: 'h-7 w-7 bg-transparent p-0 hover:bg-gray-100 rounded-full inline-flex items-center justify-center text-gray-600',
-              nav_button_previous: 'absolute left-1',
-              nav_button_next: 'absolute right-1',
+              nav_button: 'h-6 w-6 bg-transparent p-0 hover:bg-gray-100 rounded-full inline-flex items-center justify-center text-gray-600',
+              nav_button_previous: 'absolute left-0',
+              nav_button_next: 'absolute right-0',
               table: 'w-full border-collapse',
               head_row: 'flex',
-              head_cell: 'text-gray-500 rounded-md w-9 font-medium text-[0.7rem] text-center',
-              row: 'flex w-full mt-1',
-              cell: 'text-center text-sm p-0 relative [&:has([aria-selected].day-range-start)]:rounded-l-full [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected])]:bg-[#C4A572]/10',
-              day: 'h-9 w-9 p-0 font-normal hover:bg-gray-100 rounded-full transition-colors text-sm',
+              head_cell: 'text-gray-500 rounded-md w-8 font-medium text-[0.65rem] text-center',
+              row: 'flex w-full mt-0.5',
+              cell: 'text-center text-xs p-0 relative [&:has([aria-selected].day-range-start)]:rounded-l-full [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected])]:bg-[#C4A572]/10',
+              day: 'h-8 w-8 p-0 font-normal hover:bg-gray-100 rounded-full transition-colors text-xs',
               day_selected: 'bg-[#C4A572] text-white hover:bg-[#B39562] rounded-full',
               day_today: 'bg-gray-100 font-semibold',
               day_outside: 'text-gray-300 opacity-50',
@@ -205,44 +199,40 @@ export default function BookingWidget() {
           />
         </div>
 
-        {/* Right: Dates Display + Guests + Pricing + Reserve */}
-        <div className="flex-1 flex flex-col min-w-[280px] lg:min-w-[320px]">
-          {/* Selected Dates Display - Moved here */}
+        {/* Right: Dates + Guests + Pricing + Reserve */}
+        <div className="flex-1 flex flex-col min-w-[260px] lg:min-w-[280px]">
+          {/* Selected Dates */}
           {dateRange?.from && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 lg:p-6 border-b border-gray-100"
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="w-4 h-4 text-[#C4A572]" />
-                <h3 className="text-sm font-semibold text-gray-900">Your stay</h3>
+            <div className="px-4 py-3 border-b border-gray-100">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Calendar className="w-3.5 h-3.5 text-[#C4A572]" />
+                <h3 className="text-xs font-semibold text-gray-900">Your stay</h3>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 p-3 border border-gray-200 rounded-lg bg-gray-50">
-                  <p className="text-xs text-gray-500 mb-1">Check-in</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 px-3 py-2 border border-gray-200 rounded-lg">
+                  <p className="text-[10px] text-gray-500">Check-in</p>
                   <p className="text-sm font-semibold text-gray-900">{format(dateRange.from, 'EEE, MMM d')}</p>
                 </div>
-                <div className="text-gray-300">→</div>
+                <span className="text-gray-300 text-sm">→</span>
                 {dateRange.to && (
-                  <div className="flex-1 p-3 border border-gray-200 rounded-lg bg-gray-50">
-                    <p className="text-xs text-gray-500 mb-1">Check-out</p>
+                  <div className="flex-1 px-3 py-2 border border-gray-200 rounded-lg">
+                    <p className="text-[10px] text-gray-500">Check-out</p>
                     <p className="text-sm font-semibold text-gray-900">{format(dateRange.to, 'EEE, MMM d')}</p>
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Guests Section */}
-          <div className="p-4 lg:p-6 border-b border-gray-100">
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="w-4 h-4 text-[#C4A572]" />
-              <h3 className="text-sm font-semibold text-gray-900">Guests</h3>
-              <span className="text-xs text-gray-400 ml-auto">Max 5</span>
+          <div className="px-4 py-3 border-b border-gray-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Users className="w-3.5 h-3.5 text-[#C4A572]" />
+              <h3 className="text-xs font-semibold text-gray-900">Guests</h3>
+              <span className="text-[10px] text-gray-400 ml-auto">Max 5</span>
             </div>
 
-            <div className="space-y-4">
+            <div className="divide-y divide-gray-50">
               <GuestCounter
                 label="Adults"
                 sublabel="Age 13+"
@@ -265,71 +255,65 @@ export default function BookingWidget() {
                 onChange={(v) => handleGuestChange('infants', v)}
                 max={3}
               />
+            </div>
 
-              {/* Pet Toggle - Yes/No buttons */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <div className="flex items-center gap-2">
-                  <PawPrint className="w-4 h-4 text-[#C4A572]" />
-                  <p className="text-sm font-medium text-gray-900">Traveling with pet?</p>
-                </div>
-                <div className="flex rounded-lg overflow-hidden border border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => setHasPet(false)}
-                    className={`px-4 py-1.5 text-sm font-medium transition-all ${
-                      !hasPet
-                        ? 'bg-[#C4A572] text-white'
-                        : 'bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    No
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setHasPet(true)}
-                    className={`px-4 py-1.5 text-sm font-medium transition-all border-l border-gray-200 ${
-                      hasPet
-                        ? 'bg-[#C4A572] text-white'
-                        : 'bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    Yes
-                  </button>
-                </div>
+            {/* Pet Toggle */}
+            <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-100">
+              <div className="flex items-center gap-1.5">
+                <PawPrint className="w-3.5 h-3.5 text-[#C4A572]" />
+                <p className="text-sm font-medium text-gray-900">Traveling with pet?</p>
+              </div>
+              <div className="flex rounded-md overflow-hidden border border-gray-200 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setHasPet(false)}
+                  className={`px-3 py-1 font-medium transition-all ${
+                    !hasPet ? 'bg-[#C4A572] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  No
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHasPet(true)}
+                  className={`px-3 py-1 font-medium transition-all border-l border-gray-200 ${
+                    hasPet ? 'bg-[#C4A572] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Yes
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Price Section - Collapsible breakdown */}
+          {/* Price Section */}
           {pricing && (
-            <div className="p-4 lg:p-6 border-b border-gray-100">
-              {/* Total with expand option */}
+            <div className="px-4 py-3 border-b border-gray-100">
               <button
                 type="button"
                 onClick={() => setShowPriceBreakdown(!showPriceBreakdown)}
-                className="w-full flex items-center justify-between group"
+                className="w-full flex items-center justify-between"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-gray-900">Total</span>
-                  <span className="text-xs text-gray-500">for {pricing.nights} nights</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base font-bold text-gray-900">Total</span>
+                  <span className="text-[10px] text-gray-500">for {pricing.nights} nights</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-gray-900">€{pricing.total}</span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showPriceBreakdown ? 'rotate-180' : ''}`} />
+                <div className="flex items-center gap-1">
+                  <span className="text-lg font-bold text-gray-900">€{pricing.total}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showPriceBreakdown ? 'rotate-180' : ''}`} />
                 </div>
               </button>
 
-              {/* Expandable Price Breakdown */}
               <AnimatePresence>
                 {showPriceBreakdown && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.15 }}
                     className="overflow-hidden"
                   >
-                    <div className="pt-4 mt-4 border-t border-gray-100 space-y-2 text-sm">
+                    <div className="pt-2 mt-2 border-t border-gray-100 space-y-1 text-xs">
                       <div className="flex justify-between">
                         <span className="text-gray-600">€{PRICING.baseNightlyRate} × {pricing.nights} nights</span>
                         <span className="text-gray-900">€{pricing.accommodationTotal}</span>
@@ -349,22 +333,19 @@ export default function BookingWidget() {
                 )}
               </AnimatePresence>
 
-              {/* City Tax Notice */}
-              <div className="mt-3 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-2 rounded-lg">
-                <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                <span>
-                  + €{pricing.cityTax} city tax at property
-                </span>
+              <div className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-700 bg-amber-50 px-2 py-1.5 rounded">
+                <Info className="w-3 h-3 flex-shrink-0" />
+                <span>+ €{pricing.cityTax} city tax at property</span>
               </div>
             </div>
           )}
 
           {/* Reserve Button */}
-          <div className="p-4 lg:p-6 mt-auto">
+          <div className="px-4 py-3">
             <Link
               href={isValidRange ? `/book?checkIn=${format(dateRange!.from!, 'yyyy-MM-dd')}&checkOut=${format(dateRange!.to!, 'yyyy-MM-dd')}&adults=${guests.adults}&children=${guests.children}&infants=${guests.infants}&pet=${hasPet}` : '#'}
               onClick={(e) => !isValidRange && e.preventDefault()}
-              className={`block w-full py-4 rounded-xl font-semibold text-center text-lg transition-all ${
+              className={`block w-full py-3 rounded-xl font-semibold text-center transition-all ${
                 isValidRange
                   ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white hover:shadow-lg hover:shadow-[#C4A572]/30 active:scale-[0.98]'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -372,20 +353,20 @@ export default function BookingWidget() {
             >
               {isValidRange ? `Reserve · €${pricing?.total}` : 'Select dates to book'}
             </Link>
-            <p className="text-xs text-gray-400 text-center mt-2">You won&apos;t be charged yet</p>
+            <p className="text-[10px] text-gray-400 text-center mt-1.5">You won&apos;t be charged yet</p>
 
             {/* Trust badges */}
-            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap justify-center gap-4 text-xs text-gray-500">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
+            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-center gap-4 text-[10px] text-gray-500">
+              <div className="flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-green-500" />
                 <span>Free cancellation</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-blue-500" />
+              <div className="flex items-center gap-1">
+                <Shield className="w-3 h-3 text-blue-500" />
                 <span>Secure payment</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Star className="w-4 h-4 text-amber-500" />
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3 text-amber-500" />
                 <span>Best price</span>
               </div>
             </div>
