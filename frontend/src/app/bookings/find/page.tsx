@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
+import SiteNav from '@/app/components/SiteNav';
 import SiteFooter from '@/app/components/SiteFooter';
 
 // Booking type
@@ -218,40 +219,49 @@ export default function FindBookingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
-      {/* Custom Navbar with Gray Background */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-gray-100 shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16">
-          <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
-            {/* Logo - Larger */}
-            <Link href="/" className="flex-shrink-0 focus:outline-none">
-              <Image
-                src="/allarco-logo.png"
-                alt="All'Arco Apartment"
-                width={220}
-                height={80}
-                className="object-contain h-16 sm:h-20 lg:h-24 w-auto"
-                priority
-              />
-            </Link>
+      {/* Custom styles for navbar on this page */}
+      <style>{`
+        /* Make navbar background always gray */
+        header {
+          background-color: #F3F4F6 !important;
+          background-image: none !important;
+        }
 
-            {/* Right Section */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Link
-                href="/book"
-                className="hidden sm:flex px-4 lg:px-6 py-2 lg:py-2.5 text-sm font-semibold
-                  bg-[#C4A572] text-white rounded-full
-                  hover:bg-[#B39562] hover:shadow-lg hover:shadow-[#C4A572]/20
-                  transition-all duration-300 ease-out
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572] focus-visible:ring-offset-2"
-              >
-                Book Now
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+        /* Enlarge logo */
+        header img[alt="All'Arco Apartment"] {
+          height: 2.5rem !important;
+        }
 
-      <main className="flex-1 pt-28 sm:pt-32 lg:pt-36 pb-16">
+        @media (min-width: 640px) {
+          header img[alt="All'Arco Apartment"] {
+            height: 3.5rem !important;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          header img[alt="All'Arco Apartment"] {
+            height: 4.5rem !important;
+          }
+        }
+
+        /* Make text dark on gray background */
+        header {
+          color: #1F2937;
+        }
+
+        /* Style nav links for gray background */
+        nav a, header button {
+          color: #374151;
+        }
+
+        nav a:hover, header button:hover {
+          color: #C4A572;
+        }
+      `}</style>
+
+      <SiteNav />
+
+      <main className="flex-1 pt-6 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
