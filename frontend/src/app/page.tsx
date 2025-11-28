@@ -69,9 +69,9 @@ const amenities = [
 ];
 
 const highlights = [
-  { icon: Maximize, value: '70', unit: 'm²', label: 'Living Space' },
-  { icon: BedDouble, value: '1', unit: '', label: 'Bedroom' },
-  { icon: Users, value: '4', unit: '', label: 'Guests' },
+  { icon: Maximize, value: '85', unit: 'm²', label: 'Living Space' },
+  { icon: BedDouble, value: '2', unit: '', label: 'Bedrooms' },
+  { icon: Users, value: '5', unit: '', label: 'Guests' },
   { icon: Bath, value: '1', unit: '', label: 'Bathroom' },
 ];
 
@@ -392,12 +392,15 @@ export default function Home() {
               </h2>
               <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6">
                 Nestled in the historic Castello district, All&apos;Arco Apartment offers an authentic Venetian experience
-                with modern luxury. This beautifully appointed 70m² apartment combines traditional Venetian
-                architecture with contemporary design.
+                with modern luxury. This beautifully appointed 85m² apartment with 2 bedrooms combines traditional Venetian
+                architecture with contemporary design, accommodating up to 5 guests.
               </p>
-              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-6 sm:mb-8">
+              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-4 sm:mb-6">
                 Wake up to enchanting canal views, enjoy your morning espresso on the terrace, and experience
                 Venice like a true local. Just 17 minutes from the iconic Rialto Bridge.
+              </p>
+              <p className="text-sm text-gray-500 mb-6 sm:mb-8">
+                Hosted by <span className="font-semibold text-gray-700">Ali Hassan Cheema</span>
               </p>
 
               {/* Highlights Grid */}
