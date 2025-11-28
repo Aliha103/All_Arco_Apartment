@@ -4,9 +4,21 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, X, Sparkles, Calendar, Shield, Globe } from 'lucide-react';
 
-const APP_VERSION = '1.1.1';
+const APP_VERSION = '1.1.2';
 
 const updates = [
+  {
+    version: '1.1.2',
+    date: 'November 2025',
+    icon: Calendar,
+    title: 'Always-Visible Calendar',
+    changes: [
+      'Full 2-month calendar always displayed',
+      'Side-by-side months on desktop',
+      'Cleaner guest selection layout',
+      'Centered booking widget design',
+    ],
+  },
   {
     version: '1.1.1',
     date: 'November 2025',
