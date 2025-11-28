@@ -1,26 +1,20 @@
 'use client';
 
-import { useState, useCallback, useMemo, memo, useEffect } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
   MapPin,
   Navigation,
-  Clock,
   Train,
-  Ship,
   Plane,
   Bus,
-  Coffee,
-  ShoppingBag,
-  Utensils,
-  Camera,
-  ChevronRight,
-  ExternalLink,
-  Footprints,
-  Building2,
-  Star,
+  Clock,
+  ArrowUpRight,
+  Sparkles,
+  Home,
+  TreePine,
 } from 'lucide-react';
 
 // ============================================================================
@@ -29,39 +23,11 @@ import {
 const MapComponent = dynamic(() => import('./MapComponent'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
-      <MapPin className="w-8 h-8 text-gray-300" />
+    <div className="w-full h-full bg-gradient-to-br from-[#F9F6F1] to-[#EDE8E0] animate-pulse flex items-center justify-center">
+      <MapPin className="w-8 h-8 text-[#C4A572]/40" />
     </div>
   ),
 });
-
-// ============================================================================
-// TYPES
-// ============================================================================
-interface Attraction {
-  id: string;
-  name: string;
-  walkTime: number;
-  distance: string;
-  category: 'landmark' | 'culture' | 'dining' | 'shopping' | 'transport';
-  icon: React.ElementType;
-  highlight?: boolean;
-}
-
-interface TransportOption {
-  id: string;
-  name: string;
-  type: 'water' | 'train' | 'air' | 'bus';
-  time: string;
-  icon: React.ElementType;
-}
-
-interface NeighborhoodHighlight {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-}
 
 // ============================================================================
 // DATA
@@ -76,186 +42,65 @@ const PROPERTY_LOCATION = {
   district: 'Carpenedo',
 };
 
-const ATTRACTIONS: Attraction[] = [
-  { id: '1', name: 'Venice Historic Center', walkTime: 35, distance: 'By bus', category: 'landmark', icon: Camera, highlight: true },
-  { id: '2', name: "St. Mark's Square", walkTime: 45, distance: 'By bus + walk', category: 'landmark', icon: Camera, highlight: true },
-  { id: '3', name: 'Rialto Bridge', walkTime: 40, distance: 'By bus + walk', category: 'landmark', icon: Camera, highlight: true },
-  { id: '4', name: 'Parco Bissuola', walkTime: 10, distance: '800 m', category: 'culture', icon: Building2 },
-  { id: '5', name: 'Mestre Center', walkTime: 15, distance: '1.2 km', category: 'shopping', icon: ShoppingBag },
-  { id: '6', name: 'Local Restaurants', walkTime: 3, distance: '200 m', category: 'dining', icon: Utensils },
-  { id: '7', name: 'Supermarkets', walkTime: 5, distance: '350 m', category: 'shopping', icon: ShoppingBag },
-  { id: '8', name: 'Traditional Cafes', walkTime: 4, distance: '250 m', category: 'dining', icon: Coffee },
+const TRANSPORT_OPTIONS = [
+  { id: '1', name: 'Bus Stop', detail: 'Via Castellana', time: '2 min', icon: Bus, color: 'bg-amber-500' },
+  { id: '2', name: 'Mestre Station', detail: 'Train connections', time: '15 min', icon: Train, color: 'bg-emerald-500' },
+  { id: '3', name: 'Marco Polo', detail: 'Airport', time: '20 min', icon: Plane, color: 'bg-blue-500' },
 ];
 
-const TRANSPORT_OPTIONS: TransportOption[] = [
-  { id: '1', name: 'Bus Stop (Via Castellana)', type: 'bus', time: '2 min walk', icon: Bus },
-  { id: '2', name: 'Mestre Train Station', type: 'train', time: '15 min', icon: Train },
-  { id: '3', name: 'Marco Polo Airport', type: 'air', time: '20 min', icon: Plane },
+const HIGHLIGHTS = [
+  { id: '1', title: 'Venice Center', time: '35 min by bus', featured: true },
+  { id: '2', title: "St. Mark's Square", time: '45 min', featured: true },
+  { id: '3', title: 'Rialto Bridge', time: '40 min', featured: true },
+  { id: '4', title: 'Local Restaurants', time: '3 min walk', featured: false },
+  { id: '5', title: 'Supermarket', time: '5 min walk', featured: false },
+  { id: '6', title: 'Park Bissuola', time: '10 min walk', featured: false },
 ];
 
-const NEIGHBORHOOD_HIGHLIGHTS: NeighborhoodHighlight[] = [
-  {
-    id: '1',
-    title: 'Peaceful Setting',
-    description: 'Enjoy tranquil surroundings in the residential Carpenedo area, away from tourist crowds.',
-    icon: Star,
-  },
-  {
-    id: '2',
-    title: 'Local Life',
-    description: 'Surrounded by authentic Italian trattorias, shops, and friendly local atmosphere.',
-    icon: Coffee,
-  },
-  {
-    id: '3',
-    title: 'Easy Access',
-    description: 'Well-connected location with bus lines and parking for exploring Venice and the region.',
-    icon: Navigation,
-  },
+const FEATURES = [
+  { icon: Sparkles, title: 'Peaceful', desc: 'Quiet residential area' },
+  { icon: Home, title: 'Authentic', desc: 'Local Italian atmosphere' },
+  { icon: TreePine, title: 'Green', desc: 'Parks & gardens nearby' },
 ];
 
 // ============================================================================
 // ANIMATION CONFIG
 // ============================================================================
-const springConfig = { type: 'spring', stiffness: 400, damping: 30 } as const;
+const smoothEase = [0.25, 0.1, 0.25, 1];
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: springConfig },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
+const fadeIn = {
+  hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    y: 0,
+    transition: { duration: 0.7, ease: smoothEase }
   },
 };
 
-// ============================================================================
-// COMPONENTS
-// ============================================================================
-
-// Attraction Card - memoized
-const AttractionCard = memo(function AttractionCard({
-  attraction,
-  index,
-}: {
-  attraction: Attraction;
-  index: number;
-}) {
-  const Icon = attraction.icon;
-
-  return (
-    <motion.div
-      variants={fadeInUp}
-      className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200
-                  ${attraction.highlight
-                    ? 'bg-[#C4A572]/10 border border-[#C4A572]/20'
-                    : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
-    >
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-                      ${attraction.highlight ? 'bg-[#C4A572] text-white' : 'bg-white text-gray-600'}`}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-900 text-sm truncate">{attraction.name}</p>
-        <p className="text-xs text-gray-500">{attraction.distance}</p>
-      </div>
-      <div className="flex items-center gap-1 text-gray-500 flex-shrink-0">
-        <Footprints className="w-3.5 h-3.5" />
-        <span className="text-xs font-medium">{attraction.walkTime} min</span>
-      </div>
-    </motion.div>
-  );
-});
-
-// Transport Card - memoized
-const TransportCard = memo(function TransportCard({
-  transport,
-}: {
-  transport: TransportOption;
-}) {
-  const Icon = transport.icon;
-
-  const bgColor = useMemo(() => {
-    switch (transport.type) {
-      case 'water': return 'bg-blue-50 text-blue-600';
-      case 'train': return 'bg-emerald-50 text-emerald-600';
-      case 'air': return 'bg-purple-50 text-purple-600';
-      case 'bus': return 'bg-orange-50 text-orange-600';
-      default: return 'bg-gray-50 text-gray-600';
-    }
-  }, [transport.type]);
-
-  return (
-    <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${bgColor}`}>
-        <Icon className="w-4 h-4" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-900 text-sm truncate">{transport.name}</p>
-        <p className="text-xs text-gray-500">{transport.time}</p>
-      </div>
-    </div>
-  );
-});
-
-// Neighborhood Highlight Card
-const HighlightCard = memo(function HighlightCard({
-  highlight,
-}: {
-  highlight: NeighborhoodHighlight;
-}) {
-  const Icon = highlight.icon;
-
-  return (
-    <motion.div variants={fadeInUp} className="flex gap-3">
-      <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
-        <Icon className="w-5 h-5 text-[#C4A572]" />
-      </div>
-      <div>
-        <h4 className="font-semibold text-gray-900 text-sm">{highlight.title}</h4>
-        <p className="text-sm text-gray-500 leading-relaxed">{highlight.description}</p>
-      </div>
-    </motion.div>
-  );
-});
+const stagger = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+};
 
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 export default function LocationSection() {
   const sectionRef = useRef(null);
-  const isInView = useInView(sectionRef, { once: true, margin: '-100px' });
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const isInView = useInView(sectionRef, { once: true, margin: '-80px' });
 
-  // Filter attractions by category
-  const filteredAttractions = useMemo(() => {
-    if (!selectedCategory) return ATTRACTIONS.slice(0, 6);
-    return ATTRACTIONS.filter(a => a.category === selectedCategory);
-  }, [selectedCategory]);
-
-  // Category filters
-  const categories = useMemo(() => [
-    { id: null, label: 'All' },
-    { id: 'landmark', label: 'Landmarks' },
-    { id: 'culture', label: 'Culture' },
-    { id: 'dining', label: 'Dining' },
-  ], []);
-
-  // Google Maps URL
   const googleMapsUrl = useMemo(() => {
-    const query = encodeURIComponent(`${PROPERTY_LOCATION.address}, ${PROPERTY_LOCATION.city}, ${PROPERTY_LOCATION.country}`);
+    const query = encodeURIComponent(`${PROPERTY_LOCATION.address}, ${PROPERTY_LOCATION.postalCode} ${PROPERTY_LOCATION.city}, ${PROPERTY_LOCATION.country}`);
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
   }, []);
 
   return (
     <section
       ref={sectionRef}
-      className="py-16 sm:py-20 lg:py-28 bg-gradient-to-b from-gray-900 to-gray-950 text-white overflow-hidden"
+      className="py-20 sm:py-28 lg:py-32 bg-[#F9F6F1]"
       id="location"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -263,163 +108,182 @@ export default function LocationSection() {
         <motion.div
           initial="hidden"
           animate={isInView ? 'visible' : 'hidden'}
-          variants={staggerContainer}
-          className="mb-12 lg:mb-16"
+          variants={stagger}
+          className="text-center mb-16"
         >
           <motion.span
-            variants={fadeInUp}
-            className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm"
+            variants={fadeIn}
+            className="inline-block px-4 py-1.5 bg-[#C4A572]/10 text-[#C4A572] text-xs font-semibold tracking-wider uppercase rounded-full mb-4"
           >
             Location
           </motion.span>
           <motion.h2
-            variants={fadeInUp}
-            className="text-3xl sm:text-4xl lg:text-5xl font-light mt-3 mb-4"
+            variants={fadeIn}
+            className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-900 mb-4"
           >
-            In the Heart of Venice
+            Your Gateway to Venice
           </motion.h2>
-          <motion.p variants={fadeInUp} className="text-base sm:text-lg text-gray-400 max-w-2xl">
-            Located in the quiet Carpenedo neighborhood, enjoy peaceful surroundings
-            with easy access to Venice&apos;s historic center and all its attractions.
+          <motion.p variants={fadeIn} className="text-gray-500 max-w-xl mx-auto text-base sm:text-lg">
+            Perfectly positioned in peaceful Carpenedo with easy access to all Venice attractions
           </motion.p>
         </motion.div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Left Column - Map & Address */}
+        {/* Main Content */}
+        <div className="grid lg:grid-cols-5 gap-8 lg:gap-10">
+
+          {/* Map - Takes 3 columns */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ ...springConfig, delay: 0.2 }}
-            className="space-y-6"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 0.8, ease: smoothEase, delay: 0.2 }}
+            className="lg:col-span-3 relative"
           >
-            {/* Interactive Map */}
-            <div className="relative h-[300px] sm:h-[350px] lg:h-[400px] rounded-2xl overflow-hidden border border-white/10">
+            <div className="relative h-[400px] sm:h-[450px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl shadow-black/10">
               <MapComponent
                 lat={PROPERTY_LOCATION.lat}
                 lng={PROPERTY_LOCATION.lng}
-                onLoad={() => setMapLoaded(true)}
+                onLoad={() => {}}
               />
 
-              {/* Map Overlay - Address Card */}
-              <div className="absolute bottom-4 left-4 right-4">
-                <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#C4A572] flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-white" />
+              {/* Floating Address Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: 0.6, duration: 0.5, ease: smoothEase }}
+                className="absolute bottom-6 left-6 right-6"
+              >
+                <div className="bg-white rounded-2xl p-5 shadow-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#C4A572] to-[#A8895C] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#C4A572]/20">
+                      <MapPin className="w-6 h-6 text-white" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900">{PROPERTY_LOCATION.address}</p>
-                      <p className="text-sm text-gray-500">
-                        {PROPERTY_LOCATION.district}, {PROPERTY_LOCATION.city} {PROPERTY_LOCATION.postalCode}
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900 text-lg">{PROPERTY_LOCATION.address}</p>
+                      <p className="text-gray-500 text-sm">
+                        {PROPERTY_LOCATION.postalCode} {PROPERTY_LOCATION.district}, {PROPERTY_LOCATION.city}
                       </p>
                     </div>
                     <a
                       href={googleMapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 px-3 py-2 bg-gray-900 text-white text-xs font-medium
-                                 rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                      className="w-12 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center
+                                 hover:bg-gray-800 transition-all duration-300 hover:scale-105 flex-shrink-0"
+                      aria-label="Open in Google Maps"
                     >
-                      Directions
-                      <ExternalLink className="w-3 h-3" />
+                      <ArrowUpRight className="w-5 h-5" />
                     </a>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Transportation */}
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Navigation className="w-5 h-5 text-[#C4A572]" />
-                Getting Here
-              </h3>
-              <div className="grid gap-2">
-                {TRANSPORT_OPTIONS.map((transport) => (
-                  <TransportCard key={transport.id} transport={transport} />
-                ))}
-              </div>
+              </motion.div>
             </div>
           </motion.div>
 
-          {/* Right Column - Attractions & Neighborhood */}
+          {/* Info Panel - Takes 2 columns */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ ...springConfig, delay: 0.3 }}
-            className="space-y-8"
+            initial="hidden"
+            animate={isInView ? 'visible' : 'hidden'}
+            variants={stagger}
+            className="lg:col-span-2 space-y-6"
           >
-            {/* Nearby Attractions */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-[#C4A572]" />
-                  Nearby Attractions
-                </h3>
+            {/* Transport Options */}
+            <motion.div variants={fadeIn} className="bg-white rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                  <Navigation className="w-5 h-5 text-[#C4A572]" />
+                </div>
+                <h3 className="font-semibold text-gray-900 text-lg">Getting Here</h3>
               </div>
 
-              {/* Category Filters */}
-              <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id ?? 'all'}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all
-                               ${selectedCategory === cat.id
-                                 ? 'bg-[#C4A572] text-white'
-                                 : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                               }`}
+              <div className="space-y-3">
+                {TRANSPORT_OPTIONS.map((transport, i) => (
+                  <motion.div
+                    key={transport.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={isInView ? { opacity: 1, x: 0 } : {}}
+                    transition={{ delay: 0.4 + i * 0.1, duration: 0.4, ease: smoothEase }}
+                    className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-300"
                   >
-                    {cat.label}
-                  </button>
+                    <div className={`w-10 h-10 rounded-lg ${transport.color} flex items-center justify-center`}>
+                      <transport.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 text-sm">{transport.name}</p>
+                      <p className="text-xs text-gray-500">{transport.detail}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-[#C4A572]">{transport.time}</span>
+                  </motion.div>
                 ))}
               </div>
+            </motion.div>
 
-              {/* Attractions Grid */}
-              <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-                className="grid gap-2"
-              >
-                {filteredAttractions.map((attraction, index) => (
-                  <AttractionCard key={attraction.id} attraction={attraction} index={index} />
+            {/* Distances */}
+            <motion.div variants={fadeIn} className="bg-white rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-[#C4A572]" />
+                </div>
+                <h3 className="font-semibold text-gray-900 text-lg">Distances</h3>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {HIGHLIGHTS.map((item, i) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ delay: 0.5 + i * 0.05, duration: 0.4, ease: smoothEase }}
+                    className={`p-3 rounded-xl transition-all duration-300 ${
+                      item.featured
+                        ? 'bg-gradient-to-br from-[#C4A572]/10 to-[#C4A572]/5 border border-[#C4A572]/20'
+                        : 'bg-gray-50'
+                    }`}
+                  >
+                    <p className={`font-medium text-sm ${item.featured ? 'text-[#8B7355]' : 'text-gray-900'}`}>
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.time}</p>
+                  </motion.div>
                 ))}
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
 
-            {/* Neighborhood Highlights */}
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Star className="w-5 h-5 text-[#C4A572]" />
-                The Neighborhood
-              </h3>
-              <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                animate={isInView ? 'visible' : 'hidden'}
-                className="space-y-4"
-              >
-                {NEIGHBORHOOD_HIGHLIGHTS.map((highlight) => (
-                  <HighlightCard key={highlight.id} highlight={highlight} />
+            {/* Neighborhood Features */}
+            <motion.div variants={fadeIn} className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white">
+              <h3 className="font-semibold text-lg mb-4">The Neighborhood</h3>
+              <div className="grid grid-cols-3 gap-4">
+                {FEATURES.map((feature, i) => (
+                  <motion.div
+                    key={feature.title}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                    transition={{ delay: 0.7 + i * 0.1, duration: 0.4, ease: smoothEase }}
+                    className="text-center"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-2">
+                      <feature.icon className="w-5 h-5 text-[#C4A572]" />
+                    </div>
+                    <p className="font-medium text-sm">{feature.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{feature.desc}</p>
+                  </motion.div>
                 ))}
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
 
-            {/* CTA */}
-            <a
+            {/* CTA Button */}
+            <motion.a
+              variants={fadeIn}
               href={googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-4 bg-white text-gray-900
-                         font-medium rounded-xl hover:bg-gray-100 transition-colors
-                         focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900"
+              className="flex items-center justify-center gap-3 w-full py-4 bg-[#C4A572] text-white font-medium rounded-2xl
+                         hover:bg-[#B39562] transition-all duration-300 hover:shadow-lg hover:shadow-[#C4A572]/25
+                         focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2"
             >
               <MapPin className="w-5 h-5" />
               View on Google Maps
-              <ChevronRight className="w-4 h-4" />
-            </a>
+              <ArrowUpRight className="w-4 h-4" />
+            </motion.a>
           </motion.div>
         </div>
       </div>
