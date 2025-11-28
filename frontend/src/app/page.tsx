@@ -10,7 +10,6 @@ import {
   Utensils,
   Tv,
   Bath,
-  MapPin,
   Star,
   ArrowRight,
   Users,
@@ -18,13 +17,13 @@ import {
   BedDouble,
   Coffee,
   Waves,
-  Building,
   Award,
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
 import BookingWidget from '@/components/booking/BookingWidget';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
+import LocationSection from '@/components/location/LocationSection';
 import { api } from '@/lib/api';
 
 // Smooth easing for all animations
@@ -84,12 +83,6 @@ const hostInfo = {
   totalReviews: 59,
 };
 
-const nearbyAttractions = [
-  { name: 'Rialto Bridge', distance: '17 min' },
-  { name: 'St. Mark\'s Square', distance: '20 min' },
-  { name: 'Teatro La Fenice', distance: '15 min' },
-  { name: 'Doge\'s Palace', distance: '22 min' },
-];
 
 // Animated section with scroll reveal
 const AnimatedSection = ({ children, className = '', id }: { children: React.ReactNode; className?: string; id?: string }) => {
@@ -608,63 +601,7 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Location Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-28 bg-gray-900 text-white" id="location">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <motion.div variants={fadeInUp}>
-              <span className="text-[#C4A572] font-medium tracking-wider uppercase text-xs sm:text-sm">Location</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light mt-3 mb-5">
-                In the Heart of Venice
-              </h2>
-              <p className="text-base sm:text-lg text-gray-400 leading-relaxed mb-6 sm:mb-8">
-                Located in the prestigious Castello district, All&apos;Arco Apartment offers the perfect base for
-                exploring Venice. Away from the tourist crowds yet minutes from major attractions.
-              </p>
-
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                {nearbyAttractions.map(({ name, distance }) => (
-                  <div key={name} className="flex items-center gap-2 sm:gap-3 py-2 sm:py-3">
-                    <MapPin className="w-4 h-4 text-[#C4A572] flex-shrink-0" />
-                    <div>
-                      <span className="text-sm sm:text-base text-white">{name}</span>
-                      <span className="text-xs sm:text-sm text-gray-500 ml-2">{distance}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Building className="w-4 h-4" />
-                  <span>Castello 2739/A, Venice, Italy</span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div variants={fadeInUp} className="relative h-[300px] sm:h-[400px] lg:h-[450px] rounded-xl sm:rounded-2xl overflow-hidden">
-              <Image
-                src="https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2000&auto=format&fit=crop"
-                alt="Venice Map Area"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
-              <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
-                <a
-                  href="https://maps.google.com/?q=Castello+2739/A+Venice+Italy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 sm:py-4 bg-white text-gray-900 font-medium rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                >
-                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-                  View on Google Maps
-                </a>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </AnimatedSection>
+      <LocationSection />
 
       {/* Reviews Section */}
       <ReviewsSection />
