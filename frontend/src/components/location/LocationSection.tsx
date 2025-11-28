@@ -12,9 +12,6 @@ import {
   Bus,
   Clock,
   ArrowUpRight,
-  Sparkles,
-  Home,
-  TreePine,
 } from 'lucide-react';
 
 // ============================================================================
@@ -33,8 +30,8 @@ const MapComponent = dynamic(() => import('./MapComponent'), {
 // DATA
 // ============================================================================
 const PROPERTY_LOCATION = {
-  lat: 45.4975,
-  lng: 12.2435,
+  lat: 45.5030,
+  lng: 12.2380,
   address: 'Via Castellana 61',
   city: 'Venice',
   country: 'Italy',
@@ -55,12 +52,6 @@ const HIGHLIGHTS = [
   { id: '4', title: 'Local Restaurants', time: '3 min walk', featured: false },
   { id: '5', title: 'Supermarket', time: '5 min walk', featured: false },
   { id: '6', title: 'Park Bissuola', time: '10 min walk', featured: false },
-];
-
-const FEATURES = [
-  { icon: Sparkles, title: 'Peaceful', desc: 'Quiet residential area' },
-  { icon: Home, title: 'Authentic', desc: 'Local Italian atmosphere' },
-  { icon: TreePine, title: 'Green', desc: 'Parks & gardens nearby' },
 ];
 
 // ============================================================================
@@ -241,28 +232,6 @@ export default function LocationSection() {
                       {item.title}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">{item.time}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Neighborhood Features */}
-            <motion.div variants={fadeIn} className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white">
-              <h3 className="font-semibold text-lg mb-4">The Neighborhood</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {FEATURES.map((feature, i) => (
-                  <motion.div
-                    key={feature.title}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                    transition={{ delay: 0.7 + i * 0.1, duration: 0.4, ease: "easeOut" }}
-                    className="text-center"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-2">
-                      <feature.icon className="w-5 h-5 text-[#C4A572]" />
-                    </div>
-                    <p className="font-medium text-sm">{feature.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{feature.desc}</p>
                   </motion.div>
                 ))}
               </div>
