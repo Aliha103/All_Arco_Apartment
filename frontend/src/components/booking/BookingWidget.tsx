@@ -327,7 +327,7 @@ export default function BookingWidget() {
     return differenceInDays(dateRange.to, dateRange.from);
   }, [dateRange]);
 
-  const isValidBooking = nights >= CONFIG.stay.minNights;
+  const isValidBooking = nights > 0;
 
   const maxAdults = CONFIG.guests.maxTotal - guests.children;
   const maxChildren = CONFIG.guests.maxTotal - guests.adults;
@@ -442,15 +442,6 @@ export default function BookingWidget() {
         <div className="flex flex-col lg:flex-row">
           {/* Calendar Section */}
           <div className="flex-1 p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Select dates</h3>
-              {nights > 0 && (
-                <span className="text-sm font-medium text-[#C4A572]">
-                  {nights} night{nights !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-
             {/* Calendar */}
             <DayPicker
               mode="range"
@@ -604,87 +595,6 @@ export default function BookingWidget() {
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Promo Code */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center gap-2 mb-3">
-                <Tag className="w-5 h-5 text-[#C4A572]" />
-                <h3 className="font-semibold text-gray-900">Promo code</h3>
-              </div>
-
-              {appliedPromo ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl"
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    <div>
-                      <p className="font-semibold text-emerald-700">{appliedPromo.code}</p>
-                      <p className="text-sm text-emerald-600">{appliedPromo.description}</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRemovePromo}
-                    aria-label="Remove promo code"
-                    className="w-8 h-8 rounded-full hover:bg-emerald-100 flex items-center justify-center
-                               text-emerald-600 transition-colors focus:outline-none focus:ring-2
-                               focus:ring-emerald-500 focus:ring-offset-2"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </motion.div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={promoCode}
-                      onChange={(e) => {
-                        setPromoCode(e.target.value);
-                        setPromoError(null);
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
-                      placeholder="Enter code"
-                      aria-label="Promo code"
-                      aria-invalid={!!promoError}
-                      className={`flex-1 px-4 py-3 text-sm border-2 rounded-xl bg-gray-50
-                                  transition-colors focus:outline-none focus:bg-white
-                                  ${promoError
-                                    ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                                    : 'border-gray-200 focus:border-[#C4A572] focus:ring-2 focus:ring-[#C4A572]/20'
-                                  }`}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleApplyPromo}
-                      className="px-5 py-3 text-sm font-semibold text-white bg-[#C4A572] rounded-xl
-                                 hover:bg-[#B39562] transition-colors touch-manipulation
-                                 focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2
-                                 active:scale-95"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                  <AnimatePresence>
-                    {promoError && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="text-sm text-red-500 flex items-center gap-1"
-                        role="alert"
-                      >
-                        <Info className="w-4 h-4" />
-                        {promoError}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
             </div>
 
             {/* Pricing */}
