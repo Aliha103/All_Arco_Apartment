@@ -18,6 +18,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Tag,
+  Percent,
 } from 'lucide-react';
 import 'react-day-picker/dist/style.css';
 
@@ -39,7 +41,7 @@ const CONFIG = {
     maxInfants: 3,
   },
   stay: {
-    minNights: 2,
+    minNights: 1,
     maxNights: 30,
   },
 } as const;
@@ -58,10 +60,26 @@ interface PricingBreakdown {
   accommodation: number;
   cleaning: number;
   pet: number;
+  discount: number;
+  discountPercent: number;
   subtotal: number;
+  total: number;
   cityTax: number;
   cityTaxNights: number;
 }
+
+interface Promotion {
+  code: string;
+  percent: number;
+  description: string;
+}
+
+// Available promo codes (in production, this would come from API/database)
+const PROMOTIONS: Record<string, Promotion> = {
+  'WELCOME10': { code: 'WELCOME10', percent: 10, description: '10% off your first stay' },
+  'EARLYBIRD': { code: 'EARLYBIRD', percent: 15, description: '15% early bird discount' },
+  'LONGSTAY20': { code: 'LONGSTAY20', percent: 20, description: '20% off for 7+ nights' },
+};
 
 // ============================================================================
 // HOOKS
@@ -238,11 +256,33 @@ function PriceModal({
                 </div>
               )}
 
+              {pricing.discount > 0 && (
+                <>
+                  <div className="h-px bg-gray-200 my-4" />
+                  <div className="flex justify-between text-base">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-medium text-gray-900">€{pricing.subtotal}</span>
+                  </div>
+                  <div className="flex justify-between text-base">
+                    <span className="text-emerald-600 flex items-center gap-1">
+                      <Percent className="w-4 h-4" />
+                      Promo discount ({pricing.discountPercent}%)
+                    </span>
+                    <span className="font-medium text-emerald-600">-€{pricing.discount}</span>
+                  </div>
+                </>
+              )}
+
               <div className="h-px bg-gray-200 my-4" />
 
               <div className="flex justify-between">
                 <span className="text-lg font-semibold text-gray-900">Total</span>
-                <span className="text-2xl font-bold text-gray-900">€{pricing.subtotal}</span>
+                <div className="text-right">
+                  {pricing.discount > 0 && (
+                    <span className="text-sm text-gray-400 line-through mr-2">€{pricing.subtotal}</span>
+                  )}
+                  <span className="text-2xl font-bold text-gray-900">€{pricing.total}</span>
+                </div>
               </div>
 
               {/* City Tax Info */}
@@ -275,6 +315,9 @@ export default function BookingWidget() {
   const [hasPet, setHasPet] = useState(false);
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<Promotion | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
 
   const today = startOfDay(new Date());
 
@@ -297,11 +340,17 @@ export default function BookingWidget() {
     const cleaning = nights <= 2 ? CONFIG.pricing.cleaningShort : CONFIG.pricing.cleaningLong;
     const pet = hasPet ? (nights <= 2 ? CONFIG.pricing.petShort : CONFIG.pricing.petLong) : 0;
     const subtotal = accommodation + cleaning + pet;
+
+    // Apply discount if promo code is valid
+    const discountPercent = appliedPromo?.percent ?? 0;
+    const discount = Math.round(subtotal * (discountPercent / 100));
+    const total = subtotal - discount;
+
     const cityTaxNights = Math.min(nights, CONFIG.pricing.cityTaxMaxNights);
     const cityTax = guests.adults * CONFIG.pricing.cityTaxPerAdult * cityTaxNights;
 
-    return { nights, accommodation, cleaning, pet, subtotal, cityTax, cityTaxNights };
-  }, [nights, hasPet, guests.adults, isValidBooking]);
+    return { nights, accommodation, cleaning, pet, discount, discountPercent, subtotal, total, cityTax, cityTaxNights };
+  }, [nights, hasPet, guests.adults, isValidBooking, appliedPromo]);
 
   // Handlers
   const handleGuestChange = useCallback((type: keyof GuestState, value: number) => {
@@ -322,6 +371,37 @@ export default function BookingWidget() {
     setCalendarMonth(prev => addMonths(prev, direction === 'next' ? 1 : -1));
   }, []);
 
+  // Promo code handlers
+  const handleApplyPromo = useCallback(() => {
+    const code = promoCode.trim().toUpperCase();
+    setPromoError(null);
+
+    if (!code) {
+      setPromoError('Please enter a promo code');
+      return;
+    }
+
+    const promo = PROMOTIONS[code];
+    if (promo) {
+      // Check if LONGSTAY20 requires 7+ nights
+      if (code === 'LONGSTAY20' && nights < 7) {
+        setPromoError('This code requires 7+ nights stay');
+        return;
+      }
+      setAppliedPromo(promo);
+      setPromoError(null);
+    } else {
+      setPromoError('Invalid promo code');
+      setAppliedPromo(null);
+    }
+  }, [promoCode, nights]);
+
+  const handleRemovePromo = useCallback(() => {
+    setAppliedPromo(null);
+    setPromoCode('');
+    setPromoError(null);
+  }, []);
+
   // Build booking URL
   const bookingUrl = useMemo(() => {
     if (!dateRange?.from || !dateRange?.to) return '#';
@@ -333,8 +413,12 @@ export default function BookingWidget() {
       infants: String(guests.infants),
       pet: String(hasPet),
     });
+    // Include promo code if applied
+    if (appliedPromo) {
+      params.set('promo', appliedPromo.code);
+    }
     return `/book?${params.toString()}`;
-  }, [dateRange, guests, hasPet]);
+  }, [dateRange, guests, hasPet, appliedPromo]);
 
   return (
     <>
@@ -361,9 +445,8 @@ export default function BookingWidget() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Select dates</h3>
               {nights > 0 && (
-                <span className={`text-sm font-medium ${isValidBooking ? 'text-[#C4A572]' : 'text-red-500'}`}>
+                <span className="text-sm font-medium text-[#C4A572]">
                   {nights} night{nights !== 1 ? 's' : ''}
-                  {!isValidBooking && ` (min ${CONFIG.stay.minNights})`}
                 </span>
               )}
             </div>
@@ -523,6 +606,87 @@ export default function BookingWidget() {
               </div>
             </div>
 
+            {/* Promo Code */}
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="w-5 h-5 text-[#C4A572]" />
+                <h3 className="font-semibold text-gray-900">Promo code</h3>
+              </div>
+
+              {appliedPromo ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl"
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <p className="font-semibold text-emerald-700">{appliedPromo.code}</p>
+                      <p className="text-sm text-emerald-600">{appliedPromo.description}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemovePromo}
+                    aria-label="Remove promo code"
+                    className="w-8 h-8 rounded-full hover:bg-emerald-100 flex items-center justify-center
+                               text-emerald-600 transition-colors focus:outline-none focus:ring-2
+                               focus:ring-emerald-500 focus:ring-offset-2"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </motion.div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value);
+                        setPromoError(null);
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
+                      placeholder="Enter code"
+                      aria-label="Promo code"
+                      aria-invalid={!!promoError}
+                      className={`flex-1 px-4 py-3 text-sm border-2 rounded-xl bg-gray-50
+                                  transition-colors focus:outline-none focus:bg-white
+                                  ${promoError
+                                    ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                                    : 'border-gray-200 focus:border-[#C4A572] focus:ring-2 focus:ring-[#C4A572]/20'
+                                  }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyPromo}
+                      className="px-5 py-3 text-sm font-semibold text-white bg-[#C4A572] rounded-xl
+                                 hover:bg-[#B39562] transition-colors touch-manipulation
+                                 focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2
+                                 active:scale-95"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  <AnimatePresence>
+                    {promoError && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="text-sm text-red-500 flex items-center gap-1"
+                        role="alert"
+                      >
+                        <Info className="w-4 h-4" />
+                        {promoError}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+
             {/* Pricing */}
             <AnimatePresence>
               {pricing && (
@@ -536,8 +700,24 @@ export default function BookingWidget() {
                       <span className="text-xl font-bold text-gray-900">Total</span>
                       <span className="text-sm text-gray-500 ml-2">for {pricing.nights} nights</span>
                     </div>
-                    <span className="text-2xl font-bold text-gray-900">€{pricing.subtotal}</span>
+                    <div className="text-right">
+                      {pricing.discount > 0 && (
+                        <span className="text-sm text-gray-400 line-through mr-2">€{pricing.subtotal}</span>
+                      )}
+                      <span className="text-2xl font-bold text-gray-900">€{pricing.total}</span>
+                    </div>
                   </div>
+
+                  {pricing.discount > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="flex items-center gap-2 mb-3 text-emerald-600"
+                    >
+                      <Percent className="w-4 h-4" />
+                      <span className="text-sm font-medium">You save €{pricing.discount} ({pricing.discountPercent}% off)</span>
+                    </motion.div>
+                  )}
 
                   <button
                     type="button"
@@ -571,12 +751,8 @@ export default function BookingWidget() {
                            }`}
                 aria-disabled={!isValidBooking}
               >
-                {isValidBooking ? `Reserve · €${pricing?.subtotal}` : 'Select dates to book'}
+                {isValidBooking ? `Reserve · €${pricing?.total}` : 'Select dates to book'}
               </Link>
-
-              <p className="text-sm text-gray-400 text-center mt-3">
-                You won&apos;t be charged yet
-              </p>
 
               {/* Trust Badges */}
               <div className="mt-6 pt-6 border-t border-gray-100">
