@@ -2,11 +2,24 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { HelpCircle, X, Sparkles, Calendar, Shield, Globe } from 'lucide-react';
+import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Search } from 'lucide-react';
 
-const APP_VERSION = '1.1.4';
+const APP_VERSION = '1.1.5';
 
 const updates = [
+  {
+    version: '1.1.5',
+    date: 'November 2025',
+    icon: Search,
+    title: 'Public Booking Lookup & Self-Service',
+    changes: [
+      'New /bookings/find page for guest self-service',
+      'Search bookings by confirmation + email',
+      'Modify guest details (name, phone, requests)',
+      'Online check-in for Italian compliance',
+      'Account creation incentive prompt',
+    ],
+  },
   {
     version: '1.1.4',
     date: 'November 2025',
