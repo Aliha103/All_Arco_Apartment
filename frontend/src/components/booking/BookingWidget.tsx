@@ -548,7 +548,7 @@ export default function BookingWidget() {
                        [&:has([aria-selected].day-range-start)]:rounded-l-full
                        [&:has([aria-selected].day-range-end)]:rounded-r-full
                        [&:has([aria-selected])]:bg-[#C4A572]/10`,
-                day: `w-12 h-12 p-0 font-normal text-base rounded-full transition-all duration-200
+                day: `w-12 h-12 p-0 font-normal text-base text-gray-900 rounded-full transition-all duration-200
                       hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-inset
                       touch-manipulation`,
                 day_selected: 'bg-[#C4A572] text-white hover:bg-[#B39562] focus:bg-[#B39562]',
