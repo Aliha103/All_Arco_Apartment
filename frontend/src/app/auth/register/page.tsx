@@ -412,27 +412,28 @@ export default function RegisterPage() {
 
             {/* Progress Steps */}
             <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                {[1, 2].map((step) => (
-                  <div key={step} className="flex items-center">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm transition-all duration-300 ${
-                      currentStep >= step
-                        ? 'bg-[#C4A572] text-white'
-                        : 'bg-gray-800 text-gray-500'
-                    }`}>
-                      {currentStep > step ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        step
-                      )}
-                    </div>
-                    {step < 2 && (
-                      <div className={`w-24 sm:w-32 h-1 mx-2 rounded-full transition-all duration-300 ${
-                        currentStep > step ? 'bg-[#C4A572]' : 'bg-gray-800'
-                      }`} />
-                    )}
-                  </div>
-                ))}
+              <div className="relative flex items-center justify-between mb-4">
+                {/* Background line (gray) */}
+                <div className="absolute left-5 right-5 top-1/2 h-1 -translate-y-1/2 bg-gray-800 rounded-full" />
+                {/* Progress line (gold) */}
+                <div
+                  className="absolute left-5 top-1/2 h-1 -translate-y-1/2 bg-[#C4A572] rounded-full transition-all duration-500"
+                  style={{ width: currentStep > 1 ? 'calc(100% - 40px)' : '0%' }}
+                />
+
+                {/* Step 1 Circle */}
+                <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm transition-all duration-300 ${
+                  currentStep >= 1 ? 'bg-[#C4A572] text-white' : 'bg-gray-800 text-gray-500'
+                }`}>
+                  {currentStep > 1 ? <CheckCircle2 className="w-5 h-5" /> : '1'}
+                </div>
+
+                {/* Step 2 Circle */}
+                <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm transition-all duration-300 ${
+                  currentStep >= 2 ? 'bg-[#C4A572] text-white' : 'bg-gray-800 text-gray-500'
+                }`}>
+                  2
+                </div>
               </div>
               <div className="flex justify-between text-sm">
                 <span className={currentStep >= 1 ? 'text-[#C4A572]' : 'text-gray-600'}>Personal Info</span>
