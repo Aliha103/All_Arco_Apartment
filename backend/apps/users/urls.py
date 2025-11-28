@@ -14,6 +14,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('me/', views.me_view, name='me'),
+    path('password-reset/', views.password_reset_view, name='password_reset'),
 
     # RBAC Setup
     path('seed-rbac/', views.seed_rbac_data, name='seed_rbac'),

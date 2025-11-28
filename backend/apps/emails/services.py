@@ -238,3 +238,91 @@ def send_team_invitation(user, temporary_password):
         subject="You've Been Invited to All'Arco Apartment PMS",
         html_body=html_body
     )
+
+
+def send_password_reset_email(user, new_password):
+    """Send password reset email with new temporary password."""
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <!-- Header with Logo -->
+            <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 30px; text-align: center;">
+                <img src="https://www.allarcoapartment.com/logos/logo-horizontal-white.svg" alt="All'Arco Apartment" style="height: 50px; width: auto;" />
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 40px 30px;">
+                <h1 style="color: #1a1a2e; font-size: 24px; font-weight: 600; margin: 0 0 20px 0;">
+                    Password Reset
+                </h1>
+
+                <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    Hello {user.first_name or 'there'},
+                </p>
+
+                <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    We received a request to reset your password for your All'Arco Apartment account. Your new temporary password is:
+                </p>
+
+                <!-- Password Box -->
+                <div style="background-color: #f8f9fa; border: 2px dashed #C4A572; border-radius: 12px; padding: 25px; text-align: center; margin: 30px 0;">
+                    <p style="color: #718096; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px 0;">
+                        Your New Password
+                    </p>
+                    <p style="color: #1a1a2e; font-size: 28px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 2px; margin: 0;">
+                        {new_password}
+                    </p>
+                </div>
+
+                <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    For your security, please:
+                </p>
+
+                <ul style="color: #4a5568; font-size: 16px; line-height: 1.8; margin: 0 0 30px 0; padding-left: 20px;">
+                    <li>Log in with this temporary password</li>
+                    <li>Change your password immediately after logging in</li>
+                    <li>Delete this email after you've updated your password</li>
+                </ul>
+
+                <!-- Login Button -->
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="https://www.allarcoapartment.com/auth/login"
+                       style="display: inline-block; background-color: #C4A572; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 40px; border-radius: 8px;">
+                        Login to Your Account
+                    </a>
+                </div>
+
+                <p style="color: #718096; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                    If you didn't request this password reset, please ignore this email or contact us at
+                    <a href="mailto:support@allarcoapartment.com" style="color: #C4A572;">support@allarcoapartment.com</a>
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #1a1a2e; padding: 30px; text-align: center;">
+                <p style="color: #a0aec0; font-size: 14px; margin: 0 0 10px 0;">
+                    All'Arco Apartment
+                </p>
+                <p style="color: #718096; font-size: 12px; margin: 0;">
+                    Venice, Italy | support@allarcoapartment.com
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    return ZeptomailService.send_email(
+        to_email=user.email,
+        from_email='support@allarcoapartment.com',
+        from_name="All'Arco Apartment",
+        subject="Password Reset - All'Arco Apartment",
+        html_body=html_body,
+        sender_type='support'
+    )

@@ -61,6 +61,47 @@ def logout_view(request):
     return Response({'message': 'Logged out successfully'})
 
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_view(request):
+    """
+    Password reset endpoint.
+    Checks if email exists, generates new password, and sends email.
+    Always returns success for security (don't reveal if email exists).
+    """
+    import secrets
+    import string
+
+    email = request.data.get('email', '').lower().strip()
+
+    if not email:
+        return Response({'message': 'If your email is registered, you will receive a password reset email.'})
+
+    try:
+        user = User.objects.get(email=email)
+
+        # Generate a secure random password
+        alphabet = string.ascii_letters + string.digits
+        new_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+
+        # Set the new password
+        user.set_password(new_password)
+        user.save()
+
+        # Send password reset email
+        from apps.emails.services import send_password_reset_email
+        send_password_reset_email(user, new_password)
+
+    except User.DoesNotExist:
+        # Don't reveal that the email doesn't exist
+        pass
+
+    # Always return success message for security
+    return Response({
+        'message': 'If your email is registered, you will receive a password reset email.'
+    })
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def me_view(request):
