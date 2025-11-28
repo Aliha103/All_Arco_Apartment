@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,7 +16,7 @@ import SiteFooter from '@/app/components/SiteFooter';
 // Smooth easing
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useAuthStore();
@@ -338,5 +338,29 @@ export default function ResetPasswordPage() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function ResetPasswordLoading() {
+  return (
+    <div className="min-h-screen flex flex-col bg-[#0a0a0a]">
+      <SiteNav />
+      <main className="flex-1 flex items-center justify-center pt-20 px-4">
+        <div className="w-full max-w-md py-8 text-center">
+          <div className="w-12 h-12 border-2 border-[#C4A572]/30 border-t-[#C4A572] rounded-full animate-spin mx-auto" />
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+// Main export with Suspense boundary
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordLoading />}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
