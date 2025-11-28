@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { DayPicker, DateRange } from 'react-day-picker';
 import { format, differenceInDays, startOfDay } from 'date-fns';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
   PawPrint,
@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   Shield,
   Star,
+  ChevronDown,
+  Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
 import 'react-day-picker/dist/style.css';
@@ -86,6 +88,7 @@ export default function BookingWidget() {
   const [guests, setGuests] = useState<GuestCounts>({ adults: 2, children: 0, infants: 0 });
   const [hasPet, setHasPet] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
 
   const today = startOfDay(new Date());
 
@@ -157,7 +160,7 @@ export default function BookingWidget() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-sm text-[#C4A572] font-medium"
               >
-                {nights} night{nights !== 1 ? 's' : ''} selected
+                {nights} night{nights !== 1 ? 's' : ''}
               </motion.div>
             )}
           </div>
@@ -168,7 +171,7 @@ export default function BookingWidget() {
             </p>
           )}
 
-          {/* 2-Month Calendar - Always side by side on lg+ */}
+          {/* 2-Month Calendar */}
           <DayPicker
             mode="range"
             selected={dateRange}
@@ -203,39 +206,43 @@ export default function BookingWidget() {
               day_range_middle: 'aria-selected:bg-transparent aria-selected:text-gray-900',
             }}
           />
-
-          {/* Selected Dates Display */}
-          {dateRange?.from && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 flex items-center justify-center gap-3 text-sm"
-            >
-              <div className="bg-gray-50 px-4 py-2 rounded-lg">
-                <span className="text-gray-500">Check-in:</span>{' '}
-                <span className="font-semibold text-gray-900">{format(dateRange.from, 'EEE, MMM d')}</span>
-              </div>
-              {dateRange.to && (
-                <>
-                  <span className="text-gray-300">→</span>
-                  <div className="bg-gray-50 px-4 py-2 rounded-lg">
-                    <span className="text-gray-500">Check-out:</span>{' '}
-                    <span className="font-semibold text-gray-900">{format(dateRange.to, 'EEE, MMM d')}</span>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          )}
         </div>
 
-        {/* Right: Guests + Pricing + Reserve */}
+        {/* Right: Dates Display + Guests + Pricing + Reserve */}
         <div className="flex-1 flex flex-col min-w-[280px] lg:min-w-[320px]">
+          {/* Selected Dates Display - Moved here */}
+          {dateRange?.from && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 lg:p-6 border-b border-gray-100 bg-[#C4A572]/5"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-[#C4A572]" />
+                <h3 className="text-sm font-semibold text-gray-900">Your stay</h3>
+              </div>
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Check-in</p>
+                  <p className="text-sm font-semibold text-gray-900">{format(dateRange.from, 'EEE, MMM d')}</p>
+                </div>
+                <div className="text-gray-300">→</div>
+                {dateRange.to && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Check-out</p>
+                    <p className="text-sm font-semibold text-gray-900">{format(dateRange.to, 'EEE, MMM d')}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* Guests Section */}
           <div className="p-4 lg:p-6 border-b border-gray-100">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-4 h-4 text-[#C4A572]" />
               <h3 className="text-sm font-semibold text-gray-900">Guests</h3>
-              <span className="text-xs text-gray-400 ml-auto">Max 5 guests</span>
+              <span className="text-xs text-gray-400 ml-auto">Max 5</span>
             </div>
 
             <div className="space-y-4">
@@ -262,76 +269,104 @@ export default function BookingWidget() {
                 max={3}
               />
 
-              {/* Pet Toggle */}
+              {/* Pet Toggle - Yes/No buttons */}
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <div className="flex items-center gap-2">
                   <PawPrint className="w-4 h-4 text-[#C4A572]" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Traveling with pet?</p>
-                    <p className="text-xs text-gray-500">
-                      +€{nights <= 2 || nights === 0 ? PRICING.petFeeShort : PRICING.petFeeLong} fee
-                    </p>
-                  </div>
+                  <p className="text-sm font-medium text-gray-900">Traveling with pet?</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setHasPet(!hasPet)}
-                  className={`w-12 h-7 rounded-full transition-all duration-200 relative ${
-                    hasPet ? 'bg-[#C4A572]' : 'bg-gray-200'
-                  }`}
-                >
-                  <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                    hasPet ? 'translate-x-5' : 'translate-x-0.5'
-                  }`} />
-                </button>
+                <div className="flex rounded-lg overflow-hidden border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setHasPet(false)}
+                    className={`px-4 py-1.5 text-sm font-medium transition-all ${
+                      !hasPet
+                        ? 'bg-[#C4A572] text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    No
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHasPet(true)}
+                    className={`px-4 py-1.5 text-sm font-medium transition-all border-l border-gray-200 ${
+                      hasPet
+                        ? 'bg-[#C4A572] text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Yes
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Price Breakdown */}
+          {/* Price Section - Collapsible breakdown */}
           {pricing && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="p-4 lg:p-6 border-b border-gray-100 bg-gray-50"
-            >
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Price details</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">€{PRICING.baseNightlyRate} × {pricing.nights} nights</span>
-                  <span className="text-gray-900 font-medium">€{pricing.accommodationTotal}</span>
+            <div className="p-4 lg:p-6 border-b border-gray-100">
+              {/* Total with expand option */}
+              <button
+                type="button"
+                onClick={() => setShowPriceBreakdown(!showPriceBreakdown)}
+                className="w-full flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-gray-900">Total</span>
+                  <span className="text-xs text-gray-500">for {pricing.nights} nights</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Cleaning fee</span>
-                  <span className="text-gray-900 font-medium">€{pricing.cleaningFee}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-gray-900">€{pricing.total}</span>
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showPriceBreakdown ? 'rotate-180' : ''}`} />
                 </div>
-                {pricing.petFee > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Pet fee</span>
-                    <span className="text-gray-900 font-medium">€{pricing.petFee}</span>
-                  </div>
+              </button>
+
+              {/* Expandable Price Breakdown */}
+              <AnimatePresence>
+                {showPriceBreakdown && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-4 mt-4 border-t border-gray-100 space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">€{PRICING.baseNightlyRate} × {pricing.nights} nights</span>
+                        <span className="text-gray-900">€{pricing.accommodationTotal}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Cleaning fee</span>
+                        <span className="text-gray-900">€{pricing.cleaningFee}</span>
+                      </div>
+                      {pricing.petFee > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Pet fee</span>
+                          <span className="text-gray-900">€{pricing.petFee}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Service fee</span>
+                        <span className="text-gray-900">€{pricing.serviceFee}</span>
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Service fee</span>
-                  <span className="text-gray-900 font-medium">€{pricing.serviceFee}</span>
-                </div>
-                <div className="flex justify-between pt-3 border-t border-gray-200 text-base font-bold">
-                  <span>Total</span>
-                  <span>€{pricing.total}</span>
-                </div>
-              </div>
+              </AnimatePresence>
 
               {/* City Tax Notice */}
-              <div className="mt-3 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg">
-                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div className="mt-3 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-2 rounded-lg">
+                <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                 <span>
-                  City tax €{pricing.cityTax} ({guests.adults} × €{PRICING.cityTaxPerAdult} × {pricing.cityTaxNights} nights) payable at property
+                  + €{pricing.cityTax} city tax at property
                 </span>
               </div>
-            </motion.div>
+            </div>
           )}
 
-          {/* Reserve Button - Grows to fill remaining space */}
+          {/* Reserve Button */}
           <div className="p-4 lg:p-6 mt-auto">
             <Link
               href={isValidRange ? `/book?checkIn=${format(dateRange!.from!, 'yyyy-MM-dd')}&checkOut=${format(dateRange!.to!, 'yyyy-MM-dd')}&adults=${guests.adults}&children=${guests.children}&infants=${guests.infants}&pet=${hasPet}` : '#'}
