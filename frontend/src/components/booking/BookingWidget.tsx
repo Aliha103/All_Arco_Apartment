@@ -490,12 +490,26 @@ export default function BookingWidget() {
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-2">
               <span className="text-sm text-gray-400">From</span>
-              <span className="text-3xl font-bold text-white">€{CONFIG.pricing.baseRate}</span>
+              {appliedPromo ? (
+                <>
+                  <span className="text-lg text-gray-500 line-through">€{CONFIG.pricing.baseRate}</span>
+                  <span className="text-3xl font-bold text-white">
+                    €{Math.round(CONFIG.pricing.baseRate * (1 - appliedPromo.percent / 100))}
+                  </span>
+                </>
+              ) : (
+                <span className="text-3xl font-bold text-white">€{CONFIG.pricing.baseRate}</span>
+              )}
               <span className="text-gray-400">/ night</span>
+              {appliedPromo && (
+                <span className="ml-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-full">
+                  -{appliedPromo.percent}%
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 text-emerald-400">
               <CheckCircle2 className="w-4 h-4" />
-              <span className="text-sm font-medium">Free cancellation</span>
+              <span className="text-sm font-medium">Free cancel 24h before</span>
             </div>
           </div>
         </div>
