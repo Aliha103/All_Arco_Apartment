@@ -600,11 +600,11 @@ export default function Home() {
         </div>
       </AnimatedSection>
 
-      {/* Location Section */}
-      <LocationSection />
-
       {/* Reviews Section */}
       <ReviewsSection />
+
+      {/* Location Section */}
+      <LocationSection />
 
       {/* Footer */}
       <SiteFooter />

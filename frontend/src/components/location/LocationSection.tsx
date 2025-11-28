@@ -11,6 +11,7 @@ import {
   Train,
   Ship,
   Plane,
+  Bus,
   Coffee,
   ShoppingBag,
   Utensils,
@@ -50,7 +51,7 @@ interface Attraction {
 interface TransportOption {
   id: string;
   name: string;
-  type: 'water' | 'train' | 'air';
+  type: 'water' | 'train' | 'air' | 'bus';
   time: string;
   icon: React.ElementType;
 }
@@ -66,49 +67,49 @@ interface NeighborhoodHighlight {
 // DATA
 // ============================================================================
 const PROPERTY_LOCATION = {
-  lat: 45.4371,
-  lng: 12.3476,
-  address: 'Castello 2739/A',
+  lat: 45.4975,
+  lng: 12.2435,
+  address: 'Via Castellana 61',
   city: 'Venice',
   country: 'Italy',
-  postalCode: '30122',
-  district: 'Castello',
+  postalCode: '30174',
+  district: 'Carpenedo',
 };
 
 const ATTRACTIONS: Attraction[] = [
-  { id: '1', name: 'Rialto Bridge', walkTime: 17, distance: '1.3 km', category: 'landmark', icon: Camera, highlight: true },
-  { id: '2', name: "St. Mark's Square", walkTime: 20, distance: '1.5 km', category: 'landmark', icon: Camera, highlight: true },
-  { id: '3', name: 'Teatro La Fenice', walkTime: 15, distance: '1.1 km', category: 'culture', icon: Building2 },
-  { id: '4', name: "Doge's Palace", walkTime: 22, distance: '1.7 km', category: 'landmark', icon: Camera, highlight: true },
-  { id: '5', name: 'Peggy Guggenheim', walkTime: 25, distance: '1.9 km', category: 'culture', icon: Building2 },
+  { id: '1', name: 'Venice Historic Center', walkTime: 35, distance: 'By bus', category: 'landmark', icon: Camera, highlight: true },
+  { id: '2', name: "St. Mark's Square", walkTime: 45, distance: 'By bus + walk', category: 'landmark', icon: Camera, highlight: true },
+  { id: '3', name: 'Rialto Bridge', walkTime: 40, distance: 'By bus + walk', category: 'landmark', icon: Camera, highlight: true },
+  { id: '4', name: 'Parco Bissuola', walkTime: 10, distance: '800 m', category: 'culture', icon: Building2 },
+  { id: '5', name: 'Mestre Center', walkTime: 15, distance: '1.2 km', category: 'shopping', icon: ShoppingBag },
   { id: '6', name: 'Local Restaurants', walkTime: 3, distance: '200 m', category: 'dining', icon: Utensils },
-  { id: '7', name: 'Artisan Shops', walkTime: 5, distance: '350 m', category: 'shopping', icon: ShoppingBag },
+  { id: '7', name: 'Supermarkets', walkTime: 5, distance: '350 m', category: 'shopping', icon: ShoppingBag },
   { id: '8', name: 'Traditional Cafes', walkTime: 4, distance: '250 m', category: 'dining', icon: Coffee },
 ];
 
 const TRANSPORT_OPTIONS: TransportOption[] = [
-  { id: '1', name: 'Vaporetto Stop (Arsenale)', type: 'water', time: '5 min walk', icon: Ship },
-  { id: '2', name: 'Santa Lucia Train Station', type: 'train', time: '35 min', icon: Train },
-  { id: '3', name: 'Marco Polo Airport', type: 'air', time: '45 min', icon: Plane },
+  { id: '1', name: 'Bus Stop (Via Castellana)', type: 'bus', time: '2 min walk', icon: Bus },
+  { id: '2', name: 'Mestre Train Station', type: 'train', time: '15 min', icon: Train },
+  { id: '3', name: 'Marco Polo Airport', type: 'air', time: '20 min', icon: Plane },
 ];
 
 const NEIGHBORHOOD_HIGHLIGHTS: NeighborhoodHighlight[] = [
   {
     id: '1',
-    title: 'Authentic Venice',
-    description: 'Experience the real Venice away from tourist crowds in the historic Castello district.',
+    title: 'Peaceful Setting',
+    description: 'Enjoy tranquil surroundings in the residential Carpenedo area, away from tourist crowds.',
     icon: Star,
   },
   {
     id: '2',
     title: 'Local Life',
-    description: 'Surrounded by neighborhood trattorias, artisan workshops, and hidden squares.',
+    description: 'Surrounded by authentic Italian trattorias, shops, and friendly local atmosphere.',
     icon: Coffee,
   },
   {
     id: '3',
     title: 'Easy Access',
-    description: 'Central location with water bus stops nearby for exploring all of Venice.',
+    description: 'Well-connected location with bus lines and parking for exploring Venice and the region.',
     icon: Navigation,
   },
 ];
@@ -183,6 +184,7 @@ const TransportCard = memo(function TransportCard({
       case 'water': return 'bg-blue-50 text-blue-600';
       case 'train': return 'bg-emerald-50 text-emerald-600';
       case 'air': return 'bg-purple-50 text-purple-600';
+      case 'bus': return 'bg-orange-50 text-orange-600';
       default: return 'bg-gray-50 text-gray-600';
     }
   }, [transport.type]);
@@ -277,8 +279,8 @@ export default function LocationSection() {
             In the Heart of Venice
           </motion.h2>
           <motion.p variants={fadeInUp} className="text-base sm:text-lg text-gray-400 max-w-2xl">
-            Nestled in the prestigious Castello district, experience authentic Venetian life
-            while being minutes from the city&apos;s most celebrated landmarks.
+            Located in the quiet Carpenedo neighborhood, enjoy peaceful surroundings
+            with easy access to Venice&apos;s historic center and all its attractions.
           </motion.p>
         </motion.div>
 
