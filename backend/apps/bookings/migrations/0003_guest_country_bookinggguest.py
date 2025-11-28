@@ -58,17 +58,17 @@ class Migration(migrations.Migration):
                 )),
             ],
             options={
-                'db_table': 'bookings_bookinggguest',
+                'db_table': 'bookings_bookingguest',
                 'ordering': ['-is_primary', 'created_at'],
             },
         ),
         # Add indexes
         migrations.AddIndex(
-            model_name='bookinggguest',
+            model_name='bookingguest',
             index=models.Index(fields=['booking'], name='bookings_bo_booking_idx'),
         ),
         migrations.AddIndex(
-            model_name='bookinggguest',
+            model_name='bookingguest',
             index=models.Index(fields=['is_primary'], name='bookings_bo_is_prim_idx'),
         ),
     ]

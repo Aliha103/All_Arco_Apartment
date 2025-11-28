@@ -248,11 +248,11 @@ class BookingGuest(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'bookings_bookinggguest'
+        db_table = 'bookings_bookingguest'
         ordering = ['-is_primary', 'created_at']
         indexes = [
-            models.Index(fields=['booking']),
-            models.Index(fields=['is_primary']),
+            models.Index(fields=['booking'], name='bookings_bo_booking_idx'),
+            models.Index(fields=['is_primary'], name='bookings_bo_is_prim_idx'),
         ]
 
     def __str__(self):

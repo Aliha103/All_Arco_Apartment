@@ -461,8 +461,8 @@ class PasswordResetToken(models.Model):
         db_table = 'users_passwordresettoken'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['token', 'is_used']),
-            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['token', 'is_used'], name='users_passw_token_i_idx'),
+            models.Index(fields=['user', '-created_at'], name='users_passw_user_id_idx'),
         ]
 
     def __str__(self):
