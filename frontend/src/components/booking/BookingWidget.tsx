@@ -517,7 +517,7 @@ export default function BookingWidget() {
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row">
           {/* Calendar Section */}
-          <div className="flex-1 p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-gray-100">
+          <div className="flex-1 p-4 sm:p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-gray-100 overflow-x-auto">
             {/* Calendar */}
             <DayPicker
               mode="range"
@@ -528,40 +528,40 @@ export default function BookingWidget() {
               onMonthChange={setCalendarMonth}
               disabled={[{ before: today }]}
               showOutsideDays={false}
-              className="!font-sans"
+              className="!font-sans [&_button]:!text-gray-900 [&_.rdp-day]:!text-gray-900"
               classNames={{
-                months: 'flex flex-col sm:flex-row gap-8',
-                month: 'space-y-4',
+                months: 'flex flex-col sm:flex-row gap-4 sm:gap-8',
+                month: 'space-y-3 sm:space-y-4',
                 caption: 'flex justify-center relative items-center h-10',
-                caption_label: 'text-lg font-semibold text-gray-900',
+                caption_label: 'text-base sm:text-lg font-semibold text-gray-900',
                 nav: 'flex items-center gap-1',
-                nav_button: `h-10 w-10 bg-transparent rounded-full inline-flex items-center justify-center
+                nav_button: `h-8 w-8 sm:h-10 sm:w-10 bg-transparent rounded-full inline-flex items-center justify-center
                              text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors
                              focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2`,
                 nav_button_previous: 'absolute left-0',
                 nav_button_next: 'absolute right-0',
                 table: 'w-full border-collapse',
-                head_row: 'flex mb-2',
-                head_cell: 'w-12 h-10 text-sm font-medium text-gray-500 flex items-center justify-center',
+                head_row: 'flex mb-1 sm:mb-2',
+                head_cell: 'w-9 sm:w-10 md:w-12 h-8 sm:h-10 text-xs sm:text-sm font-medium text-gray-500 flex items-center justify-center',
                 row: 'flex w-full',
-                cell: `relative w-12 h-12 p-0 text-center focus-within:z-20
+                cell: `relative w-9 sm:w-10 md:w-12 h-9 sm:h-10 md:h-12 p-0 text-center focus-within:z-20
                        [&:has([aria-selected].day-range-start)]:rounded-l-full
                        [&:has([aria-selected].day-range-end)]:rounded-r-full
                        [&:has([aria-selected])]:bg-[#C4A572]/10`,
-                day: `w-12 h-12 p-0 font-normal text-base text-gray-900 rounded-full transition-all duration-200
+                day: `w-9 sm:w-10 md:w-12 h-9 sm:h-10 md:h-12 p-0 font-medium text-sm sm:text-base !text-gray-900 rounded-full transition-all duration-200
                       hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-inset
                       touch-manipulation`,
-                day_selected: 'bg-[#C4A572] text-white hover:bg-[#B39562] focus:bg-[#B39562]',
-                day_today: 'bg-gray-100 font-semibold',
-                day_outside: 'text-gray-300 opacity-50',
-                day_disabled: 'text-gray-300 cursor-not-allowed hover:bg-transparent',
+                day_selected: 'bg-[#C4A572] !text-white hover:bg-[#B39562] focus:bg-[#B39562]',
+                day_today: 'bg-gray-100 font-semibold !text-gray-900',
+                day_outside: '!text-gray-300 opacity-50',
+                day_disabled: '!text-gray-300 cursor-not-allowed hover:bg-transparent',
                 day_range_start: 'day-range-start rounded-full',
                 day_range_end: 'day-range-end rounded-full',
-                day_range_middle: 'rounded-none',
+                day_range_middle: 'rounded-none !text-gray-900',
               }}
               components={{
-                IconLeft: () => <ChevronLeft className="w-5 h-5" />,
-                IconRight: () => <ChevronRight className="w-5 h-5" />,
+                IconLeft: () => <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />,
+                IconRight: () => <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />,
               }}
             />
           </div>
