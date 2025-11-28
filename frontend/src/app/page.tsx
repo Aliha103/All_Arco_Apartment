@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
@@ -13,7 +13,6 @@ import {
   MapPin,
   Star,
   ArrowRight,
-  Mail,
   Users,
   Maximize,
   BedDouble,
@@ -25,6 +24,7 @@ import {
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
 import BookingWidget from '@/components/booking/BookingWidget';
+import { api } from '@/lib/api';
 
 // Smooth easing for all animations
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
@@ -47,25 +47,20 @@ const staggerContainer = {
   },
 };
 
-// Hero images for auto-scroll carousel
-const heroImages = [
-  {
-    src: 'https://images.unsplash.com/photo-1514890547357-a9ee288728e0?q=80&w=2940&auto=format&fit=crop',
-    alt: 'Venice Canal View'
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=2940&auto=format&fit=crop',
-    alt: 'Venice Grand Canal'
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2940&auto=format&fit=crop',
-    alt: 'Venice Architecture'
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?q=80&w=2940&auto=format&fit=crop',
-    alt: 'Italian Scenery'
-  },
-];
+// Fallback hero image if database is empty
+const fallbackHeroImage = {
+  src: '/images/hero-fallback.jpg',
+  alt: 'All\'Arco Apartment Venice'
+};
+
+interface HeroImage {
+  id: number;
+  title: string;
+  alt_text: string;
+  image: string | null;
+  image_url: string | null;
+  url: string;
+}
 
 // Property data
 const amenities = [
@@ -188,6 +183,8 @@ const Button = ({
 export default function Home() {
   const heroRef = useRef(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [heroImages, setHeroImages] = useState<{ src: string; alt: string }[]>([]);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -198,13 +195,38 @@ export default function Home() {
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.05]);
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 50]);
 
+  // Fetch hero images from database
+  useEffect(() => {
+    const fetchHeroImages = async () => {
+      try {
+        const response = await api.gallery.public('hero');
+        const images = response.data;
+        if (images && images.length > 0) {
+          setHeroImages(images.map((img: HeroImage) => ({
+            src: img.url || img.image || img.image_url || '',
+            alt: img.alt_text || img.title
+          })));
+        } else {
+          setHeroImages([fallbackHeroImage]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch hero images:', error);
+        setHeroImages([fallbackHeroImage]);
+      } finally {
+        setIsLoadingImages(false);
+      }
+    };
+    fetchHeroImages();
+  }, []);
+
   // Auto-scroll hero images every 5 seconds
   useEffect(() => {
+    if (heroImages.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroImages.length]);
 
   return (
     <div className="min-h-screen bg-white antialiased">
@@ -217,43 +239,54 @@ export default function Home() {
           style={{ scale: heroScale, y: heroY }}
           className="absolute inset-0 will-change-transform"
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentImageIndex}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.5, ease: smoothEase }}
-              className="absolute inset-0"
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 z-10" />
-              <Image
-                src={heroImages[currentImageIndex].src}
-                alt={heroImages[currentImageIndex].alt}
-                fill
-                className="object-cover"
-                priority={currentImageIndex === 0}
-                sizes="100vw"
-              />
-            </motion.div>
-          </AnimatePresence>
+          {/* Loading state */}
+          {isLoadingImages && (
+            <div className="absolute inset-0 bg-gradient-to-b from-[#1a1a2e] to-[#16213e]" />
+          )}
+
+          {/* Images carousel */}
+          {!isLoadingImages && heroImages.length > 0 && (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentImageIndex}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.5, ease: smoothEase }}
+                className="absolute inset-0"
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 z-10" />
+                <Image
+                  src={heroImages[currentImageIndex].src}
+                  alt={heroImages[currentImageIndex].alt}
+                  fill
+                  className="object-cover"
+                  priority={currentImageIndex === 0}
+                  sizes="100vw"
+                  unoptimized={heroImages[currentImageIndex].src.startsWith('http')}
+                />
+              </motion.div>
+            </AnimatePresence>
+          )}
         </motion.div>
 
-        {/* Image Indicators */}
-        <div className="absolute bottom-32 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-          {heroImages.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentImageIndex(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === currentImageIndex
-                  ? 'bg-white w-6'
-                  : 'bg-white/40 hover:bg-white/60'
-              }`}
-              aria-label={`Go to image ${index + 1}`}
-            />
-          ))}
-        </div>
+        {/* Image Indicators - only show if more than 1 image */}
+        {heroImages.length > 1 && (
+          <div className="absolute bottom-32 sm:bottom-28 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+            {heroImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  index === currentImageIndex
+                    ? 'bg-white w-6'
+                    : 'bg-white/40 hover:bg-white/60'
+                }`}
+                aria-label={`Go to image ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Hero Content */}
         <motion.div
@@ -649,30 +682,6 @@ export default function Home() {
                 </div>
               </motion.div>
             ))}
-          </motion.div>
-        </div>
-      </AnimatedSection>
-
-      {/* CTA Section */}
-      <AnimatedSection className="py-16 sm:py-20 lg:py-24 bg-[#C4A572]">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div variants={fadeInUp}>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-light text-white mb-4 sm:mb-6">
-              Ready to Experience Venice?
-            </h2>
-            <p className="text-base sm:text-lg text-white/80 mb-6 sm:mb-8 max-w-xl mx-auto">
-              Book directly for the best rates and a complimentary welcome basket with local Venetian treats.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Button href="/book" variant="secondary" className="group">
-                Book Your Stay
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <Button href="mailto:support@allarcoapartment.com" variant="outline" external>
-                <Mail className="w-4 h-4" />
-                Contact Us
-              </Button>
-            </div>
           </motion.div>
         </div>
       </AnimatedSection>
