@@ -14,6 +14,12 @@ import SiteFooter from '@/app/components/SiteFooter';
 // Smooth easing
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
 
+// Image type from gallery
+interface GalleryImage {
+  src: string;
+  alt: string;
+}
+
 // Reviews data
 const reviews = [
   {
@@ -36,13 +42,6 @@ const reviews = [
   },
 ];
 
-// Hero images
-const heroImages = [
-  'https://images.unsplash.com/photo-1514890547357-a9ee288728e0?q=80&w=2940&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=2940&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1534113414509-0eec2bfb493f?q=80&w=2940&auto=format&fit=crop',
-];
-
 export default function LoginPage() {
   const router = useRouter();
   const { setUser, setIsAuthenticated, isAuthenticated } = useAuthStore();
@@ -53,7 +52,30 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [currentReview, setCurrentReview] = useState(0);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(true);
   const emailRef = useRef<HTMLInputElement>(null);
+
+  // Fetch gallery images from database
+  useEffect(() => {
+    const fetchGalleryImages = async () => {
+      try {
+        const response = await api.gallery.public('gallery');
+        const images = response.data;
+        if (images && images.length > 0) {
+          setGalleryImages(images.map((img: any) => ({
+            src: img.url || img.image || img.image_url || '',
+            alt: img.alt_text || img.title || 'Gallery image'
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch gallery images:', error);
+      } finally {
+        setImagesLoading(false);
+      }
+    };
+    fetchGalleryImages();
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -64,11 +86,12 @@ export default function LoginPage() {
 
   // Auto-rotate images
   useEffect(() => {
+    if (galleryImages.length === 0) return;
     const timer = setInterval(() => {
-      setCurrentImage((prev) => (prev + 1) % heroImages.length);
+      setCurrentImage((prev) => (prev + 1) % galleryImages.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [galleryImages.length]);
 
   // Auto-rotate reviews
   useEffect(() => {
@@ -111,25 +134,33 @@ export default function LoginPage() {
         {/* Left Side - Hero Image & Reviews (Hidden on mobile) */}
         <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
           {/* Background Image Carousel */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentImage}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.5, ease: smoothEase }}
-              className="absolute inset-0"
-            >
-              <Image
-                src={heroImages[currentImage]}
-                alt="Venice"
-                fill
-                className="object-cover"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/80" />
-            </motion.div>
-          </AnimatePresence>
+          {imagesLoading ? (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800 animate-pulse flex items-center justify-center">
+              <div className="w-12 h-12 border-2 border-[#C4A572]/30 border-t-[#C4A572] rounded-full animate-spin" />
+            </div>
+          ) : galleryImages.length > 0 ? (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentImage}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.5, ease: smoothEase }}
+                className="absolute inset-0"
+              >
+                <Image
+                  src={galleryImages[currentImage]?.src}
+                  alt={galleryImages[currentImage]?.alt || 'Gallery image'}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/80" />
+              </motion.div>
+            </AnimatePresence>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800" />
+          )}
 
           {/* Content Overlay */}
           <div className="relative z-10 flex flex-col justify-between p-10 xl:p-14 w-full">
