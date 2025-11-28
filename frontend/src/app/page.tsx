@@ -47,12 +47,6 @@ const staggerContainer = {
   },
 };
 
-// Fallback hero image if database is empty
-const fallbackHeroImage = {
-  src: '/images/hero-fallback.jpg',
-  alt: 'All\'Arco Apartment Venice'
-};
-
 interface HeroImage {
   id: number;
   title: string;
@@ -206,12 +200,11 @@ export default function Home() {
             src: img.url || img.image || img.image_url || '',
             alt: img.alt_text || img.title
           })));
-        } else {
-          setHeroImages([fallbackHeroImage]);
         }
+        // If no images, heroImages stays empty - will show gradient background
       } catch (error) {
         console.error('Failed to fetch hero images:', error);
-        setHeroImages([fallbackHeroImage]);
+        // On error, heroImages stays empty - will show gradient background
       } finally {
         setIsLoadingImages(false);
       }
@@ -239,12 +232,10 @@ export default function Home() {
           style={{ scale: heroScale, y: heroY }}
           className="absolute inset-0 will-change-transform"
         >
-          {/* Loading state */}
-          {isLoadingImages && (
-            <div className="absolute inset-0 bg-gradient-to-b from-[#1a1a2e] to-[#16213e]" />
-          )}
+          {/* Gradient background - shown when loading or no images */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a2e] via-[#2d2d44] to-[#16213e]" />
 
-          {/* Images carousel */}
+          {/* Images carousel - overlays the gradient when images available */}
           {!isLoadingImages && heroImages.length > 0 && (
             <AnimatePresence mode="wait">
               <motion.div
