@@ -290,12 +290,12 @@ class User(AbstractUser):
 
     # Invitation/Referral System
     reference_code = models.CharField(
-        max_length=12,
+        max_length=13,
         unique=True,
         db_index=True,
         blank=True,
         null=True
-    )  # e.g., "ARK-ABC123XYZ" - Unique code for this user to invite others
+    )  # e.g., "ARCO-XXXXXXXX" - Unique code for this user to invite others
 
     referred_by = models.ForeignKey(
         'self',

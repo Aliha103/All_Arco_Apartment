@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 blank=True,
                 db_index=True,
-                max_length=12,
+                max_length=13,
                 null=True,
                 unique=True
             ),
