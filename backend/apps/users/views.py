@@ -163,25 +163,67 @@ def password_reset_confirm_view(request):
     })
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def me_view(request):
     """
-    Get current authenticated user with role and permissions.
+    Get or update current authenticated user with role and permissions.
 
-    Returns:
+    GET:
+        Returns:
         - User details (id, email, name, phone)
         - role_info: Full role object with name, slug, is_super_admin
         - permissions: Array of permission codes user has
         - is_super_admin: Boolean flag
         - is_team_member: Boolean flag
 
-    This endpoint is used by the frontend to:
-    1. Display user info in header
-    2. Store permissions in Zustand store
-    3. Enable/disable UI elements based on permissions
+        This endpoint is used by the frontend to:
+        1. Display user info in header
+        2. Store permissions in Zustand store
+        3. Enable/disable UI elements based on permissions
+
+    PATCH:
+        Updates user profile fields (first_name, last_name, phone, date_of_birth, country)
+        Email cannot be changed through this endpoint for security.
     """
-    return Response(UserWithRoleSerializer(request.user).data)
+    if request.method == 'GET':
+        return Response(UserWithRoleSerializer(request.user).data)
+
+    elif request.method == 'PATCH':
+        user = request.user
+
+        # Fields that can be updated
+        updatable_fields = ['first_name', 'last_name', 'phone', 'date_of_birth', 'country']
+
+        # Update only provided fields
+        for field in updatable_fields:
+            if field in request.data:
+                setattr(user, field, request.data[field])
+
+        # Validate and save
+        try:
+            user.full_clean()
+            user.save()
+
+            # Create audit log entry
+            from .models import AuditLog
+            AuditLog.objects.create(
+                user=user,
+                role_at_time=user.role_name,
+                action_type='user.profile_updated',
+                resource_type='user',
+                resource_id=str(user.id),
+                metadata={'updated_fields': list(request.data.keys())},
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
+            )
+
+            return Response(UserWithRoleSerializer(user).data)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class GuestViewSet(viewsets.ReadOnlyModelViewSet):

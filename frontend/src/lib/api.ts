@@ -67,6 +67,7 @@ export const api = {
     login: (credentials: any) => apiClient.post('/auth/login/', credentials),
     logout: () => apiClient.post('/auth/logout/'),
     me: () => apiClient.get('/auth/me/'),
+    updateProfile: (data: any) => apiClient.patch('/auth/me/', data),
     passwordReset: (email: string) => apiClient.post('/auth/password-reset/', { email }),
     passwordResetConfirm: (data: { email: string; code: string; new_password: string }) =>
       apiClient.post('/auth/password-reset/confirm/', data),

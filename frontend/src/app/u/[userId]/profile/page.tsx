@@ -110,7 +110,7 @@ export default function ProfileSettingsPage() {
   // Optimized mutation with cache update
   const updateProfile = useMutation({
     mutationFn: async (data: ProfileFormData) => {
-      const response = await api.auth.me(); // TODO: Replace with actual update endpoint
+      const response = await api.auth.updateProfile(data);
       return response.data;
     },
     onSuccess: () => {
