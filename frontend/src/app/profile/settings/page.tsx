@@ -17,10 +17,11 @@ import {
   Camera,
   Lock,
   Bell,
-  Globe,
+  Globe as GlobeIcon,
   Check,
   AlertCircle,
-  ChevronLeft
+  ChevronLeft,
+  Cake
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -38,6 +39,8 @@ const profileSchema = z.object({
   last_name: z.string().min(2, 'Last name must be at least 2 characters').max(50),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
+  date_of_birth: z.string().optional(),
+  country: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -67,11 +70,14 @@ export default function ProfileSettingsPage() {
   // React Hook Form with Zod validation
   const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
+    mode: 'onBlur', // Only validate when field loses focus, not on every keystroke
     defaultValues: useMemo(() => ({
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
       email: user?.email || '',
       phone: user?.phone || '',
+      date_of_birth: user?.date_of_birth || '',
+      country: user?.country || '',
     }), [user]),
   });
 
@@ -158,6 +164,8 @@ export default function ProfileSettingsPage() {
         last_name: user.last_name || '',
         email: user.email || '',
         phone: user.phone || '',
+        date_of_birth: user.date_of_birth || '',
+        country: user.country || '',
       });
     }
   }, [user, reset]);
@@ -337,6 +345,8 @@ export default function ProfileSettingsPage() {
                       <InfoField icon={User} label="Last Name" value={user.last_name} />
                       <InfoField icon={Mail} label="Email Address" value={user.email} />
                       <InfoField icon={Phone} label="Phone Number" value={user.phone || 'Not provided'} />
+                      <InfoField icon={Cake} label="Date of Birth" value={user.date_of_birth || 'Not provided'} />
+                      <InfoField icon={GlobeIcon} label="Country" value={user.country || 'Not provided'} />
                     </div>
                   ) : (
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
@@ -421,6 +431,36 @@ export default function ProfileSettingsPage() {
                           className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation"
                           placeholder="Enter phone number (optional)"
                         />
+                      </div>
+
+                      {/* Date of Birth & Country */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Date of Birth */}
+                        <div>
+                          <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-2">
+                            Date of Birth <span className="text-gray-500 text-xs sm:text-sm">(optional)</span>
+                          </label>
+                          <input
+                            {...register('date_of_birth')}
+                            type="date"
+                            id="date_of_birth"
+                            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation"
+                          />
+                        </div>
+
+                        {/* Country */}
+                        <div>
+                          <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                            Country <span className="text-gray-500 text-xs sm:text-sm">(optional)</span>
+                          </label>
+                          <input
+                            {...register('country')}
+                            type="text"
+                            id="country"
+                            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation"
+                            placeholder="Enter your country"
+                          />
+                        </div>
                       </div>
 
                       {/* Action Buttons */}
