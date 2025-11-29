@@ -6,10 +6,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models import Max
+import logging
+import traceback
 
 from .models import HeroImage
 from .serializers import HeroImageSerializer, HeroImagePublicSerializer
 from apps.users.permissions import HasPermission
+
+logger = logging.getLogger(__name__)
 
 
 class HeroImageViewSet(viewsets.ModelViewSet):
@@ -49,6 +53,38 @@ class HeroImageViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    def create(self, request, *args, **kwargs):
+        """Create new gallery image with comprehensive error handling."""
+        try:
+            logger.info(f"Image upload attempt by user: {request.user.id}")
+            logger.info(f"Request data keys: {request.data.keys()}")
+            logger.info(f"Request FILES: {request.FILES.keys()}")
+
+            # Validate required fields
+            if 'image' not in request.FILES and 'image_url' not in request.data:
+                return Response(
+                    {'error': 'Either image file or image_url is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            serializer = self.get_serializer(data=request.data)
+            if not serializer.is_valid():
+                logger.error(f"Serializer validation errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            logger.info(f"Image uploaded successfully: {serializer.data.get('id')}")
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+        except Exception as e:
+            logger.error(f"Image upload error: {str(e)}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            return Response(
+                {'error': f'Failed to upload image: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     def perform_create(self, serializer):
         serializer.save(uploaded_by=self.request.user)
     
