@@ -150,6 +150,18 @@ export default function ProfileSettingsPage() {
     updateProfile.mutate(data);
   }, [updateProfile]);
 
+  // Sync form with user data when it loads/changes
+  useEffect(() => {
+    if (user) {
+      reset({
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user, reset]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -342,7 +354,7 @@ export default function ProfileSettingsPage() {
                             className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
                               errors.first_name ? 'border-red-300' : 'border-gray-200'
                             }`}
-                            placeholder="John"
+                            placeholder="Enter your first name"
                           />
                           {errors.first_name && (
                             <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
@@ -364,7 +376,7 @@ export default function ProfileSettingsPage() {
                             className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
                               errors.last_name ? 'border-red-300' : 'border-gray-200'
                             }`}
-                            placeholder="Doe"
+                            placeholder="Enter your last name"
                           />
                           {errors.last_name && (
                             <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
@@ -387,7 +399,7 @@ export default function ProfileSettingsPage() {
                           className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
                             errors.email ? 'border-red-300' : 'border-gray-200'
                           }`}
-                          placeholder="john.doe@example.com"
+                          placeholder="your.email@example.com"
                         />
                         {errors.email && (
                           <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
@@ -407,7 +419,7 @@ export default function ProfileSettingsPage() {
                           type="tel"
                           id="phone"
                           className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation"
-                          placeholder="+1 (555) 123-4567"
+                          placeholder="Enter phone number (optional)"
                         />
                       </div>
 
