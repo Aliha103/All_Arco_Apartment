@@ -14,6 +14,12 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const { user, setUser, setLoading, logout: storeLogout } = useAuthStore();
 
+  const redirectAfterAuth = (nextUser: User) => {
+    const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
+    const target = isTeam ? '/dashboard' : '/';
+    router.replace(target);
+  };
+
   // Fetch current user
   const { data, isLoading, error } = useQuery({
     queryKey: ['auth', 'me'],
@@ -41,7 +47,7 @@ export function useAuth() {
     onSuccess: (data) => {
       setUser(data.user || data);
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      router.push(data.user?.is_team_member ? '/pms' : '/dashboard');
+      redirectAfterAuth(data.user || data);
     },
   });
 
@@ -54,7 +60,7 @@ export function useAuth() {
     onSuccess: (data) => {
       setUser(data.user || data);
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      router.push('/dashboard');
+      redirectAfterAuth(data.user || data);
     },
   });
 
