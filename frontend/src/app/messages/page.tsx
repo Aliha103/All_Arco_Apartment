@@ -2,7 +2,7 @@
 
 import { MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
-import Site Nav from '../components/SiteNav';
+import SiteNav from '../components/SiteNav';
 import SiteFooter from '../components/SiteFooter';
 
 export default function MessagesPage() {
