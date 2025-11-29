@@ -21,10 +21,12 @@ import {
   MapPin,
   Image as GalleryIcon,
   Bed,
+  MessageSquare,
+  LayoutDashboard,
 } from 'lucide-react';
 
-// Smooth easing
-const smoothEase = [0.22, 1, 0.36, 1] as const;
+// Smooth easing - Discord-style
+const smoothEase = [0.16, 1, 0.3, 1] as const;
 
 // Navigation structure
 const navLinks = [
@@ -43,7 +45,16 @@ const SiteNav = () => {
   const lastScrollY = useRef(0);
   const { user, isAuthenticated, logout } = useAuthStore();
   const isTeamMember = !!user && (user.is_super_admin || user.is_team_member);
-  const roleLabel = isTeamMember ? (user?.role_info?.name || 'Team Member') : 'Guest';
+
+  // Get first initial + last name
+  const displayName = user
+    ? `${user.first_name?.[0] || ''}. ${user.last_name || ''}`
+    : '';
+
+  // Role label with proper formatting
+  const roleLabel = isTeamMember
+    ? (user?.role_info?.name || 'Team Member')
+    : 'Guest';
 
   // Framer Motion scroll tracking
   const { scrollY } = useScroll();
@@ -178,78 +189,129 @@ const SiteNav = () => {
                 Book Now
               </Link>
 
-              {/* Account Dropdown - Desktop */}
+              {/* Account Dropdown - Desktop (Discord Style) */}
               <div className="hidden md:block relative" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className={`
-                    flex items-center gap-1.5 p-2 rounded-full
-                    transition-all duration-300
+                    flex items-center gap-2 px-2.5 py-1.5 rounded-full
+                    transition-all duration-200
                     ${isScrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}
                     focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]
                   `}
                   aria-label="Account menu"
                   aria-expanded={dropdownOpen}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isScrolled ? 'bg-gray-100' : 'bg-white/20'}`}>
-                    <User className="w-4 h-4" />
-                  </div>
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  {isAuthenticated ? (
+                    <>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs ${isScrolled ? 'bg-[#C4A572] text-white' : 'bg-[#C4A572] text-white'}`}>
+                        {user?.first_name?.[0]}{user?.last_name?.[0]}
+                      </div>
+                      <span className="text-sm font-medium max-w-[120px] truncate">{displayName}</span>
+                    </>
+                  ) : (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isScrolled ? 'bg-gray-100' : 'bg-white/20'}`}>
+                      <User className="w-4 h-4" />
+                    </div>
+                  )}
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <AnimatePresence>
                   {dropdownOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      transition={{ duration: 0.2, ease: smoothEase }}
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl shadow-black/10 overflow-hidden border border-gray-100"
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.15, ease: smoothEase }}
+                      className="absolute right-0 mt-2 w-64 bg-[#18191c] rounded-lg shadow-2xl overflow-hidden border border-[#2b2d31]"
                     >
                       {isAuthenticated ? (
                         <>
-                          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-900 text-sm">{user?.first_name} {user?.last_name}</p>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700">
-                                {roleLabel}
-                              </span>
+                          {/* User Info Header - Discord Style */}
+                          <div className="px-3 py-3 bg-[#111214] border-b border-[#2b2d31]">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-[#C4A572] flex items-center justify-center font-bold text-white flex-shrink-0">
+                                {user?.first_name?.[0]}{user?.last_name?.[0]}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-white text-sm truncate">{displayName}</p>
+                                <p className="text-xs text-[#b5bac1] truncate">{user?.email}</p>
+                                <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded bg-[#C4A572]/20 text-[10px] font-semibold text-[#C4A572] uppercase tracking-wider">
+                                  {roleLabel}
+                                </span>
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                           </div>
-                          <div className="py-1">
-                            {isTeamMember && (
-                              <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                                <User className="w-4 h-4 text-gray-400" /> Dashboard
-                              </Link>
-                            )}
-                            {!isTeamMember && (
-                              <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                                <Calendar className="w-4 h-4 text-gray-400" /> My Reservations
-                              </Link>
-                            )}
-                            {isTeamMember && (
-                              <Link href="/pms" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                                <Sparkles className="w-4 h-4 text-[#C4A572]" /> PMS Dashboard
-                              </Link>
-                            )}
-                            <hr className="my-1 border-gray-100" />
-                            <button onClick={() => { logout(); handleNavClick(); }} className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full">
-                              <LogOut className="w-4 h-4" /> Sign Out
+
+                          {/* Menu Items */}
+                          <div className="py-1.5">
+                            <Link
+                              href={isTeamMember ? '/pms' : '/dashboard'}
+                              onClick={handleNavClick}
+                              className="flex items-center gap-3 px-3 py-2 text-sm text-[#dbdee1] hover:bg-[#404249] hover:text-white transition-colors"
+                            >
+                              <LayoutDashboard className="w-4 h-4 text-[#b5bac1]" />
+                              {isTeamMember ? 'PMS Dashboard' : 'Dashboard'}
+                            </Link>
+                            <Link
+                              href="/messages"
+                              onClick={handleNavClick}
+                              className="flex items-center gap-3 px-3 py-2 text-sm text-[#dbdee1] hover:bg-[#404249] hover:text-white transition-colors"
+                            >
+                              <MessageSquare className="w-4 h-4 text-[#b5bac1]" />
+                              Messages
+                            </Link>
+                            <Link
+                              href="/profile/settings"
+                              onClick={handleNavClick}
+                              className="flex items-center gap-3 px-3 py-2 text-sm text-[#dbdee1] hover:bg-[#404249] hover:text-white transition-colors"
+                            >
+                              <Settings className="w-4 h-4 text-[#b5bac1]" />
+                              Profile
+                            </Link>
+                          </div>
+
+                          {/* Divider */}
+                          <div className="border-t border-[#2b2d31]" />
+
+                          {/* Logout */}
+                          <div className="py-1.5">
+                            <button
+                              onClick={() => { logout(); handleNavClick(); }}
+                              className="flex items-center gap-3 px-3 py-2 text-sm text-[#f23f43] hover:bg-[#404249] transition-colors w-full"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              Sign Out
                             </button>
                           </div>
                         </>
                       ) : (
-                        <div className="py-1">
-                          <Link href="/auth/login" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                            <LogIn className="w-4 h-4 text-gray-400" /> Sign In
+                        <div className="py-1.5">
+                          <Link
+                            href="/auth/login"
+                            onClick={handleNavClick}
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[#dbdee1] hover:bg-[#404249] hover:text-white transition-colors"
+                          >
+                            <LogIn className="w-4 h-4 text-[#b5bac1]" />
+                            Sign In
                           </Link>
-                          <Link href="/auth/register" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                            <UserPlus className="w-4 h-4 text-gray-400" /> Create Account
+                          <Link
+                            href="/auth/register"
+                            onClick={handleNavClick}
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[#dbdee1] hover:bg-[#404249] hover:text-white transition-colors"
+                          >
+                            <UserPlus className="w-4 h-4 text-[#b5bac1]" />
+                            Create Account
                           </Link>
-                          <hr className="my-1 border-gray-100" />
-                          <Link href="/bookings/find" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#C4A572] hover:bg-[#C4A572]/5">
-                            <Calendar className="w-4 h-4" /> Find Booking
+                          <div className="border-t border-[#2b2d31] my-1.5" />
+                          <Link
+                            href="/bookings/find"
+                            onClick={handleNavClick}
+                            className="flex items-center gap-3 px-3 py-2 text-sm text-[#C4A572] hover:bg-[#404249] transition-colors"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            Find Booking
                           </Link>
                         </div>
                       )}
@@ -325,39 +387,70 @@ const SiteNav = () => {
                     <>
                       {/* User Info */}
                       <div className="px-4 py-3 mb-4 bg-gray-50 rounded-xl">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900">{user?.first_name} {user?.last_name}</p>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700">
-                            {roleLabel}
-                          </span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#C4A572] flex items-center justify-center font-bold text-white flex-shrink-0">
+                            {user?.first_name?.[0]}{user?.last_name?.[0]}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{displayName}</p>
+                            <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+                            <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-gray-200 text-[10px] font-semibold text-gray-700 uppercase tracking-wider">
+                              {roleLabel}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-500 truncate">{user?.email}</p>
                       </div>
-                      {isTeamMember && (
-                        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                          <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                            <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
-                              <User className="w-5 h-5 text-[#C4A572]" />
-                            </div>
-                            <span className="font-medium">Dashboard</span>
-                            <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
-                          </Link>
-                        </motion.div>
-                      )}
-                      {!isTeamMember && (
-                        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                          <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                            <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
-                              <Calendar className="w-5 h-5 text-[#C4A572]" />
-                            </div>
-                            <span className="font-medium">My Reservations</span>
-                            <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
-                          </Link>
-                        </motion.div>
-                      )}
-                      <div className="mx-4 my-4 border-t border-gray-100" />
+
+                      {/* Menu Items */}
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                        <Link
+                          href={isTeamMember ? '/pms' : '/dashboard'}
+                          onClick={handleNavClick}
+                          className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                            <LayoutDashboard className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <span className="font-medium">{isTeamMember ? 'PMS Dashboard' : 'Dashboard'}</span>
+                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
+                        </Link>
+                      </motion.div>
+
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
+                        <Link
+                          href="/messages"
+                          onClick={handleNavClick}
+                          className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                            <MessageSquare className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <span className="font-medium">Messages</span>
+                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
+                        </Link>
+                      </motion.div>
+
                       <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                        <button onClick={() => { logout(); handleNavClick(); }} className="flex items-center gap-4 px-4 py-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full">
+                        <Link
+                          href="/profile/settings"
+                          onClick={handleNavClick}
+                          className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                            <Settings className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <span className="font-medium">Profile</span>
+                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
+                        </Link>
+                      </motion.div>
+
+                      <div className="mx-4 my-4 border-t border-gray-100" />
+
+                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}>
+                        <button
+                          onClick={() => { logout(); handleNavClick(); }}
+                          className="flex items-center gap-4 px-4 py-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full"
+                        >
                           <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
                             <LogOut className="w-5 h-5 text-red-500" />
                           </div>

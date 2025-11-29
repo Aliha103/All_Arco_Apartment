@@ -16,7 +16,7 @@ export function useAuth() {
 
   const redirectAfterAuth = (nextUser: User) => {
     const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
-    const target = isTeam ? '/dashboard' : '/';
+    const target = isTeam ? '/pms' : '/dashboard';
     router.replace(target);
   };
 
