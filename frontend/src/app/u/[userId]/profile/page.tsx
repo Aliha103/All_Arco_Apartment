@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -67,7 +67,6 @@ export default function ProfileSettingsPage() {
   const params = useParams();
   const [isEditing, setIsEditing] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const firstInputRef = useRef<HTMLInputElement>(null);
 
   // Security: Verify userId in URL matches logged-in user
   const urlUserId = params.userId as string;
@@ -76,18 +75,18 @@ export default function ProfileSettingsPage() {
   }, [urlUserId, user]);
 
   // React Hook Form with Zod validation
-  const { register, handleSubmit, formState: { errors, dirtyFields, isSubmitted }, reset } = useForm<ProfileFormData>({
+  const { register, handleSubmit, formState: { errors, dirtyFields, isSubmitted }, reset, setFocus } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     mode: 'onSubmit', // Only validate on submit, prevents errors while typing
     reValidateMode: 'onChange', // Re-validate on change after first submit attempt
-    defaultValues: useMemo(() => ({
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-      date_of_birth: user?.date_of_birth || '',
-      country: user?.country || '',
-    }), [user]),
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      date_of_birth: '',
+      country: '',
+    },
   });
 
   // Generate userId for display
@@ -127,8 +126,8 @@ export default function ProfileSettingsPage() {
     setIsEditing(true);
     setSaveSuccess(false);
     // Focus first input after state update
-    setTimeout(() => firstInputRef.current?.focus(), 100);
-  }, []);
+    setTimeout(() => setFocus('first_name'), 100);
+  }, [setFocus]);
 
   const handleCancel = useCallback(() => {
     reset();
@@ -364,7 +363,6 @@ export default function ProfileSettingsPage() {
                           </label>
                           <input
                             {...register('first_name')}
-                            ref={firstInputRef}
                             type="text"
                             id="first_name"
                             className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
