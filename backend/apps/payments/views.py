@@ -3,6 +3,8 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 import stripe
 from .models import Payment, Refund
 from .serializers import PaymentSerializer, RefundSerializer
@@ -19,11 +21,13 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = Payment.objects.select_related('booking').all()
-        
+
         # Guests see only their payments
-        if user.role == 'guest':
-            queryset = queryset.filter(booking__user=user)
-        
+        if not user.is_team_member():
+            queryset = queryset.filter(
+                Q(booking__user=user) | Q(booking__guest_email=user.email)
+            )
+
         return queryset.order_by('-created_at')
 
 
@@ -143,6 +147,7 @@ def refund_payment(request, pk):
         )
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([])
 def stripe_webhook(request):

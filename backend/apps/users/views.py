@@ -3,6 +3,8 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import login, logout
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from .models import User, GuestNote, Role, Permission, PasswordResetToken
 from .serializers import (
@@ -117,19 +119,21 @@ def password_reset_confirm_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Validate password length
-    if len(new_password) < 8:
-        return Response(
-            {'error': 'Password must be at least 8 characters.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
     # Verify the token
     reset_token, error = PasswordResetToken.verify_token(email, code)
 
     if error:
         return Response(
             {'error': error},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Validate password using Django's validators
+    try:
+        validate_password(new_password, user=reset_token.user)
+    except DjangoValidationError as e:
+        return Response(
+            {'error': '; '.join(e.messages)},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -187,7 +191,7 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_queryset(self):
         # Only team/admin can view guests
-        if not request.user.is_team_member():
+        if not self.request.user.is_team_member():
             return User.objects.none()
         
         queryset = User.objects.filter(role='guest')
@@ -220,14 +224,14 @@ class TeamViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         # Only admin can view/manage team
-        if request.user.role != 'admin':
+        if self.request.user.role != 'admin':
             return User.objects.none()
         
         return User.objects.filter(role__in=['team', 'admin']).order_by('-created_at')
     
     def create(self, request, *args, **kwargs):
         # Only admin can create team members
-        if request.user.role != 'admin':
+        if self.request.user.role != 'admin':
             return Response(
                 {'error': 'Permission denied'},
                 status=status.HTTP_403_FORBIDDEN

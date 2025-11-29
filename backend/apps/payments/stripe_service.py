@@ -3,6 +3,7 @@ Stripe API integration service.
 """
 
 import stripe
+import time
 from django.conf import settings
 from decimal import Decimal
 
@@ -66,7 +67,7 @@ class StripeService:
                 billing_address_collection='required',
                 phone_number_collection={'enabled': True},
                 locale='auto',
-                expires_at=int((settings.STRIPE_SESSION_EXPIRY if hasattr(settings, 'STRIPE_SESSION_EXPIRY') else 1800))  # 30 minutes
+                expires_at=int(time.time()) + (settings.STRIPE_SESSION_EXPIRY if hasattr(settings, 'STRIPE_SESSION_EXPIRY') else 1800)  # 30 minutes from now
             )
 
             return {
@@ -86,7 +87,7 @@ class StripeService:
         """
         try:
             intent = stripe.PaymentIntent.create(
-                amount=int(booking.total_amount * 100),
+                amount=int(booking.total_price * 100),
                 currency='eur',
                 metadata={
                     'booking_id': booking.booking_id,

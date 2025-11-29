@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Q, Count, Sum
 from django.db import transaction
+from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import Booking, BlockedDate
 from .serializers import (
@@ -97,9 +98,9 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = Booking.objects.select_related('user').all()
-        
+
         # Guests see only their bookings
-        if user.role == 'guest':
+        if not user.is_team_member():
             queryset = queryset.filter(Q(user=user) | Q(guest_email=user.email))
         
         # Filters
@@ -247,7 +248,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Update booking
         with transaction.atomic():
             booking.status = 'cancelled'
-            booking.cancelled_at = datetime.now()
+            booking.cancelled_at = timezone.now()
             booking.cancellation_reason = cancellation_reason
             booking.save(update_fields=['status', 'cancelled_at', 'cancellation_reason', 'updated_at'])
 
@@ -455,7 +456,7 @@ def calendar_month(request):
     
     bookings = Booking.objects.filter(
         Q(check_in_date__lt=end_date) & Q(check_out_date__gte=start_date),
-        status__in=['confirmed', 'paid', 'checked_in', 'checked_out']
+        status__in=['pending', 'confirmed', 'paid', 'checked_in', 'checked_out']
     )
     
     blocked_dates = BlockedDate.objects.filter(

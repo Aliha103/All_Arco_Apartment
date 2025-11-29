@@ -92,7 +92,7 @@ export const api = {
     sendEmail: (id: string) => apiClient.post(`/bookings/${id}/send_email/`),
     calendar: (year: number, month: number) =>
       apiClient.get('/calendar/month/', { params: { year, month } }),
-    statistics: () => apiClient.get('/reports/bookings-summary/'),
+    statistics: () => apiClient.get('/bookings/statistics/'),
     // Public booking lookup (no auth required)
     lookup: (confirmation: string, email: string) =>
       apiClient.post('/bookings/lookup/', { confirmation, email }),
