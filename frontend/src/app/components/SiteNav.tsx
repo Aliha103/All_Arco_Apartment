@@ -42,6 +42,8 @@ const SiteNav = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const { user, isAuthenticated, logout } = useAuthStore();
+  const isTeamMember = !!user && (user.is_super_admin || user.is_team_member);
+  const roleLabel = isTeamMember ? (user?.role_info?.name || 'Team Member') : 'Guest';
 
   // Framer Motion scroll tracking
   const { scrollY } = useScroll();
@@ -207,17 +209,26 @@ const SiteNav = () => {
                       {isAuthenticated ? (
                         <>
                           <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                            <p className="font-medium text-gray-900 text-sm">{user?.first_name} {user?.last_name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-gray-900 text-sm">{user?.first_name} {user?.last_name}</p>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700">
+                                {roleLabel}
+                              </span>
+                            </div>
                             <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                           </div>
                           <div className="py-1">
-                            <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                              <User className="w-4 h-4 text-gray-400" /> Dashboard
-                            </Link>
-                            <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                              <Calendar className="w-4 h-4 text-gray-400" /> My Reservations
-                            </Link>
-                            {(user?.is_super_admin || user?.is_team_member) && (
+                            {isTeamMember && (
+                              <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                <User className="w-4 h-4 text-gray-400" /> Dashboard
+                              </Link>
+                            )}
+                            {!isTeamMember && (
+                              <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                <Calendar className="w-4 h-4 text-gray-400" /> My Reservations
+                              </Link>
+                            )}
+                            {isTeamMember && (
                               <Link href="/pms" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                                 <Sparkles className="w-4 h-4 text-[#C4A572]" /> PMS Dashboard
                               </Link>
@@ -314,27 +325,36 @@ const SiteNav = () => {
                     <>
                       {/* User Info */}
                       <div className="px-4 py-3 mb-4 bg-gray-50 rounded-xl">
-                        <p className="font-medium text-gray-900">{user?.first_name} {user?.last_name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">{user?.first_name} {user?.last_name}</p>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700">
+                            {roleLabel}
+                          </span>
+                        </div>
                         <p className="text-sm text-gray-500 truncate">{user?.email}</p>
                       </div>
-                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                        <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
-                            <User className="w-5 h-5 text-[#C4A572]" />
-                          </div>
-                          <span className="font-medium">Dashboard</span>
-                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
-                        </Link>
-                      </motion.div>
-                      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
-                        <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                          <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
-                            <Calendar className="w-5 h-5 text-[#C4A572]" />
-                          </div>
-                          <span className="font-medium">My Reservations</span>
-                          <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
-                        </Link>
-                      </motion.div>
+                      {isTeamMember && (
+                        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                          <Link href="/dashboard" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+                            <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                              <User className="w-5 h-5 text-[#C4A572]" />
+                            </div>
+                            <span className="font-medium">Dashboard</span>
+                            <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
+                          </Link>
+                        </motion.div>
+                      )}
+                      {!isTeamMember && (
+                        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                          <Link href="/bookings" onClick={handleNavClick} className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
+                            <div className="w-10 h-10 rounded-xl bg-[#C4A572]/10 flex items-center justify-center">
+                              <Calendar className="w-5 h-5 text-[#C4A572]" />
+                            </div>
+                            <span className="font-medium">My Reservations</span>
+                            <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
+                          </Link>
+                        </motion.div>
+                      )}
                       <div className="mx-4 my-4 border-t border-gray-100" />
                       <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                         <button onClick={() => { logout(); handleNavClick(); }} className="flex items-center gap-4 px-4 py-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors w-full">

@@ -79,7 +79,7 @@ const countries = [
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { setUser, setIsAuthenticated, isAuthenticated } = useAuthStore();
+  const { setUser, setIsAuthenticated, isAuthenticated, user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -125,10 +125,11 @@ export default function RegisterPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    if (isAuthenticated && user) {
+      const isTeam = user.is_super_admin || user.is_team_member;
+      router.push(isTeam ? '/dashboard' : '/');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   // Auto-rotate images
   useEffect(() => {
@@ -242,9 +243,11 @@ export default function RegisterPage() {
       const response = await api.auth.register(registrationData);
 
       if (response.data?.user) {
-        setUser(response.data.user);
+        const nextUser = response.data.user;
+        setUser(nextUser);
         setIsAuthenticated(true);
-        router.push('/dashboard');
+        const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
+        router.push(isTeam ? '/dashboard' : '/');
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Registration failed. Please try again.');

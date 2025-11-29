@@ -44,7 +44,7 @@ const reviews = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser, setIsAuthenticated, isAuthenticated } = useAuthStore();
+  const { setUser, setIsAuthenticated, isAuthenticated, user } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -79,10 +79,11 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    if (isAuthenticated && user) {
+      const isTeam = user.is_super_admin || user.is_team_member;
+      router.push(isTeam ? '/dashboard' : '/');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   // Auto-rotate images
   useEffect(() => {
@@ -114,9 +115,11 @@ export default function LoginPage() {
     try {
       const response = await api.auth.login({ email, password });
       if (response.data?.user) {
-        setUser(response.data.user);
+        const nextUser = response.data.user;
+        setUser(nextUser);
         setIsAuthenticated(true);
-        router.push('/dashboard');
+        const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
+        router.push(isTeam ? '/dashboard' : '/');
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Invalid email or password');
