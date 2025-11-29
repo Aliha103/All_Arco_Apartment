@@ -1,38 +1,38 @@
 'use client';
 
-import { MessageSquare } from 'lucide-react';
-import { motion } from 'framer-motion';
-import SiteNav from '../components/SiteNav';
-import SiteFooter from '../components/SiteFooter';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { generateUserId } from '@/lib/userId';
 
-export default function MessagesPage() {
+/**
+ * Legacy URL redirect page
+ * Redirects /messages to /u/{userId}/messages
+ */
+export default function MessagesRedirect() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        // Not authenticated - redirect to login
+        router.replace('/auth/login');
+      } else {
+        // Authenticated - redirect to new user-specific URL
+        const userId = generateUserId(user);
+        router.replace(`/u/${userId}/messages`);
+      }
+    }
+  }, [user, isLoading, router]);
+
+  // Show loading spinner while redirecting
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <SiteNav />
-
-      <main className="flex-1 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center"
-          >
-            <div className="w-16 h-16 bg-[#C4A572]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <MessageSquare className="w-8 h-8 text-[#C4A572]" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Messages</h1>
-            <p className="text-gray-600 mb-8">
-              Your messaging center for guest and team communications
-            </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
-              <strong>Coming Soon:</strong> Real-time messaging functionality will be available in the next update.
-            </div>
-          </motion.div>
-        </div>
-      </main>
-
-      <SiteFooter />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#C4A572]/30 border-t-[#C4A572]" />
+        <p className="text-sm text-gray-600">Redirecting...</p>
+      </div>
     </div>
   );
 }

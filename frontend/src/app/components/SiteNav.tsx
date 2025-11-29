@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion';
 import { useAuthStore } from '@/stores/authStore';
+import { useUserUrls } from '@/hooks/useUserUrls';
 import {
   Calendar,
   ChevronDown,
@@ -45,6 +46,7 @@ const SiteNav = () => {
   const lastScrollY = useRef(0);
   const { user, isAuthenticated, logout } = useAuthStore();
   const isTeamMember = !!user && (user.is_super_admin || user.is_team_member);
+  const userUrls = useUserUrls();
 
   // Get first initial + last name
   const displayName = user
@@ -247,7 +249,7 @@ const SiteNav = () => {
                           {/* Menu Items */}
                           <div className="py-1.5">
                             <Link
-                              href={isTeamMember ? '/pms' : '/dashboard'}
+                              href={userUrls.dashboard}
                               onClick={handleNavClick}
                               className="flex items-center gap-3 px-3 py-2 text-sm text-[#dbdee1] hover:bg-[#404249] hover:text-white transition-colors"
                             >
@@ -255,7 +257,7 @@ const SiteNav = () => {
                               {isTeamMember ? 'PMS Dashboard' : 'Dashboard'}
                             </Link>
                             <Link
-                              href="/messages"
+                              href={userUrls.messages}
                               onClick={handleNavClick}
                               className="flex items-center gap-3 px-3 py-2 text-sm text-[#dbdee1] hover:bg-[#404249] hover:text-white transition-colors"
                             >
@@ -263,7 +265,7 @@ const SiteNav = () => {
                               Messages
                             </Link>
                             <Link
-                              href="/profile/settings"
+                              href={userUrls.profile}
                               onClick={handleNavClick}
                               className="flex items-center gap-3 px-3 py-2 text-sm text-[#dbdee1] hover:bg-[#404249] hover:text-white transition-colors"
                             >
@@ -404,7 +406,7 @@ const SiteNav = () => {
                       {/* Menu Items */}
                       <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                         <Link
-                          href={isTeamMember ? '/pms' : '/dashboard'}
+                          href={userUrls.dashboard}
                           onClick={handleNavClick}
                           className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
                         >
@@ -418,7 +420,7 @@ const SiteNav = () => {
 
                       <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
                         <Link
-                          href="/messages"
+                          href={userUrls.messages}
                           onClick={handleNavClick}
                           className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
                         >
@@ -432,7 +434,7 @@ const SiteNav = () => {
 
                       <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                         <Link
-                          href="/profile/settings"
+                          href={userUrls.profile}
                           onClick={handleNavClick}
                           className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
                         >
