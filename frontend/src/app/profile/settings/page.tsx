@@ -68,9 +68,10 @@ export default function ProfileSettingsPage() {
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   // React Hook Form with Zod validation
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileFormData>({
+  const { register, handleSubmit, formState: { errors, touchedFields }, reset } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    mode: 'onBlur', // Only validate when field loses focus, not on every keystroke
+    mode: 'onTouched', // Only validate after field is touched and changed, prevents premature errors
+    reValidateMode: 'onChange', // Re-validate on change after first validation
     defaultValues: useMemo(() => ({
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
@@ -170,6 +171,14 @@ export default function ProfileSettingsPage() {
     }
   }, [user, reset]);
 
+  // Authentication guard - redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      // Not authenticated - redirect to login with return URL
+      router.push('/auth/login?next=/profile/settings');
+    }
+  }, [isLoading, user, router]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -183,13 +192,18 @@ export default function ProfileSettingsPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isEditing, handleCancel]);
 
-  // Loading state
+  // Loading state or not authenticated
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <SiteNav />
         <main className="flex-1 flex items-center justify-center pt-24">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#C4A572]/30 border-t-[#C4A572]" />
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#C4A572]/30 border-t-[#C4A572]" />
+            <p className="text-sm text-gray-600">
+              {isLoading ? 'Loading your profile...' : 'Redirecting to login...'}
+            </p>
+          </div>
         </main>
         <SiteFooter />
       </div>
@@ -362,11 +376,11 @@ export default function ProfileSettingsPage() {
                             type="text"
                             id="first_name"
                             className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
-                              errors.first_name ? 'border-red-300' : 'border-gray-200'
+                              errors.first_name && touchedFields.first_name ? 'border-red-300' : 'border-gray-200'
                             }`}
                             placeholder="Enter your first name"
                           />
-                          {errors.first_name && (
+                          {errors.first_name && touchedFields.first_name && (
                             <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                               <AlertCircle className="w-3 h-3" />
                               {errors.first_name.message}
@@ -384,11 +398,11 @@ export default function ProfileSettingsPage() {
                             type="text"
                             id="last_name"
                             className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
-                              errors.last_name ? 'border-red-300' : 'border-gray-200'
+                              errors.last_name && touchedFields.last_name ? 'border-red-300' : 'border-gray-200'
                             }`}
                             placeholder="Enter your last name"
                           />
-                          {errors.last_name && (
+                          {errors.last_name && touchedFields.last_name && (
                             <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                               <AlertCircle className="w-3 h-3" />
                               {errors.last_name.message}
@@ -407,11 +421,11 @@ export default function ProfileSettingsPage() {
                           type="email"
                           id="email"
                           className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
-                            errors.email ? 'border-red-300' : 'border-gray-200'
+                            errors.email && touchedFields.email ? 'border-red-300' : 'border-gray-200'
                           }`}
                           placeholder="your.email@example.com"
                         />
-                        {errors.email && (
+                        {errors.email && touchedFields.email && (
                           <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                             <AlertCircle className="w-3 h-3" />
                             {errors.email.message}
