@@ -114,8 +114,8 @@ export default function LoginPage() {
 
     try {
       const response = await api.auth.login({ email, password });
-      if (response.data?.user) {
-        const nextUser = response.data.user;
+      if (response.data) {
+        const nextUser = response.data;
         setUser(nextUser);
         setIsAuthenticated(true);
         const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
