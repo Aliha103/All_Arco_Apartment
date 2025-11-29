@@ -68,10 +68,10 @@ export default function ProfileSettingsPage() {
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   // React Hook Form with Zod validation
-  const { register, handleSubmit, formState: { errors, touchedFields }, reset } = useForm<ProfileFormData>({
+  const { register, handleSubmit, formState: { errors, dirtyFields, isSubmitted }, reset } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    mode: 'onTouched', // Only validate after field is touched and changed, prevents premature errors
-    reValidateMode: 'onChange', // Re-validate on change after first validation
+    mode: 'onSubmit', // Only validate on submit, prevents errors while typing
+    reValidateMode: 'onChange', // Re-validate on change after first submit attempt
     defaultValues: useMemo(() => ({
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
@@ -157,9 +157,9 @@ export default function ProfileSettingsPage() {
     updateProfile.mutate(data);
   }, [updateProfile]);
 
-  // Sync form with user data when it loads/changes
+  // Sync form with user data when it loads/changes (but NOT while editing)
   useEffect(() => {
-    if (user) {
+    if (user && !isEditing) {
       reset({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
@@ -169,7 +169,7 @@ export default function ProfileSettingsPage() {
         country: user.country || '',
       });
     }
-  }, [user, reset]);
+  }, [user, reset, isEditing]);
 
   // Authentication guard - redirect to login if not authenticated
   useEffect(() => {
@@ -376,11 +376,11 @@ export default function ProfileSettingsPage() {
                             type="text"
                             id="first_name"
                             className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
-                              errors.first_name && touchedFields.first_name ? 'border-red-300' : 'border-gray-200'
+                              errors.first_name && isSubmitted ? 'border-red-300' : 'border-gray-200'
                             }`}
                             placeholder="Enter your first name"
                           />
-                          {errors.first_name && touchedFields.first_name && (
+                          {errors.first_name && isSubmitted && (
                             <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                               <AlertCircle className="w-3 h-3" />
                               {errors.first_name.message}
@@ -398,11 +398,11 @@ export default function ProfileSettingsPage() {
                             type="text"
                             id="last_name"
                             className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
-                              errors.last_name && touchedFields.last_name ? 'border-red-300' : 'border-gray-200'
+                              errors.last_name && isSubmitted ? 'border-red-300' : 'border-gray-200'
                             }`}
                             placeholder="Enter your last name"
                           />
-                          {errors.last_name && touchedFields.last_name && (
+                          {errors.last_name && isSubmitted && (
                             <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                               <AlertCircle className="w-3 h-3" />
                               {errors.last_name.message}
@@ -421,11 +421,11 @@ export default function ProfileSettingsPage() {
                           type="email"
                           id="email"
                           className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
-                            errors.email && touchedFields.email ? 'border-red-300' : 'border-gray-200'
+                            errors.email && isSubmitted ? 'border-red-300' : 'border-gray-200'
                           }`}
                           placeholder="your.email@example.com"
                         />
-                        {errors.email && touchedFields.email && (
+                        {errors.email && isSubmitted && (
                           <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                             <AlertCircle className="w-3 h-3" />
                             {errors.email.message}
