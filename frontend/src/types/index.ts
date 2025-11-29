@@ -42,6 +42,8 @@ export interface User {
   first_name: string;
   last_name: string;
   phone?: string;
+  date_of_birth?: string;
+  country?: string;
   role_info: RoleInfo;
   permissions: string[];
   is_super_admin: boolean;
