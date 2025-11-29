@@ -431,17 +431,22 @@ class User(AbstractUser):
     def _generate_reference_code():
         """
         Generate a unique reference code for inviting others.
-        Format: ARCO-XXXXXXXXX (13 chars total)
+        Uses available field length; capped to 12 chars to stay compatible with older DBs.
         """
         import secrets
         import string
+
+        prefix = "ARCO-"
+        field_max = User._meta.get_field('reference_code').max_length or 12
+        # Cap at 12 to avoid hitting older varchar(12) columns; ensure at least 4 chars suffix
+        suffix_len = max(4, min(field_max, 12) - len(prefix))
 
         # Characters to use (no confusing: 0/O, 1/I/l, etc.)
         chars = string.ascii_uppercase + string.digits.replace('0', '').replace('1', '')
 
         while True:
-            code_suffix = ''.join(secrets.choice(chars) for _ in range(8))
-            reference_code = f"ARCO-{code_suffix}"
+            code_suffix = ''.join(secrets.choice(chars) for _ in range(suffix_len))
+            reference_code = f"{prefix}{code_suffix}"
 
             # Ensure uniqueness
             if not User.objects.filter(reference_code=reference_code).exists():
