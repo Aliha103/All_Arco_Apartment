@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,13 +19,15 @@ import {
   Bell,
   Globe,
   Check,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import SiteNav from '@/app/components/SiteNav';
 import SiteFooter from '@/app/components/SiteFooter';
+import { useRouter } from 'next/navigation';
 
 // Quantum-optimized easing
 const smoothEase = [0.16, 1, 0.3, 1] as const;
@@ -41,34 +43,14 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 // Memoized components for quantum performance
-const StatCard = memo(({ icon: Icon, label, value, color }: any) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3, ease: smoothEase }}
-    className="bg-white rounded-xl p-6 border border-gray-100 hover:shadow-md transition-shadow"
-  >
-    <div className="flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
-        <Icon className="w-6 h-6 text-white" />
-      </div>
-      <div>
-        <p className="text-sm text-gray-600">{label}</p>
-        <p className="text-lg font-semibold text-gray-900">{value}</p>
-      </div>
-    </div>
-  </motion.div>
-));
-StatCard.displayName = 'StatCard';
-
 const InfoField = memo(({ icon: Icon, label, value }: any) => (
-  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
-    <div className="w-10 h-10 rounded-lg bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
-      <Icon className="w-5 h-5 text-[#C4A572]" />
+  <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
+      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#C4A572]" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-sm text-gray-600 mb-1">{label}</p>
-      <p className="text-base font-medium text-gray-900 truncate">{value}</p>
+      <p className="text-xs sm:text-sm text-gray-600 mb-0.5 sm:mb-1">{label}</p>
+      <p className="text-sm sm:text-base font-medium text-gray-900 truncate">{value}</p>
     </div>
   </div>
 ));
@@ -77,8 +59,10 @@ InfoField.displayName = 'InfoField';
 export default function ProfileSettingsPage() {
   const { user, isLoading } = useAuth();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const firstInputRef = useRef<HTMLInputElement>(null);
 
   // React Hook Form with Zod validation
   const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileFormData>({
@@ -90,6 +74,24 @@ export default function ProfileSettingsPage() {
       phone: user?.phone || '',
     }), [user]),
   });
+
+  // Generate clean UserId
+  const userId = useMemo(() => {
+    if (!user) return '';
+
+    // Create readable ID: FirstInitialLastName + number
+    const firstName = user.first_name || '';
+    const lastName = user.last_name || '';
+    const initial = firstName[0]?.toUpperCase() || '';
+    const lastNameClean = lastName.toUpperCase().replace(/\s+/g, '');
+
+    // Generate a consistent 4-digit number from user ID
+    const idStr = user.id?.toString() || '';
+    const hash = idStr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const fourDigit = (1000 + (hash % 9000)).toString();
+
+    return `${initial}${lastNameClean}-${fourDigit}`;
+  }, [user]);
 
   // Memoized user display data
   const userStats = useMemo(() => ({
@@ -124,6 +126,8 @@ export default function ProfileSettingsPage() {
   const handleEdit = useCallback(() => {
     setIsEditing(true);
     setSaveSuccess(false);
+    // Focus first input after state update
+    setTimeout(() => firstInputRef.current?.focus(), 100);
   }, []);
 
   const handleCancel = useCallback(() => {
@@ -135,6 +139,19 @@ export default function ProfileSettingsPage() {
   const onSubmit = useCallback((data: ProfileFormData) => {
     updateProfile.mutate(data);
   }, [updateProfile]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to cancel edit mode
+      if (e.key === 'Escape' && isEditing) {
+        handleCancel();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isEditing, handleCancel]);
 
   // Loading state
   if (isLoading || !user) {
@@ -153,17 +170,29 @@ export default function ProfileSettingsPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <SiteNav />
 
-      <main className="flex-1 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 pt-20 sm:pt-24 pb-8 sm:pb-12 px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
+          {/* Back Button - Mobile Only */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => router.back()}
+            className="md:hidden flex items-center gap-2 text-gray-600 hover:text-[#C4A572] mb-4 py-2 px-3 -ml-3 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            <span className="text-sm font-medium">Back</span>
+          </motion.button>
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: smoothEase }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Profile Settings</h1>
-            <p className="text-gray-600">Manage your account information and preferences</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">Profile Settings</h1>
+            <p className="text-sm sm:text-base text-gray-600">Manage your account information and preferences</p>
           </motion.div>
 
           {/* Success Message */}
@@ -174,15 +203,17 @@ export default function ProfileSettingsPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ duration: 0.2, ease: smoothEase }}
-                className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3"
+                className="mb-4 sm:mb-6 bg-green-50 border border-green-200 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
+                role="alert"
+                aria-live="polite"
               >
-                <Check className="w-5 h-5 text-green-600" />
-                <p className="text-green-800 font-medium">Profile updated successfully!</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                <p className="text-sm sm:text-base text-green-800 font-medium">Profile updated successfully!</p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Profile Card */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -192,47 +223,50 @@ export default function ProfileSettingsPage() {
             >
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {/* Profile Header */}
-                <div className="relative h-32 bg-gradient-to-br from-[#C4A572] to-[#B39562]">
+                <div className="relative h-24 sm:h-32 bg-gradient-to-br from-[#C4A572] to-[#B39562]">
                   <div className="absolute inset-0 bg-black/10" />
                 </div>
 
-                <div className="relative px-6 pb-6">
+                <div className="relative px-4 sm:px-6 pb-4 sm:pb-6">
                   {/* Avatar */}
-                  <div className="relative -mt-16 mb-4">
-                    <div className="w-32 h-32 rounded-full bg-white p-2 shadow-lg">
+                  <div className="relative -mt-12 sm:-mt-16 mb-3 sm:mb-4">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white p-1.5 sm:p-2 shadow-lg">
                       <div className="w-full h-full rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center">
-                        <span className="text-white text-3xl font-bold">
+                        <span className="text-white text-2xl sm:text-3xl font-bold">
                           {userStats.initials}
                         </span>
                       </div>
                     </div>
-                    <button className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-lg border-2 border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                      <Camera className="w-4 h-4 text-gray-600" />
+                    <button
+                      className="absolute bottom-0 right-0 w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full shadow-lg border-2 border-gray-100 flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all touch-manipulation focus:ring-2 focus:ring-[#C4A572] focus:outline-none"
+                      aria-label="Change profile photo"
+                    >
+                      <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
                     </button>
                   </div>
 
                   {/* User Info */}
-                  <div className="text-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">{userStats.fullName}</h2>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-white ${userStats.roleColor}`}>
+                  <div className="text-center mb-4 sm:mb-6">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1.5 sm:mb-2">{userStats.fullName}</h2>
+                    <span className={`inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold text-white ${userStats.roleColor}`}>
                       {userStats.roleLabel}
                     </span>
                   </div>
 
                   {/* Quick Stats */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between py-3 border-t border-gray-100">
-                      <span className="text-sm text-gray-600">Account ID</span>
-                      <span className="text-sm font-medium text-gray-900">#{user.id}</span>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex items-center justify-between py-2.5 sm:py-3 border-t border-gray-100">
+                      <span className="text-xs sm:text-sm text-gray-600">User ID</span>
+                      <span className="text-xs sm:text-sm font-mono font-semibold text-gray-900">{userId}</span>
                     </div>
-                    <div className="flex items-center justify-between py-3 border-t border-gray-100">
-                      <span className="text-sm text-gray-600">Member Since</span>
-                      <span className="text-sm font-medium text-gray-900">{userStats.memberSince}</span>
+                    <div className="flex items-center justify-between py-2.5 sm:py-3 border-t border-gray-100">
+                      <span className="text-xs sm:text-sm text-gray-600">Member Since</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-900">{userStats.memberSince}</span>
                     </div>
-                    <div className="flex items-center justify-between py-3 border-t border-gray-100">
-                      <span className="text-sm text-gray-600">Status</span>
-                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600">
-                        <span className="w-2 h-2 bg-green-600 rounded-full" />
+                    <div className="flex items-center justify-between py-2.5 sm:py-3 border-t border-gray-100">
+                      <span className="text-xs sm:text-sm text-gray-600">Status</span>
+                      <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-green-600">
+                        <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse" />
                         Active
                       </span>
                     </div>
@@ -242,7 +276,7 @@ export default function ProfileSettingsPage() {
             </motion.div>
 
             {/* Right Column - Settings */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Personal Information */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -250,14 +284,14 @@ export default function ProfileSettingsPage() {
                 transition={{ duration: 0.6, ease: smoothEase, delay: 0.2 }}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
               >
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#C4A572]/10 flex items-center justify-center">
-                      <User className="w-5 h-5 text-[#C4A572]" />
+                <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#C4A572]" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
-                      <p className="text-sm text-gray-600">Update your personal details</p>
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Personal Information</h3>
+                      <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Update your personal details</p>
                     </div>
                   </div>
                   {!isEditing && (
@@ -265,24 +299,25 @@ export default function ProfileSettingsPage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleEdit}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#C4A572] text-white rounded-lg hover:bg-[#B39562] transition-colors"
+                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-[#C4A572] text-white rounded-lg hover:bg-[#B39562] transition-colors flex-shrink-0 touch-manipulation focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2 focus:outline-none"
+                      aria-label="Edit profile information"
                     >
-                      <Edit3 className="w-4 h-4" />
-                      <span className="font-medium">Edit</span>
+                      <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="font-medium text-sm sm:text-base">Edit</span>
                     </motion.button>
                   )}
                 </div>
 
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   {!isEditing ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <InfoField icon={User} label="First Name" value={user.first_name} />
                       <InfoField icon={User} label="Last Name" value={user.last_name} />
                       <InfoField icon={Mail} label="Email Address" value={user.email} />
                       <InfoField icon={Phone} label="Phone Number" value={user.phone || 'Not provided'} />
                     </div>
                   ) : (
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* First Name */}
                         <div>
@@ -291,15 +326,16 @@ export default function ProfileSettingsPage() {
                           </label>
                           <input
                             {...register('first_name')}
+                            ref={firstInputRef}
                             type="text"
                             id="first_name"
-                            className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all ${
+                            className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
                               errors.first_name ? 'border-red-300' : 'border-gray-200'
                             }`}
                             placeholder="John"
                           />
                           {errors.first_name && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                            <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                               <AlertCircle className="w-3 h-3" />
                               {errors.first_name.message}
                             </p>
@@ -315,13 +351,13 @@ export default function ProfileSettingsPage() {
                             {...register('last_name')}
                             type="text"
                             id="last_name"
-                            className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all ${
+                            className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
                               errors.last_name ? 'border-red-300' : 'border-gray-200'
                             }`}
                             placeholder="Doe"
                           />
                           {errors.last_name && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                            <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                               <AlertCircle className="w-3 h-3" />
                               {errors.last_name.message}
                             </p>
@@ -338,13 +374,13 @@ export default function ProfileSettingsPage() {
                           {...register('email')}
                           type="email"
                           id="email"
-                          className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all ${
+                          className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation ${
                             errors.email ? 'border-red-300' : 'border-gray-200'
                           }`}
                           placeholder="john.doe@example.com"
                         />
                         {errors.email && (
-                          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                          <p className="mt-1.5 text-xs sm:text-sm text-red-600 flex items-center gap-1" role="alert">
                             <AlertCircle className="w-3 h-3" />
                             {errors.email.message}
                           </p>
@@ -354,25 +390,25 @@ export default function ProfileSettingsPage() {
                       {/* Phone */}
                       <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                          Phone Number <span className="text-gray-500">(optional)</span>
+                          Phone Number <span className="text-gray-500 text-xs sm:text-sm">(optional)</span>
                         </label>
                         <input
                           {...register('phone')}
                           type="tel"
                           id="phone"
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
+                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all text-sm sm:text-base touch-manipulation"
                           placeholder="+1 (555) 123-4567"
                         />
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex items-center gap-3 pt-4">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 sm:pt-4">
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           type="submit"
                           disabled={updateProfile.isPending}
-                          className="flex items-center gap-2 px-6 py-3 bg-[#C4A572] text-white rounded-xl hover:bg-[#B39562] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                          className="flex items-center justify-center gap-2 px-5 sm:px-6 py-3 bg-[#C4A572] text-white rounded-xl hover:bg-[#B39562] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm sm:text-base min-h-[44px] touch-manipulation focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2 focus:outline-none"
                         >
                           {updateProfile.isPending ? (
                             <>
@@ -391,7 +427,7 @@ export default function ProfileSettingsPage() {
                           whileTap={{ scale: 0.98 }}
                           type="button"
                           onClick={handleCancel}
-                          className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                          className="flex items-center justify-center gap-2 px-5 sm:px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm sm:text-base min-h-[44px] touch-manipulation focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 focus:outline-none"
                         >
                           <X className="w-4 h-4" />
                           <span>Cancel</span>
@@ -409,29 +445,29 @@ export default function ProfileSettingsPage() {
                 transition={{ duration: 0.6, ease: smoothEase, delay: 0.3 }}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
               >
-                <div className="px-6 py-5 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
-                      <Lock className="w-5 h-5 text-red-600" />
+                <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
+                      <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Security</h3>
-                      <p className="text-sm text-gray-600">Manage your password and security settings</p>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Security</h3>
+                      <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Manage your password and security settings</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-6">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-xl">
                     <div>
-                      <p className="font-medium text-gray-900 mb-1">Password</p>
-                      <p className="text-sm text-gray-600">Last changed 30 days ago</p>
+                      <p className="font-medium text-gray-900 mb-0.5 sm:mb-1 text-sm sm:text-base">Password</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Last changed 30 days ago</p>
                     </div>
                     <motion.a
                       href="/auth/forgot-password"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                      className="w-full sm:w-auto text-center px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm min-h-[44px] flex items-center justify-center touch-manipulation focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 focus:outline-none"
                     >
                       Change Password
                     </motion.a>
