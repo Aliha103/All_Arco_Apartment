@@ -654,10 +654,22 @@ class ReferralCredit(models.Model):
         db_table = 'users_referralcredit'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['referrer', '-created_at']),
-            models.Index(fields=['referred_user']),
-            models.Index(fields=['status']),
-            models.Index(fields=['booking']),
+            models.Index(
+                fields=['referrer', '-created_at'],
+                name='refcredit_referrer_created_idx',
+            ),
+            models.Index(
+                fields=['referred_user'],
+                name='refcredit_referred_user_idx',
+            ),
+            models.Index(
+                fields=['status'],
+                name='refcredit_status_idx',
+            ),
+            models.Index(
+                fields=['booking'],
+                name='refcredit_booking_idx',
+            ),
         ]
 
     def __str__(self):
