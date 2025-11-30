@@ -718,21 +718,22 @@ export default function PMSDashboard() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.48 }}
+            className="w-full"
           >
-            <Card className="border border-gray-200 shadow">
+            <Card className="border border-gray-200 shadow w-full">
               <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-[#C4A572]/10">
                     <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
                   </div>
-                  <div>
-                    <CardTitle className="text-base text-gray-900">Revenue Trend (Last 30 Days)</CardTitle>
-                    <CardDescription className="text-xs font-medium text-gray-800">Daily revenue performance</CardDescription>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base text-gray-900 truncate">Revenue Trend (Last 30 Days)</CardTitle>
+                    <CardDescription className="text-xs font-medium text-gray-800 truncate">Daily revenue performance</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-4">
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <AreaChart data={revenueData}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -769,27 +770,28 @@ export default function PMSDashboard() {
           </motion.div>
 
           {/* Occupancy & Guest Count - Two columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Occupancy & Revenue Trend */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.56 }}
+              className="w-full"
             >
-              <Card className="border border-gray-200 shadow">
+              <Card className="border border-gray-200 shadow w-full h-full">
                 <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-[#C4A572]/10">
                       <Activity className="w-5 h-5" style={{ color: COLORS.primary }} />
                     </div>
-                    <div>
-                      <CardTitle className="text-base text-gray-900">Occupancy & Revenue Trend</CardTitle>
-                      <CardDescription className="text-xs font-medium text-gray-800">Last 6 months performance</CardDescription>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base text-gray-900 truncate">Occupancy & Revenue Trend</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-800 truncate">Last 6 months performance</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer width="100%" height={250} minWidth={0}>
                     <LineChart data={occupancyTrendData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
@@ -837,21 +839,22 @@ export default function PMSDashboard() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.64 }}
+              className="w-full"
             >
-              <Card className="border border-gray-200 shadow">
+              <Card className="border border-gray-200 shadow w-full h-full">
                 <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-[#C4A572]/10">
                       <Users className="w-5 h-5" style={{ color: COLORS.primary }} />
                     </div>
-                    <div>
-                      <CardTitle className="text-base text-gray-900">Guest Count Trend</CardTitle>
-                      <CardDescription className="text-xs font-medium text-gray-800">Monthly guest arrivals</CardDescription>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base text-gray-900 truncate">Guest Count Trend</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-800 truncate">Monthly guest arrivals</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4">
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer width="100%" height={250} minWidth={0}>
                     <AreaChart data={guestTrendData}>
                       <defs>
                         <linearGradient id="colorGuests" x1="0" y1="0" x2="0" y2="1">
