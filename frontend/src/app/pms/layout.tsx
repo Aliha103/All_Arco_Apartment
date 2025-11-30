@@ -61,6 +61,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
 
@@ -75,15 +76,23 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     }
   });
 
+  // Set mounted state to prevent hydration flash
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Redirect if not team member and log PMS access
   useEffect(() => {
+    // Only perform auth checks after component is mounted to prevent flash during hydration
+    if (!isMounted) return;
+
     if (!isLoading && (!user || !isTeamMember())) {
       router.push('/auth/login');
     } else if (!isLoading && user && isTeamMember()) {
       // Log successful PMS access for security audit
       logPMSAccess(user);
     }
-  }, [user, isLoading, isTeamMember, router]);
+  }, [user, isLoading, isTeamMember, router, isMounted]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -123,9 +132,10 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     };
   }, [mobileMenuOpen]);
 
-  if (isLoading || !user || !isTeamMember()) {
+  // Show loading until mounted and auth is complete
+  if (!isMounted || isLoading || !user || !isTeamMember()) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
