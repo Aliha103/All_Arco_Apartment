@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -139,9 +139,9 @@ const StatCard = ({
   const TrendIcon = isPositive ? TrendingUp : isNegative ? TrendingDown : Activity;
 
   const statusColors = {
-    good: 'border-green-200 bg-green-50/50',
-    warning: 'border-yellow-200 bg-yellow-50/50',
-    critical: 'border-red-200 bg-red-50/50',
+    good: 'border-green-200 bg-green-50/30',
+    warning: 'border-yellow-200 bg-yellow-50/30',
+    critical: 'border-red-200 bg-red-50/30',
   };
 
   return (
@@ -150,42 +150,41 @@ const StatCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay, ease: smoothEase }}
     >
-      <Card className={`overflow-hidden hover:shadow-xl transition-all duration-300 border-2 ${status ? statusColors[status] : 'border-gray-100 hover:border-gray-200'}`}>
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-start justify-between mb-4">
+      <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 border ${status ? statusColors[status] : 'border-gray-200 hover:border-gray-300'}`}>
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-start justify-between mb-2">
             <div
-              className="p-2.5 sm:p-3.5 rounded-xl shadow-sm"
+              className="p-2 rounded-lg shadow-sm"
               style={{
                 backgroundColor: `${color}15`,
-                boxShadow: `0 4px 12px ${color}20`
               }}
             >
-              <div style={{ color }}>{icon}</div>
+              <div style={{ color }} className="w-5 h-5 sm:w-6 sm:h-6">{icon}</div>
             </div>
             {change !== undefined && trend !== 'neutral' && (
               <div
-                className={`flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold shadow-sm ${
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold ${
                   isPositive
-                    ? 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
+                    ? 'bg-green-100 text-green-800 border border-green-300'
                     : isNegative
-                    ? 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border border-red-200'
-                    : 'bg-gray-100 text-gray-700'
+                    ? 'bg-red-100 text-red-800 border border-red-300'
+                    : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                <TrendIcon className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                <TrendIcon className="w-3 h-3" />
                 {Math.abs(change)}%
               </div>
             )}
           </div>
-          <div className="space-y-2">
-            <h3 className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide">
+          <div className="space-y-1">
+            <h3 className="text-xs font-bold text-gray-600 uppercase tracking-wide">
               {title}
             </h3>
-            <p className={`text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight transition-all duration-300 ${isSensitive && hideData ? 'blur-lg select-none' : ''}`}>
+            <p className={`text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight transition-all duration-300 ${isSensitive && hideData ? 'blur-lg select-none' : ''}`}>
               {value}
             </p>
             {subtitle && (
-              <p className="text-xs text-gray-500 flex items-center gap-1">
+              <p className="text-xs text-gray-600 flex items-center gap-1">
                 <Info className="w-3 h-3" />
                 {subtitle}
               </p>
@@ -209,31 +208,31 @@ interface BookingItemProps {
 const BookingItem = ({ booking, type, hideData = false }: BookingItemProps) => {
   const icon = type === 'arrival' ? <UserCheck className="w-5 h-5" /> : <UserX className="w-5 h-5" />;
   const bgColor = type === 'arrival' ? 'bg-gradient-to-br from-green-50 to-green-100' : 'bg-gradient-to-br from-blue-50 to-blue-100';
-  const textColor = type === 'arrival' ? 'text-green-700' : 'text-blue-700';
-  const borderColor = type === 'arrival' ? 'border-green-200' : 'border-blue-200';
+  const textColor = type === 'arrival' ? 'text-green-800' : 'text-blue-800';
+  const borderColor = type === 'arrival' ? 'border-green-300' : 'border-blue-300';
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
-      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 rounded-xl hover:shadow-md transition-all border-2 ${borderColor} ${bgColor} gap-3 sm:gap-0`}
+      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg hover:shadow-md transition-all border ${borderColor} ${bgColor} gap-2 sm:gap-0`}
     >
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className={`p-2 sm:p-2.5 rounded-lg shadow-sm ${textColor} flex-shrink-0`} style={{ backgroundColor: 'white' }}>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className={`p-2 rounded-lg shadow-sm ${textColor} flex-shrink-0 bg-white`}>
           {icon}
         </div>
         <div className="min-w-0">
           <p className={`font-bold text-gray-900 text-sm truncate transition-all duration-300 ${hideData ? 'blur-md select-none' : ''}`}>{booking.guest_name}</p>
-          <p className="text-xs text-gray-600 font-medium mt-0.5">
+          <p className="text-xs text-gray-700 font-medium">
             {type === 'arrival' ? 'Check-in' : 'Check-out'}: {formatDate(type === 'arrival' ? booking.check_in_date : booking.check_out_date)}
           </p>
-          <p className={`text-xs text-gray-500 mt-0.5 transition-all duration-300 ${hideData ? 'blur-sm select-none' : ''}`}>Ref: {booking.reference_code || booking.booking_id}</p>
+          <p className={`text-xs text-gray-600 transition-all duration-300 ${hideData ? 'blur-sm select-none' : ''}`}>Ref: {booking.reference_code || booking.booking_id}</p>
         </div>
       </div>
       <div className="text-left sm:text-right flex-shrink-0 w-full sm:w-auto">
-        <p className={`font-bold text-base sm:text-lg transition-all duration-300 ${hideData ? 'blur-md select-none' : ''}`} style={{ color: COLORS.primary }}>{formatCurrency(booking.total_price)}</p>
-        <p className="text-xs text-gray-600 font-medium mt-0.5">{booking.number_of_guests || booking.guests} {(booking.number_of_guests || booking.guests) === 1 ? 'guest' : 'guests'}</p>
+        <p className={`font-bold text-base transition-all duration-300 ${hideData ? 'blur-md select-none' : ''}`} style={{ color: COLORS.primary }}>{formatCurrency(booking.total_price)}</p>
+        <p className="text-xs text-gray-700 font-medium">{booking.number_of_guests || booking.guests} {(booking.number_of_guests || booking.guests) === 1 ? 'guest' : 'guests'}</p>
       </div>
     </motion.div>
   );
@@ -242,32 +241,39 @@ const BookingItem = ({ booking, type, hideData = false }: BookingItemProps) => {
 // Smart Notification Component
 const SmartNotification = ({ type, title, message, time, action }: any) => {
   const icons: any = {
-    urgent: <AlertCircle className="w-5 h-5 text-red-600" />,
-    info: <Info className="w-5 h-5 text-blue-600" />,
-    success: <CheckCircle className="w-5 h-5 text-green-600" />,
-    warning: <AlertTriangle className="w-5 h-5 text-yellow-600" />,
+    urgent: <AlertCircle className="w-5 h-5 text-red-700" />,
+    info: <Info className="w-5 h-5 text-blue-700" />,
+    success: <CheckCircle className="w-5 h-5 text-green-700" />,
+    warning: <AlertTriangle className="w-5 h-5 text-yellow-700" />,
   };
 
   const colors: any = {
-    urgent: 'border-red-200 bg-red-50',
-    info: 'border-blue-200 bg-blue-50',
-    success: 'border-green-200 bg-green-50',
-    warning: 'border-yellow-200 bg-yellow-50',
+    urgent: 'border-red-300 bg-red-50',
+    info: 'border-blue-300 bg-blue-50',
+    success: 'border-green-300 bg-green-50',
+    warning: 'border-yellow-300 bg-yellow-50',
+  };
+
+  const textColors: any = {
+    urgent: 'text-red-900',
+    info: 'text-blue-900',
+    success: 'text-green-900',
+    warning: 'text-yellow-900',
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className={`p-4 rounded-xl border-2 ${colors[type]} mb-3 hover:shadow-md transition-all`}
+      className={`p-3 rounded-lg border ${colors[type]} mb-2 hover:shadow-md transition-all`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2">
         <div className="flex-shrink-0">{icons[type]}</div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-gray-900 text-sm mb-1">{title}</p>
-          <p className="text-xs text-gray-600">{message}</p>
+          <p className={`font-bold ${textColors[type]} text-sm mb-1`}>{title}</p>
+          <p className="text-xs text-gray-700">{message}</p>
           <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-500">{time}</span>
+            <span className="text-xs text-gray-600">{time}</span>
             {action && (
               <Button variant="ghost" size="sm" className="h-6 text-xs font-semibold">
                 {action} <ChevronRight className="w-3 h-3 ml-1" />
@@ -285,19 +291,19 @@ const TaskItem = ({ task, completed, onToggle }: any) => {
   return (
     <motion.div
       whileHover={{ x: 4 }}
-      className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all cursor-pointer ${
-        completed ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white hover:border-gray-300'
+      className={`flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer ${
+        completed ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white hover:border-gray-300'
       }`}
       onClick={onToggle}
     >
       <div
-        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
           completed ? 'border-green-600 bg-green-600' : 'border-gray-300'
         }`}
       >
-        {completed && <CheckCircle className="w-4 h-4 text-white" />}
+        {completed && <CheckCircle className="w-3 h-3 text-white" />}
       </div>
-      <p className={`text-sm font-medium flex-1 ${completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+      <p className={`text-xs font-medium flex-1 ${completed ? 'text-gray-600 line-through' : 'text-gray-900'}`}>
         {task}
       </p>
     </motion.div>
@@ -315,7 +321,22 @@ export default function PMSDashboard() {
   ]);
 
   const [showNotifications, setShowNotifications] = useState(true);
-  const [hideSensitiveData, setHideSensitiveData] = useState(false);
+
+  // Load hide sensitive data state from localStorage
+  const [hideSensitiveData, setHideSensitiveData] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('hideSensitiveData');
+      return stored === 'true';
+    }
+    return false;
+  });
+
+  // Persist hide sensitive data state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hideSensitiveData', hideSensitiveData.toString());
+    }
+  }, [hideSensitiveData]);
 
   // Fetch dashboard statistics from API
   const { data: dashboardData, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
@@ -484,7 +505,7 @@ export default function PMSDashboard() {
   const apartment = dashboardData?.apartment || { is_occupied: false, guest_count: 0 };
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 sm:space-y-6 pb-8">
       {/* Personalized Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -492,16 +513,16 @@ export default function PMSDashboard() {
         transition={{ duration: 0.6, ease: smoothEase }}
         className="relative"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#C4A572]/5 via-transparent to-[#C4A572]/5 rounded-2xl -z-10"></div>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4 sm:p-6 rounded-2xl border-2 border-gray-100 bg-white/80 backdrop-blur-sm shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#C4A572]/5 via-transparent to-[#C4A572]/5 rounded-xl -z-10"></div>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 p-4 sm:p-5 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 sm:gap-3 mb-2">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 truncate">
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 truncate">
                 {getGreeting()}, {user?.first_name}!
               </h1>
-              <Zap className="w-5 sm:w-6 h-5 sm:h-6 text-[#C4A572] animate-pulse flex-shrink-0" />
+              <Zap className="w-5 h-5 text-[#C4A572] animate-pulse flex-shrink-0" />
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-sm sm:text-base text-gray-600 font-medium">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-gray-700 font-medium">
               <div className="flex items-center gap-2">
                 <CalendarDays className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate">{format(new Date(), 'EEEE, MMMM dd, yyyy')}</span>
@@ -513,16 +534,16 @@ export default function PMSDashboard() {
                 23°C
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-500 mt-2">
+            <p className="text-xs text-gray-600 mt-1">
               {period.month_name} {period.year} • Day {period.days_elapsed} of {period.days_in_month}
             </p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             {notifications.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 border-2 border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 font-semibold"
+                className="gap-1 border border-purple-300 bg-purple-50 text-purple-800 hover:bg-purple-100 font-semibold"
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="w-4 h-4" />
@@ -533,22 +554,22 @@ export default function PMSDashboard() {
             <Button
               variant="outline"
               size="sm"
-              className={`gap-2 border-2 font-semibold ${hideSensitiveData ? 'border-gray-300 bg-gray-50 text-gray-700' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+              className={`gap-1 border font-semibold ${hideSensitiveData ? 'border-gray-300 bg-gray-50 text-gray-800' : 'border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100'}`}
               onClick={() => setHideSensitiveData(!hideSensitiveData)}
               title={hideSensitiveData ? 'Show sensitive data' : 'Hide sensitive data'}
             >
               {hideSensitiveData ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               <span className="hidden lg:inline">{hideSensitiveData ? 'Hidden' : 'Visible'}</span>
             </Button>
-            <Badge variant="outline" className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold border-2 border-green-200 bg-green-50 text-green-700">
-              <Activity className="w-4 h-4 mr-1 sm:mr-2 animate-pulse" />
+            <Badge variant="outline" className="px-3 py-1 text-xs font-semibold border border-green-300 bg-green-50 text-green-800">
+              <Activity className="w-3 h-3 mr-1 animate-pulse" />
               Live
             </Badge>
-            <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-2 border-2 hover:border-[#C4A572] hover:bg-[#C4A572]/5">
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-1 border border-gray-300 hover:border-[#C4A572] hover:bg-[#C4A572]/5">
               <RefreshCw className="w-4 h-4" />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <Button variant="outline" size="sm" className="gap-2 border-2">
+            <Button variant="outline" size="sm" className="gap-1 border border-gray-300">
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
@@ -557,22 +578,22 @@ export default function PMSDashboard() {
       </motion.div>
 
       {/* Main Grid Layout */}
-      <div className="grid lg:grid-cols-12 gap-6">
-        {/* Left Column - Main Content (8 columns) */}
-        <div className="lg:col-span-8 space-y-6">
+      <div className="grid lg:grid-cols-12 xl:grid-cols-12 gap-4 sm:gap-6">
+        {/* Left Column - Main Content (8 columns on lg, 9 on xl) */}
+        <div className="lg:col-span-8 xl:col-span-9 space-y-4 sm:space-y-6">
           {/* Key Performance Indicators */}
           <motion.div
             variants={staggerContainer}
             initial="initial"
             animate="animate"
-            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4"
           >
             <StatCard
               title="Total Revenue"
               value={formatCurrency(metrics.total_revenue || 0)}
               change={12.4}
               trend="up"
-              icon={<DollarSign className="w-5 sm:w-7 h-5 sm:h-7" />}
+              icon={<DollarSign />}
               color={COLORS.success}
               delay={0}
               subtitle={`${period.month_name} earnings`}
@@ -585,7 +606,7 @@ export default function PMSDashboard() {
               value={`${metrics.occupancy_rate || 0}%`}
               change={5.2}
               trend="up"
-              icon={<BedDouble className="w-5 sm:w-7 h-5 sm:h-7" />}
+              icon={<BedDouble />}
               color={COLORS.info}
               delay={0.08}
               subtitle={`${metrics.occupied_nights || 0} of ${period.days_in_month} nights`}
@@ -596,7 +617,7 @@ export default function PMSDashboard() {
               value={metrics.total_bookings || 0}
               change={8.3}
               trend="up"
-              icon={<Calendar className="w-5 sm:w-7 h-5 sm:h-7" />}
+              icon={<Calendar />}
               color={COLORS.purple}
               delay={0.16}
               subtitle="Confirmed reservations"
@@ -606,7 +627,7 @@ export default function PMSDashboard() {
               value={formatCurrency(metrics.average_daily_rate || 0)}
               change={4.1}
               trend="up"
-              icon={<TrendingUp className="w-5 sm:w-7 h-5 sm:h-7" />}
+              icon={<TrendingUp />}
               color={COLORS.warning}
               delay={0.24}
               subtitle="Per night average"
@@ -615,92 +636,90 @@ export default function PMSDashboard() {
             />
           </motion.div>
 
-          {/* Apartment Status Card */}
+          {/* Apartment Status Card - More compact */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.32 }}
           >
-            <Card className={`border-2 shadow-lg ${apartment.is_occupied ? 'border-red-200 bg-red-50/30' : 'border-green-200 bg-green-50/30'}`}>
-              <CardHeader className="bg-gradient-to-r from-white to-gray-50 border-b-2 border-gray-100">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <div className={`p-3 rounded-xl ${apartment.is_occupied ? 'bg-red-100' : 'bg-green-100'}`}>
+            <Card className={`border shadow ${apartment.is_occupied ? 'border-red-300 bg-red-50/20' : 'border-green-300 bg-green-50/20'}`}>
+              <CardHeader className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <div className={`p-2 rounded-lg ${apartment.is_occupied ? 'bg-red-100' : 'bg-green-100'}`}>
                     {apartment.is_occupied ? (
-                      <Lock className="w-6 h-6 text-red-600" />
+                      <Lock className="w-5 h-5 text-red-700" />
                     ) : (
-                      <Unlock className="w-6 h-6 text-green-600" />
+                      <Unlock className="w-5 h-5 text-green-700" />
                     )}
                   </div>
-                  Apartment Status
-                  <Badge className={`ml-auto ${apartment.is_occupied ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'} hover:bg-opacity-80`}>
+                  <CardTitle className="text-lg">Apartment Status</CardTitle>
+                  <Badge className={`ml-auto ${apartment.is_occupied ? 'bg-red-100 text-red-800 border-red-300' : 'bg-green-100 text-green-800 border-green-300'} border`}>
                     {apartment.is_occupied ? 'OCCUPIED' : 'VACANT'}
                   </Badge>
-                </CardTitle>
-                <CardDescription className="mt-2 text-base font-medium">
+                </div>
+                <CardDescription className="text-sm font-medium text-gray-700">
                   All'Arco Apartment - Single Property Management
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-4">
                 {apartment.is_occupied ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs sm:text-sm text-gray-600 font-semibold mb-2">Current Guests</p>
-                      <p className="text-3xl sm:text-4xl font-bold text-gray-900">{apartment.guest_count}</p>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs font-semibold text-gray-700 mb-1">Current Guests</p>
+                      <p className="text-2xl sm:text-3xl font-extrabold text-gray-900">{apartment.guest_count}</p>
+                      <p className="text-xs text-gray-600 mt-1">
                         Checkout: {apartment.current_checkout_date ? format(new Date(apartment.current_checkout_date), 'MMM dd, yyyy') : 'N/A'}
                       </p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="text-xs sm:text-sm text-gray-600 font-semibold mb-2">Booking</p>
-                      <p className="text-base sm:text-lg font-bold" style={{ color: COLORS.primary }}>
+                      <p className="text-xs font-semibold text-gray-700 mb-1">Booking</p>
+                      <p className="text-base font-bold" style={{ color: COLORS.primary }}>
                         {todaysOps.current_booking_id || 'N/A'}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-6 sm:py-8">
-                    <Unlock className="w-12 sm:w-16 h-12 sm:h-16 text-green-400 mx-auto mb-4" />
-                    <p className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Apartment Available</p>
-                    <p className="text-xs sm:text-sm text-gray-600">Ready for next booking</p>
+                  <div className="text-center py-4">
+                    <Unlock className="w-12 h-12 text-green-400 mx-auto mb-3" />
+                    <p className="text-lg font-bold text-gray-900 mb-1">Apartment Available</p>
+                    <p className="text-xs text-gray-600">Ready for next booking</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Today's Timeline */}
+          {/* Today's Timeline - More compact */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <Card className="border-2 border-gray-100 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
-                <div className="flex items-center justify-between">
+            <Card className="border border-gray-200 shadow">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                    <Timer className="w-5 h-5" style={{ color: COLORS.primary }} />
+                  </div>
                   <div>
-                    <CardTitle className="flex items-center gap-3 text-2xl">
-                      <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                        <Timer className="w-6 h-6" style={{ color: COLORS.primary }} />
-                      </div>
-                      Today's Operations
-                    </CardTitle>
-                    <CardDescription className="mt-2 text-base font-medium">
+                    <CardTitle className="text-lg">Today's Operations</CardTitle>
+                    <CardDescription className="text-xs font-medium text-gray-700">
                       Arrivals & Departures for {format(new Date(), 'MMMM dd')}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid md:grid-cols-2 gap-8">
+              <CardContent className="p-4">
+                <div className="grid md:grid-cols-2 gap-6">
                   {/* Arrivals */}
                   <div>
-                    <div className="flex items-center justify-between mb-5">
-                      <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-green-100">
-                          <UserCheck className="w-5 h-5 text-green-600" />
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                        <div className="p-1 rounded bg-green-100">
+                          <UserCheck className="w-4 h-4 text-green-700" />
                         </div>
                         Arrivals
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 font-bold">
+                        <Badge className="bg-green-100 text-green-800 border-green-300 border font-bold text-xs">
                           {todaysOps.arrivals?.length || 0}
                         </Badge>
                       </h3>
@@ -710,15 +729,15 @@ export default function PMSDashboard() {
                         </Button>
                       </Link>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {todaysOps.arrivals && todaysOps.arrivals.length > 0 ? (
                         todaysOps.arrivals.map((booking: any) => (
                           <BookingItem key={booking.id} booking={booking} type="arrival" hideData={hideSensitiveData} />
                         ))
                       ) : (
-                        <div className="text-center py-12 px-4 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50">
-                          <UserCheck className="w-10 sm:w-12 h-10 sm:h-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-sm sm:text-base text-gray-500 font-medium">No arrivals scheduled</p>
+                        <div className="text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                          <UserCheck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                          <p className="text-sm text-gray-600 font-medium">No arrivals scheduled</p>
                         </div>
                       )}
                     </div>
@@ -726,13 +745,13 @@ export default function PMSDashboard() {
 
                   {/* Departures */}
                   <div>
-                    <div className="flex items-center justify-between mb-5">
-                      <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-blue-100">
-                          <UserX className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                        <div className="p-1 rounded bg-blue-100">
+                          <UserX className="w-4 h-4 text-blue-700" />
                         </div>
                         Departures
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 font-bold">
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-300 border font-bold text-xs">
                           {todaysOps.departures?.length || 0}
                         </Badge>
                       </h3>
@@ -742,15 +761,15 @@ export default function PMSDashboard() {
                         </Button>
                       </Link>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {todaysOps.departures && todaysOps.departures.length > 0 ? (
                         todaysOps.departures.map((booking: any) => (
                           <BookingItem key={booking.id} booking={booking} type="departure" hideData={hideSensitiveData} />
                         ))
                       ) : (
-                        <div className="text-center py-12 px-4 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50">
-                          <UserX className="w-10 sm:w-12 h-10 sm:h-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-sm sm:text-base text-gray-500 font-medium">No departures scheduled</p>
+                        <div className="text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                          <UserX className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                          <p className="text-sm text-gray-600 font-medium">No departures scheduled</p>
                         </div>
                       )}
                     </div>
@@ -760,24 +779,26 @@ export default function PMSDashboard() {
             </Card>
           </motion.div>
 
-          {/* Revenue Analytics */}
+          {/* Revenue Analytics - Compact */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.48 }}
           >
-            <Card className="border-2 border-gray-100 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
-                <CardTitle className="flex items-center gap-3 text-xl">
+            <Card className="border border-gray-200 shadow">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-[#C4A572]/10">
                     <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
                   </div>
-                  Revenue Trend (Last 30 Days)
-                </CardTitle>
-                <CardDescription className="font-medium">Daily revenue performance</CardDescription>
+                  <div>
+                    <CardTitle className="text-base">Revenue Trend (Last 30 Days)</CardTitle>
+                    <CardDescription className="text-xs font-medium text-gray-700">Daily revenue performance</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="p-6">
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="p-4">
+                <ResponsiveContainer width="100%" height={250}>
                   <AreaChart data={revenueData}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -785,15 +806,15 @@ export default function PMSDashboard() {
                         <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" strokeWidth={1.5} />
-                    <XAxis dataKey="date" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" strokeWidth={1} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'white',
                         border: '2px solid #E5E7EB',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                         fontWeight: 600
                       }}
                     />
@@ -801,7 +822,7 @@ export default function PMSDashboard() {
                       type="monotone"
                       dataKey="revenue"
                       stroke={COLORS.primary}
-                      strokeWidth={3}
+                      strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#colorRevenue)"
                     />
@@ -811,79 +832,82 @@ export default function PMSDashboard() {
             </Card>
           </motion.div>
 
-          {/* Occupancy & Revenue Trend */}
+          {/* Occupancy & Revenue Trend - Compact */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.56 }}
           >
-            <Card className="border-2 border-gray-100 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
-                <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+            <Card className="border border-gray-200 shadow">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-[#C4A572]/10">
                     <Activity className="w-5 h-5" style={{ color: COLORS.primary }} />
                   </div>
-                  Occupancy & Revenue Trend
-                </CardTitle>
-                <CardDescription className="font-medium text-sm">Last 6 months performance</CardDescription>
+                  <div>
+                    <CardTitle className="text-base">Occupancy & Revenue Trend</CardTitle>
+                    <CardDescription className="text-xs font-medium text-gray-700">Last 6 months performance</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="p-4">
+                <ResponsiveContainer width="100%" height={250}>
                   <LineChart data={occupancyTrendData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis yAxisId="left" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                    <YAxis yAxisId="left" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'white',
                         border: '2px solid #E5E7EB',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)',
+                        borderRadius: '8px',
                         fontWeight: 600
                       }}
                     />
-                    <Legend wrapperStyle={{ fontWeight: 600, fontSize: '13px' }} />
-                    <Line yAxisId="left" type="monotone" dataKey="occupancy" stroke={COLORS.info} strokeWidth={3} name="Occupancy %" dot={{ r: 5 }} />
-                    <Line yAxisId="right" type="monotone" dataKey="revenue" stroke={COLORS.success} strokeWidth={3} name="Revenue €" dot={{ r: 5 }} />
+                    <Legend wrapperStyle={{ fontWeight: 600, fontSize: '12px' }} />
+                    <Line yAxisId="left" type="monotone" dataKey="occupancy" stroke={COLORS.info} strokeWidth={2} name="Occupancy %" dot={{ r: 4 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="revenue" stroke={COLORS.success} strokeWidth={2} name="Revenue €" dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Booking Status Distribution */}
+          {/* Booking Status Distribution - Compact */}
           {bookingStatusData.length > 0 && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.64 }}
             >
-              <Card className="border-2 border-gray-100 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
-                  <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+              <Card className="border border-gray-200 shadow">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                  <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-[#C4A572]/10">
                       <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
                     </div>
-                    Booking Status Distribution
-                  </CardTitle>
-                  <CardDescription className="font-medium text-sm">Current month breakdown</CardDescription>
+                    <div>
+                      <CardTitle className="text-base">Booking Status Distribution</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-700">Current month breakdown</CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="p-4 sm:p-6">
-                  <ResponsiveContainer width="100%" height={250}>
+                <CardContent className="p-4">
+                  <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={bookingStatusData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
-                      <YAxis tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: 'white',
                           border: '2px solid #E5E7EB',
-                          borderRadius: '12px',
+                          borderRadius: '8px',
                           fontWeight: 600
                         }}
                       />
-                      <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                      <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                         {bookingStatusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
@@ -895,24 +919,26 @@ export default function PMSDashboard() {
             </motion.div>
           )}
 
-          {/* Guest Count Trend */}
+          {/* Guest Count Trend - Compact */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.72 }}
           >
-            <Card className="border-2 border-gray-100 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
-                <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+            <Card className="border border-gray-200 shadow">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-[#C4A572]/10">
                     <Users className="w-5 h-5" style={{ color: COLORS.primary }} />
                   </div>
-                  Guest Count Trend
-                </CardTitle>
-                <CardDescription className="font-medium text-sm">Monthly guest arrivals</CardDescription>
+                  <div>
+                    <CardTitle className="text-base">Guest Count Trend</CardTitle>
+                    <CardDescription className="text-xs font-medium text-gray-700">Monthly guest arrivals</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <ResponsiveContainer width="100%" height={250}>
+              <CardContent className="p-4">
+                <ResponsiveContainer width="100%" height={220}>
                   <AreaChart data={guestTrendData}>
                     <defs>
                       <linearGradient id="colorGuests" x1="0" y1="0" x2="0" y2="1">
@@ -921,13 +947,13 @@ export default function PMSDashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'white',
                         border: '2px solid #E5E7EB',
-                        borderRadius: '12px',
+                        borderRadius: '8px',
                         fontWeight: 600
                       }}
                     />
@@ -935,7 +961,7 @@ export default function PMSDashboard() {
                       type="monotone"
                       dataKey="guests"
                       stroke={COLORS.purple}
-                      strokeWidth={3}
+                      strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#colorGuests)"
                     />
@@ -946,9 +972,9 @@ export default function PMSDashboard() {
           </motion.div>
         </div>
 
-        {/* Right Column - Sidebar (4 columns) */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Smart Notifications */}
+        {/* Right Column - Sidebar (4 columns on lg, 3 on xl) */}
+        <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+          {/* Smart Notifications - Compact */}
           <AnimatePresence>
             {showNotifications && notifications.length > 0 && (
               <motion.div
@@ -957,16 +983,16 @@ export default function PMSDashboard() {
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="border-2 border-gray-100 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b-2 border-purple-100">
-                    <CardTitle className="flex items-center gap-3 text-lg">
-                      <div className="p-2 rounded-lg bg-purple-100">
-                        <BellRing className="w-5 h-5 text-purple-600" />
+                <Card className="border border-gray-200 shadow">
+                  <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-200 py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-lg bg-purple-100">
+                        <BellRing className="w-4 h-4 text-purple-700" />
                       </div>
-                      Smart Alerts
-                    </CardTitle>
+                      <CardTitle className="text-base">Smart Alerts</CardTitle>
+                    </div>
                   </CardHeader>
-                  <CardContent className="p-4">
+                  <CardContent className="p-3">
                     {notifications.map((notif, i) => (
                       <SmartNotification key={i} {...notif} />
                     ))}
@@ -976,39 +1002,39 @@ export default function PMSDashboard() {
             )}
           </AnimatePresence>
 
-          {/* AI Insights */}
+          {/* AI Insights - Compact */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.56 }}
           >
-            <Card className="border-2 border-blue-100 shadow-lg bg-gradient-to-br from-blue-50/50 to-white">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b-2 border-blue-100">
-                <CardTitle className="flex items-center gap-3 text-lg">
-                  <div className="p-2 rounded-lg bg-blue-100">
-                    <Brain className="w-5 h-5 text-blue-600" />
+            <Card className="border border-blue-200 shadow bg-gradient-to-br from-blue-50/30 to-white">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-200 py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded-lg bg-blue-100">
+                    <Brain className="w-4 h-4 text-blue-700" />
                   </div>
-                  AI Insights
-                </CardTitle>
+                  <CardTitle className="text-base">AI Insights</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="p-4 space-y-3">
-                <div className="p-4 rounded-xl border-2 border-blue-200 bg-white">
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+              <CardContent className="p-3 space-y-2">
+                <div className="p-3 rounded-lg border border-blue-300 bg-white">
+                  <div className="flex items-start gap-2">
+                    <Lightbulb className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-gray-900 text-sm mb-1">Revenue Opportunity</p>
-                      <p className="text-xs text-gray-600">
+                      <p className="font-bold text-gray-900 text-xs mb-1">Revenue Opportunity</p>
+                      <p className="text-xs text-gray-700">
                         Occupancy at {metrics.occupancy_rate || 0}%. Consider adjusting weekend rates for optimal revenue.
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="p-4 rounded-xl border-2 border-green-200 bg-white">
-                  <div className="flex items-start gap-3">
-                    <TrendingUp className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="p-3 rounded-lg border border-green-300 bg-white">
+                  <div className="flex items-start gap-2">
+                    <TrendingUp className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-gray-900 text-sm mb-1">Performance Trend</p>
-                      <p className="text-xs text-gray-600">
+                      <p className="font-bold text-gray-900 text-xs mb-1">Performance Trend</p>
+                      <p className="text-xs text-gray-700">
                         {metrics.total_bookings || 0} bookings this month. {metrics.occupancy_rate >= 60 ? 'Great performance!' : 'Room for growth.'}
                       </p>
                     </div>
@@ -1018,27 +1044,27 @@ export default function PMSDashboard() {
             </Card>
           </motion.div>
 
-          {/* Task Management */}
+          {/* Task Management - Compact */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.64 }}
           >
-            <Card className="border-2 border-gray-100 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
+            <Card className="border border-gray-200 shadow">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-3 text-lg">
-                    <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                      <ClipboardList className="w-5 h-5" style={{ color: COLORS.primary }} />
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-lg bg-[#C4A572]/10">
+                      <ClipboardList className="w-4 h-4" style={{ color: COLORS.primary }} />
                     </div>
-                    Today's Tasks
-                  </CardTitle>
-                  <Badge className="bg-gray-100 text-gray-700 font-bold">
+                    <CardTitle className="text-base">Today's Tasks</CardTitle>
+                  </div>
+                  <Badge className="bg-gray-100 text-gray-800 border-gray-300 border font-bold text-xs">
                     {tasks.filter(t => !t.completed).length}/{tasks.length}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 space-y-2">
+              <CardContent className="p-3 space-y-1">
                 {tasks.map((task) => (
                   <TaskItem
                     key={task.id}
@@ -1051,31 +1077,31 @@ export default function PMSDashboard() {
             </Card>
           </motion.div>
 
-          {/* Booking Sources */}
+          {/* Booking Sources - Compact with scrollable legend */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.72 }}
           >
-            <Card className="border-2 border-gray-100 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
-                <CardTitle className="flex items-center gap-3 text-lg">
-                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                    <PieChart className="w-5 h-5" style={{ color: COLORS.primary }} />
+            <Card className="border border-gray-200 shadow">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded-lg bg-[#C4A572]/10">
+                    <PieChart className="w-4 h-4" style={{ color: COLORS.primary }} />
                   </div>
-                  Booking Sources
-                </CardTitle>
+                  <CardTitle className="text-base">Booking Sources</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="p-6">
-                <ResponsiveContainer width="100%" height={200}>
+              <CardContent className="p-4">
+                <ResponsiveContainer width="100%" height={180}>
                   <RePieChart>
                     <Pie
                       data={bookingSourceData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={85}
-                      paddingAngle={3}
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={2}
                       dataKey="value"
                     >
                       {bookingSourceData.map((entry, index) => (
@@ -1086,20 +1112,21 @@ export default function PMSDashboard() {
                       contentStyle={{
                         backgroundColor: 'white',
                         border: '2px solid #E5E7EB',
-                        borderRadius: '12px',
+                        borderRadius: '8px',
                         fontWeight: 600
                       }}
                     />
                   </RePieChart>
                 </ResponsiveContainer>
-                <div className="mt-4 space-y-2">
+                {/* Scrollable legend for many sources */}
+                <div className="mt-3 space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
                   {bookingSourceData.map((source) => (
                     <div key={source.name} className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: source.color }} />
-                        <span className="text-gray-700 font-semibold">{source.name}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: source.color }} />
+                        <span className="text-gray-800 font-semibold text-xs">{source.name}</span>
                       </div>
-                      <span className="font-bold text-gray-900">{source.value}%</span>
+                      <span className="font-bold text-gray-900 text-xs">{source.value}%</span>
                     </div>
                   ))}
                 </div>
@@ -1107,31 +1134,31 @@ export default function PMSDashboard() {
             </Card>
           </motion.div>
 
-          {/* Payment Status */}
+          {/* Payment Status - Compact */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.8 }}
           >
-            <Card className="border-2 border-gray-100 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
-                <CardTitle className="flex items-center gap-3 text-lg">
-                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                    <CreditCard className="w-5 h-5" style={{ color: COLORS.primary }} />
+            <Card className="border border-gray-200 shadow">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded-lg bg-[#C4A572]/10">
+                    <CreditCard className="w-4 h-4" style={{ color: COLORS.primary }} />
                   </div>
-                  Payment Status
-                </CardTitle>
+                  <CardTitle className="text-base">Payment Status</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="p-6">
-                <ResponsiveContainer width="100%" height={180}>
+              <CardContent className="p-4">
+                <ResponsiveContainer width="100%" height={160}>
                   <RePieChart>
                     <Pie
                       data={paymentStatusData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={75}
-                      paddingAngle={3}
+                      innerRadius={42}
+                      outerRadius={65}
+                      paddingAngle={2}
                       dataKey="value"
                     >
                       {paymentStatusData.map((entry, index) => (
@@ -1142,20 +1169,20 @@ export default function PMSDashboard() {
                       contentStyle={{
                         backgroundColor: 'white',
                         border: '2px solid #E5E7EB',
-                        borderRadius: '12px',
+                        borderRadius: '8px',
                         fontWeight: 600
                       }}
                     />
                   </RePieChart>
                 </ResponsiveContainer>
-                <div className="mt-4 space-y-2">
+                <div className="mt-3 space-y-1">
                   {paymentStatusData.map((status) => (
                     <div key={status.name} className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: status.color }} />
-                        <span className="text-gray-700 font-semibold">{status.name}</span>
+                        <span className="text-gray-800 font-semibold text-xs">{status.name}</span>
                       </div>
-                      <span className="font-bold text-gray-900">{status.value}%</span>
+                      <span className="font-bold text-gray-900 text-xs">{status.value}%</span>
                     </div>
                   ))}
                 </div>
@@ -1165,23 +1192,23 @@ export default function PMSDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions Command Center */}
+      {/* Quick Actions Command Center - Compact */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.8 }}
       >
-        <Card className="border-2 border-gray-100 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
-            <CardTitle className="flex items-center gap-3 text-xl">
+        <Card className="border border-gray-200 shadow">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+            <div className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-[#C4A572]/10">
                 <Sparkles className="w-5 h-5" style={{ color: COLORS.primary }} />
               </div>
-              Quick Actions
-            </CardTitle>
+              <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
                 { href: '/pms/bookings', icon: Calendar, label: 'Booking', color: COLORS.primary },
                 { href: '/pms/calendar', icon: CalendarDays, label: 'Calendar', color: COLORS.info },
@@ -1192,9 +1219,9 @@ export default function PMSDashboard() {
               ].map(({ href, icon: Icon, label, color }) => (
                 <Link key={href} href={href}>
                   <motion.div whileHover={{ scale: 1.05, y: -4 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="outline" className="w-full h-auto flex-col gap-2 sm:gap-3 py-4 sm:py-6 border-2 hover:border-gray-300 hover:shadow-lg">
-                      <div className="p-2 sm:p-3 rounded-xl" style={{ backgroundColor: `${color}15` }}>
-                        <Icon className="w-5 sm:w-6 h-5 sm:h-6" style={{ color }} />
+                    <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4 border border-gray-300 hover:border-gray-400 hover:shadow">
+                      <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}15` }}>
+                        <Icon className="w-5 h-5" style={{ color }} />
                       </div>
                       <span className="text-xs font-bold text-gray-900">{label}</span>
                     </Button>
@@ -1205,6 +1232,24 @@ export default function PMSDashboard() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Custom scrollbar styles */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #555;
+        }
+      `}</style>
     </div>
   );
 }
