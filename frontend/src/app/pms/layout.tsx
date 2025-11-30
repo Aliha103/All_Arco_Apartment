@@ -201,12 +201,14 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
                   aria-label="Account menu"
                   aria-expanded={dropdownOpen}
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center text-white text-sm font-semibold">
-                    {user.first_name?.[0]}{user.last_name?.[0]}
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center text-white text-sm font-semibold shadow-md">
+                    {user.first_name?.[user.first_name.length - 1]?.toUpperCase()}{user.last_name?.[0]?.toUpperCase()}
                   </div>
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-gray-700">{user.first_name} {user.last_name}</p>
-                    <p className="text-xs text-gray-500">{roleLabel}</p>
+                  <div className="hidden md:block text-left max-w-[140px]">
+                    <p className="text-sm font-medium text-gray-700 truncate">
+                      {user.first_name?.[user.first_name.length - 1]?.toUpperCase()}. {user.last_name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{roleLabel}</p>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -218,41 +220,64 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.95 }}
                       transition={{ duration: 0.2, ease: smoothEase }}
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl shadow-black/10 overflow-hidden border border-gray-100"
+                      className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl shadow-black/20 overflow-hidden border border-gray-200"
                     >
-                      <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900 text-sm">{user.first_name} {user.last_name}</p>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#C4A572]/20 text-[11px] font-semibold text-[#C4A572]">
-                            {roleLabel}
-                          </span>
+                      {/* User Info Section */}
+                      <div className="px-4 py-4 bg-gradient-to-br from-gray-50 to-white border-b border-gray-200">
+                        <div className="flex items-start gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center text-white text-lg font-bold shadow-lg">
+                            {user.first_name?.[user.first_name.length - 1]?.toUpperCase()}{user.last_name?.[0]?.toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm truncate">
+                              {user.first_name?.[user.first_name.length - 1]?.toUpperCase()}. {user.last_name}
+                            </p>
+                            <p className="text-xs text-gray-600 truncate mt-0.5">{user.email}</p>
+                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-gradient-to-r from-[#C4A572] to-[#B39562] text-[10px] font-bold text-white mt-2 shadow-sm">
+                              {roleLabel}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
                       </div>
-                      <div className="py-1">
+
+                      {/* Menu Items - All Vertical */}
+                      <div className="py-2">
                         <Link
                           href="/"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 sm:hidden"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors sm:hidden"
                         >
-                          <Home className="w-4 h-4 text-gray-400" /> View Site
+                          <Home className="w-4 h-4 text-gray-400" />
+                          <span>View Site</span>
                         </Link>
                         <Link
                           href="/dashboard"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
-                          <User className="w-4 h-4 text-gray-400" /> My Dashboard
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span>My Dashboard</span>
                         </Link>
-                        <hr className="my-1 border-gray-100" />
+                        <Link
+                          href="/messages"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                          </svg>
+                          <span>Messages</span>
+                        </Link>
+                        <div className="my-2 border-t border-gray-100"></div>
                         <button
                           onClick={() => {
                             logout();
                             setDropdownOpen(false);
                           }}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full transition-colors"
                         >
-                          <LogOut className="w-4 h-4" /> Sign Out
+                          <LogOut className="w-4 h-4" />
+                          <span>Sign Out</span>
                         </button>
                       </div>
                     </motion.div>
