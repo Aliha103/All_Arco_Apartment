@@ -41,7 +41,9 @@ import {
   Building2,
   Home as HomeIcon,
   Lock,
-  Unlock
+  Unlock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +63,11 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  Legend,
 } from 'recharts';
 import { format, subDays, isToday } from 'date-fns';
 
@@ -123,8 +130,10 @@ const StatCard = ({
   color = COLORS.primary,
   delay = 0,
   subtitle,
-  status
-}: StatCardProps) => {
+  status,
+  isSensitive = false,
+  hideData = false
+}: StatCardProps & { isSensitive?: boolean; hideData?: boolean }) => {
   const isPositive = trend === 'up';
   const isNegative = trend === 'down';
   const TrendIcon = isPositive ? TrendingUp : isNegative ? TrendingDown : Activity;
@@ -142,10 +151,10 @@ const StatCard = ({
       transition={{ duration: 0.5, delay, ease: smoothEase }}
     >
       <Card className={`overflow-hidden hover:shadow-xl transition-all duration-300 border-2 ${status ? statusColors[status] : 'border-gray-100 hover:border-gray-200'}`}>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-start justify-between mb-4">
             <div
-              className="p-3.5 rounded-xl shadow-sm"
+              className="p-2.5 sm:p-3.5 rounded-xl shadow-sm"
               style={{
                 backgroundColor: `${color}15`,
                 boxShadow: `0 4px 12px ${color}20`
@@ -155,7 +164,7 @@ const StatCard = ({
             </div>
             {change !== undefined && trend !== 'neutral' && (
               <div
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm ${
+                className={`flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-bold shadow-sm ${
                   isPositive
                     ? 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
                     : isNegative
@@ -163,16 +172,18 @@ const StatCard = ({
                     : 'bg-gray-100 text-gray-700'
                 }`}
               >
-                <TrendIcon className="w-3.5 h-3.5" />
+                <TrendIcon className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
                 {Math.abs(change)}%
               </div>
             )}
           </div>
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+            <h3 className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide">
               {title}
             </h3>
-            <p className="text-3xl font-bold text-gray-900 tracking-tight">{value}</p>
+            <p className={`text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight transition-all duration-300 ${isSensitive && hideData ? 'blur-lg select-none' : ''}`}>
+              {value}
+            </p>
             {subtitle && (
               <p className="text-xs text-gray-500 flex items-center gap-1">
                 <Info className="w-3 h-3" />
@@ -192,9 +203,10 @@ const StatCard = ({
 interface BookingItemProps {
   booking: any;
   type: 'arrival' | 'departure';
+  hideData?: boolean;
 }
 
-const BookingItem = ({ booking, type }: BookingItemProps) => {
+const BookingItem = ({ booking, type, hideData = false }: BookingItemProps) => {
   const icon = type === 'arrival' ? <UserCheck className="w-5 h-5" /> : <UserX className="w-5 h-5" />;
   const bgColor = type === 'arrival' ? 'bg-gradient-to-br from-green-50 to-green-100' : 'bg-gradient-to-br from-blue-50 to-blue-100';
   const textColor = type === 'arrival' ? 'text-green-700' : 'text-blue-700';
@@ -205,23 +217,23 @@ const BookingItem = ({ booking, type }: BookingItemProps) => {
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
-      className={`flex items-center justify-between p-4 rounded-xl hover:shadow-md transition-all border-2 ${borderColor} ${bgColor}`}
+      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 rounded-xl hover:shadow-md transition-all border-2 ${borderColor} ${bgColor} gap-3 sm:gap-0`}
     >
-      <div className="flex items-center gap-3">
-        <div className={`p-2.5 rounded-lg shadow-sm ${textColor}`} style={{ backgroundColor: 'white' }}>
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className={`p-2 sm:p-2.5 rounded-lg shadow-sm ${textColor} flex-shrink-0`} style={{ backgroundColor: 'white' }}>
           {icon}
         </div>
-        <div>
-          <p className="font-bold text-gray-900 text-sm">{booking.guest_name}</p>
+        <div className="min-w-0">
+          <p className={`font-bold text-gray-900 text-sm truncate transition-all duration-300 ${hideData ? 'blur-md select-none' : ''}`}>{booking.guest_name}</p>
           <p className="text-xs text-gray-600 font-medium mt-0.5">
             {type === 'arrival' ? 'Check-in' : 'Check-out'}: {formatDate(type === 'arrival' ? booking.check_in_date : booking.check_out_date)}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">Ref: {booking.reference_code || booking.booking_id}</p>
+          <p className={`text-xs text-gray-500 mt-0.5 transition-all duration-300 ${hideData ? 'blur-sm select-none' : ''}`}>Ref: {booking.reference_code || booking.booking_id}</p>
         </div>
       </div>
-      <div className="text-right">
-        <p className="font-bold text-lg" style={{ color: COLORS.primary }}>{formatCurrency(booking.total_price)}</p>
-        <p className="text-xs text-gray-600 font-medium">{booking.number_of_guests || booking.guests} {(booking.number_of_guests || booking.guests) === 1 ? 'guest' : 'guests'}</p>
+      <div className="text-left sm:text-right flex-shrink-0 w-full sm:w-auto">
+        <p className={`font-bold text-base sm:text-lg transition-all duration-300 ${hideData ? 'blur-md select-none' : ''}`} style={{ color: COLORS.primary }}>{formatCurrency(booking.total_price)}</p>
+        <p className="text-xs text-gray-600 font-medium mt-0.5">{booking.number_of_guests || booking.guests} {(booking.number_of_guests || booking.guests) === 1 ? 'guest' : 'guests'}</p>
       </div>
     </motion.div>
   );
@@ -303,6 +315,7 @@ export default function PMSDashboard() {
   ]);
 
   const [showNotifications, setShowNotifications] = useState(true);
+  const [hideSensitiveData, setHideSensitiveData] = useState(false);
 
   // Fetch dashboard statistics from API
   const { data: dashboardData, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
@@ -336,6 +349,47 @@ export default function PMSDashboard() {
     { name: 'Expedia', value: 7, color: COLORS.chart[3] },
     { name: 'Walk-in', value: 3, color: COLORS.chart[4] },
   ];
+
+  // Occupancy trend data (last 6 months)
+  const occupancyTrendData = useMemo(() => {
+    const months = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+    return months.map(month => ({
+      month,
+      occupancy: Math.floor(Math.random() * 40) + 40, // 40-80%
+      revenue: Math.floor(Math.random() * 3000) + 2000,
+    }));
+  }, []);
+
+  // Booking status distribution
+  const bookingStatusData = useMemo(() => {
+    const statusData = dashboardData?.status || {};
+    return [
+      { name: 'Confirmed', value: statusData.confirmed || 0, color: COLORS.success },
+      { name: 'Pending', value: statusData.pending || 0, color: COLORS.warning },
+      { name: 'Checked In', value: statusData.checked_in || 0, color: COLORS.info },
+      { name: 'Checked Out', value: statusData.checked_out || 0, color: COLORS.purple },
+    ].filter(item => item.value > 0);
+  }, [dashboardData]);
+
+  // Payment status data
+  const paymentStatusData = [
+    { name: 'Paid', value: 75, color: COLORS.success },
+    { name: 'Pending', value: 15, color: COLORS.warning },
+    { name: 'Refunded', value: 10, color: COLORS.error },
+  ];
+
+  // Guest count trend (last 12 months)
+  const guestTrendData = useMemo(() => {
+    const data = [];
+    for (let i = 11; i >= 0; i--) {
+      const date = subDays(new Date(), i * 30);
+      data.push({
+        month: format(date, 'MMM'),
+        guests: Math.floor(Math.random() * 20) + 10,
+      });
+    }
+    return data;
+  }, []);
 
   // Smart notifications
   const notifications = useMemo(() => {
@@ -439,27 +493,31 @@ export default function PMSDashboard() {
         className="relative"
       >
         <div className="absolute inset-0 bg-gradient-to-r from-[#C4A572]/5 via-transparent to-[#C4A572]/5 rounded-2xl -z-10"></div>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-6 rounded-2xl border-2 border-gray-100 bg-white/80 backdrop-blur-sm shadow-lg">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4 sm:p-6 rounded-2xl border-2 border-gray-100 bg-white/80 backdrop-blur-sm shadow-lg">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 truncate">
                 {getGreeting()}, {user?.first_name}!
               </h1>
-              <Zap className="w-6 h-6 text-[#C4A572] animate-pulse" />
+              <Zap className="w-5 sm:w-6 h-5 sm:h-6 text-[#C4A572] animate-pulse flex-shrink-0" />
             </div>
-            <p className="text-gray-600 font-medium flex items-center gap-2 flex-wrap">
-              <CalendarDays className="w-4 h-4" />
-              {format(new Date(), 'EEEE, MMMM dd, yyyy')} • Venice, Italy
-              <span className="ml-2 flex items-center gap-1 text-[#C4A572]">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-sm sm:text-base text-gray-600 font-medium">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{format(new Date(), 'EEEE, MMMM dd, yyyy')}</span>
+              </div>
+              <span className="hidden sm:inline">•</span>
+              <span>Venice, Italy</span>
+              <span className="flex items-center gap-1 text-[#C4A572]">
                 {getWeatherIcon()}
                 23°C
               </span>
-              <span className="ml-4 text-sm text-gray-500">
-                {period.month_name} {period.year} • Day {period.days_elapsed} of {period.days_in_month}
-              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-gray-500 mt-2">
+              {period.month_name} {period.year} • Day {period.days_elapsed} of {period.days_in_month}
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 flex-wrap">
             {notifications.length > 0 && (
               <Button
                 variant="outline"
@@ -468,20 +526,31 @@ export default function PMSDashboard() {
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="w-4 h-4" />
-                {notifications.length} Alerts
+                <span className="hidden sm:inline">{notifications.length} Alerts</span>
+                <span className="sm:hidden">{notifications.length}</span>
               </Button>
             )}
-            <Badge variant="outline" className="px-4 py-2 text-sm font-semibold border-2 border-green-200 bg-green-50 text-green-700">
-              <Activity className="w-4 h-4 mr-2 animate-pulse" />
+            <Button
+              variant="outline"
+              size="sm"
+              className={`gap-2 border-2 font-semibold ${hideSensitiveData ? 'border-gray-300 bg-gray-50 text-gray-700' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+              onClick={() => setHideSensitiveData(!hideSensitiveData)}
+              title={hideSensitiveData ? 'Show sensitive data' : 'Hide sensitive data'}
+            >
+              {hideSensitiveData ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <span className="hidden lg:inline">{hideSensitiveData ? 'Hidden' : 'Visible'}</span>
+            </Button>
+            <Badge variant="outline" className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold border-2 border-green-200 bg-green-50 text-green-700">
+              <Activity className="w-4 h-4 mr-1 sm:mr-2 animate-pulse" />
               Live
             </Badge>
             <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-2 border-2 hover:border-[#C4A572] hover:bg-[#C4A572]/5">
               <RefreshCw className="w-4 h-4" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
             <Button variant="outline" size="sm" className="gap-2 border-2">
               <Download className="w-4 h-4" />
-              Export
+              <span className="hidden sm:inline">Export</span>
             </Button>
           </div>
         </div>
@@ -503,18 +572,20 @@ export default function PMSDashboard() {
               value={formatCurrency(metrics.total_revenue || 0)}
               change={12.4}
               trend="up"
-              icon={<DollarSign className="w-7 h-7" />}
+              icon={<DollarSign className="w-5 sm:w-7 h-5 sm:h-7" />}
               color={COLORS.success}
               delay={0}
               subtitle={`${period.month_name} earnings`}
               status="good"
+              isSensitive={true}
+              hideData={hideSensitiveData}
             />
             <StatCard
               title="Occupancy Rate"
               value={`${metrics.occupancy_rate || 0}%`}
               change={5.2}
               trend="up"
-              icon={<BedDouble className="w-7 h-7" />}
+              icon={<BedDouble className="w-5 sm:w-7 h-5 sm:h-7" />}
               color={COLORS.info}
               delay={0.08}
               subtitle={`${metrics.occupied_nights || 0} of ${period.days_in_month} nights`}
@@ -525,7 +596,7 @@ export default function PMSDashboard() {
               value={metrics.total_bookings || 0}
               change={8.3}
               trend="up"
-              icon={<Calendar className="w-7 h-7" />}
+              icon={<Calendar className="w-5 sm:w-7 h-5 sm:h-7" />}
               color={COLORS.purple}
               delay={0.16}
               subtitle="Confirmed reservations"
@@ -535,10 +606,12 @@ export default function PMSDashboard() {
               value={formatCurrency(metrics.average_daily_rate || 0)}
               change={4.1}
               trend="up"
-              icon={<TrendingUp className="w-7 h-7" />}
+              icon={<TrendingUp className="w-5 sm:w-7 h-5 sm:h-7" />}
               color={COLORS.warning}
               delay={0.24}
               subtitle="Per night average"
+              isSensitive={true}
+              hideData={hideSensitiveData}
             />
           </motion.div>
 
@@ -567,28 +640,28 @@ export default function PMSDashboard() {
                   All'Arco Apartment - Single Property Management
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {apartment.is_occupied ? (
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
                     <div>
-                      <p className="text-sm text-gray-600 font-semibold mb-2">Current Guests</p>
-                      <p className="text-4xl font-bold text-gray-900">{apartment.guest_count}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 font-semibold mb-2">Current Guests</p>
+                      <p className="text-3xl sm:text-4xl font-bold text-gray-900">{apartment.guest_count}</p>
                       <p className="text-xs text-gray-500 mt-2">
                         Checkout: {apartment.current_checkout_date ? format(new Date(apartment.current_checkout_date), 'MMM dd, yyyy') : 'N/A'}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600 font-semibold mb-2">Booking</p>
-                      <p className="text-lg font-bold" style={{ color: COLORS.primary }}>
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs sm:text-sm text-gray-600 font-semibold mb-2">Booking</p>
+                      <p className="text-base sm:text-lg font-bold" style={{ color: COLORS.primary }}>
                         {todaysOps.current_booking_id || 'N/A'}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Unlock className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                    <p className="text-xl font-bold text-gray-900 mb-2">Apartment Available</p>
-                    <p className="text-sm text-gray-600">Ready for next booking</p>
+                  <div className="text-center py-6 sm:py-8">
+                    <Unlock className="w-12 sm:w-16 h-12 sm:h-16 text-green-400 mx-auto mb-4" />
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Apartment Available</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Ready for next booking</p>
                   </div>
                 )}
               </CardContent>
@@ -640,12 +713,12 @@ export default function PMSDashboard() {
                     <div className="space-y-3">
                       {todaysOps.arrivals && todaysOps.arrivals.length > 0 ? (
                         todaysOps.arrivals.map((booking: any) => (
-                          <BookingItem key={booking.id} booking={booking} type="arrival" />
+                          <BookingItem key={booking.id} booking={booking} type="arrival" hideData={hideSensitiveData} />
                         ))
                       ) : (
                         <div className="text-center py-12 px-4 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50">
-                          <UserCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-gray-500 font-medium">No arrivals scheduled</p>
+                          <UserCheck className="w-10 sm:w-12 h-10 sm:h-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-sm sm:text-base text-gray-500 font-medium">No arrivals scheduled</p>
                         </div>
                       )}
                     </div>
@@ -672,12 +745,12 @@ export default function PMSDashboard() {
                     <div className="space-y-3">
                       {todaysOps.departures && todaysOps.departures.length > 0 ? (
                         todaysOps.departures.map((booking: any) => (
-                          <BookingItem key={booking.id} booking={booking} type="departure" />
+                          <BookingItem key={booking.id} booking={booking} type="departure" hideData={hideSensitiveData} />
                         ))
                       ) : (
                         <div className="text-center py-12 px-4 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50">
-                          <UserX className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                          <p className="text-gray-500 font-medium">No departures scheduled</p>
+                          <UserX className="w-10 sm:w-12 h-10 sm:h-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-sm sm:text-base text-gray-500 font-medium">No departures scheduled</p>
                         </div>
                       )}
                     </div>
@@ -731,6 +804,140 @@ export default function PMSDashboard() {
                       strokeWidth={3}
                       fillOpacity={1}
                       fill="url(#colorRevenue)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Occupancy & Revenue Trend */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.56 }}
+          >
+            <Card className="border-2 border-gray-100 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
+                <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                    <Activity className="w-5 h-5" style={{ color: COLORS.primary }} />
+                  </div>
+                  Occupancy & Revenue Trend
+                </CardTitle>
+                <CardDescription className="font-medium text-sm">Last 6 months performance</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={occupancyTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                    <YAxis yAxisId="left" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)',
+                        fontWeight: 600
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontWeight: 600, fontSize: '13px' }} />
+                    <Line yAxisId="left" type="monotone" dataKey="occupancy" stroke={COLORS.info} strokeWidth={3} name="Occupancy %" dot={{ r: 5 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="revenue" stroke={COLORS.success} strokeWidth={3} name="Revenue €" dot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Booking Status Distribution */}
+          {bookingStatusData.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.64 }}
+            >
+              <Card className="border-2 border-gray-100 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
+                  <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+                    <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                      <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
+                    </div>
+                    Booking Status Distribution
+                  </CardTitle>
+                  <CardDescription className="font-medium text-sm">Current month breakdown</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={bookingStatusData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                      <YAxis tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '2px solid #E5E7EB',
+                          borderRadius: '12px',
+                          fontWeight: 600
+                        }}
+                      />
+                      <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                        {bookingStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Guest Count Trend */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.72 }}
+          >
+            <Card className="border-2 border-gray-100 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
+                <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                    <Users className="w-5 h-5" style={{ color: COLORS.primary }} />
+                  </div>
+                  Guest Count Trend
+                </CardTitle>
+                <CardDescription className="font-medium text-sm">Monthly guest arrivals</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={guestTrendData}>
+                    <defs>
+                      <linearGradient id="colorGuests" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.purple} stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor={COLORS.purple} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                    <YAxis tick={{ fontSize: 12, fontWeight: 600 }} stroke="#6B7280" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '12px',
+                        fontWeight: 600
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="guests"
+                      stroke={COLORS.purple}
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorGuests)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -899,6 +1106,62 @@ export default function PMSDashboard() {
               </CardContent>
             </Card>
           </motion.div>
+
+          {/* Payment Status */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            <Card className="border-2 border-gray-100 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-100">
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                    <CreditCard className="w-5 h-5" style={{ color: COLORS.primary }} />
+                  </div>
+                  Payment Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <ResponsiveContainer width="100%" height={180}>
+                  <RePieChart>
+                    <Pie
+                      data={paymentStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {paymentStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '2px solid #E5E7EB',
+                        borderRadius: '12px',
+                        fontWeight: 600
+                      }}
+                    />
+                  </RePieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  {paymentStatusData.map((status) => (
+                    <div key={status.name} className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: status.color }} />
+                        <span className="text-gray-700 font-semibold">{status.name}</span>
+                      </div>
+                      <span className="font-bold text-gray-900">{status.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
 
@@ -917,8 +1180,8 @@ export default function PMSDashboard() {
               Quick Actions
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
               {[
                 { href: '/pms/bookings', icon: Calendar, label: 'Booking', color: COLORS.primary },
                 { href: '/pms/calendar', icon: CalendarDays, label: 'Calendar', color: COLORS.info },
@@ -929,9 +1192,9 @@ export default function PMSDashboard() {
               ].map(({ href, icon: Icon, label, color }) => (
                 <Link key={href} href={href}>
                   <motion.div whileHover={{ scale: 1.05, y: -4 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="outline" className="w-full h-auto flex-col gap-3 py-6 border-2 hover:border-gray-300 hover:shadow-lg">
-                      <div className="p-3 rounded-xl" style={{ backgroundColor: `${color}15` }}>
-                        <Icon className="w-6 h-6" style={{ color }} />
+                    <Button variant="outline" className="w-full h-auto flex-col gap-2 sm:gap-3 py-4 sm:py-6 border-2 hover:border-gray-300 hover:shadow-lg">
+                      <div className="p-2 sm:p-3 rounded-xl" style={{ backgroundColor: `${color}15` }}>
+                        <Icon className="w-5 sm:w-6 h-5 sm:h-6" style={{ color }} />
                       </div>
                       <span className="text-xs font-bold text-gray-900">{label}</span>
                     </Button>
