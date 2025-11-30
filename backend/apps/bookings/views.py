@@ -511,36 +511,168 @@ def calendar_month(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def booking_statistics(request):
-    """Get booking statistics for dashboard."""
+    """
+    Comprehensive dashboard statistics for single apartment PMS.
+
+    Requires: dashboard.view permission (checked via role permissions)
+
+    Returns metrics for current month including:
+    - Total revenue
+    - Total bookings
+    - Occupancy rate (for single apartment)
+    - Average daily rate (ADR)
+    - RevPAR (Revenue per available room/night)
+    - Status breakdown (confirmed, pending, cancelled, etc.)
+    - Today's arrivals and departures
+    - Recent bookings for timeline
+    """
+    # Check permission for dashboard view
     if not request.user.is_team_member():
         return Response(
-            {'error': 'Permission denied'},
+            {'error': 'Permission denied. Dashboard access requires team member role.'},
             status=status.HTTP_403_FORBIDDEN
         )
-    
-    total_bookings = Booking.objects.count()
-    confirmed_bookings = Booking.objects.filter(status='confirmed').count()
-    paid_bookings = Booking.objects.filter(payment_status='paid').count()
-    
-    # Revenue
-    total_revenue = Booking.objects.filter(
-        payment_status='paid'
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
-    
-    # This month
-    now = datetime.now()
-    this_month_bookings = Booking.objects.filter(
-        check_in_date__year=now.year,
-        check_in_date__month=now.month
-    ).count()
-    
-    return Response({
-        'total_bookings': total_bookings,
-        'confirmed_bookings': confirmed_bookings,
-        'paid_bookings': paid_bookings,
-        'total_revenue': float(total_revenue),
-        'this_month_bookings': this_month_bookings
-    })
+
+    # Get date range for current month
+    now = timezone.now()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if now.month == 12:
+        month_end = now.replace(year=now.year + 1, month=1, day=1)
+    else:
+        month_end = now.replace(month=now.month + 1, day=1)
+    month_end = month_end.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Calculate total days in month
+    days_in_month = (month_end - month_start).days
+
+    # Get this month's bookings
+    month_bookings = Booking.objects.filter(
+        check_in_date__lt=month_end,
+        check_out_date__gte=month_start
+    ).exclude(status='cancelled')
+
+    # Calculate occupied nights for occupancy rate
+    occupied_nights = 0
+    for booking in month_bookings:
+        # Calculate overlap with current month
+        overlap_start = max(booking.check_in_date, month_start.date())
+        overlap_end = min(booking.check_out_date, month_end.date())
+        if overlap_start < overlap_end:
+            nights = (overlap_end - overlap_start).days
+            occupied_nights += nights
+
+    # Occupancy rate for single apartment
+    occupancy_rate = round((occupied_nights / days_in_month) * 100, 1) if days_in_month > 0 else 0
+
+    # Revenue statistics (paid bookings this month)
+    revenue_bookings = month_bookings.filter(payment_status='paid')
+    total_revenue = revenue_bookings.aggregate(Sum('total_price'))['total_price__sum'] or 0
+
+    # Total bookings count
+    total_bookings = month_bookings.count()
+
+    # Average Daily Rate (ADR) = Total Revenue / Occupied Nights
+    adr = round(total_revenue / occupied_nights, 2) if occupied_nights > 0 else 0
+
+    # RevPAR = Total Revenue / Available Nights
+    revpar = round(total_revenue / days_in_month, 2) if days_in_month > 0 else 0
+
+    # Status breakdown
+    confirmed = month_bookings.filter(status='confirmed').count()
+    pending = month_bookings.filter(status='pending').count()
+    checked_in = month_bookings.filter(status='checked_in').count()
+    checked_out = month_bookings.filter(status='checked_out').count()
+
+    # Today's operations
+    today = now.date()
+    todays_arrivals = Booking.objects.filter(
+        check_in_date=today,
+        status__in=['confirmed', 'paid', 'checked_in']
+    ).select_related('user')
+
+    todays_departures = Booking.objects.filter(
+        check_out_date=today,
+        status='checked_in'
+    ).select_related('user')
+
+    # Current guest (checked in, hasn't checked out yet)
+    current_guest = Booking.objects.filter(
+        check_in_date__lte=today,
+        check_out_date__gt=today,
+        status='checked_in'
+    ).first()
+
+    in_house_guests = current_guest.number_of_guests if current_guest else 0
+
+    # Recent bookings for timeline (last 20)
+    recent_bookings = Booking.objects.all().order_by('-created_at')[:20]
+
+    # Upcoming bookings (next 30 days)
+    upcoming_end = today + timedelta(days=30)
+    upcoming_bookings = Booking.objects.filter(
+        check_in_date__gte=today,
+        check_in_date__lt=upcoming_end,
+        status__in=['confirmed', 'paid']
+    ).order_by('check_in_date')[:10]
+
+    # Serialize arrivals and departures
+    from .serializers import BookingListSerializer
+    arrivals_data = BookingListSerializer(todays_arrivals, many=True).data
+    departures_data = BookingListSerializer(todays_departures, many=True).data
+    recent_data = BookingListSerializer(recent_bookings, many=True).data
+    upcoming_data = BookingListSerializer(upcoming_bookings, many=True).data
+
+    # Build response
+    response_data = {
+        # Period info
+        'period': {
+            'month': now.month,
+            'year': now.year,
+            'month_name': now.strftime('%B'),
+            'days_in_month': days_in_month,
+            'days_elapsed': now.day,
+        },
+
+        # Key metrics
+        'metrics': {
+            'total_revenue': float(total_revenue),
+            'total_bookings': total_bookings,
+            'occupancy_rate': occupancy_rate,
+            'occupied_nights': occupied_nights,
+            'average_daily_rate': float(adr),
+            'revpar': float(revpar),
+        },
+
+        # Status breakdown
+        'status': {
+            'confirmed': confirmed,
+            'pending': pending,
+            'checked_in': checked_in,
+            'checked_out': checked_out,
+        },
+
+        # Today's operations
+        'today': {
+            'arrivals': arrivals_data,
+            'departures': departures_data,
+            'in_house_guests': in_house_guests,
+            'is_occupied': current_guest is not None,
+            'current_booking_id': current_guest.booking_id if current_guest else None,
+        },
+
+        # Recent activity
+        'recent_bookings': recent_data,
+        'upcoming_bookings': upcoming_data,
+
+        # Apartment status
+        'apartment': {
+            'is_occupied': current_guest is not None,
+            'guest_count': in_house_guests,
+            'current_checkout_date': current_guest.check_out_date.isoformat() if current_guest else None,
+        }
+    }
+
+    return Response(response_data)
 
 
 class BlockedDateViewSet(viewsets.ModelViewSet):
