@@ -26,7 +26,15 @@ class Booking(models.Model):
         ('refunded', 'Refunded'),
         ('partially_refunded', 'Partially Refunded'),
     ]
-    
+
+    SOURCE_CHOICES = [
+        ('airbnb', 'Airbnb'),
+        ('booking_com', 'Booking.com'),
+        ('website', 'Own Website'),
+        ('direct', 'Direct'),
+        ('other', 'Other'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     booking_id = models.CharField(max_length=50, unique=True, editable=False)
     user = models.ForeignKey(
@@ -58,7 +66,13 @@ class Booking(models.Model):
         choices=PAYMENT_STATUS_CHOICES,
         default='unpaid'
     )
-    
+    booking_source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        default='direct',
+        help_text='Source of the booking (Airbnb, Booking.com, website, etc.)'
+    )
+
     special_requests = models.TextField(blank=True, null=True)
     internal_notes = models.TextField(blank=True, null=True)
     

@@ -201,11 +201,11 @@ const BookingMobileCard = ({ booking, isSelected, onSelect, onAction }: any) => 
           {/* Guest Info */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
-              <Users className="w-4 h-4 text-gray-400" />
+              <Users className="w-4 h-4 text-gray-700" />
               <span className="font-semibold text-gray-900">{booking.guest_name}</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <Mail className="w-3 h-3 text-gray-400" />
+            <div className="flex items-center gap-2 text-xs text-gray-800">
+              <Mail className="w-3 h-3 text-gray-700" />
               {booking.guest_email}
             </div>
           </div>
@@ -215,14 +215,14 @@ const BookingMobileCard = ({ booking, isSelected, onSelect, onAction }: any) => 
             <div className="flex items-center gap-2 text-xs">
               <Calendar className="w-4 h-4 text-blue-500" />
               <div>
-                <p className="text-gray-500 text-xs">Check-in</p>
+                <p className="text-gray-700 text-xs">Check-in</p>
                 <p className="font-semibold text-gray-900">{formatDate(booking.check_in_date)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <Calendar className="w-4 h-4 text-red-500" />
               <div>
-                <p className="text-gray-500 text-xs">Check-out</p>
+                <p className="text-gray-700 text-xs">Check-out</p>
                 <p className="font-semibold text-gray-900">{formatDate(booking.check_out_date)}</p>
               </div>
             </div>
@@ -231,8 +231,8 @@ const BookingMobileCard = ({ booking, isSelected, onSelect, onAction }: any) => 
           {/* Price & Guests */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-semibold text-gray-700">{booking.guests} Guests</span>
+              <Users className="w-4 h-4 text-gray-700" />
+              <span className="text-sm font-semibold text-gray-800">{booking.guests} Guests</span>
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-green-600" />
@@ -284,12 +284,12 @@ const BookingTableRow = ({ booking, isSelected, onSelect, onAction, style }: any
       <td className="p-4">
         <div>
           <p className="font-semibold text-sm text-gray-900">{booking.guest_name}</p>
-          <p className="text-xs text-gray-500">{booking.guest_email}</p>
+          <p className="text-xs text-gray-700">{booking.guest_email}</p>
         </div>
       </td>
-      <td className="p-4 text-sm text-gray-700">{formatDate(booking.check_in_date)}</td>
-      <td className="p-4 text-sm text-gray-700">{formatDate(booking.check_out_date)}</td>
-      <td className="p-4 text-sm text-gray-700">{booking.guests}</td>
+      <td className="p-4 text-sm text-gray-800">{formatDate(booking.check_in_date)}</td>
+      <td className="p-4 text-sm text-gray-800">{formatDate(booking.check_out_date)}</td>
+      <td className="p-4 text-sm text-gray-800">{booking.guests}</td>
       <td className="p-4">
         <Badge className={`${statusConfig.color} text-xs border`}>
           <StatusIcon className="w-3 h-3 mr-1" />
@@ -484,7 +484,7 @@ export default function BookingsPage() {
       >
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bookings Management</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
+          <p className="text-sm sm:text-base text-gray-800 mt-1">
             Manage all property bookings • {sortedBookings.length} total
           </p>
         </div>
@@ -519,15 +519,15 @@ export default function BookingsPage() {
             {/* Search & Quick Actions */}
             <div className="flex flex-col lg:flex-row gap-4 mb-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700" />
                 <Input
                   placeholder="Search by booking ID, guest name, or email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 h-11 border-2 focus:border-[#C4A572]"
+                  className="pl-10 h-11 border-2 focus:border-[#C4A572] text-gray-900"
                 />
                 {isFetching && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 animate-spin" />
                 )}
               </div>
 
@@ -699,10 +699,10 @@ export default function BookingsPage() {
             ) : sortedBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <Calendar className="w-10 h-10 text-gray-400" />
+                  <Calendar className="w-10 h-10 text-gray-700" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No bookings found</h3>
-                <p className="text-sm text-gray-600 text-center max-w-md mb-6">
+                <p className="text-sm text-gray-800 text-center max-w-md mb-6">
                   {hasActiveFilters
                     ? "Try adjusting your filters to see more results"
                     : "Create your first booking to get started"}
