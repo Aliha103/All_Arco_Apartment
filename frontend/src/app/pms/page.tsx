@@ -617,7 +617,7 @@ export default function PMSDashboard() {
                       <Unlock className="w-4 h-4 text-green-700" />
                     )}
                   </div>
-                  <CardTitle className="text-sm">Apartment Status</CardTitle>
+                  <CardTitle className="text-sm text-gray-900">Apartment Status</CardTitle>
                   <Badge className={`ml-auto text-xs ${apartment.is_occupied ? 'bg-red-100 text-red-800 border-red-300' : 'bg-green-100 text-green-800 border-green-300'} border`}>
                     {apartment.is_occupied ? 'OCCUPIED' : 'VACANT'}
                   </Badge>
@@ -664,7 +664,7 @@ export default function PMSDashboard() {
                     <Timer className="w-5 h-5" style={{ color: COLORS.primary }} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Today's Operations</CardTitle>
+                    <CardTitle className="text-lg text-gray-900">Today's Operations</CardTitle>
                     <CardDescription className="text-xs font-medium text-gray-700">
                       Arrivals & Departures for {format(new Date(), 'MMMM dd')}
                     </CardDescription>
@@ -809,8 +809,8 @@ export default function PMSDashboard() {
                       <Activity className="w-5 h-5" style={{ color: COLORS.primary }} />
                     </div>
                     <div>
-                      <CardTitle className="text-base">Occupancy & Revenue Trend</CardTitle>
-                      <CardDescription className="text-xs font-medium text-gray-700">Last 6 months performance</CardDescription>
+                      <CardTitle className="text-base text-gray-900">Occupancy & Revenue Trend</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-800">Last 6 months performance</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -851,8 +851,8 @@ export default function PMSDashboard() {
                       <Users className="w-5 h-5" style={{ color: COLORS.primary }} />
                     </div>
                     <div>
-                      <CardTitle className="text-base">Guest Count Trend</CardTitle>
-                      <CardDescription className="text-xs font-medium text-gray-700">Monthly guest arrivals</CardDescription>
+                      <CardTitle className="text-base text-gray-900">Guest Count Trend</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-800">Monthly guest arrivals</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -905,8 +905,8 @@ export default function PMSDashboard() {
                       <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
                     </div>
                     <div>
-                      <CardTitle className="text-base">Booking Status Distribution</CardTitle>
-                      <CardDescription className="text-xs font-medium text-gray-700">Current month breakdown</CardDescription>
+                      <CardTitle className="text-base text-gray-900">Booking Status Distribution</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-800">Current month breakdown</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -954,7 +954,7 @@ export default function PMSDashboard() {
                       <div className="p-1 rounded-lg bg-purple-100">
                         <BellRing className="w-4 h-4 text-purple-700" />
                       </div>
-                      <CardTitle className="text-base">Smart Alerts</CardTitle>
+                      <CardTitle className="text-base text-gray-900">Smart Alerts</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent className="p-3">
@@ -979,7 +979,7 @@ export default function PMSDashboard() {
                   <div className="p-1 rounded-lg bg-[#C4A572]/10">
                     <PieChart className="w-4 h-4" style={{ color: COLORS.primary }} />
                   </div>
-                  <CardTitle className="text-base">Booking Sources</CardTitle>
+                  <CardTitle className="text-base text-gray-900">Booking Sources</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="p-4">
@@ -1036,7 +1036,7 @@ export default function PMSDashboard() {
                   <div className="p-1 rounded-lg bg-[#C4A572]/10">
                     <CreditCard className="w-4 h-4" style={{ color: COLORS.primary }} />
                   </div>
-                  <CardTitle className="text-base">Payment Status</CardTitle>
+                  <CardTitle className="text-base text-gray-900">Payment Status</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="p-4">
@@ -1094,7 +1094,7 @@ export default function PMSDashboard() {
               <div className="p-2 rounded-lg bg-[#C4A572]/10">
                 <Sparkles className="w-5 h-5" style={{ color: COLORS.primary }} />
               </div>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
+              <CardTitle className="text-lg text-gray-900">Quick Actions</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-4">
