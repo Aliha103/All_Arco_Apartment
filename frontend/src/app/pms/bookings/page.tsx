@@ -13,6 +13,7 @@ import {
   Eye,
   Edit,
   Trash2,
+  Ban,
   Calendar,
   Users,
   DollarSign,
@@ -49,6 +50,15 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -57,6 +67,7 @@ import {
 } from '@/components/ui/select';
 import { formatCurrency, formatDate, getStatusColor } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import BookingFormModal from '@/components/pms/BookingFormModal';
 
 // ============================================================================
@@ -190,9 +201,9 @@ const BookingMobileCard = ({ booking, isSelected, onSelect, onAction }: any) => 
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onAction('delete', booking)} className="text-red-600">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                <DropdownMenuItem onClick={() => onAction('cancel', booking)} className="text-red-600">
+                  <Ban className="w-4 h-4 mr-2" />
+                  Cancel Booking
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -319,9 +330,9 @@ const BookingTableRow = ({ booking, isSelected, onSelect, onAction, style }: any
               Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onAction('delete', booking)} className="text-red-600">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
+            <DropdownMenuItem onClick={() => onAction('cancel', booking)} className="text-red-600">
+              <Ban className="w-4 h-4 mr-2" />
+              Cancel Booking
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -345,9 +356,13 @@ export default function BookingsPage() {
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'amount'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [detailsBooking, setDetailsBooking] = useState<any>(null);
+  const [cancelBooking, setCancelBooking] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const queryClient = useQueryClient();
   const parentRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Debounced search for performance
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -426,23 +441,16 @@ export default function BookingsPage() {
   const handleAction = useCallback((action: string, booking: any) => {
     switch (action) {
       case 'view':
-        window.location.href = `/pms/bookings/${booking.id}`;
+        setDetailsBooking(booking);
         break;
       case 'edit':
-        // Open edit modal
-        console.log('Edit:', booking);
+        router.push(`/pms/bookings/${booking.id}`);
         break;
-      case 'delete':
-        if (confirm(`Delete booking ${booking.booking_id}?`)) {
-          // Optimistic update
-          queryClient.setQueryData(['all-bookings', debouncedSearch, statusFilter, dateFrom, dateTo], (old: any) =>
-            old?.filter((b: any) => b.id !== booking.id)
-          );
-          // TODO: Call delete API
-        }
+      case 'cancel':
+        setCancelBooking(booking);
         break;
     }
-  }, [queryClient, debouncedSearch, statusFilter, dateFrom, dateTo]);
+  }, [router]);
 
   // Clear filters
   const clearFilters = () => {
@@ -821,6 +829,176 @@ export default function BookingsPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
       />
+
+      {/* Booking Details Dialog */}
+      <Dialog open={!!detailsBooking} onOpenChange={(open) => !open && setDetailsBooking(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">Booking Details</DialogTitle>
+            <DialogDescription>
+              Complete information for booking {detailsBooking?.booking_id}
+            </DialogDescription>
+          </DialogHeader>
+          {detailsBooking && (
+            <div className="space-y-6">
+              {/* Booking ID & Status */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Booking ID</p>
+                  <p className="text-lg font-bold text-gray-900">{detailsBooking.booking_id}</p>
+                </div>
+                <Badge className={`${STATUS_CONFIG[detailsBooking.status as keyof typeof STATUS_CONFIG]?.color} text-sm border`}>
+                  {STATUS_CONFIG[detailsBooking.status as keyof typeof STATUS_CONFIG]?.label}
+                </Badge>
+              </div>
+
+              {/* Guest Information */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Guest Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-600">Name</p>
+                    <p className="font-semibold text-gray-900">{detailsBooking.guest_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">Email</p>
+                    <p className="font-semibold text-gray-900">{detailsBooking.guest_email}</p>
+                  </div>
+                  {detailsBooking.guest_phone && (
+                    <div>
+                      <p className="text-xs text-gray-600">Phone</p>
+                      <p className="font-semibold text-gray-900">{detailsBooking.guest_phone}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-gray-600">Number of Guests</p>
+                    <p className="font-semibold text-gray-900">{detailsBooking.guests || detailsBooking.number_of_guests}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stay Information */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Stay Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-600">Check-in</p>
+                    <p className="font-semibold text-gray-900">{formatDate(detailsBooking.check_in_date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">Check-out</p>
+                    <p className="font-semibold text-gray-900">{formatDate(detailsBooking.check_out_date)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Information */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Payment Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-600">Total Price</p>
+                    <p className="text-xl font-bold text-gray-900">{formatCurrency(detailsBooking.total_price)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600">Payment Status</p>
+                    <Badge variant="outline" className="text-sm mt-1">
+                      {detailsBooking.payment_status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Special Requests */}
+              {detailsBooking.special_requests && (
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-2">Special Requests</h3>
+                  <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{detailsBooking.special_requests}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsBooking(null)}>
+              Close
+            </Button>
+            <Button onClick={() => { setDetailsBooking(null); router.push(`/pms/bookings/${detailsBooking?.id}`); }} className="bg-[#C4A572] hover:bg-[#B39562]">
+              <Edit className="w-4 h-4 mr-2" />
+              Edit Booking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Booking Dialog */}
+      <Dialog open={!!cancelBooking} onOpenChange={(open) => { if (!open) { setCancelBooking(null); setCancelReason(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Cancel Booking</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel booking {cancelBooking?.booking_id}?
+            </DialogDescription>
+          </DialogHeader>
+          {cancelBooking && (
+            <div className="space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                <p className="text-sm text-gray-900">
+                  <strong>Guest:</strong> {cancelBooking.guest_name}
+                </p>
+                <p className="text-sm text-gray-900 mt-1">
+                  <strong>Check-in:</strong> {formatDate(cancelBooking.check_in_date)}
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="cancelReason" className="text-gray-900 font-semibold">
+                  Cancellation Reason <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="cancelReason"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Please provide a reason for cancellation..."
+                  className="mt-2 min-h-[100px] border-2"
+                  required
+                />
+                <p className="text-xs text-gray-600 mt-1">Required for audit trail and guest communication</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCancelBooking(null); setCancelReason(''); }}>
+              Keep Booking
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!cancelReason.trim()}
+              onClick={() => {
+                if (cancelReason.trim()) {
+                  // TODO: Call cancel API with reason
+                  console.log('Cancelling booking:', cancelBooking.id, 'Reason:', cancelReason);
+                  setCancelBooking(null);
+                  setCancelReason('');
+                  refetch();
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Ban className="w-4 h-4 mr-2" />
+              Cancel Booking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

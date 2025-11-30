@@ -714,7 +714,7 @@ export default function PMSDashboard() {
           </motion.div>
 
           {/* Charts Grid - All charts together */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Revenue Trend - Compact */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
