@@ -741,61 +741,61 @@ export default function PMSDashboard() {
             </Card>
           </motion.div>
 
-          {/* Revenue Analytics - Compact */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.48 }}
-          >
-            <Card className="border border-gray-200 shadow">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                    <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
+          {/* Charts Grid - All charts together */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {/* Revenue Trend - Compact */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.48 }}
+            >
+              <Card className="border border-gray-200 shadow">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                      <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base text-gray-900">Revenue Trend (Last 30 Days)</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-800">Daily revenue performance</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-base">Revenue Trend (Last 30 Days)</CardTitle>
-                    <CardDescription className="text-xs font-medium text-gray-700">Daily revenue performance</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <ResponsiveContainer width="100%" height={250}>
-                  <AreaChart data={revenueData}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" strokeWidth={1} />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '2px solid #E5E7EB',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                        fontWeight: 600
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke={COLORS.primary}
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#colorRevenue)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <AreaChart data={revenueData}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" strokeWidth={1} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '2px solid #E5E7EB',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                          fontWeight: 600
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke={COLORS.primary}
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-          {/* Trends Grid - Horizontal on Large Screens */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Occupancy & Revenue Trend - Compact */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
