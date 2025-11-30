@@ -20,6 +20,7 @@ class Permission(models.Model):
     """
     # Permission groups for organization
     GROUP_CHOICES = [
+        ('dashboard', 'Dashboard & Analytics'),
         ('bookings', 'Bookings & Calendar'),
         ('payments', 'Payments & Invoices'),
         ('guests', 'Guests'),

@@ -526,10 +526,10 @@ def booking_statistics(request):
     - Today's arrivals and departures
     - Recent bookings for timeline
     """
-    # Check permission for dashboard view
-    if not request.user.is_team_member():
+    # Check permission for dashboard view (role-based access control)
+    if not request.user.has_perm_code('dashboard.view'):
         return Response(
-            {'error': 'Permission denied. Dashboard access requires team member role.'},
+            {'error': 'Permission denied. You do not have permission to view the dashboard.'},
             status=status.HTTP_403_FORBIDDEN
         )
 
