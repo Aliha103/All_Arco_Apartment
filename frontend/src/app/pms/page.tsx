@@ -718,12 +718,12 @@ export default function PMSDashboard() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.48 }}
-            className="w-full"
+            className="w-full max-w-full"
           >
-            <Card className="border border-gray-200 shadow w-full">
+            <Card className="border border-gray-200 shadow w-full overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                  <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
                     <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -732,7 +732,7 @@ export default function PMSDashboard() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4">
+              <CardContent className="p-4 overflow-hidden">
                 <ResponsiveContainer width="100%" height={250} minWidth={0}>
                   <AreaChart data={revenueData}>
                     <defs>
@@ -770,18 +770,18 @@ export default function PMSDashboard() {
           </motion.div>
 
           {/* Occupancy & Guest Count - Two columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full overflow-hidden">
             {/* Occupancy & Revenue Trend */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.56 }}
-              className="w-full"
+              className="w-full max-w-full"
             >
-              <Card className="border border-gray-200 shadow w-full h-full">
+              <Card className="border border-gray-200 shadow w-full h-full overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                    <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
                       <Activity className="w-5 h-5" style={{ color: COLORS.primary }} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -790,7 +790,7 @@ export default function PMSDashboard() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-4 overflow-hidden">
                   <ResponsiveContainer width="100%" height={250} minWidth={0}>
                     <LineChart data={occupancyTrendData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -839,12 +839,12 @@ export default function PMSDashboard() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.64 }}
-              className="w-full"
+              className="w-full max-w-full"
             >
-              <Card className="border border-gray-200 shadow w-full h-full">
+              <Card className="border border-gray-200 shadow w-full h-full overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                    <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
                       <Users className="w-5 h-5" style={{ color: COLORS.primary }} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -853,7 +853,7 @@ export default function PMSDashboard() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-4 overflow-hidden">
                   <ResponsiveContainer width="100%" height={250} minWidth={0}>
                     <AreaChart data={guestTrendData}>
                       <defs>
