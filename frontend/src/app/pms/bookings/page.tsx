@@ -608,7 +608,7 @@ export default function BookingsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={refetch}
+                  onClick={() => refetch()}
                   className="h-8 w-8 p-0 border-2"
                   disabled={isFetching}
                 >
