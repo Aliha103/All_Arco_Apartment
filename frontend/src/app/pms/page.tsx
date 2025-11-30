@@ -317,11 +317,20 @@ export default function PMSDashboard() {
   // Generate revenue data for last 30 days (TODO: Replace with real API data)
   const revenueData = useMemo(() => {
     const data = [];
+    let baseRevenue = 400;
     for (let i = 29; i >= 0; i--) {
       const date = subDays(new Date(), i);
+      // Create smoother data with trending pattern
+      const dayOfWeek = date.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const weekendBoost = isWeekend ? 150 : 0;
+      const randomVariation = Math.sin(i / 3) * 80; // Smoother sine wave variation
+      baseRevenue += (Math.random() - 0.5) * 30; // Gradual drift
+      baseRevenue = Math.max(250, Math.min(800, baseRevenue)); // Keep in range
+
       data.push({
         date: format(date, 'MMM dd'),
-        revenue: Math.floor(Math.random() * 600) + 250,
+        revenue: Math.floor(baseRevenue + weekendBoost + randomVariation),
         bookings: Math.floor(Math.random() * 6) + 1,
       });
     }
@@ -340,11 +349,21 @@ export default function PMSDashboard() {
   // Occupancy trend data (last 6 months)
   const occupancyTrendData = useMemo(() => {
     const months = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
-    return months.map(month => ({
-      month,
-      occupancy: Math.floor(Math.random() * 40) + 40, // 40-80%
-      revenue: Math.floor(Math.random() * 3000) + 2000,
-    }));
+    let baseOccupancy = 55;
+    let baseRevenue = 3500;
+    return months.map((month, index) => {
+      // Create smoother trending data
+      baseOccupancy += (Math.random() - 0.4) * 8; // Slight upward trend
+      baseRevenue += (Math.random() - 0.4) * 400;
+      baseOccupancy = Math.max(40, Math.min(85, baseOccupancy));
+      baseRevenue = Math.max(2000, Math.min(5500, baseRevenue));
+
+      return {
+        month,
+        occupancy: Math.floor(baseOccupancy),
+        revenue: Math.floor(baseRevenue),
+      };
+    });
   }, []);
 
   // Booking status distribution
@@ -368,11 +387,17 @@ export default function PMSDashboard() {
   // Guest count trend (last 12 months)
   const guestTrendData = useMemo(() => {
     const data = [];
+    let baseGuests = 15;
     for (let i = 11; i >= 0; i--) {
       const date = subDays(new Date(), i * 30);
+      // Create smoother data with seasonal pattern
+      const seasonalFactor = Math.sin((11 - i) * Math.PI / 6) * 8; // Seasonal variation
+      baseGuests += (Math.random() - 0.45) * 3; // Slight upward trend
+      baseGuests = Math.max(8, Math.min(35, baseGuests));
+
       data.push({
         month: format(date, 'MMM'),
-        guests: Math.floor(Math.random() * 20) + 10,
+        guests: Math.floor(baseGuests + seasonalFactor),
       });
     }
     return data;
@@ -730,12 +755,14 @@ export default function PMSDashboard() {
                         }}
                       />
                       <Area
-                        type="monotone"
+                        type="natural"
                         dataKey="revenue"
                         stroke={COLORS.primary}
-                        strokeWidth={2}
+                        strokeWidth={3}
                         fillOpacity={1}
                         fill="url(#colorRevenue)"
+                        animationDuration={1500}
+                        animationEasing="ease-in-out"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -777,8 +804,28 @@ export default function PMSDashboard() {
                         }}
                       />
                       <Legend wrapperStyle={{ fontWeight: 600, fontSize: '12px' }} />
-                      <Line yAxisId="left" type="monotone" dataKey="occupancy" stroke={COLORS.info} strokeWidth={2} name="Occupancy %" dot={{ r: 4 }} />
-                      <Line yAxisId="right" type="monotone" dataKey="revenue" stroke={COLORS.success} strokeWidth={2} name="Revenue €" dot={{ r: 4 }} />
+                      <Line
+                        yAxisId="left"
+                        type="natural"
+                        dataKey="occupancy"
+                        stroke={COLORS.info}
+                        strokeWidth={3}
+                        name="Occupancy %"
+                        dot={{ r: 4, strokeWidth: 2 }}
+                        animationDuration={1500}
+                        animationEasing="ease-in-out"
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="natural"
+                        dataKey="revenue"
+                        stroke={COLORS.success}
+                        strokeWidth={3}
+                        name="Revenue €"
+                        dot={{ r: 4, strokeWidth: 2 }}
+                        animationDuration={1500}
+                        animationEasing="ease-in-out"
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -824,12 +871,14 @@ export default function PMSDashboard() {
                         }}
                       />
                       <Area
-                        type="monotone"
+                        type="natural"
                         dataKey="guests"
                         stroke={COLORS.purple}
-                        strokeWidth={2}
+                        strokeWidth={3}
                         fillOpacity={1}
                         fill="url(#colorGuests)"
+                        animationDuration={1500}
+                        animationEasing="ease-in-out"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -871,7 +920,12 @@ export default function PMSDashboard() {
                           fontWeight: 600
                         }}
                       />
-                      <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                      <Bar
+                        dataKey="value"
+                        radius={[6, 6, 0, 0]}
+                        animationDuration={1200}
+                        animationEasing="ease-out"
+                      >
                         {bookingStatusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
@@ -940,6 +994,8 @@ export default function PMSDashboard() {
                       outerRadius={75}
                       paddingAngle={2}
                       dataKey="value"
+                      animationDuration={1200}
+                      animationEasing="ease-out"
                     >
                       {bookingSourceData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -997,6 +1053,8 @@ export default function PMSDashboard() {
                       outerRadius={65}
                       paddingAngle={2}
                       dataKey="value"
+                      animationDuration={1200}
+                      animationEasing="ease-out"
                     >
                       {paymentStatusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
