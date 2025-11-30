@@ -286,40 +286,8 @@ const SmartNotification = ({ type, title, message, time, action }: any) => {
   );
 };
 
-// Task Item Component
-const TaskItem = ({ task, completed, onToggle }: any) => {
-  return (
-    <motion.div
-      whileHover={{ x: 4 }}
-      className={`flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer ${
-        completed ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white hover:border-gray-300'
-      }`}
-      onClick={onToggle}
-    >
-      <div
-        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-          completed ? 'border-green-600 bg-green-600' : 'border-gray-300'
-        }`}
-      >
-        {completed && <CheckCircle className="w-3 h-3 text-white" />}
-      </div>
-      <p className={`text-xs font-medium flex-1 ${completed ? 'text-gray-600 line-through' : 'text-gray-900'}`}>
-        {task}
-      </p>
-    </motion.div>
-  );
-};
-
 export default function PMSDashboard() {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState([
-    { id: 1, task: 'Review pending bookings', completed: false },
-    { id: 2, task: 'Confirm VIP arrival preparations', completed: false },
-    { id: 3, task: 'Process late checkout requests', completed: false },
-    { id: 4, task: 'Update pricing for weekend', completed: true },
-    { id: 5, task: 'Review housekeeping schedule', completed: false },
-  ]);
-
   const [showNotifications, setShowNotifications] = useState(true);
 
   // Load hide sensitive data state from localStorage
@@ -451,10 +419,6 @@ export default function PMSDashboard() {
 
   const handleRefresh = () => {
     refetchStats();
-  };
-
-  const toggleTask = (id: number) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
   if (statsLoading) {
@@ -636,52 +600,49 @@ export default function PMSDashboard() {
             />
           </motion.div>
 
-          {/* Apartment Status Card - More compact */}
+          {/* Apartment Status Card - Compact */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.32 }}
           >
             <Card className={`border shadow ${apartment.is_occupied ? 'border-red-300 bg-red-50/20' : 'border-green-300 bg-green-50/20'}`}>
-              <CardHeader className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 py-3 px-4">
+              <CardHeader className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 py-2 px-3">
                 <div className="flex items-center gap-2">
-                  <div className={`p-2 rounded-lg ${apartment.is_occupied ? 'bg-red-100' : 'bg-green-100'}`}>
+                  <div className={`p-1.5 rounded-lg ${apartment.is_occupied ? 'bg-red-100' : 'bg-green-100'}`}>
                     {apartment.is_occupied ? (
-                      <Lock className="w-5 h-5 text-red-700" />
+                      <Lock className="w-4 h-4 text-red-700" />
                     ) : (
-                      <Unlock className="w-5 h-5 text-green-700" />
+                      <Unlock className="w-4 h-4 text-green-700" />
                     )}
                   </div>
-                  <CardTitle className="text-lg">Apartment Status</CardTitle>
-                  <Badge className={`ml-auto ${apartment.is_occupied ? 'bg-red-100 text-red-800 border-red-300' : 'bg-green-100 text-green-800 border-green-300'} border`}>
+                  <CardTitle className="text-sm">Apartment Status</CardTitle>
+                  <Badge className={`ml-auto text-xs ${apartment.is_occupied ? 'bg-red-100 text-red-800 border-red-300' : 'bg-green-100 text-green-800 border-green-300'} border`}>
                     {apartment.is_occupied ? 'OCCUPIED' : 'VACANT'}
                   </Badge>
                 </div>
-                <CardDescription className="text-sm font-medium text-gray-700">
-                  All'Arco Apartment - Single Property Management
-                </CardDescription>
               </CardHeader>
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 {apartment.is_occupied ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div>
-                      <p className="text-xs font-semibold text-gray-700 mb-1">Current Guests</p>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-gray-900">{apartment.guest_count}</p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Checkout: {apartment.current_checkout_date ? format(new Date(apartment.current_checkout_date), 'MMM dd, yyyy') : 'N/A'}
+                      <p className="text-xs font-semibold text-gray-700 mb-0.5">Current Guests</p>
+                      <p className="text-xl font-extrabold text-gray-900">{apartment.guest_count}</p>
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        Checkout: {apartment.current_checkout_date ? format(new Date(apartment.current_checkout_date), 'MMM dd') : 'N/A'}
                       </p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="text-xs font-semibold text-gray-700 mb-1">Booking</p>
-                      <p className="text-base font-bold" style={{ color: COLORS.primary }}>
+                      <p className="text-xs font-semibold text-gray-700 mb-0.5">Booking</p>
+                      <p className="text-sm font-bold" style={{ color: COLORS.primary }}>
                         {todaysOps.current_booking_id || 'N/A'}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-4">
-                    <Unlock className="w-12 h-12 text-green-400 mx-auto mb-3" />
-                    <p className="text-lg font-bold text-gray-900 mb-1">Apartment Available</p>
+                  <div className="text-center py-2">
+                    <Unlock className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                    <p className="text-sm font-bold text-gray-900 mb-0.5">Apartment Available</p>
                     <p className="text-xs text-gray-600">Ready for next booking</p>
                   </div>
                 )}
@@ -832,47 +793,102 @@ export default function PMSDashboard() {
             </Card>
           </motion.div>
 
-          {/* Occupancy & Revenue Trend - Compact */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.56 }}
-          >
-            <Card className="border border-gray-200 shadow">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                    <Activity className="w-5 h-5" style={{ color: COLORS.primary }} />
+          {/* Trends Grid - Horizontal on Large Screens */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* Occupancy & Revenue Trend - Compact */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.56 }}
+            >
+              <Card className="border border-gray-200 shadow">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                      <Activity className="w-5 h-5" style={{ color: COLORS.primary }} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Occupancy & Revenue Trend</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-700">Last 6 months performance</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-base">Occupancy & Revenue Trend</CardTitle>
-                    <CardDescription className="text-xs font-medium text-gray-700">Last 6 months performance</CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={occupancyTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <YAxis yAxisId="left" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '2px solid #E5E7EB',
+                          borderRadius: '8px',
+                          fontWeight: 600
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontWeight: 600, fontSize: '12px' }} />
+                      <Line yAxisId="left" type="monotone" dataKey="occupancy" stroke={COLORS.info} strokeWidth={2} name="Occupancy %" dot={{ r: 4 }} />
+                      <Line yAxisId="right" type="monotone" dataKey="revenue" stroke={COLORS.success} strokeWidth={2} name="Revenue €" dot={{ r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Guest Count Trend - Compact */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.64 }}
+            >
+              <Card className="border border-gray-200 shadow">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-[#C4A572]/10">
+                      <Users className="w-5 h-5" style={{ color: COLORS.primary }} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Guest Count Trend</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-700">Monthly guest arrivals</CardDescription>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={occupancyTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis yAxisId="left" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '2px solid #E5E7EB',
-                        borderRadius: '8px',
-                        fontWeight: 600
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontWeight: 600, fontSize: '12px' }} />
-                    <Line yAxisId="left" type="monotone" dataKey="occupancy" stroke={COLORS.info} strokeWidth={2} name="Occupancy %" dot={{ r: 4 }} />
-                    <Line yAxisId="right" type="monotone" dataKey="revenue" stroke={COLORS.success} strokeWidth={2} name="Revenue €" dot={{ r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <AreaChart data={guestTrendData}>
+                      <defs>
+                        <linearGradient id="colorGuests" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.purple} stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor={COLORS.purple} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: '2px solid #E5E7EB',
+                          borderRadius: '8px',
+                          fontWeight: 600
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="guests"
+                        stroke={COLORS.purple}
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorGuests)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
 
           {/* Booking Status Distribution - Compact */}
           {bookingStatusData.length > 0 && (
@@ -918,58 +934,6 @@ export default function PMSDashboard() {
               </Card>
             </motion.div>
           )}
-
-          {/* Guest Count Trend - Compact */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.72 }}
-          >
-            <Card className="border border-gray-200 shadow">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                    <Users className="w-5 h-5" style={{ color: COLORS.primary }} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Guest Count Trend</CardTitle>
-                    <CardDescription className="text-xs font-medium text-gray-700">Monthly guest arrivals</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={guestTrendData}>
-                    <defs>
-                      <linearGradient id="colorGuests" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={COLORS.purple} stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor={COLORS.purple} stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '2px solid #E5E7EB',
-                        borderRadius: '8px',
-                        fontWeight: 600
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="guests"
-                      stroke={COLORS.purple}
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#colorGuests)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
 
         {/* Right Column - Sidebar (4 columns on lg, 3 on xl) */}
@@ -1001,81 +965,6 @@ export default function PMSDashboard() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* AI Insights - Compact */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.56 }}
-          >
-            <Card className="border border-blue-200 shadow bg-gradient-to-br from-blue-50/30 to-white">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-200 py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 rounded-lg bg-blue-100">
-                    <Brain className="w-4 h-4 text-blue-700" />
-                  </div>
-                  <CardTitle className="text-base">AI Insights</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3 space-y-2">
-                <div className="p-3 rounded-lg border border-blue-300 bg-white">
-                  <div className="flex items-start gap-2">
-                    <Lightbulb className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-gray-900 text-xs mb-1">Revenue Opportunity</p>
-                      <p className="text-xs text-gray-700">
-                        Occupancy at {metrics.occupancy_rate || 0}%. Consider adjusting weekend rates for optimal revenue.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-3 rounded-lg border border-green-300 bg-white">
-                  <div className="flex items-start gap-2">
-                    <TrendingUp className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-gray-900 text-xs mb-1">Performance Trend</p>
-                      <p className="text-xs text-gray-700">
-                        {metrics.total_bookings || 0} bookings this month. {metrics.occupancy_rate >= 60 ? 'Great performance!' : 'Room for growth.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Task Management - Compact */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.64 }}
-          >
-            <Card className="border border-gray-200 shadow">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1 rounded-lg bg-[#C4A572]/10">
-                      <ClipboardList className="w-4 h-4" style={{ color: COLORS.primary }} />
-                    </div>
-                    <CardTitle className="text-base">Today's Tasks</CardTitle>
-                  </div>
-                  <Badge className="bg-gray-100 text-gray-800 border-gray-300 border font-bold text-xs">
-                    {tasks.filter(t => !t.completed).length}/{tasks.length}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3 space-y-1">
-                {tasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task.task}
-                    completed={task.completed}
-                    onToggle={() => toggleTask(task.id)}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-          </motion.div>
 
           {/* Booking Sources - Compact with scrollable legend */}
           <motion.div
