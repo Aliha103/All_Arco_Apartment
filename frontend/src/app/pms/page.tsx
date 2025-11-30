@@ -40,8 +40,6 @@ import {
   Timer,
   Building2,
   Home as HomeIcon,
-  Lock,
-  Unlock,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -598,57 +596,6 @@ export default function PMSDashboard() {
               isSensitive={true}
               hideData={hideSensitiveData}
             />
-          </motion.div>
-
-          {/* Apartment Status Card - Compact with max width */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.32 }}
-            className="max-w-md"
-          >
-            <Card className={`border shadow ${apartment.is_occupied ? 'border-red-300 bg-red-50/20' : 'border-green-300 bg-green-50/20'}`}>
-              <CardHeader className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 py-2 px-3">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-lg ${apartment.is_occupied ? 'bg-red-100' : 'bg-green-100'}`}>
-                    {apartment.is_occupied ? (
-                      <Lock className="w-4 h-4 text-red-700" />
-                    ) : (
-                      <Unlock className="w-4 h-4 text-green-700" />
-                    )}
-                  </div>
-                  <CardTitle className="text-sm text-gray-900">Apartment Status</CardTitle>
-                  <Badge className={`ml-auto text-xs ${apartment.is_occupied ? 'bg-red-100 text-red-800 border-red-300' : 'bg-green-100 text-green-800 border-green-300'} border`}>
-                    {apartment.is_occupied ? 'OCCUPIED' : 'VACANT'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3">
-                {apartment.is_occupied ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-700 mb-0.5">Current Guests</p>
-                      <p className="text-xl font-extrabold text-gray-900">{apartment.guest_count}</p>
-                      <p className="text-xs text-gray-600 mt-0.5">
-                        Checkout: {apartment.current_checkout_date ? format(new Date(apartment.current_checkout_date), 'MMM dd') : 'N/A'}
-                      </p>
-                    </div>
-                    <div className="text-left sm:text-right">
-                      <p className="text-xs font-semibold text-gray-700 mb-0.5">Booking</p>
-                      <p className="text-sm font-bold" style={{ color: COLORS.primary }}>
-                        {todaysOps.current_booking_id || 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-2">
-                    <Unlock className="w-6 h-6 text-green-400 mx-auto mb-1.5" />
-                    <p className="text-sm font-bold text-gray-900 mb-0.5">Apartment Available</p>
-                    <p className="text-xs text-gray-600">Ready for next booking</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </motion.div>
 
           {/* Today's Timeline - More compact */}
