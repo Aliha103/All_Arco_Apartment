@@ -136,7 +136,14 @@ export default function ProfileSettingsPage() {
   }, [reset]);
 
   const onSubmit = useCallback((data: ProfileFormData) => {
-    updateProfile.mutate(data);
+    // Clean data: convert empty strings to null for optional fields
+    const cleanedData = {
+      ...data,
+      phone: data.phone?.trim() || null,
+      date_of_birth: data.date_of_birth?.trim() || null,
+      country: data.country?.trim() || null,
+    };
+    updateProfile.mutate(cleanedData);
   }, [updateProfile]);
 
   // Sync form with user data when it loads/changes (but NOT while editing)

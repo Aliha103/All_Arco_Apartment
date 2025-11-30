@@ -198,7 +198,11 @@ def me_view(request):
         # Update only provided fields
         for field in updatable_fields:
             if field in request.data:
-                setattr(user, field, request.data[field])
+                value = request.data[field]
+                # Convert empty strings to None for optional fields
+                if value == '' and field in ['phone', 'date_of_birth', 'country']:
+                    value = None
+                setattr(user, field, value)
 
         # Validate and save
         try:
