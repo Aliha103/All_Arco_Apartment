@@ -3,21 +3,54 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
+import { logPMSAccess } from '@/lib/auditLogger';
+import {
+  LayoutDashboard,
+  Calendar,
+  CreditCard,
+  FileText,
+  Users,
+  DollarSign,
+  CalendarDays,
+  Image as ImageIcon,
+  UserCog,
+  TrendingUp,
+  ChevronDown,
+  Menu,
+  X,
+  User,
+  LogOut,
+  Home,
+  Sparkles,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const navigation = [
-  { name: 'Dashboard', href: '/pms', icon: '📊', permission: null }, // Always visible
-  { name: 'Bookings', href: '/pms/bookings', icon: '📅', permission: 'bookings.view' },
-  { name: 'Payments', href: '/pms/payments', icon: '💳', permission: 'payments.view' },
-  { name: 'Invoices', href: '/pms/invoices', icon: '📄', permission: 'payments.view' },
-  { name: 'Guests', href: '/pms/guests', icon: '👥', permission: 'guests.view' },
-  { name: 'Pricing', href: '/pms/pricing', icon: '💰', permission: 'pricing.view' },
-  { name: 'Calendar', href: '/pms/calendar', icon: '📆', permission: 'bookings.view' },
-  { name: 'Gallery', href: '/pms/gallery', icon: '🖼️', permission: 'gallery.view' },
-  { name: 'Team', href: '/pms/team', icon: '👨‍💼', permission: 'team.view' },
-  { name: 'Reports', href: '/pms/reports', icon: '📈', permission: 'reports.view' },
+// Smooth easing
+const smoothEase = [0.22, 1, 0.36, 1] as const;
+
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  permission: string | null;
+}
+
+const navigation: NavigationItem[] = [
+  { name: 'Dashboard', href: '/pms', icon: LayoutDashboard, permission: null }, // Always visible
+  { name: 'Bookings', href: '/pms/bookings', icon: Calendar, permission: 'bookings.view' },
+  { name: 'Payments', href: '/pms/payments', icon: CreditCard, permission: 'payments.view' },
+  { name: 'Invoices', href: '/pms/invoices', icon: FileText, permission: 'payments.view' },
+  { name: 'Guests', href: '/pms/guests', icon: Users, permission: 'guests.view' },
+  { name: 'Pricing', href: '/pms/pricing', icon: DollarSign, permission: 'pricing.view' },
+  { name: 'Calendar', href: '/pms/calendar', icon: CalendarDays, permission: 'bookings.view' },
+  { name: 'Gallery', href: '/pms/gallery', icon: ImageIcon, permission: 'gallery.view' },
+  { name: 'Team', href: '/pms/team', icon: UserCog, permission: 'team.view' },
+  { name: 'Reports', href: '/pms/reports', icon: TrendingUp, permission: 'reports.view' },
 ];
 
 export default function PMSLayout({ children }: { children: React.ReactNode }) {
@@ -25,18 +58,84 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
   const { hasPermission, isTeamMember } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
 
-  // Redirect if not team member
+  // Scroll tracking
+  const { scrollY } = useScroll();
+
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    if (latest > 20) {
+      setIsScrolled(true);
+    } else {
+      setIsScrolled(false);
+    }
+  });
+
+  // Redirect if not team member and log PMS access
   useEffect(() => {
     if (!isLoading && (!user || !isTeamMember())) {
       router.push('/auth/login');
+    } else if (!isLoading && user && isTeamMember()) {
+      // Log successful PMS access for security audit
+      logPMSAccess(user);
     }
   }, [user, isLoading, isTeamMember, router]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDropdownOpen(false);
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Lock body scroll when mobile menu open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [mobileMenuOpen]);
 
   if (isLoading || !user || !isTeamMember()) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 border-4 border-[#C4A572] border-t-transparent rounded-full animate-spin" />
+            <p className="text-gray-600">Loading PMS...</p>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -46,60 +145,246 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     (item) => !item.permission || hasPermission(item.permission)
   );
 
+  const roleLabel = user.role_info?.name || 'Team Member';
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link href="/pms" className="text-xl font-bold text-blue-600">
-              All'Arco PMS
+      {/* Professional Header - Matching Homepage */}
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: smoothEase }}
+        className={`
+          fixed top-0 left-0 right-0 z-50
+          transition-all duration-500 ease-out
+          ${isScrolled
+            ? 'bg-white/98 backdrop-blur-xl shadow-lg shadow-black/5'
+            : 'bg-white border-b border-gray-200'
+          }
+        `}
+      >
+        <div className="w-full px-4 sm:px-6 lg:px-10">
+          <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
+
+            {/* Logo */}
+            <Link href="/pms" className="flex-shrink-0 focus:outline-none flex items-center gap-3">
+              <Image
+                src="/allarco-logo.png"
+                alt="All'Arco Apartment"
+                width={160}
+                height={58}
+                className="object-contain h-10 sm:h-12 lg:h-14 w-auto"
+                priority
+              />
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#C4A572]/10 to-[#C4A572]/5 rounded-full border border-[#C4A572]/20">
+                <Sparkles className="w-4 h-4 text-[#C4A572]" />
+                <span className="text-sm font-semibold text-gray-700">PMS</span>
+              </div>
             </Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
-              View Site
-            </Link>
-            <span className="text-sm text-gray-600">
-              {user.first_name} {user.last_name}
-            </span>
-            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-              {user.role_info.name}
-            </span>
-            <Button variant="outline" size="sm" onClick={() => logout()}>
-              Logout
-            </Button>
+
+            {/* Right Section */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* View Site Link */}
+              <Link
+                href="/"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#C4A572] transition-colors rounded-lg hover:bg-gray-50"
+              >
+                <Home className="w-4 h-4" />
+                View Site
+              </Link>
+
+              {/* User Dropdown */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]"
+                  aria-label="Account menu"
+                  aria-expanded={dropdownOpen}
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center text-white text-sm font-semibold">
+                    {user.first_name?.[0]}{user.last_name?.[0]}
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <p className="text-sm font-medium text-gray-700">{user.first_name} {user.last_name}</p>
+                    <p className="text-xs text-gray-500">{roleLabel}</p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      transition={{ duration: 0.2, ease: smoothEase }}
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl shadow-black/10 overflow-hidden border border-gray-100"
+                    >
+                      <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900 text-sm">{user.first_name} {user.last_name}</p>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#C4A572]/20 text-[11px] font-semibold text-[#C4A572]">
+                            {roleLabel}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      </div>
+                      <div className="py-1">
+                        <Link
+                          href="/"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 sm:hidden"
+                        >
+                          <Home className="w-4 h-4 text-gray-400" /> View Site
+                        </Link>
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <User className="w-4 h-4 text-gray-400" /> My Dashboard
+                        </Link>
+                        <hr className="my-1 border-gray-100" />
+                        <button
+                          onClick={() => {
+                            logout();
+                            setDropdownOpen(false);
+                          }}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 w-full"
+                        >
+                          <LogOut className="w-4 h-4" /> Sign Out
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Mobile Menu Button */}
+              <motion.button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Menu className="w-6 h-6" />
+              </motion.button>
+            </div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r min-h-[calc(100vh-57px)] sticky top-[57px]">
-          <nav className="p-4 space-y-1">
-            {filteredNav.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 bottom-0 w-full max-w-[280px] bg-white z-[70] lg:hidden overflow-y-auto shadow-2xl"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-[#C4A572]" />
+                  <span className="font-bold text-gray-900">PMS Navigation</span>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                  aria-label="Close menu"
                 >
-                  <span className="text-lg">{item.icon}</span>
-                  {item.name}
-                </Link>
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <nav className="p-3 space-y-1">
+                {filteredNav.map((item, index) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <motion.div
+                      key={item.href}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                    >
+                      <Link
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                          isActive
+                            ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white shadow-lg shadow-[#C4A572]/30'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        {item.name}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </nav>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      <div className="flex pt-16 sm:pt-18 lg:pt-20">
+        {/* Desktop Sidebar */}
+        <motion.aside
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: smoothEase }}
+          className="hidden lg:block w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem]"
+        >
+          <nav className="p-4 space-y-1">
+            {filteredNav.map((item, index) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={item.href}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                >
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white shadow-lg shadow-[#C4A572]/30'
+                        : 'text-gray-700 hover:bg-gray-100 hover:translate-x-1'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    {item.name}
+                  </Link>
+                </motion.div>
               );
             })}
           </nav>
-        </aside>
+        </motion.aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
-          {children}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3, ease: smoothEase }}
+          >
+            {children}
+          </motion.div>
         </main>
       </div>
     </div>
