@@ -529,11 +529,11 @@ export default function PMSDashboard() {
               <Activity className="w-3 h-3 mr-1 animate-pulse" />
               Live
             </Badge>
-            <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-1 border border-gray-300 hover:border-[#C4A572] hover:bg-[#C4A572]/5">
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-1 border border-gray-300 hover:border-[#C4A572] hover:bg-[#C4A572]/5 text-gray-900">
               <RefreshCw className="w-4 h-4" />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <Button variant="outline" size="sm" className="gap-1 border border-gray-300">
+            <Button variant="outline" size="sm" className="gap-1 border border-gray-300 text-gray-900">
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
@@ -600,11 +600,12 @@ export default function PMSDashboard() {
             />
           </motion.div>
 
-          {/* Apartment Status Card - Compact */}
+          {/* Apartment Status Card - Compact with max width */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.32 }}
+            className="max-w-md"
           >
             <Card className={`border shadow ${apartment.is_occupied ? 'border-red-300 bg-red-50/20' : 'border-green-300 bg-green-50/20'}`}>
               <CardHeader className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 py-2 px-3">
@@ -641,7 +642,7 @@ export default function PMSDashboard() {
                   </div>
                 ) : (
                   <div className="text-center py-2">
-                    <Unlock className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                    <Unlock className="w-6 h-6 text-green-400 mx-auto mb-1.5" />
                     <p className="text-sm font-bold text-gray-900 mb-0.5">Apartment Available</p>
                     <p className="text-xs text-gray-600">Ready for next booking</p>
                   </div>
