@@ -136,12 +136,14 @@ export default function ProfileSettingsPage() {
   }, [reset]);
 
   const onSubmit = useCallback((data: ProfileFormData) => {
-    // Clean data: convert empty strings to null for optional fields
+    // Clean data: convert empty strings to undefined for optional fields
     const cleanedData = {
-      ...data,
-      phone: data.phone?.trim() || null,
-      date_of_birth: data.date_of_birth?.trim() || null,
-      country: data.country?.trim() || null,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      email: data.email,
+      phone: data.phone?.trim() || undefined,
+      date_of_birth: data.date_of_birth?.trim() || undefined,
+      country: data.country?.trim() || undefined,
     };
     updateProfile.mutate(cleanedData);
   }, [updateProfile]);
