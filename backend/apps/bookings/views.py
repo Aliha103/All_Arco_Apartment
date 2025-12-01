@@ -487,7 +487,13 @@ def calendar_month(request):
                 date_info['booking'] = {
                     'id': str(booking.id),
                     'booking_id': booking.booking_id,
-                    'guest_name': booking.guest_name
+                    'guest_name': booking.guest_name,
+                    'check_in_date': booking.check_in_date,
+                    'check_out_date': booking.check_out_date,
+                    'number_of_guests': booking.number_of_guests,
+                    'total_price': booking.total_price,
+                    'booking_source': booking.booking_source,
+                    'status': booking.status,
                 }
                 break
         
