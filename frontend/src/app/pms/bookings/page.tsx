@@ -187,7 +187,9 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
         </Badge>
       </td>
       <td className="px-4 py-3">
-        <span className="text-sm text-gray-900">{booking.guests || booking.number_of_guests}</span>
+        <span className="text-sm font-semibold text-gray-900">
+          {(booking.guests || booking.number_of_guests || 0)} guest{(booking.guests || booking.number_of_guests || 0) === 1 ? '' : 's'}
+        </span>
       </td>
       <td className="px-4 py-3">
         <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
