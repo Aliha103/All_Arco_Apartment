@@ -34,13 +34,6 @@ export default function GuestsPage() {
     },
   });
 
-  // Calculate statistics
-  const totalGuests = guests?.length || 0;
-  const totalRevenue = guests?.reduce((sum, g) =>
-    sum + parseFloat(g.total_spent || '0'), 0
-  ) || 0;
-  const repeatGuests = guests?.filter(g => (g.total_bookings || 0) > 1).length || 0;
-
   return (
     <div>
       <div className="mb-8">
@@ -48,35 +41,7 @@ export default function GuestsPage() {
         <p className="text-gray-600">Manage guest information and history</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-1">Total Guests</p>
-            <p className="text-3xl font-bold">{totalGuests}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-1">Repeat Guests</p>
-            <p className="text-3xl font-bold text-blue-600">{repeatGuests}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
-            <p className="text-3xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 mb-1">Repeat Rate</p>
-            <p className="text-3xl font-bold text-purple-600">
-              {totalGuests > 0 ? ((repeatGuests / totalGuests) * 100).toFixed(1) : 0}%
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Stats cards removed */}
 
       {/* Search */}
       <Card className="mb-6">
