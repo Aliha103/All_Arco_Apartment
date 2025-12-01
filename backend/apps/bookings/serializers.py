@@ -21,7 +21,7 @@ class BookingListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'booking_id', 'guest_name', 'guest_email', 'check_in_date',
             'check_out_date', 'nights', 'status', 'payment_status', 'total_price',
-            'booking_source', 'created_at'
+            'booking_source', 'number_of_guests', 'created_at'
         ]
         read_only_fields = fields
 
