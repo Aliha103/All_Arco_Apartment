@@ -67,7 +67,7 @@ import {
   Line,
   Legend,
 } from 'recharts';
-import { format, subDays, isToday } from 'date-fns';
+import { format, subDays, isToday, subMonths, startOfMonth, endOfMonth, formatISO } from 'date-fns';
 
 // Professional color palette
 const COLORS = {
@@ -314,6 +314,21 @@ export default function PMSDashboard() {
     refetchInterval: 60000, // Refetch every minute
   });
 
+  const twelveMonthStart = startOfMonth(subMonths(new Date(), 11));
+  const { data: bookingsLastYear } = useQuery({
+    queryKey: ['bookings-last-year'],
+    queryFn: async () => {
+      const params: any = {
+        check_in_date_from: formatISO(twelveMonthStart, { representation: 'date' }),
+        check_in_date_to: formatISO(endOfMonth(new Date()), { representation: 'date' }),
+        status: 'pending,confirmed,paid,checked_in,checked_out,cancelled,no_show',
+      };
+      const response = await api.bookings.list(params);
+      return response.data.results || response.data || [];
+    },
+    staleTime: 30000,
+  });
+
   // Generate revenue data for last 30 days (TODO: Replace with real API data)
   const revenueData = useMemo(() => {
     const data = [];
@@ -402,6 +417,56 @@ export default function PMSDashboard() {
     }
     return data;
   }, []);
+
+  // 12-month booking vs cancellation trend
+  const bookingCancelTrend = useMemo(() => {
+    const months: { label: string; confirmed: number; cancelled: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const start = startOfMonth(subMonths(new Date(), i));
+      const label = format(start, 'MMM');
+      months.push({ label, confirmed: 0, cancelled: 0 });
+    }
+    if (Array.isArray(bookingsLastYear)) {
+      bookingsLastYear.forEach((b: any) => {
+        const checkIn = new Date(b.check_in_date);
+        const label = format(startOfMonth(checkIn), 'MMM');
+        const bucket = months.find((m) => m.label === label);
+        if (!bucket) return;
+        const status = (b.status || '').toLowerCase();
+        if (['confirmed', 'paid', 'checked_in'].includes(status)) {
+          bucket.confirmed += 1;
+        } else if (status === 'cancelled') {
+          bucket.cancelled += 1;
+        }
+      });
+    }
+    return months;
+  }, [bookingsLastYear]);
+
+  // 12-month booking vs cancellation trend
+  const bookingCancelTrend = useMemo(() => {
+    const months: { label: string; confirmed: number; cancelled: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const start = startOfMonth(subMonths(new Date(), i));
+      const label = format(start, 'MMM');
+      months.push({ label, confirmed: 0, cancelled: 0 });
+    }
+    if (Array.isArray(bookingsLastYear)) {
+      bookingsLastYear.forEach((b: any) => {
+        const checkIn = new Date(b.check_in_date);
+        const label = format(startOfMonth(checkIn), 'MMM');
+        const bucket = months.find((m) => m.label === label);
+        if (!bucket) return;
+        const status = (b.status || '').toLowerCase();
+        if (['confirmed', 'paid', 'checked_in'].includes(status)) {
+          bucket.confirmed += 1;
+        } else if (status === 'cancelled') {
+          bucket.cancelled += 1;
+        }
+      });
+    }
+    return months;
+  }, [bookingsLastYear]);
 
   // Smart notifications
   const notifications = useMemo(() => {
@@ -889,6 +954,41 @@ export default function PMSDashboard() {
               </Card>
             </motion.div>
           </div>
+
+          {/* 12-Month Bookings vs Cancellations */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+            className="w-full"
+          >
+            <Card className="border border-gray-200 shadow w-full overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
+                    <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base text-gray-900 truncate">12-Month Bookings vs Cancellations</CardTitle>
+                    <CardDescription className="text-xs font-medium text-gray-800 truncate">Confirmed/checked-in vs cancelled</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 overflow-hidden">
+                <ResponsiveContainer width="100%" height={260} minWidth={0}>
+                  <BarChart data={bookingCancelTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="confirmed" name="Bookings" stackId="a" fill={COLORS.primary} radius={[6,6,0,0]} />
+                    <Bar dataKey="cancelled" name="Cancelled" stackId="a" fill={COLORS.error} radius={[6,6,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Booking Status Distribution - Compact */}
           {bookingStatusData.length > 0 && (
