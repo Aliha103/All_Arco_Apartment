@@ -367,11 +367,11 @@ export default function BookingsPage() {
             <p className="text-sm text-gray-500">Manage all property reservations</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="text-black">
               <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="text-black">
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
@@ -451,12 +451,12 @@ export default function BookingsPage() {
                   placeholder="Search by booking reference, guest name, or email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-black placeholder:text-gray-500"
                 />
               </div>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
-              <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40 text-black" />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40 text-black" />
+              <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="text-black">
                 <Filter className="w-4 h-4 mr-2" />
                 Filters
                 {statusFilter.length > 0 && <Badge className="ml-2 bg-blue-600 text-white">{statusFilter.length}</Badge>}
@@ -491,11 +491,11 @@ export default function BookingsPage() {
         <Card>
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
-              <CardTitle>All Bookings ({sortedBookings.length})</CardTitle>
+              <CardTitle className="text-black">All Bookings ({sortedBookings.length})</CardTitle>
               <div className="flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="text-black">
                       <ArrowUpDown className="w-4 h-4 mr-2" />
                       Sort: {sortBy}
                       <ChevronDown className="w-4 h-4 ml-2" />
@@ -507,7 +507,7 @@ export default function BookingsPage() {
                     <DropdownMenuItem onClick={() => setSortBy('amount')}>Amount</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="outline" size="sm" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
+                <Button variant="outline" size="sm" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="text-black">
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </Button>
               </div>
