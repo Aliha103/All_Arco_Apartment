@@ -262,69 +262,7 @@ export default function InvoicesPage() {
         </div>
       </motion.div>
 
-      {/* Statistics Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Total Invoices</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{totalInvoices}</p>
-              </div>
-              <div className="p-3 rounded-full bg-blue-100">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Paid Invoices</p>
-                <p className="text-2xl font-bold text-green-700 mt-1">{paidInvoices}</p>
-              </div>
-              <div className="p-3 rounded-full bg-green-100">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Pending</p>
-                <p className="text-2xl font-bold text-orange-700 mt-1">{pendingInvoices}</p>
-              </div>
-              <div className="p-3 rounded-full bg-orange-100">
-                <Clock className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(totalRevenue)}</p>
-              </div>
-              <div className="p-3 rounded-full bg-purple-100">
-                <Euro className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* Statistics cards removed */}
 
       {/* Tabs */}
       <motion.div
