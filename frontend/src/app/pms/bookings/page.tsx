@@ -404,6 +404,17 @@ export default function BookingsPage() {
     return Math.max(0, Number(detailsData.total_price) - paidAmount);
   }, [detailsData?.total_price, paidAmount]);
 
+  const computedPaymentStatus = useMemo(() => {
+    if (!detailsData) return 'unpaid';
+    const total = Number(detailsData.total_price || 0);
+    if (paidAmount >= total && total > 0) return 'paid';
+    if (paidAmount > 0) return 'partial';
+    return 'unpaid';
+  }, [detailsData, paidAmount]);
+
+  const statusBadge = detailsData ? STATUS_CONFIG[detailsData.status as keyof typeof STATUS_CONFIG] : null;
+  const paymentBadge = PAYMENT_STATUS_CONFIG[computedPaymentStatus as keyof typeof PAYMENT_STATUS_CONFIG] || PAYMENT_STATUS_CONFIG.pending;
+
   const updateBookingStatus = useCallback(
     async (status: string) => {
       if (!detailsData) return;
@@ -787,7 +798,7 @@ export default function BookingsPage() {
 
       {/* Details Dialog */}
       <Dialog open={!!detailsBooking} onOpenChange={(open) => { if (!open) { setDetailsBooking(null); setDetailsData(null); setDetailsPayments([]); } }}>
-        <DialogContent className="max-w-3xl bg-white">
+        <DialogContent className="max-w-3xl bg-white text-gray-900">
           <DialogHeader>
             <DialogTitle>Booking Details</DialogTitle>
             <DialogDescription>
@@ -811,80 +822,90 @@ export default function BookingsPage() {
           )}
           {detailsData && !detailsLoading && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 bg-gray-50 rounded-lg p-4">
                 <div>
-                  <Label className="text-xs text-gray-500">Booking ID</Label>
-                  <p className="font-medium">{detailsData.booking_id || generateArcoReference(detailsData.id)}</p>
+                  <Label className="text-xs text-gray-600">Booking ID</Label>
+                  <p className="font-semibold text-gray-900">{detailsData.booking_id || generateArcoReference(detailsData.id)}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div>
-                    <Label className="text-xs text-gray-500">Status</Label>
-                    <p className="font-medium capitalize">{(detailsData.status || '').replace('_', ' ')}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-gray-600">Status</Label>
+                    {statusBadge ? (
+                      <Badge className={`${statusBadge.color} border text-xs font-semibold`}>
+                        {statusBadge.label}
+                      </Badge>
+                    ) : (
+                      <p className="font-medium capitalize text-gray-900">{(detailsData.status || '').replace('_', ' ')}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-gray-600">Payment</Label>
+                    <Badge className={`${paymentBadge.color} border text-xs font-semibold`}>
+                      {paymentBadge.label}
+                    </Badge>
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-500">Payment Status</Label>
-                    <p className="font-medium capitalize">{detailsData.payment_status || 'unpaid'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500">Source</Label>
-                    <p className="font-medium capitalize">{(detailsData.booking_source || 'direct').replace('_', ' ')}</p>
+                    <Label className="text-xs text-gray-600">Source</Label>
+                    <p className="font-medium capitalize text-gray-900">{(detailsData.booking_source || 'direct').replace('_', ' ')}</p>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-gray-500">Guest Name</Label>
-                  <p className="font-medium">{detailsData.guest_name}</p>
+                <div className="bg-white rounded-lg border p-3">
+                  <Label className="text-xs text-gray-600">Guest Name</Label>
+                  <p className="font-semibold text-gray-900">{detailsData.guest_name}</p>
                   {detailsData.guest_phone && (
-                    <p className="text-sm text-gray-600 mt-1">{detailsData.guest_phone}</p>
+                    <p className="text-sm text-gray-700 mt-1">{detailsData.guest_phone}</p>
                   )}
                   {detailsData.guest_email && (
-                    <p className="text-sm text-gray-600">{detailsData.guest_email}</p>
+                    <p className="text-sm text-gray-700">{detailsData.guest_email}</p>
                   )}
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-500">Address</Label>
-                  <p className="font-medium text-sm text-gray-700 whitespace-pre-line">
+                <div className="bg-white rounded-lg border p-3">
+                  <Label className="text-xs text-gray-600">Address</Label>
+                  <p className="font-medium text-sm text-gray-900 whitespace-pre-line">
                     {detailsData.guest_address || '—'}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">{detailsData.guest_country || '—'}</p>
+                  <p className="text-sm text-gray-700 mt-1">{detailsData.guest_country || '—'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 bg-gray-50 rounded-lg p-4">
+                <div>
+                  <Label className="text-xs text-gray-600">Check-in</Label>
+                  <p className="font-semibold text-gray-900">{formatDate(detailsData.check_in_date)}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Check-out</Label>
+                  <p className="font-semibold text-gray-900">{formatDate(detailsData.check_out_date)}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Nights</Label>
+                  <p className="font-semibold text-gray-900">{detailsData.nights}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Guests</Label>
+                  <p className="font-semibold text-gray-900">{detailsData.guests || detailsData.number_of_guests}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-gray-500">Check-in</Label>
-                  <p className="font-medium">{formatDate(detailsData.check_in_date)}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-500">Check-out</Label>
-                  <p className="font-medium">{formatDate(detailsData.check_out_date)}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-500">Nights</Label>
-                  <p className="font-medium">{detailsData.nights}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-500">Guests</Label>
-                  <p className="font-medium">{detailsData.guests || detailsData.number_of_guests}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-gray-500">Pricing</Label>
-                  <p className="text-sm text-gray-700">
+                <div className="bg-white rounded-lg border p-3">
+                  <Label className="text-xs text-gray-600">Pricing</Label>
+                  <p className="text-sm text-gray-800">
                     Nightly: {formatCurrency(detailsData.nightly_rate || 0)} × {detailsData.nights} nights
                   </p>
-                  <p className="text-sm text-gray-700">Cleaning Fee: {formatCurrency(detailsData.cleaning_fee || 0)}</p>
-                  <p className="text-sm text-gray-700">Tourist Tax: {formatCurrency(detailsData.tourist_tax || 0)}</p>
+                  <p className="text-sm text-gray-800">Cleaning Fee: {formatCurrency(detailsData.cleaning_fee || 0)}</p>
+                  <p className="text-sm text-gray-800">Tourist Tax: {formatCurrency(detailsData.tourist_tax || 0)}</p>
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-500">Totals</Label>
+                <div className="bg-white rounded-lg border p-3">
+                  <Label className="text-xs text-gray-600">Totals</Label>
                   <p className="font-semibold text-lg text-gray-900">Total: {formatCurrency(detailsData.total_price)}</p>
                   <p className="text-sm text-emerald-700 mt-1">Paid: {formatCurrency(paidAmount)}</p>
-                  <p className="text-sm text-rose-700">Balance: {formatCurrency(balanceDue)}</p>
+                  <p className={`text-sm ${balanceDue > 0 ? 'text-rose-700' : 'text-gray-700'}`}>
+                    Balance: {formatCurrency(balanceDue)}
+                  </p>
                 </div>
               </div>
 
