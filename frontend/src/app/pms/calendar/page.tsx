@@ -266,9 +266,10 @@ export default function CalendarPage() {
 
         if (checkOut < monthStart || checkIn > monthEnd) return;
 
-        // Calculate start and end day numbers (use checkout day for span end)
+        // Calculate start and end day numbers (end on last night, stop at checkout left edge)
         const startDay = checkIn.getMonth() === month ? checkIn.getDate() : 1;
-        const endDay = checkOut.getMonth() === month ? checkOut.getDate() : new Date(year, month + 1, 0).getDate();
+        let endDay = checkOut.getMonth() === month ? checkOut.getDate() - 1 : new Date(year, month + 1, 0).getDate();
+        endDay = Math.max(startDay, endDay);
 
         // Calculate nights
         const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
@@ -319,9 +320,9 @@ export default function CalendarPage() {
         const endDate = dates[dates.length - 1];
 
         const startDay = startDate.getDate();
-        // Use full end day for blocked ranges
+        // Use full end day for blocked ranges (inclusive)
         const endDay = Math.max(startDay, endDate.getDate());
-        const nights = Math.max(1, blockedDates.length); // Blocked spans are inclusive
+        const nights = Math.max(1, endDay - startDay + 1);
 
         // Calculate row
         const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -443,39 +444,7 @@ export default function CalendarPage() {
         <p className="text-base text-gray-800 mt-1">Manage availability and view bookings</p>
       </motion.div>
 
-      {/* Legend */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        <Card className="border border-gray-200/50 shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex gap-4 sm:gap-6 flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-white/50 rounded"></div>
-                <span className="text-sm font-semibold text-gray-900">Available</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-blue-100/40 rounded"></div>
-                <span className="text-sm font-semibold text-gray-900">Booked</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gray-200/70 rounded"></div>
-                <span className="text-sm font-semibold text-gray-900">Blocked</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-green-100/50 rounded"></div>
-                <span className="text-sm font-semibold text-gray-900">Check-in</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-red-100/50 rounded"></div>
-                <span className="text-sm font-semibold text-gray-900">Check-out</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* Legend removed */}
 
       {/* Calendar Card */}
       <motion.div
