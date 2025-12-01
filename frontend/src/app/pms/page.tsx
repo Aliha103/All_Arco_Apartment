@@ -588,15 +588,17 @@ export default function PMSDashboard() {
               {hideSensitiveData ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               <span className="hidden lg:inline">{hideSensitiveData ? 'Hidden' : 'Visible'}</span>
             </Button>
-            <Badge variant="outline" className="px-3 py-1 text-xs font-semibold border border-green-300 bg-green-50 text-green-800">
-              <Activity className="w-3 h-3 mr-1 animate-pulse" />
-              Live
-            </Badge>
-            <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-1 border border-gray-300 hover:border-[#C4A572] hover:bg-[#C4A572]/5 text-gray-900">
-              <RefreshCw className="w-4 h-4" />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1 border border-gray-300 text-gray-900">
+            {/* Removed Live/Refresh per request */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 border border-gray-300 text-gray-900"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.print();
+                }
+              }}
+            >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
@@ -965,55 +967,6 @@ export default function PMSDashboard() {
             </Card>
           </motion.div>
 
-          {/* Booking Status Distribution - Compact */}
-          {bookingStatusData.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.64 }}
-            >
-              <Card className="border border-gray-200 shadow">
-                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                      <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base text-gray-900">Booking Status Distribution</CardTitle>
-                      <CardDescription className="text-xs font-medium text-gray-800">Current month breakdown</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={bookingStatusData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                      <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '2px solid #E5E7EB',
-                          borderRadius: '8px',
-                          fontWeight: 600
-                        }}
-                      />
-                      <Bar
-                        dataKey="value"
-                        radius={[6, 6, 0, 0]}
-                        animationDuration={1200}
-                        animationEasing="ease-out"
-                      >
-                        {bookingStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
         </div>
 
         {/* Right Column - Sidebar (4 columns on lg, 3 on xl) */}
