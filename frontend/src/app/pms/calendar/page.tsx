@@ -572,10 +572,9 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        const dayNumberHeight = 24; // approximate height for day number
-                        const verticalCenter = dayNumberHeight + (cellHeight - dayNumberHeight - capsuleHeight) / 2;
-                        const startOffset = 0.05; // 5% padding from start
-                        const endOffset = 0.05; // 5% padding from end
+                        const verticalCenter = (cellHeight - capsuleHeight) / 2; // Center capsule in cell
+                        const startOffset = 0.4; // 40% padding from start
+                        const endOffset = 0.4; // 40% padding from end
 
                         return (
                           <motion.div
@@ -629,10 +628,9 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        const dayNumberHeight = 24; // approximate height for day number
-                        const verticalCenter = dayNumberHeight + (cellHeight - dayNumberHeight - capsuleHeight) / 2;
-                        const startOffset = 0.05; // 5% padding
-                        const endOffset = 0.05; // 5% padding
+                        const verticalCenter = (cellHeight - capsuleHeight) / 2; // Center capsule in cell
+                        const startOffset = 0.4; // 40% padding from start
+                        const endOffset = 0.4; // 40% padding from end
 
                         return (
                           <motion.div
