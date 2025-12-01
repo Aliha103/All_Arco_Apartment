@@ -27,6 +27,7 @@ export default function BookingDetailPage() {
   const [issueRefund, setIssueRefund] = useState(true);
   const [newNote, setNewNote] = useState('');
   const [selectedEmailType, setSelectedEmailType] = useState('confirmation');
+  const [overlapBlocked, setOverlapBlocked] = useState(false);
 
   // Fetch booking details
   const { data: booking, isLoading, error } = useQuery({
@@ -131,12 +132,57 @@ export default function BookingDetailPage() {
     );
   }
 
-  const canCheckIn = booking.status === 'paid' || booking.status === 'confirmed';
+  // Derived amounts
+  const paidAmount = (payments || [])
+    .filter((p) => ['succeeded', 'partially_refunded'].includes(p.status))
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const totalAmount = Number(booking.total_price || 0);
+  const balance = Math.max(0, totalAmount - paidAmount);
+  const computedPaymentStatus =
+    paidAmount >= totalAmount && totalAmount > 0
+      ? 'paid'
+      : paidAmount > 0
+      ? 'partial'
+      : 'unpaid';
+
+  // Availability check for undo-cancel / undo no-show to avoid overbooking
+  useQuery({
+    queryKey: ['booking-overlaps', bookingId, booking.status],
+    queryFn: async () => {
+      const resp = await api.bookings.list({
+        check_in_date_from: booking.check_in_date,
+        check_in_date_to: booking.check_out_date,
+      });
+      const list = resp.data.results || resp.data || [];
+      const overlaps = list.filter(
+        (b: any) =>
+          b.id !== booking.id &&
+          ['pending', 'confirmed', 'paid', 'checked_in'].includes((b.status || '').toLowerCase())
+      );
+      return overlaps.length > 0;
+    },
+    enabled: ['cancelled', 'no_show'].includes(booking.status),
+    onSuccess: (blocked) => setOverlapBlocked(blocked),
+  });
+
+  // Actions eligibility
+  const canCheckIn = ['paid', 'confirmed'].includes(booking.status);
   const canCheckOut = booking.status === 'checked_in';
+  const canUndoCheckIn = booking.status === 'checked_in';
+  const canUndoCheckOut = booking.status === 'checked_out';
+  const canNoShow = ['confirmed', 'paid'].includes(booking.status);
   const canCancel = !['cancelled', 'checked_out'].includes(booking.status);
+  const canUndoCancel = booking.status === 'cancelled' && !overlapBlocked;
+  const canUndoNoShow = booking.status === 'no_show' && !overlapBlocked;
+
+  const handleStatusUpdate = (status: string, confirmationText: string) => {
+    if (confirm(confirmationText)) {
+      updateStatus.mutate({ status });
+    }
+  };
 
   return (
-    <div>
+    <div className="text-gray-900">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
@@ -149,11 +195,11 @@ export default function BookingDetailPage() {
           <p className="text-gray-600">Created on {formatDateTime(booking.created_at)}</p>
         </div>
         <div className="flex gap-3">
-          <Badge className={`${getStatusColor(booking.status)} text-base px-3 py-1`}>
+          <Badge className={`${getStatusColor(booking.status)} text-base px-3 py-1 bg-white text-gray-900`}>
             {booking.status.replace('_', ' ').toUpperCase()}
           </Badge>
-          <Badge className={`${getStatusColor(booking.payment_status)} text-base px-3 py-1`}>
-            {booking.payment_status.toUpperCase()}
+          <Badge className={`${getStatusColor(computedPaymentStatus)} text-base px-3 py-1 bg-white text-gray-900`}>
+            {computedPaymentStatus.toUpperCase()}
           </Badge>
         </div>
       </div>
@@ -172,13 +218,13 @@ export default function BookingDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Email</p>
-              <a href={`mailto:${booking.guest_email}`} className="text-blue-600 hover:underline">
+              <a href={`mailto:${booking.guest_email}`} className="text-blue-700 hover:underline">
                 {booking.guest_email}
               </a>
             </div>
             <div>
               <p className="text-sm text-gray-600">Phone</p>
-              <a href={`tel:${booking.guest_phone}`} className="text-blue-600 hover:underline">
+              <a href={`tel:${booking.guest_phone}`} className="text-blue-700 hover:underline">
                 {booking.guest_phone}
               </a>
             </div>
@@ -343,9 +389,7 @@ export default function BookingDetailPage() {
             {canCheckIn && (
               <Button
                 onClick={() => {
-                  if (confirm('Mark this booking as checked in?')) {
-                    updateStatus.mutate({ status: 'checked_in' });
-                  }
+                  handleStatusUpdate('checked_in', 'Mark this booking as checked in?');
                 }}
                 disabled={updateStatus.isPending}
               >
@@ -356,13 +400,41 @@ export default function BookingDetailPage() {
             {canCheckOut && (
               <Button
                 onClick={() => {
-                  if (confirm('Mark this booking as checked out?')) {
-                    updateStatus.mutate({ status: 'checked_out' });
-                  }
+                  handleStatusUpdate('checked_out', 'Mark this booking as checked out?');
                 }}
                 disabled={updateStatus.isPending}
               >
                 Mark as Checked Out
+              </Button>
+            )}
+
+            {canUndoCheckIn && (
+              <Button
+                variant="outline"
+                onClick={() => handleStatusUpdate('confirmed', 'Undo check-in and revert to confirmed?')}
+                disabled={updateStatus.isPending}
+              >
+                Undo Check-in
+              </Button>
+            )}
+
+            {canUndoCheckOut && (
+              <Button
+                variant="outline"
+                onClick={() => handleStatusUpdate('checked_in', 'Undo check-out and revert to checked-in?')}
+                disabled={updateStatus.isPending}
+              >
+                Undo Check-out
+              </Button>
+            )}
+
+            {canNoShow && (
+              <Button
+                variant="outline"
+                onClick={() => handleStatusUpdate('no_show', 'Mark as no-show?')}
+                disabled={updateStatus.isPending}
+              >
+                Mark as No-show
               </Button>
             )}
 
@@ -379,6 +451,26 @@ export default function BookingDetailPage() {
                 onClick={() => setIsCancelModalOpen(true)}
               >
                 Cancel Booking
+              </Button>
+            )}
+
+            {canUndoCancel && (
+              <Button
+                variant="outline"
+                onClick={() => handleStatusUpdate('confirmed', 'Undo cancellation and restore booking?')}
+                disabled={updateStatus.isPending}
+              >
+                Undo Cancel
+              </Button>
+            )}
+
+            {canUndoNoShow && (
+              <Button
+                variant="outline"
+                onClick={() => handleStatusUpdate('confirmed', 'Undo no-show and restore booking?')}
+                disabled={updateStatus.isPending}
+              >
+                Undo No-show
               </Button>
             )}
           </div>
