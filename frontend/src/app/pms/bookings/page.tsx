@@ -414,6 +414,8 @@ export default function BookingsPage() {
     if (!detailsData?.total_price) return 0;
     return Math.max(0, Number(detailsData.total_price) - paidAmount);
   }, [detailsData?.total_price, paidAmount]);
+  const hasOpenBalance = balanceDue > 0;
+  const [balanceWarned, setBalanceWarned] = useState(false);
 
   const computedPaymentStatus = useMemo(() => {
     if (!detailsData) return 'unpaid';
@@ -450,20 +452,20 @@ export default function BookingsPage() {
 
 const handleCheckIn = useCallback(async () => {
   if (!detailsData) return;
-  if (balanceDue > 0) {
+  if (hasOpenBalance) {
     toast.warning(`Open balance of ${formatCurrency(balanceDue)} remains for this booking.`);
   }
   await updateBookingStatus('checked_in');
-}, [balanceDue, detailsData, updateBookingStatus]);
+}, [balanceDue, detailsData, hasOpenBalance, updateBookingStatus]);
 
 const handleCheckOut = useCallback(async () => {
   if (!detailsData) return;
-  if (balanceDue > 0) {
+  if (hasOpenBalance) {
     toast.error('Please settle the open balance before checking out.');
     return;
   }
   await updateBookingStatus('checked_out');
-}, [balanceDue, detailsData, updateBookingStatus]);
+}, [hasOpenBalance, detailsData, updateBookingStatus]);
 
 const canCheckIn = detailsData && ['confirmed', 'paid', 'pending'].includes(detailsData.status);
 const canCheckOut = detailsData && detailsData.status === 'checked_in';
@@ -471,6 +473,13 @@ const canUndoCheckIn = detailsData && detailsData.status === 'checked_in';
 const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
 const canUndoCancel = detailsData && detailsData.status === 'cancelled';
 const canUndoNoShow = detailsData && detailsData.status === 'no_show';
+
+useEffect(() => {
+  if (detailsData && hasOpenBalance && !balanceWarned) {
+    toast.warning(`Payment pending: ${formatCurrency(balanceDue)} due.`);
+    setBalanceWarned(true);
+  }
+}, [detailsData, hasOpenBalance, balanceDue, balanceWarned]);
 
   return (
     <>
@@ -940,35 +949,6 @@ const canUndoNoShow = detailsData && detailsData.status === 'no_show';
                 <p>Created: {detailsData.created_at ? formatDate(detailsData.created_at) : '—'}</p>
                 <p>Updated: {detailsData.updated_at ? formatDate(detailsData.updated_at) : '—'}</p>
               </div>
-
-              {/* Audit Trail */}
-              <div className="bg-gray-50 rounded-lg p-3 border">
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-xs text-gray-600">Activity Log</Label>
-                  <span className="text-xs text-gray-500">
-                    Showing {bookingLogs.length ? bookingLogs.length : 0} recent events (session)
-                  </span>
-                </div>
-                {bookingLogs.length === 0 ? (
-                  <p className="text-sm text-gray-600">No recent activity logged for this booking.</p>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {bookingLogs.map((log) => (
-                      <div key={log.timestamp} className="text-sm text-gray-800 flex justify-between">
-                        <div className="pr-3">
-                          <p className="font-semibold capitalize">{log.action.replace('_', ' ')}</p>
-                          <p className="text-xs text-gray-600">
-                            {log.userEmail} • {log.userRole} • {log.resource || 'booking'}
-                          </p>
-                        </div>
-                        <p className="text-xs text-gray-500 whitespace-nowrap">
-                          {new Date(log.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           )}
           <DialogFooter>
@@ -1002,7 +982,7 @@ const canUndoNoShow = detailsData && detailsData.status === 'no_show';
                 {canCheckOut && (
                   <Button
                     variant="destructive"
-                    disabled={statusUpdating || !detailsData}
+                    disabled={statusUpdating || !detailsData || hasOpenBalance}
                     onClick={handleCheckOut}
                   >
                     {statusUpdating ? 'Updating…' : 'Check-out'}
