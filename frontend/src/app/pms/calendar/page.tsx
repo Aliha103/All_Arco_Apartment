@@ -254,14 +254,9 @@ export default function CalendarPage() {
 
         if (checkOut < monthStart || checkIn > monthEnd) return;
 
-        // Calculate start and end day numbers
-        // Note: Capsule should end on last night of stay, not checkout morning
+        // Calculate start and end day numbers (use checkout day for span end)
         const startDay = checkIn.getMonth() === month ? checkIn.getDate() : 1;
-        let endDay = checkOut.getMonth() === month ? checkOut.getDate() : new Date(year, month + 1, 0).getDate();
-        // Subtract 1 to show last night, not checkout day
-        if (checkOut.getMonth() === month) {
-          endDay = Math.max(startDay, endDay - 1);
-        }
+        const endDay = checkOut.getMonth() === month ? checkOut.getDate() : new Date(year, month + 1, 0).getDate();
 
         // Calculate nights
         const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
@@ -312,9 +307,9 @@ export default function CalendarPage() {
         const endDate = dates[dates.length - 1];
 
         const startDay = startDate.getDate();
-        // Subtract 1 from endDay to show last night, not checkout day (same as bookings)
-        const endDay = Math.max(startDay, endDate.getDate() - 1);
-        const nights = blockedDates.length - 1; // Actual nights (excluding checkout day)
+        // Use full end day for blocked ranges
+        const endDay = Math.max(startDay, endDate.getDate());
+        const nights = Math.max(1, blockedDates.length); // Blocked spans are inclusive
 
         // Calculate row
         const firstDayOfMonth = new Date(year, month, 1).getDay();
