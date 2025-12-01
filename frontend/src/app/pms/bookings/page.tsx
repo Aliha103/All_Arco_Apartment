@@ -28,6 +28,7 @@ import {
   Copy,
   Check,
   RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import api from '@/lib/api';
