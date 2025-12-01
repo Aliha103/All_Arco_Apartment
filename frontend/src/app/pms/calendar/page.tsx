@@ -580,8 +580,10 @@ export default function CalendarPage() {
                         const capsuleHeight = 28; // h-7 = 28px
                         // Position capsule in vertical center of cell
                         const verticalCenter = 34; // Center vertically in 96px cell
-                        const startOffset = 0.45; // 45% padding from start (check-in)
-                        const endOffset = 0.45; // 45% padding from end (check-out) - creates 10% gap
+                        // Use smaller offsets for single-day capsules to avoid tiny dots
+                        const isSingleDay = capsule.startDay === capsule.endDay;
+                        const startOffset = isSingleDay ? 0.1 : 0.45; // 10% for single-day, 45% for multi-day
+                        const endOffset = isSingleDay ? 0.1 : 0.45; // Creates 80% width for single-day, 10% gap for multi-day
 
                         return (
                           <motion.div
@@ -637,8 +639,10 @@ export default function CalendarPage() {
                         const capsuleHeight = 28; // h-7 = 28px
                         // Position capsule in vertical center of cell
                         const verticalCenter = 34; // Center vertically in 96px cell
-                        const startOffset = 0.45; // 45% padding from start (check-in)
-                        const endOffset = 0.45; // 45% padding from end (check-out) - creates 10% gap
+                        // Use smaller offsets for single-day capsules to avoid tiny dots
+                        const isSingleDay = capsule.startDay === capsule.endDay;
+                        const startOffset = isSingleDay ? 0.1 : 0.45; // 10% for single-day, 45% for multi-day
+                        const endOffset = isSingleDay ? 0.1 : 0.45; // Creates 80% width for single-day, 10% gap for multi-day
 
                         return (
                           <motion.div
