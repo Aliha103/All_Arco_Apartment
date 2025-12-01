@@ -166,14 +166,12 @@ export default function InvoicesPage() {
     staleTime: 10000,
   });
 
-  // Fetch companies list (mock data for now)
+  // Fetch companies list
   const { data: companiesData, isLoading: companiesLoading } = useQuery({
     queryKey: ['companies'],
     queryFn: async () => {
-      // TODO: Replace with actual API call when backend is ready
-      // const response = await api.companies.list();
-      // return response.data.results || response.data || [];
-      return [] as Company[];
+      const response = await api.companies.list();
+      return response.data.results || response.data || [];
     },
     staleTime: 30000,
   });
@@ -1235,13 +1233,11 @@ function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
 
   const saveCompany = useMutation({
     mutationFn: async (data: any) => {
-      // TODO: Replace with actual API call when backend is ready
-      // if (company) {
-      //   await api.companies.update(company.id, data);
-      // } else {
-      //   await api.companies.create(data);
-      // }
-      console.log('Saving company:', data);
+      if (company?.id) {
+        await api.companies.update(company.id, data);
+      } else {
+        await api.companies.create(data);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });

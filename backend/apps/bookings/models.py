@@ -46,6 +46,7 @@ class Booking(models.Model):
     )
     guest_email = models.EmailField()
     guest_name = models.CharField(max_length=100)
+    guest_tax_code = models.CharField(max_length=50, blank=True, null=True)
     guest_phone = models.CharField(max_length=20)
     guest_country = models.CharField(max_length=100)  # Required for booking
     guest_address = models.TextField(blank=True, null=True)

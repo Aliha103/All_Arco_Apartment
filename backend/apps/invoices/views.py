@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
 from django.db.models import Sum
-from .models import Invoice
-from .serializers import InvoiceSerializer
+from .models import Invoice, Company
+from .serializers import InvoiceSerializer, CompanySerializer
 
 
 class InvoiceViewSet(viewsets.ModelViewSet):
@@ -61,6 +61,18 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice.status = 'paid'
         invoice.save()
         return Response(InvoiceSerializer(invoice).data)
+
+
+class CompanyViewSet(viewsets.ModelViewSet):
+    """Company CRUD for invoicing."""
+    serializer_class = CompanySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Company.objects.all().order_by('name')
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 
 @api_view(['GET'])

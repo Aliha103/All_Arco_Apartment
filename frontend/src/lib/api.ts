@@ -138,6 +138,14 @@ export const api = {
     statistics: () => apiClient.get('/invoices/statistics/'),
   },
 
+  // Companies (for invoices)
+  companies: {
+    list: () => apiClient.get('/invoices/companies/'),
+    create: (data: any) => apiClient.post('/invoices/companies/', data),
+    update: (id: string, data: any) => apiClient.patch(`/invoices/companies/${id}/`, data),
+    delete: (id: string) => apiClient.delete(`/invoices/companies/${id}/`),
+  },
+
   // Pricing
   pricing: {
     getSettings: () => apiClient.get('/pricing/settings/'),
