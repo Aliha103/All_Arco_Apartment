@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 // ============================================================================
 // Types & Interfaces
@@ -141,6 +142,17 @@ export default function CalendarPage() {
       setIsBlockModalOpen(false);
       setBlockFormData({ start_date: '', end_date: '', reason: 'maintenance', notes: '' });
     },
+  });
+
+  const deleteBlockedDate = useMutation({
+    mutationFn: (id: string) => api.blockedDates.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      toast.success('Blocked dates removed');
+    },
+    onError: () => {
+      toast.error('Failed to delete blocked dates');
+    }
   });
 
   // ============================================================================
@@ -619,8 +631,14 @@ export default function CalendarPage() {
                                 zIndex: 10,
                               }}
                               onClick={(e) => {
-                                if (!isBlocked) handleCapsuleClick(capsule, e);
                                 e.stopPropagation();
+                                if (isBlocked) {
+                                  if (confirm('Delete this blocked range?')) {
+                                    deleteBlockedDate.mutate(capsule.id);
+                                  }
+                                  return;
+                                }
+                                handleCapsuleClick(capsule, e);
                               }}
                             >
                               <div
