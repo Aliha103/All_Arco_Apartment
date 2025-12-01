@@ -95,6 +95,8 @@ export default function CalendarPage() {
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
+  const monthStart = useMemo(() => new Date(currentDate.getFullYear(), currentDate.getMonth(), 1), [currentDate]);
+  const monthEnd = useMemo(() => new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1), [currentDate]);
 
   // ============================================================================
   // Data Fetching
@@ -106,6 +108,22 @@ export default function CalendarPage() {
       const response = await api.bookings.calendar(currentYear, currentMonth);
       return response.data as CalendarDate[];
     },
+    staleTime: 30000,
+  });
+
+  // Fallback: fetch bookings directly if calendar endpoint returns empty
+  const { data: fallbackBookings } = useQuery({
+    queryKey: ['calendar-fallback', monthStart.toISOString()],
+    queryFn: async () => {
+      const params: any = {
+        check_in_date_from: monthStart.toISOString().slice(0, 10),
+        check_in_date_to: monthEnd.toISOString().slice(0, 10),
+        status: 'pending,confirmed,paid,checked_in,checked_out,no_show',
+      };
+      const res = await api.bookings.list(params);
+      return res.data.results || res.data || [];
+    },
+    enabled: !isLoading,
     staleTime: 30000,
   });
 
@@ -130,6 +148,47 @@ export default function CalendarPage() {
   // ============================================================================
 
   const calendarGrid = useMemo(() => {
+    const sourceData = (calendarData && calendarData.length > 0)
+      ? calendarData
+      : (fallbackBookings && fallbackBookings.length > 0
+        ? (() => {
+            // Build minimal calendar data from bookings list
+            const dates: any[] = [];
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const first = new Date(year, month, 1);
+            const last = new Date(year, month + 1, 0);
+            for (let d = 1; d <= last.getDate(); d++) {
+              const dateStr = createDateKey(year, month, d);
+              dates.push({ date: dateStr, status: 'available' });
+            }
+            (fallbackBookings as any[]).forEach((b) => {
+              const checkIn = new Date(b.check_in_date);
+              const checkOut = new Date(b.check_out_date);
+              for (let dt = new Date(checkIn); dt < checkOut; dt.setDate(dt.getDate() + 1)) {
+                const ds = dt.toISOString().slice(0, 10);
+                const found = dates.find((x) => x.date === ds);
+                if (found) {
+                  if (ds === b.check_in_date) found.status = 'check_in';
+                  else if (ds === new Date(new Date(b.check_out_date).getTime() - 86400000).toISOString().slice(0,10)) found.status = 'check_out';
+                  else found.status = 'booked';
+                  found.booking = {
+                    id: b.id,
+                    booking_id: b.booking_id,
+                    guest_name: b.guest_name,
+                    check_in_date: b.check_in_date,
+                    check_out_date: b.check_out_date,
+                    number_of_guests: b.number_of_guests,
+                    total_price: b.total_price,
+                    booking_source: b.booking_source,
+                    status: b.status,
+                  };
+                }
+              }
+            });
+            return dates;
+          })()
+        : []);
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -147,7 +206,7 @@ export default function CalendarPage() {
     // All days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = createDateKey(year, month, day);
-      const calendarDate = calendarData?.find((d) => d.date === dateStr);
+      const calendarDate = sourceData?.find((d) => d.date === dateStr);
       days.push({
         day,
         date: dateStr,
@@ -165,14 +224,23 @@ export default function CalendarPage() {
   // ============================================================================
 
   const bookingCapsules = useMemo((): BookingCapsule[] => {
-    if (!calendarData) return [];
+    const dataSource =
+      calendarData && calendarData.length > 0
+        ? calendarData
+        : (fallbackBookings || []).map((b: any) => ({
+            date: b.check_in_date,
+            status: 'check_in',
+            booking: b,
+          }));
+
+    if (!dataSource) return [];
 
     const capsules: BookingCapsule[] = [];
     const processedBookings = new Set<string>();
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    calendarData.forEach((dateData) => {
+    dataSource.forEach((dateData: any) => {
       if (dateData.booking && !processedBookings.has(dateData.booking.id)) {
         const booking = dateData.booking;
         processedBookings.add(booking.id);
