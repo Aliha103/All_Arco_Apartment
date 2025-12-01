@@ -250,6 +250,9 @@ export default function BookingsPage() {
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [bookingLogs, setBookingLogs] = useState<any[]>([]);
+  const [showLogDialog, setShowLogDialog] = useState(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
+  const [invoiceAction, setInvoiceAction] = useState<'download' | 'email' | 'edit'>('download');
 
   const { user } = useAuth();
   const auditUser = user && (user as any).role_info ? user : null;
@@ -445,25 +448,29 @@ export default function BookingsPage() {
     [detailsData, refetch, auditUser]
   );
 
-  const handleCheckIn = useCallback(async () => {
-    if (!detailsData) return;
-    if (balanceDue > 0) {
-      toast.warning(`Open balance of ${formatCurrency(balanceDue)} remains for this booking.`);
-    }
-    await updateBookingStatus('checked_in');
-  }, [balanceDue, detailsData, updateBookingStatus]);
+const handleCheckIn = useCallback(async () => {
+  if (!detailsData) return;
+  if (balanceDue > 0) {
+    toast.warning(`Open balance of ${formatCurrency(balanceDue)} remains for this booking.`);
+  }
+  await updateBookingStatus('checked_in');
+}, [balanceDue, detailsData, updateBookingStatus]);
 
-  const handleCheckOut = useCallback(async () => {
-    if (!detailsData) return;
-    if (balanceDue > 0) {
-      toast.error('Please settle the open balance before checking out.');
-      return;
-    }
-    await updateBookingStatus('checked_out');
-  }, [balanceDue, detailsData, updateBookingStatus]);
+const handleCheckOut = useCallback(async () => {
+  if (!detailsData) return;
+  if (balanceDue > 0) {
+    toast.error('Please settle the open balance before checking out.');
+    return;
+  }
+  await updateBookingStatus('checked_out');
+}, [balanceDue, detailsData, updateBookingStatus]);
 
-  const canCheckIn = detailsData && ['confirmed', 'paid', 'pending'].includes(detailsData.status);
-  const canCheckOut = detailsData && detailsData.status === 'checked_in';
+const canCheckIn = detailsData && ['confirmed', 'paid', 'pending'].includes(detailsData.status);
+const canCheckOut = detailsData && detailsData.status === 'checked_in';
+const canUndoCheckIn = detailsData && detailsData.status === 'checked_in';
+const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
+const canUndoCancel = detailsData && detailsData.status === 'cancelled';
+const canUndoNoShow = detailsData && detailsData.status === 'no_show';
 
   return (
     <>
@@ -968,7 +975,19 @@ export default function BookingsPage() {
             <div className="flex flex-col sm:flex-row gap-2 w-full justify-between">
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setDetailsBooking(null)}>Close</Button>
-                <Button onClick={() => router.push(`/pms/bookings/${detailsBooking?.id}`)}>Edit</Button>
+                <Button
+                  onClick={() => router.push(`/pms/bookings/${detailsBooking?.id}`)}
+                  disabled={detailsData && ['checked_out', 'cancelled', 'no_show'].includes(detailsData.status)}
+                  className={detailsData && ['checked_out', 'cancelled', 'no_show'].includes(detailsData.status) ? 'opacity-60' : ''}
+                >
+                  Edit
+                </Button>
+                <Button variant="outline" onClick={() => setShowLogDialog(true)}>
+                  User Log
+                </Button>
+                <Button variant="outline" onClick={() => setShowInvoiceDialog(true)}>
+                  Invoice / Receipt
+                </Button>
               </div>
               <div className="flex gap-2">
                 {canCheckIn && (
@@ -989,8 +1008,151 @@ export default function BookingsPage() {
                     {statusUpdating ? 'Updating…' : 'Check-out'}
                   </Button>
                 )}
+                {canUndoCheckIn && (
+                  <Button
+                    variant="outline"
+                    disabled={statusUpdating || !detailsData}
+                    onClick={() => updateBookingStatus('confirmed')}
+                  >
+                    {statusUpdating ? 'Updating…' : 'Undo Check-in'}
+                  </Button>
+                )}
+                {canUndoCheckOut && (
+                  <Button
+                    variant="outline"
+                    disabled={statusUpdating || !detailsData}
+                    onClick={() => updateBookingStatus('checked_in')}
+                  >
+                    {statusUpdating ? 'Updating…' : 'Undo Check-out'}
+                  </Button>
+                )}
+                {canUndoCancel && (
+                  <Button
+                    variant="outline"
+                    disabled={statusUpdating || !detailsData}
+                    onClick={() => updateBookingStatus('confirmed')}
+                  >
+                    {statusUpdating ? 'Updating…' : 'Undo Cancel'}
+                  </Button>
+                )}
+                {canUndoNoShow && (
+                  <Button
+                    variant="outline"
+                    disabled={statusUpdating || !detailsData}
+                    onClick={() => updateBookingStatus('confirmed')}
+                  >
+                    {statusUpdating ? 'Updating…' : 'Undo No-show'}
+                  </Button>
+                )}
               </div>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Log Dialog */}
+      <Dialog open={showLogDialog} onOpenChange={setShowLogDialog}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>User Log</DialogTitle>
+            <DialogDescription>Important events for this booking (session + derived)</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[320px] overflow-y-auto">
+            {bookingLogs.length === 0 ? (
+              <p className="text-sm text-gray-600">No recent events logged in this session.</p>
+            ) : (
+              bookingLogs.map((log) => (
+                <div key={log.timestamp + log.action} className="flex justify-between text-sm text-gray-800 border-b pb-2">
+                  <div className="pr-3">
+                    <p className="font-semibold capitalize">{log.action.replace('_', ' ')}</p>
+                    <p className="text-xs text-gray-600">
+                      {log.userEmail} • {log.userRole} • {log.resource || 'booking'}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500 whitespace-nowrap">
+                    {new Date(log.timestamp).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            )}
+            {detailsData && (
+              <div className="text-xs text-gray-600 pt-2 border-t">
+                <p>Created: {detailsData.created_at ? new Date(detailsData.created_at).toLocaleString() : '—'}</p>
+                {detailsData.cancelled_at && <p>Cancelled: {new Date(detailsData.cancelled_at).toLocaleString()}</p>}
+                <p>Last Updated: {detailsData.updated_at ? new Date(detailsData.updated_at).toLocaleString() : '—'}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLogDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invoice / Receipt Dialog */}
+      <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invoice / Receipt</DialogTitle>
+            <DialogDescription>Select an action</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label className="text-sm">Choose an option</Label>
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="invoiceAction"
+                    value="download"
+                    checked={invoiceAction === 'download'}
+                    onChange={() => setInvoiceAction('download')}
+                  />
+                  Download PDF
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="invoiceAction"
+                    value="email"
+                    checked={invoiceAction === 'email'}
+                    onChange={() => setInvoiceAction('email')}
+                  />
+                  Send by Email
+                </label>
+                <label className={`flex items-center gap-2 text-sm ${detailsData && detailsData.status !== 'confirmed' ? 'opacity-50' : ''}`}>
+                  <input
+                    type="radio"
+                    name="invoiceAction"
+                    value="edit"
+                    checked={invoiceAction === 'edit'}
+                    onChange={() => setInvoiceAction('edit')}
+                    disabled={detailsData && detailsData.status !== 'confirmed'}
+                  />
+                  Edit (only for confirmed bookings)
+                </label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInvoiceDialog(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                setShowInvoiceDialog(false);
+                if (invoiceAction === 'download') {
+                  toast.info('Preparing invoice download...');
+                } else if (invoiceAction === 'email') {
+                  toast.info('Sending invoice via email...');
+                } else {
+                  toast.info('Opening invoice for editing (confirmed bookings only).');
+                  if (detailsData?.status !== 'confirmed') {
+                    toast.error('Invoice edit allowed only for confirmed bookings.');
+                  }
+                }
+              }}
+            >
+              Continue
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
