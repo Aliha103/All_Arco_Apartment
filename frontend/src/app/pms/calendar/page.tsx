@@ -584,10 +584,10 @@ export default function CalendarPage() {
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
                         const capsuleOffsetY = (cellHeight - capsuleHeight) / 2;
-                        // 45/10/45 split: use right side of start cell, left side of end cell
+                        // Split: for single-day use ~80% width centered, for multi-day use 45/10/45
                         const isSingleDay = capsule.startDay === capsule.endDay;
-                        const startOffset = isSingleDay ? 0.55 : 0.55;
-                        const endOffset = isSingleDay ? 0.35 : 0.55;
+                        const startOffset = isSingleDay ? 0.1 : 0.45;
+                        const endOffset = isSingleDay ? 0.1 : 0.45;
 
                         return (
                           <motion.div
@@ -643,10 +643,10 @@ export default function CalendarPage() {
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
                         const capsuleOffsetY = (cellHeight - capsuleHeight) / 2;
-                        // 45/10/45 split: use right side of start cell, left side of end cell
+                        // Split: for single-day use ~80% width centered, for multi-day use 45/10/45
                         const isSingleDay = capsule.startDay === capsule.endDay;
-                        const startOffset = isSingleDay ? 0.55 : 0.55;
-                        const endOffset = isSingleDay ? 0.35 : 0.55;
+                        const startOffset = isSingleDay ? 0.1 : 0.45;
+                        const endOffset = isSingleDay ? 0.1 : 0.45;
 
                         return (
                           <motion.div
