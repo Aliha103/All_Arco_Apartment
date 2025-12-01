@@ -362,9 +362,12 @@ export default function CalendarPage() {
   const handleDateClick = useCallback((dayData: any) => {
     if (!dayData) return;
 
+    const status = dayData.calendarDate?.status;
     if (dayData.calendarDate?.booking) {
       router.push(`/pms/bookings/${dayData.calendarDate.booking.id}`);
-    } else if (dayData.calendarDate?.status === 'available') {
+      return;
+    }
+    if (status === 'available') {
       setBlockFormData({
         start_date: dayData.date,
         end_date: dayData.date,
@@ -575,6 +578,7 @@ export default function CalendarPage() {
                         // Calculate if capsule spans multiple rows
                         const spansMultipleRows = gridRow !== Math.floor(endIndex / 7);
                         const daysInRow = spansMultipleRows ? (7 - startCol) : (endCol - startCol + 1);
+                        if (daysInRow <= 0) return null;
 
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
@@ -633,6 +637,7 @@ export default function CalendarPage() {
                         // Calculate if capsule spans multiple rows
                         const spansMultipleRows = gridRow !== Math.floor(endIndex / 7);
                         const daysInRow = spansMultipleRows ? (7 - startCol) : (endCol - startCol + 1);
+                        if (daysInRow <= 0) return null;
 
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
