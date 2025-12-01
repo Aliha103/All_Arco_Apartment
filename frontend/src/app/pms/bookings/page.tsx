@@ -145,7 +145,11 @@ interface BookingRowProps {
 const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRowProps) => {
   const statusConfig = STATUS_CONFIG[booking.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
   const StatusIcon = statusConfig.icon;
-  const paymentConfig = PAYMENT_STATUS_CONFIG[booking.payment_status as keyof typeof PAYMENT_STATUS_CONFIG] || PAYMENT_STATUS_CONFIG.pending;
+  const amountPaid = Number(booking.amount_paid || booking.paid_amount || 0);
+  const normalizedPaymentStatus =
+    booking.payment_status === 'partial' && amountPaid <= 0 ? 'unpaid' : booking.payment_status;
+  const paymentConfig =
+    PAYMENT_STATUS_CONFIG[normalizedPaymentStatus as keyof typeof PAYMENT_STATUS_CONFIG] || PAYMENT_STATUS_CONFIG.pending;
   const arcoRef = generateArcoReference(booking.id);
   const [copied, setCopied] = useState(false);
 
@@ -933,20 +937,24 @@ export default function BookingsPage() {
                 <Button onClick={() => router.push(`/pms/bookings/${detailsBooking?.id}`)}>Edit</Button>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  disabled={!canCheckIn || statusUpdating || !detailsData}
-                  onClick={handleCheckIn}
-                >
-                  {statusUpdating ? 'Updating…' : 'Check-in'}
-                </Button>
-                <Button
-                  variant="destructive"
-                  disabled={!canCheckOut || statusUpdating || !detailsData}
-                  onClick={handleCheckOut}
-                >
-                  {statusUpdating ? 'Updating…' : 'Check-out'}
-                </Button>
+                {canCheckIn && (
+                  <Button
+                    variant="outline"
+                    disabled={statusUpdating || !detailsData}
+                    onClick={handleCheckIn}
+                  >
+                    {statusUpdating ? 'Updating…' : 'Check-in'}
+                  </Button>
+                )}
+                {canCheckOut && (
+                  <Button
+                    variant="destructive"
+                    disabled={statusUpdating || !detailsData}
+                    onClick={handleCheckOut}
+                  >
+                    {statusUpdating ? 'Updating…' : 'Check-out'}
+                  </Button>
+                )}
               </div>
             </div>
           </DialogFooter>
