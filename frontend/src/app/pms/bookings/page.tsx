@@ -151,16 +151,10 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
   };
 
   return (
-    <tr className={`border-b hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}>
-      <td className="px-4 py-3">
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={() => onSelect(booking.id)}
-        />
-      </td>
+    <tr className="border-b hover:bg-gray-50">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 group">
-          <span className="font-semibold text-sm">{arcoRef}</span>
+          <span className="font-semibold text-sm text-gray-900">{arcoRef}</span>
           <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100">
             {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-400" />}
           </button>
@@ -168,47 +162,47 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
       </td>
       <td className="px-4 py-3">
         <div>
-          <p className="font-medium text-sm">{booking.guest_name}</p>
-          <p className="text-xs text-gray-500">{booking.guest_email}</p>
+          <p className="font-medium text-sm text-gray-900">{booking.guest_name}</p>
+          <p className="text-xs text-gray-600">{booking.guest_email}</p>
         </div>
       </td>
       <td className="px-4 py-3">
         <div className="text-sm">
-          <div className="font-medium">{formatDate(booking.check_in_date)}</div>
-          <div className="text-gray-500">{formatDate(booking.check_out_date)}</div>
+          <div className="font-medium text-gray-900">{formatDate(booking.check_in_date)}</div>
+          <div className="text-gray-600">{formatDate(booking.check_out_date)}</div>
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className="text-sm">{booking.guests || booking.number_of_guests}</span>
+        <span className="text-sm text-gray-900">{booking.guests || booking.number_of_guests}</span>
       </td>
       <td className="px-4 py-3">
-        <Badge className={`${statusConfig.color} border text-xs font-medium`}>
+        <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
           <StatusIcon className="w-3 h-3 mr-1" />
           {statusConfig.label}
         </Badge>
       </td>
       <td className="px-4 py-3">
-        <Badge className={`${paymentConfig.color} border text-xs font-medium capitalize`}>
+        <Badge className={`${paymentConfig.color} border text-xs font-semibold capitalize`}>
           {paymentConfig.label}
         </Badge>
       </td>
       <td className="px-4 py-3">
-        <span className="font-semibold text-sm">{formatCurrency(booking.total_price)}</span>
+        <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_price)}</span>
       </td>
       <td className="px-4 py-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreHorizontal className="w-4 h-4" />
+              <MoreHorizontal className="w-4 h-4 text-gray-700" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onAction('view', booking)}>
-              <Eye className="w-4 h-4 mr-2" />
+              <Eye className="w-4 h-4 mr-2 text-gray-700" />
               View Details
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onAction('edit', booking)}>
-              <Edit className="w-4 h-4 mr-2" />
+              <Edit className="w-4 h-4 mr-2 text-gray-700" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -518,19 +512,13 @@ export default function BookingsPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-4 py-3 text-left">
-                        <Checkbox
-                          checked={selectedBookings.size === sortedBookings.length}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Reference</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Guest</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Dates</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Guests</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Payment</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Total</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">ARCO Reference</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guest</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Dates</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guests</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Payment</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Total</th>
                       <th className="px-4 py-3"></th>
                     </tr>
                   </thead>
