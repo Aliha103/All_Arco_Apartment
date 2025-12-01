@@ -578,8 +578,8 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        // Position capsule in vertical center of cell
-                        const verticalCenter = 34; // Center vertically in 96px cell
+                        // Position capsule higher in cell for better visual centering
+                        const verticalCenter = 28; // Lifted position in 96px cell
                         // Use smaller offsets for single-day capsules to avoid tiny dots
                         const isSingleDay = capsule.startDay === capsule.endDay;
                         const startOffset = isSingleDay ? 0.1 : 0.45; // 10% for single-day, 45% for multi-day
@@ -637,8 +637,8 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        // Position capsule in vertical center of cell
-                        const verticalCenter = 34; // Center vertically in 96px cell
+                        // Position capsule higher in cell for better visual centering
+                        const verticalCenter = 28; // Lifted position in 96px cell
                         // Use smaller offsets for single-day capsules to avoid tiny dots
                         const isSingleDay = capsule.startDay === capsule.endDay;
                         const startOffset = isSingleDay ? 0.1 : 0.45; // 10% for single-day, 45% for multi-day
