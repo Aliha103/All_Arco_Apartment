@@ -577,10 +577,10 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        // Position capsule in visual center below day number (day# ~20px + center in remaining 76px)
-                        const verticalCenter = 44; // Fixed position for consistent centering
-                        const startOffset = 0.4; // 40% padding from start
-                        const endOffset = 0.4; // 40% padding from end
+                        // Position capsule in vertical center of cell
+                        const verticalCenter = 34; // Center vertically in 96px cell
+                        const startOffset = 0.45; // 45% padding from start (check-in)
+                        const endOffset = 0.45; // 45% padding from end (check-out) - creates 10% gap
 
                         return (
                           <motion.div
@@ -634,10 +634,10 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        // Position capsule in visual center below day number (day# ~20px + center in remaining 76px)
-                        const verticalCenter = 44; // Fixed position for consistent centering
-                        const startOffset = 0.4; // 40% padding from start
-                        const endOffset = 0.4; // 40% padding from end
+                        // Position capsule in vertical center of cell
+                        const verticalCenter = 34; // Center vertically in 96px cell
+                        const startOffset = 0.45; // 45% padding from start (check-in)
+                        const endOffset = 0.45; // 45% padding from end (check-out) - creates 10% gap
 
                         return (
                           <motion.div
