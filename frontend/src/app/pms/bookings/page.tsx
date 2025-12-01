@@ -162,7 +162,7 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
   return (
     <>
       {/* Desktop Table Row */}
-      <tr className="border-b hover:bg-gray-50 hidden lg:table-row">
+      <tr className="border-b hover:bg-gray-50 hidden xl:table-row">
         <td className="px-4 py-3">
           <div className="flex items-center gap-2 group">
             <span className="font-semibold text-sm text-gray-900">{arcoRef}</span>
@@ -233,8 +233,8 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
         </td>
       </tr>
 
-      {/* Mobile Card View */}
-      <div className="lg:hidden border-b p-4 hover:bg-gray-50">
+      {/* Mobile/Tablet Card View */}
+      <div className="xl:hidden border-b p-4 hover:bg-gray-50">
         <div className="space-y-3">
           {/* Header - Reference and Actions */}
           <div className="flex items-center justify-between">
@@ -756,7 +756,7 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
             ) : (
               <>
                 {/* Desktop Table View */}
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="hidden xl:block overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                       <tr>
@@ -785,8 +785,8 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                   </table>
                 </div>
 
-                {/* Mobile Card View */}
-                <div className="lg:hidden">
+                {/* Mobile/Tablet Card View */}
+                <div className="xl:hidden">
                   {paginatedBookings.map((booking: any) => (
                     <BookingRow
                       key={booking.id}
