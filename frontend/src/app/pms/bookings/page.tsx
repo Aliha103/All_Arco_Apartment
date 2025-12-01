@@ -57,6 +57,8 @@ import { Label } from '@/components/ui/label';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import BookingFormModal from '@/components/pms/BookingFormModal';
+import { useAuth } from '@/hooks/useAuth';
+import { logResourceAction } from '@/lib/auditLogger';
 
 // Status configuration
 const STATUS_CONFIG = {
@@ -238,7 +240,14 @@ export default function BookingsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [detailsData, setDetailsData] = useState<any>(null);
+  const [detailsPayments, setDetailsPayments] = useState<any[]>([]);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
+  const { user } = useAuth();
+  const auditUser = user && (user as any).role_info ? user : null;
   const router = useRouter();
   const debouncedSearch = useDebouncedValue(search, 300);
 
@@ -333,6 +342,30 @@ export default function BookingsPage() {
     switch (action) {
       case 'view':
         setDetailsBooking(booking);
+        setDetailsData(booking);
+        setDetailsPayments([]);
+        setDetailsError(null);
+        setDetailsLoading(true);
+        (async () => {
+          try {
+            const [fullRes, paymentsRes] = await Promise.all([
+              api.bookings.get(booking.id),
+              api.payments.list({ booking: booking.id }),
+            ]);
+            const fullBooking = fullRes.data || fullRes;
+            const payments = paymentsRes?.data?.results ?? paymentsRes?.data ?? [];
+            setDetailsData(fullBooking);
+            setDetailsPayments(Array.isArray(payments) ? payments : []);
+            if (auditUser?.id) {
+              logResourceAction('booking_view', auditUser as any, 'booking', booking.id, { source: 'modal' });
+            }
+          } catch (error) {
+            setDetailsError('Failed to load booking details');
+            toast.error('Failed to load booking details');
+          } finally {
+            setDetailsLoading(false);
+          }
+        })();
         break;
       case 'edit':
         router.push(`/pms/bookings/${booking.id}`);
@@ -341,7 +374,7 @@ export default function BookingsPage() {
         setCancelBooking(booking);
         break;
     }
-  }, [router]);
+  }, [router, auditUser]);
 
   const clearFilters = () => {
     setSearch('');
@@ -355,6 +388,62 @@ export default function BookingsPage() {
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     );
   };
+
+  const paidAmount = useMemo(() => {
+    return detailsPayments.reduce((sum, payment) => {
+      const status = (payment.status || '').toLowerCase();
+      if (['succeeded', 'partially_refunded'].includes(status)) {
+        return sum + Number(payment.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [detailsPayments]);
+
+  const balanceDue = useMemo(() => {
+    if (!detailsData?.total_price) return 0;
+    return Math.max(0, Number(detailsData.total_price) - paidAmount);
+  }, [detailsData?.total_price, paidAmount]);
+
+  const updateBookingStatus = useCallback(
+    async (status: string) => {
+      if (!detailsData) return;
+      setStatusUpdating(true);
+      try {
+        await api.bookings.update(detailsData.id, { status });
+        toast.success(`Booking marked as ${status.replace('_', ' ')}`);
+        setDetailsData((prev: any) => (prev ? { ...prev, status } : prev));
+        refetch();
+        if (auditUser?.id) {
+          logResourceAction('booking_update', auditUser as any, 'booking', detailsData.id, { newStatus: status });
+        }
+      } catch (error) {
+        toast.error('Failed to update booking status');
+      } finally {
+        setStatusUpdating(false);
+      }
+    },
+    [detailsData, refetch, auditUser]
+  );
+
+  const handleCheckIn = useCallback(async () => {
+    if (!detailsData) return;
+    if (balanceDue > 0) {
+      toast.warning(`Open balance of ${formatCurrency(balanceDue)} remains for this booking.`);
+    }
+    await updateBookingStatus('checked_in');
+  }, [balanceDue, detailsData, updateBookingStatus]);
+
+  const handleCheckOut = useCallback(async () => {
+    if (!detailsData) return;
+    if (balanceDue > 0) {
+      toast.error('Please settle the open balance before checking out.');
+      return;
+    }
+    await updateBookingStatus('checked_out');
+  }, [balanceDue, detailsData, updateBookingStatus]);
+
+  const canCheckIn = detailsData && ['confirmed', 'paid', 'pending'].includes(detailsData.status);
+  const canCheckOut = detailsData && detailsData.status === 'checked_in';
 
   return (
     <>
@@ -697,47 +786,148 @@ export default function BookingsPage() {
       <BookingFormModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
 
       {/* Details Dialog */}
-      <Dialog open={!!detailsBooking} onOpenChange={(open) => !open && setDetailsBooking(null)}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={!!detailsBooking} onOpenChange={(open) => { if (!open) { setDetailsBooking(null); setDetailsData(null); setDetailsPayments([]); } }}>
+        <DialogContent className="max-w-3xl bg-white">
           <DialogHeader>
             <DialogTitle>Booking Details</DialogTitle>
             <DialogDescription>
               {detailsBooking && generateArcoReference(detailsBooking.id)}
             </DialogDescription>
           </DialogHeader>
-          {detailsBooking && (
+          {detailsLoading && (
+            <div className="p-6">
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-3" />
+              <div className="grid grid-cols-2 gap-4">
+                {[...Array(6)].map((_, idx) => (
+                  <div key={idx} className="h-12 bg-gray-100 rounded animate-pulse" />
+                ))}
+              </div>
+            </div>
+          )}
+          {detailsError && (
+            <div className="p-6 bg-rose-50 border border-rose-200 rounded text-rose-700 text-sm">
+              {detailsError}
+            </div>
+          )}
+          {detailsData && !detailsLoading && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <Label className="text-xs text-gray-500">Booking ID</Label>
+                  <p className="font-medium">{detailsData.booking_id || generateArcoReference(detailsData.id)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div>
+                    <Label className="text-xs text-gray-500">Status</Label>
+                    <p className="font-medium capitalize">{(detailsData.status || '').replace('_', ' ')}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Payment Status</Label>
+                    <p className="font-medium capitalize">{detailsData.payment_status || 'unpaid'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Source</Label>
+                    <p className="font-medium capitalize">{(detailsData.booking_source || 'direct').replace('_', ' ')}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <Label className="text-xs text-gray-500">Guest Name</Label>
-                  <p className="font-medium">{detailsBooking.guest_name}</p>
+                  <p className="font-medium">{detailsData.guest_name}</p>
+                  {detailsData.guest_phone && (
+                    <p className="text-sm text-gray-600 mt-1">{detailsData.guest_phone}</p>
+                  )}
+                  {detailsData.guest_email && (
+                    <p className="text-sm text-gray-600">{detailsData.guest_email}</p>
+                  )}
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-500">Email</Label>
-                  <p className="font-medium">{detailsBooking.guest_email}</p>
+                  <Label className="text-xs text-gray-500">Address</Label>
+                  <p className="font-medium text-sm text-gray-700 whitespace-pre-line">
+                    {detailsData.guest_address || '—'}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">{detailsData.guest_country || '—'}</p>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs text-gray-500">Check-in</Label>
-                  <p className="font-medium">{formatDate(detailsBooking.check_in_date)}</p>
+                  <p className="font-medium">{formatDate(detailsData.check_in_date)}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-500">Check-out</Label>
-                  <p className="font-medium">{formatDate(detailsBooking.check_out_date)}</p>
+                  <p className="font-medium">{formatDate(detailsData.check_out_date)}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Nights</Label>
+                  <p className="font-medium">{detailsData.nights}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-500">Guests</Label>
-                  <p className="font-medium">{detailsBooking.guests || detailsBooking.number_of_guests}</p>
+                  <p className="font-medium">{detailsData.guests || detailsData.number_of_guests}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-gray-500">Pricing</Label>
+                  <p className="text-sm text-gray-700">
+                    Nightly: {formatCurrency(detailsData.nightly_rate || 0)} × {detailsData.nights} nights
+                  </p>
+                  <p className="text-sm text-gray-700">Cleaning Fee: {formatCurrency(detailsData.cleaning_fee || 0)}</p>
+                  <p className="text-sm text-gray-700">Tourist Tax: {formatCurrency(detailsData.tourist_tax || 0)}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-500">Total</Label>
-                  <p className="font-medium text-lg">{formatCurrency(detailsBooking.total_price)}</p>
+                  <Label className="text-xs text-gray-500">Totals</Label>
+                  <p className="font-semibold text-lg text-gray-900">Total: {formatCurrency(detailsData.total_price)}</p>
+                  <p className="text-sm text-emerald-700 mt-1">Paid: {formatCurrency(paidAmount)}</p>
+                  <p className="text-sm text-rose-700">Balance: {formatCurrency(balanceDue)}</p>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-gray-500">Special Requests</Label>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{detailsData.special_requests || '—'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Internal Notes</Label>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{detailsData.internal_notes || '—'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                <p>Created: {detailsData.created_at ? formatDate(detailsData.created_at) : '—'}</p>
+                <p>Updated: {detailsData.updated_at ? formatDate(detailsData.updated_at) : '—'}</p>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailsBooking(null)}>Close</Button>
-            <Button onClick={() => router.push(`/pms/bookings/${detailsBooking?.id}`)}>Edit</Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full justify-between">
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setDetailsBooking(null)}>Close</Button>
+                <Button onClick={() => router.push(`/pms/bookings/${detailsBooking?.id}`)}>Edit</Button>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  disabled={!canCheckIn || statusUpdating || !detailsData}
+                  onClick={handleCheckIn}
+                >
+                  {statusUpdating ? 'Updating…' : 'Check-in'}
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={!canCheckOut || statusUpdating || !detailsData}
+                  onClick={handleCheckOut}
+                >
+                  {statusUpdating ? 'Updating…' : 'Check-out'}
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
