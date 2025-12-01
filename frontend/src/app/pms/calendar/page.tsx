@@ -578,12 +578,13 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        // Position capsule higher in cell for better visual centering
-                        const verticalCenter = 28; // Lifted position in 96px cell
+                        // Position capsule at true center of cell (96px cell - 28px capsule) / 2 = 34px
+                        const verticalCenter = 34; // Center position in 96px cell
                         // Use smaller offsets for single-day capsules to avoid tiny dots
+                        // For multi-day: start from right side of check-in (50%) to left side of check-out (50%)
                         const isSingleDay = capsule.startDay === capsule.endDay;
-                        const startOffset = isSingleDay ? 0.1 : 0.45; // 10% for single-day, 45% for multi-day
-                        const endOffset = isSingleDay ? 0.1 : 0.45; // Creates 80% width for single-day, 10% gap for multi-day
+                        const startOffset = isSingleDay ? 0.1 : 0.5; // 10% for single-day, 50% for multi-day
+                        const endOffset = isSingleDay ? 0.1 : 0.5; // Creates 80% width for single-day, balanced for multi-day
 
                         return (
                           <motion.div
@@ -637,12 +638,13 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        // Position capsule higher in cell for better visual centering
-                        const verticalCenter = 28; // Lifted position in 96px cell
+                        // Position capsule at true center of cell (96px cell - 28px capsule) / 2 = 34px
+                        const verticalCenter = 34; // Center position in 96px cell
                         // Use smaller offsets for single-day capsules to avoid tiny dots
+                        // For multi-day: start from right side of check-in (50%) to left side of check-out (50%)
                         const isSingleDay = capsule.startDay === capsule.endDay;
-                        const startOffset = isSingleDay ? 0.1 : 0.45; // 10% for single-day, 45% for multi-day
-                        const endOffset = isSingleDay ? 0.1 : 0.45; // Creates 80% width for single-day, 10% gap for multi-day
+                        const startOffset = isSingleDay ? 0.1 : 0.5; // 10% for single-day, 50% for multi-day
+                        const endOffset = isSingleDay ? 0.1 : 0.5; // Creates 80% width for single-day, balanced for multi-day
 
                         return (
                           <motion.div
