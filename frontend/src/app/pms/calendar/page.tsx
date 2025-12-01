@@ -560,122 +560,93 @@ export default function CalendarPage() {
                   {/* Booking Capsules Overlay */}
                   <div className="absolute inset-0 pointer-events-none" style={{ top: '0px' }}>
                     <AnimatePresence>
-                      {/* Booking Capsules */}
-                      {bookingCapsules.map((capsule, index) => {
-                        const year = currentDate.getFullYear();
-                        const month = currentDate.getMonth();
-                        const firstDayOfMonth = new Date(year, month, 1).getDay();
-
-                        // Calculate position in grid
-                        const startIndex = firstDayOfMonth + capsule.startDay - 1;
-                        const endIndex = firstDayOfMonth + capsule.endDay - 1;
-
-                        // Grid row and column
-                        const gridRow = Math.floor(startIndex / 7);
-                        const startCol = startIndex % 7;
-                        const endCol = endIndex % 7;
-
-                        // Calculate if capsule spans multiple rows
-                        const spansMultipleRows = gridRow !== Math.floor(endIndex / 7);
-                        const daysInRow = spansMultipleRows ? (7 - startCol) : (endCol - startCol + 1);
-                        if (daysInRow <= 0) return null;
-
-                        // Positioning with centered vertical alignment
+                      {(() => {
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
-                        const capsuleHeight = 28; // h-7 = 28px
+                        const capsuleHeight = 28;
                         const capsuleOffsetY = (cellHeight - capsuleHeight) / 2;
-                        // Split: for single-day use ~80% width centered, for multi-day use 45/10/45
-                        const isSingleDay = capsule.startDay === capsule.endDay;
-                        const startOffset = isSingleDay ? 0.1 : 0.45;
-                        const endOffset = isSingleDay ? 0.1 : 0.45;
 
-                        return (
-                          <motion.div
-                            key={capsule.id}
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className="absolute pointer-events-auto cursor-pointer"
-                            style={{
-                              top: `${gridRow * (cellHeight + gapSize) + capsuleOffsetY}px`,
-                              left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
-                              width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
-                              zIndex: 10,
-                            }}
-                            onClick={(e) => handleCapsuleClick(capsule, e)}
-                          >
-                            <div
-                              className="relative h-7 rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center px-3 overflow-hidden group"
-                              style={{ backgroundColor: capsule.color }}
+                        const buildSegments = (caps: any[], isBlocked = false) => {
+                          const segments: any[] = [];
+                          caps.forEach((capsule, idx) => {
+                            const year = currentDate.getFullYear();
+                            const month = currentDate.getMonth();
+                            const firstDayOfMonth = new Date(year, month, 1).getDay();
+                            const startIndex = firstDayOfMonth + capsule.startDay - 1;
+                            const endIndex = firstDayOfMonth + capsule.endDay - 1;
+
+                            let currentIndex = startIndex;
+                            while (currentIndex <= endIndex) {
+                              const gridRow = Math.floor(currentIndex / 7);
+                              const rowEndIndex = Math.min((gridRow + 1) * 7 - 1, endIndex);
+                              const startCol = currentIndex % 7;
+                              const daysInRow = rowEndIndex - currentIndex + 1;
+                              if (daysInRow > 0) {
+                                const isSingleDay = capsule.startDay === capsule.endDay;
+                                const startOffset = isSingleDay ? 0.1 : 0.45;
+                                const endOffset = isSingleDay ? 0.1 : 0.45;
+                                segments.push({
+                                  key: `${isBlocked ? 'blocked' : 'booking'}-${capsule.id}-${gridRow}-${startCol}`,
+                                  top: `${gridRow * (cellHeight + gapSize) + capsuleOffsetY}px`,
+                                  left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
+                                  width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
+                                  capsule,
+                                  isBlocked,
+                                  delay: idx * 0.02,
+                                });
+                              }
+                              currentIndex = rowEndIndex + 1;
+                            }
+                          });
+                          return segments;
+                        };
+
+                        const bookingSegments = buildSegments(bookingCapsules, false);
+                        const blockedSegments = buildSegments(blockedCapsules, true);
+                        const allSegments = [...bookingSegments, ...blockedSegments];
+
+                        return allSegments.map((segment) => {
+                          const { capsule, isBlocked } = segment;
+                          if (segment.width?.includes('calc') && segment.width.endsWith('calc()')) return null;
+                          return (
+                            <motion.div
+                              key={segment.key}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              transition={{ duration: 0.3, delay: segment.delay }}
+                              className={`absolute pointer-events-auto ${isBlocked ? 'cursor-default' : 'cursor-pointer'}`}
+                              style={{
+                                top: segment.top,
+                                left: segment.left,
+                                width: segment.width,
+                                zIndex: 10,
+                              }}
+                              onClick={(e) => {
+                                if (!isBlocked) handleCapsuleClick(capsule, e);
+                                e.stopPropagation();
+                              }}
                             >
-                              <div className="flex items-center justify-between w-full text-white text-xs font-bold truncate">
-                                <span className="truncate">{capsule.guest_name}</span>
-                                <span className="ml-2 opacity-90 text-[10px]">{capsule.nights}N</span>
+                              <div
+                                className={`relative h-7 rounded-full shadow-md transition-all duration-200 flex items-center px-3 overflow-hidden ${isBlocked ? 'bg-gray-400/80' : ''}`}
+                                style={isBlocked ? undefined : { backgroundColor: capsule.color }}
+                              >
+                                {isBlocked ? (
+                                  <div className="flex items-center gap-1.5 text-white text-xs font-bold truncate">
+                                    <Lock className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate capitalize">Blocked - {capsule.reason.replace('_', ' ')}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-between w-full text-white text-xs font-bold truncate">
+                                    <span className="truncate">{capsule.guest_name}</span>
+                                    <span className="ml-2 opacity-90 text-[10px]">{capsule.nights}N</span>
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
                               </div>
-                              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-
-                      {/* Blocked Date Capsules */}
-                      {blockedCapsules.map((capsule, index) => {
-                        const year = currentDate.getFullYear();
-                        const month = currentDate.getMonth();
-                        const firstDayOfMonth = new Date(year, month, 1).getDay();
-
-                        // Calculate position in grid
-                        const startIndex = firstDayOfMonth + capsule.startDay - 1;
-                        const endIndex = firstDayOfMonth + capsule.endDay - 1;
-
-                        // Grid row and column
-                        const gridRow = Math.floor(startIndex / 7);
-                        const startCol = startIndex % 7;
-                        const endCol = endIndex % 7;
-
-                        // Calculate if capsule spans multiple rows
-                        const spansMultipleRows = gridRow !== Math.floor(endIndex / 7);
-                        const daysInRow = spansMultipleRows ? (7 - startCol) : (endCol - startCol + 1);
-                        if (daysInRow <= 0) return null;
-
-                        // Positioning with centered vertical alignment
-                        const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
-                        const capsuleHeight = 28; // h-7 = 28px
-                        const capsuleOffsetY = (cellHeight - capsuleHeight) / 2;
-                        // Split: for single-day use ~80% width centered, for multi-day use 45/10/45
-                        const isSingleDay = capsule.startDay === capsule.endDay;
-                        const startOffset = isSingleDay ? 0.1 : 0.45;
-                        const endOffset = isSingleDay ? 0.1 : 0.45;
-
-                        return (
-                          <motion.div
-                            key={`blocked-${capsule.id}`}
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className="absolute pointer-events-auto cursor-default"
-                            style={{
-                              top: `${gridRow * (cellHeight + gapSize) + capsuleOffsetY}px`,
-                              left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
-                              width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
-                              zIndex: 10,
-                            }}
-                          >
-                            <div
-                              className="relative h-7 rounded-full shadow-md transition-all duration-200 flex items-center px-3 overflow-hidden bg-gray-400/80"
-                            >
-                              <div className="flex items-center justify-between w-full text-white text-xs font-bold truncate">
-                                <div className="flex items-center gap-1.5 truncate">
-                                  <Lock className="w-3 h-3 flex-shrink-0" />
-                                  <span className="truncate capitalize">Blocked - {capsule.reason.replace('_', ' ')}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
+                            </motion.div>
+                          );
+                        });
+                      })()}
                     </AnimatePresence>
                   </div>
                 </div>
