@@ -321,33 +321,28 @@ export default function PaymentsPage() {
       </motion.div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <Card className="relative overflow-hidden border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-white shadow-lg hover:shadow-xl transition-shadow">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-400/20 to-transparent rounded-bl-full" />
-            <CardContent className="pt-6 pb-6 relative">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-3 bg-yellow-500 rounded-xl shadow-md">
-                      <DollarSign className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-1">
+          <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
+            <CardContent className="pt-6 pb-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <DollarSign className="w-5 h-5 text-yellow-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
                     Total Open Balance
                   </p>
-                  <h3 className="text-4xl font-extrabold text-gray-900 mb-2">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
                     {formatCurrency(statistics.totalOpenBalance)}
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-yellow-200 text-yellow-800 border-yellow-300 text-xs font-bold">
-                      {statistics.openCount} pending
-                    </Badge>
-                  </div>
+                  <p className="text-sm text-gray-600">
+                    {statistics.openCount} pending payment{statistics.openCount !== 1 ? 's' : ''}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -359,27 +354,22 @@ export default function PaymentsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <Card className="relative overflow-hidden border-2 border-red-200 bg-gradient-to-br from-red-50 to-white shadow-lg hover:shadow-xl transition-shadow">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-400/20 to-transparent rounded-bl-full" />
-            <CardContent className="pt-6 pb-6 relative">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-3 bg-red-500 rounded-xl shadow-md">
-                      <AlertCircle className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-1">
+          <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
+            <CardContent className="pt-6 pb-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-red-50 rounded-lg border border-red-100">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
                     Overdue Payments
                   </p>
-                  <h3 className="text-4xl font-extrabold text-gray-900 mb-2">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
                     {formatCurrency(statistics.totalOverdue)}
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-red-200 text-red-800 border-red-300 text-xs font-bold">
-                      {statistics.overdueCount} overdue
-                    </Badge>
-                  </div>
+                  <p className="text-sm text-gray-600">
+                    {statistics.overdueCount} overdue
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -391,27 +381,22 @@ export default function PaymentsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
         >
-          <Card className="relative overflow-hidden border-2 border-green-200 bg-gradient-to-br from-green-50 to-white shadow-lg hover:shadow-xl transition-shadow">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400/20 to-transparent rounded-bl-full" />
-            <CardContent className="pt-6 pb-6 relative">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-3 bg-green-500 rounded-xl shadow-md">
-                      <CheckCircle2 className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-1">
+          <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
+            <CardContent className="pt-6 pb-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-green-50 rounded-lg border border-green-100">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
                     Total Collected
                   </p>
-                  <h3 className="text-4xl font-extrabold text-gray-900 mb-2">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
                     {formatCurrency(statistics.totalPaid)}
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-green-200 text-green-800 border-green-300 text-xs font-bold">
-                      {statistics.paidCount} paid
-                    </Badge>
-                  </div>
+                  <p className="text-sm text-gray-600">
+                    {statistics.paidCount} paid
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -576,19 +561,6 @@ function PaymentCard({
     }
   };
 
-  const getBackgroundColor = () => {
-    switch (payment.status) {
-      case 'overdue':
-        return 'bg-red-50/50';
-      case 'pending':
-        return 'bg-yellow-50/30';
-      case 'paid':
-        return 'bg-green-50/30';
-      default:
-        return 'bg-gray-50/30';
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -597,57 +569,47 @@ function PaymentCard({
       transition={{ duration: 0.3, delay: index * 0.05 }}
       layout
       className={cn(
-        'relative overflow-hidden rounded-xl border-2 border-l-4 shadow-sm hover:shadow-lg transition-all duration-300',
-        getBorderColor(),
-        getBackgroundColor(),
-        'bg-white'
+        'rounded-lg border border-l-4 hover:shadow-sm transition-all duration-200 bg-white',
+        getBorderColor()
       )}
     >
-      {/* Gradient overlay for overdue */}
-      {isOverdue && (
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/10 to-transparent rounded-bl-full" />
-      )}
-
-      <div className="relative p-6 space-y-4">
+      <div className="p-5 space-y-4">
         {/* Header Section */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-xl font-bold text-gray-900 truncate">{payment.title}</h3>
+            <div className="flex items-center gap-2 mb-1.5">
+              <h3 className="text-lg font-semibold text-gray-900 truncate">{payment.title}</h3>
               <Badge
                 className={cn(
                   statusConfig.color,
-                  'text-sm font-bold px-3 py-1 shadow-sm'
+                  'text-xs font-medium px-2 py-0.5'
                 )}
               >
-                <StatusIcon className="w-4 h-4 mr-1.5" />
+                <StatusIcon className="w-3 h-3 mr-1" />
                 {statusConfig.label}
               </Badge>
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed">{payment.description}</p>
+            <p className="text-sm text-gray-600">{payment.description}</p>
           </div>
 
-          {/* Amount Badge */}
-          <div className={cn(
-            'flex flex-col items-end px-4 py-3 rounded-lg',
-            isOverdue ? 'bg-red-100' : isPending ? 'bg-yellow-100' : 'bg-green-100'
-          )}>
-            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+          {/* Amount */}
+          <div className="flex flex-col items-end">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Amount
             </span>
             <span className={cn(
-              'text-3xl font-extrabold',
-              isOverdue ? 'text-red-700' : isPending ? 'text-yellow-700' : 'text-green-700'
+              'text-2xl font-bold',
+              isOverdue ? 'text-red-600' : isPending ? 'text-yellow-600' : 'text-green-600'
             )}>
               {formatCurrency(payment.amount)}
             </span>
             {payment.paid_at && (
-              <span className="text-xs text-green-600 font-medium mt-1">
+              <span className="text-xs text-gray-500 mt-1">
                 Paid {formatDate(payment.paid_at)}
               </span>
             )}
             {payment.cancelled_at && (
-              <span className="text-xs text-gray-600 font-medium mt-1">
+              <span className="text-xs text-gray-500 mt-1">
                 Cancelled {formatDate(payment.cancelled_at)}
               </span>
             )}
@@ -655,72 +617,72 @@ function PaymentCard({
         </div>
 
         {/* Details Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-gray-200/50">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FileText className="w-4 h-4 text-blue-600" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 border-t border-gray-200">
+          <div className="flex items-start gap-2.5">
+            <div className="p-1.5 bg-blue-50 rounded border border-blue-100">
+              <FileText className="w-3.5 h-3.5 text-blue-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-0.5">
+              <p className="text-xs text-gray-500 font-medium mb-0.5">
                 Booking
               </p>
-              <p className="text-sm font-bold text-gray-900 truncate">
+              <p className="text-sm font-semibold text-gray-900 truncate">
                 {payment.booking_reference}
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <User className="w-4 h-4 text-purple-600" />
+          <div className="flex items-start gap-2.5">
+            <div className="p-1.5 bg-purple-50 rounded border border-purple-100">
+              <User className="w-3.5 h-3.5 text-purple-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-0.5">
+              <p className="text-xs text-gray-500 font-medium mb-0.5">
                 Guest
               </p>
-              <p className="text-sm font-bold text-gray-900 truncate">
+              <p className="text-sm font-semibold text-gray-900 truncate">
                 {payment.guest_name}
               </p>
-              <p className="text-xs text-gray-600 truncate">{payment.guest_email}</p>
+              <p className="text-xs text-gray-500 truncate">{payment.guest_email}</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2.5">
             <div className={cn(
-              'p-2 rounded-lg',
-              isOverdue ? 'bg-red-100' : 'bg-orange-100'
+              'p-1.5 rounded border',
+              isOverdue ? 'bg-red-50 border-red-100' : 'bg-orange-50 border-orange-100'
             )}>
               <Calendar className={cn(
-                'w-4 h-4',
+                'w-3.5 h-3.5',
                 isOverdue ? 'text-red-600' : 'text-orange-600'
               )} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-0.5">
+              <p className="text-xs text-gray-500 font-medium mb-0.5">
                 Due Date
               </p>
               <p className={cn(
-                'text-sm font-bold truncate',
-                isOverdue ? 'text-red-700' : 'text-gray-900'
+                'text-sm font-semibold truncate',
+                isOverdue ? 'text-red-600' : 'text-gray-900'
               )}>
                 {formatDate(payment.due_date)}
               </p>
               {isOverdue && (
-                <p className="text-xs text-red-600 font-semibold">Overdue!</p>
+                <p className="text-xs text-red-600 font-medium">Overdue</p>
               )}
             </div>
           </div>
 
           {payment.payment_method && (
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CreditCard className="w-4 h-4 text-green-600" />
+            <div className="flex items-start gap-2.5">
+              <div className="p-1.5 bg-green-50 rounded border border-green-100">
+                <CreditCard className="w-3.5 h-3.5 text-green-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-0.5">
+                <p className="text-xs text-gray-500 font-medium mb-0.5">
                   Payment Method
                 </p>
-                <p className="text-sm font-bold text-gray-900 capitalize truncate">
+                <p className="text-sm font-semibold text-gray-900 capitalize truncate">
                   {payment.payment_method.replace('_', ' ')}
                 </p>
               </div>
@@ -730,41 +692,38 @@ function PaymentCard({
 
         {/* Actions Section */}
         {isPending && (
-          <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200/50">
+          <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
             <Button
               onClick={() => onSendEmail(payment)}
-              variant="default"
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              <Mail className="w-4 h-4 mr-2" />
+              <Mail className="w-3.5 h-3.5 mr-1.5" />
               Send Email
             </Button>
             <Button
               onClick={() => onCopyUrl(payment.payment_url)}
               variant="outline"
               size="sm"
-              className="border-blue-200 text-blue-700 hover:bg-blue-50"
             >
-              <Copy className="w-4 h-4 mr-2" />
+              <Copy className="w-3.5 h-3.5 mr-1.5" />
               Copy URL
             </Button>
             <Button
               onClick={() => onMarkPaid(payment)}
               variant="outline"
               size="sm"
-              className="border-green-200 text-green-700 hover:bg-green-50"
             >
-              <CheckCircle2 className="w-4 h-4 mr-2" />
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
               Mark as Paid
             </Button>
             <Button
               onClick={() => onCancel(payment)}
               variant="outline"
               size="sm"
-              className="border-red-200 text-red-700 hover:bg-red-50 ml-auto"
+              className="ml-auto"
             >
-              <Ban className="w-4 h-4 mr-2" />
+              <Ban className="w-3.5 h-3.5 mr-1.5" />
               Cancel
             </Button>
           </div>
