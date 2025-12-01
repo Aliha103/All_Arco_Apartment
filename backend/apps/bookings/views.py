@@ -456,7 +456,7 @@ def calendar_month(request):
     
     bookings = Booking.objects.filter(
         Q(check_in_date__lt=end_date) & Q(check_out_date__gte=start_date),
-        status__in=['pending', 'confirmed', 'paid', 'checked_in', 'checked_out']
+        status__in=['pending', 'confirmed', 'paid', 'checked_in', 'checked_out', 'no_show']
     )
     
     blocked_dates = BlockedDate.objects.filter(
