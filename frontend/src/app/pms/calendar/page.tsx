@@ -490,19 +490,11 @@ export default function CalendarPage() {
                         onMouseEnter={() => dayData && setHoveredDate(dayData.date)}
                         onMouseLeave={() => setHoveredDate(null)}
                       >
-                        {dayData && (
-                          <>
-                            <div className={`text-sm font-bold mb-1 ${dayData.isToday ? 'text-[#C4A572]' : 'text-gray-900'}`}>
-                              {dayData.day}
-                            </div>
-                            {dayData.calendarDate?.booking && (
-                              <div className="mt-1">
-                                <div className="bg-blue-600 text-white text-[11px] font-semibold rounded-md px-2 py-1 leading-tight shadow-sm">
-                                  <div className="truncate">{dayData.calendarDate.booking.guest_name}</div>
-                                  <div className="opacity-90 text-[10px] truncate">{dayData.calendarDate.booking.booking_id}</div>
+                            {dayData && (
+                              <>
+                                <div className={`text-sm font-bold mb-1 ${dayData.isToday ? 'text-[#C4A572]' : 'text-gray-900'}`}>
+                                  {dayData.day}
                                 </div>
-                              </div>
-                            )}
                             {dayData.calendarDate?.blocked && (
                               <div className="text-xs space-y-1">
                                 <div className="flex items-center gap-1 text-gray-700">
@@ -514,8 +506,8 @@ export default function CalendarPage() {
                                 </div>
                               </div>
                             )}
-                          </>
-                        )}
+                              </>
+                            )}
                       </motion.div>
                     ))}
                   </div>

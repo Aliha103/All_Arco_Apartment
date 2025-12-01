@@ -75,6 +75,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     - mark_no_show: bookings.mark_no_show
     """
     permission_classes = [IsAuthenticated]  # Will be upgraded to HasPermissionForAction after seeding
+    lookup_value_regex = r'[0-9a-f-]{36}'  # Ensure router does not treat other paths as booking IDs
 
     # Action-level permission mapping (for RBAC)
     action_permissions = {
