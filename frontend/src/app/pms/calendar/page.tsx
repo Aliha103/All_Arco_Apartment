@@ -266,10 +266,9 @@ export default function CalendarPage() {
 
         if (checkOut < monthStart || checkIn > monthEnd) return;
 
-        // Calculate start and end day numbers (end on last night, stop at checkout left edge)
+        // Calculate start and end day numbers (end at checkout cell)
         const startDay = checkIn.getMonth() === month ? checkIn.getDate() : 1;
-        let endDay = checkOut.getMonth() === month ? checkOut.getDate() - 1 : new Date(year, month + 1, 0).getDate();
-        endDay = Math.max(startDay, endDay);
+        const endDay = checkOut.getMonth() === month ? checkOut.getDate() : new Date(year, month + 1, 0).getDate();
 
         // Calculate nights
         const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
