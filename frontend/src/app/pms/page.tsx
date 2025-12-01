@@ -443,31 +443,6 @@ export default function PMSDashboard() {
     return months;
   }, [bookingsLastYear]);
 
-  // 12-month booking vs cancellation trend
-  const bookingCancelTrend = useMemo(() => {
-    const months: { label: string; confirmed: number; cancelled: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const start = startOfMonth(subMonths(new Date(), i));
-      const label = format(start, 'MMM');
-      months.push({ label, confirmed: 0, cancelled: 0 });
-    }
-    if (Array.isArray(bookingsLastYear)) {
-      bookingsLastYear.forEach((b: any) => {
-        const checkIn = new Date(b.check_in_date);
-        const label = format(startOfMonth(checkIn), 'MMM');
-        const bucket = months.find((m) => m.label === label);
-        if (!bucket) return;
-        const status = (b.status || '').toLowerCase();
-        if (['confirmed', 'paid', 'checked_in'].includes(status)) {
-          bucket.confirmed += 1;
-        } else if (status === 'cancelled') {
-          bucket.cancelled += 1;
-        }
-      });
-    }
-    return months;
-  }, [bookingsLastYear]);
-
   // Smart notifications
   const notifications = useMemo(() => {
     const notifs = [];
