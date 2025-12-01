@@ -160,76 +160,157 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
   };
 
   return (
-    <tr className="border-b hover:bg-gray-50">
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2 group">
-          <span className="font-semibold text-sm text-gray-900">{arcoRef}</span>
-          <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100">
-            {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-400" />}
-          </button>
+    <>
+      {/* Desktop Table Row */}
+      <tr className="border-b hover:bg-gray-50 hidden lg:table-row">
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-2 group">
+            <span className="font-semibold text-sm text-gray-900">{arcoRef}</span>
+            <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100">
+              {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-400" />}
+            </button>
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          <div>
+            <p className="font-medium text-sm text-gray-900">{booking.guest_name}</p>
+            <p className="text-xs text-gray-600">{booking.guest_email}</p>
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          <div className="text-sm">
+            <div className="font-medium text-gray-900">{formatDate(booking.check_in_date)}</div>
+            <div className="text-gray-600">{formatDate(booking.check_out_date)}</div>
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          <Badge className="bg-gray-100 text-gray-800 border text-xs font-semibold capitalize">
+            {(booking.booking_source || 'direct').replace('_', ' ')}
+          </Badge>
+        </td>
+        <td className="px-4 py-3">
+          <span className="text-sm font-semibold text-gray-900">
+            {(booking.guests || booking.number_of_guests || 0)} guest{(booking.guests || booking.number_of_guests || 0) === 1 ? '' : 's'}
+          </span>
+        </td>
+        <td className="px-4 py-3">
+          <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
+            <StatusIcon className="w-3 h-3 mr-1" />
+            {statusConfig.label}
+          </Badge>
+        </td>
+        <td className="px-4 py-3">
+          <Badge className={`${paymentConfig.color} border text-xs font-semibold capitalize`}>
+            {paymentConfig.label}
+          </Badge>
+        </td>
+        <td className="px-4 py-3">
+          <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_price)}</span>
+        </td>
+        <td className="px-4 py-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="w-4 h-4 text-gray-700" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onAction('view', booking)}>
+                <Eye className="w-4 h-4 mr-2 text-gray-700" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAction('edit', booking)}>
+                <Edit className="w-4 h-4 mr-2 text-gray-700" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onAction('cancel', booking)} className="text-rose-600">
+                <Ban className="w-4 h-4 mr-2" />
+                Cancel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </td>
+      </tr>
+
+      {/* Mobile Card View */}
+      <div className="lg:hidden border-b p-4 hover:bg-gray-50">
+        <div className="space-y-3">
+          {/* Header - Reference and Actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 group">
+              <span className="font-bold text-sm text-gray-900">{arcoRef}</span>
+              <button onClick={handleCopy}>
+                {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-400" />}
+              </button>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="w-4 h-4 text-gray-700" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onAction('view', booking)}>
+                  <Eye className="w-4 h-4 mr-2 text-gray-700" />
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAction('edit', booking)}>
+                  <Edit className="w-4 h-4 mr-2 text-gray-700" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onAction('cancel', booking)} className="text-rose-600">
+                  <Ban className="w-4 h-4 mr-2" />
+                  Cancel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Guest Info */}
+          <div>
+            <p className="font-semibold text-sm text-gray-900">{booking.guest_name}</p>
+            <p className="text-xs text-gray-600">{booking.guest_email}</p>
+          </div>
+
+          {/* Dates and Guests */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2 text-gray-700">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(booking.check_in_date)}</span>
+              <span>→</span>
+              <span>{formatDate(booking.check_out_date)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-gray-700">
+              <Users className="w-4 h-4" />
+              <span>{booking.guests || booking.number_of_guests || 0}</span>
+            </div>
+          </div>
+
+          {/* Status, Payment, Total */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
+                <StatusIcon className="w-3 h-3 mr-1" />
+                {statusConfig.label}
+              </Badge>
+              <Badge className={`${paymentConfig.color} border text-xs font-semibold capitalize`}>
+                {paymentConfig.label}
+              </Badge>
+            </div>
+            <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_price)}</span>
+          </div>
+
+          {/* Source */}
+          <div className="flex items-center gap-2">
+            <Badge className="bg-gray-100 text-gray-800 border text-xs font-semibold capitalize">
+              {(booking.booking_source || 'direct').replace('_', ' ')}
+            </Badge>
+          </div>
         </div>
-      </td>
-      <td className="px-4 py-3">
-        <div>
-          <p className="font-medium text-sm text-gray-900">{booking.guest_name}</p>
-          <p className="text-xs text-gray-600">{booking.guest_email}</p>
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <div className="text-sm">
-          <div className="font-medium text-gray-900">{formatDate(booking.check_in_date)}</div>
-          <div className="text-gray-600">{formatDate(booking.check_out_date)}</div>
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <Badge className="bg-gray-100 text-gray-800 border text-xs font-semibold capitalize">
-          {(booking.booking_source || 'direct').replace('_', ' ')}
-        </Badge>
-      </td>
-      <td className="px-4 py-3">
-        <span className="text-sm font-semibold text-gray-900">
-          {(booking.guests || booking.number_of_guests || 0)} guest{(booking.guests || booking.number_of_guests || 0) === 1 ? '' : 's'}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
-          <StatusIcon className="w-3 h-3 mr-1" />
-          {statusConfig.label}
-        </Badge>
-      </td>
-      <td className="px-4 py-3">
-        <Badge className={`${paymentConfig.color} border text-xs font-semibold capitalize`}>
-          {paymentConfig.label}
-        </Badge>
-      </td>
-      <td className="px-4 py-3">
-        <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_price)}</span>
-      </td>
-      <td className="px-4 py-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreHorizontal className="w-4 h-4 text-gray-700" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onAction('view', booking)}>
-              <Eye className="w-4 h-4 mr-2 text-gray-700" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAction('edit', booking)}>
-              <Edit className="w-4 h-4 mr-2 text-gray-700" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onAction('cancel', booking)} className="text-rose-600">
-              <Ban className="w-4 h-4 mr-2" />
-              Cancel
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </td>
-    </tr>
+      </div>
+    </>
   );
 });
 
@@ -500,23 +581,23 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
 
       <div className="space-y-6 pb-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
             <p className="text-sm text-gray-500">Manage all property reservations</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="text-black">
-              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              Refresh
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="text-black flex-1 sm:flex-none">
+              <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''} sm:mr-2`} />
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <Button variant="outline" size="sm" className="text-black">
-              <Download className="w-4 h-4 mr-2" />
-              Export
+            <Button variant="outline" size="sm" className="text-black flex-1 sm:flex-none">
+              <Download className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Export</span>
             </Button>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              New Booking
+            <Button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-none">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">New Booking</span>
             </Button>
           </div>
         </div>
@@ -583,7 +664,7 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
         {/* Search & Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-col lg:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -593,13 +674,15 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                   className="pl-10 text-black placeholder:text-gray-500"
                 />
               </div>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40 text-black" />
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40 text-black" />
-              <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="text-black">
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-                {statusFilter.length > 0 && <Badge className="ml-2 bg-blue-600 text-white">{statusFilter.length}</Badge>}
-              </Button>
+              <div className="grid grid-cols-2 sm:flex gap-3">
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="sm:w-40 text-black" />
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="sm:w-40 text-black" />
+                <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="text-black col-span-2 sm:col-span-1">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filters
+                  {statusFilter.length > 0 && <Badge className="ml-2 bg-blue-600 text-white">{statusFilter.length}</Badge>}
+                </Button>
+              </div>
             </div>
 
             {showFilters && (
@@ -629,14 +712,15 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
         {/* Table */}
         <Card>
           <CardHeader className="border-b">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-black">All Bookings ({sortedBookings.length})</CardTitle>
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <CardTitle className="text-black text-lg sm:text-xl">All Bookings ({sortedBookings.length})</CardTitle>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-black">
-                      <ArrowUpDown className="w-4 h-4 mr-2" />
-                      Sort: {sortBy}
+                    <Button variant="outline" size="sm" className="text-black flex-1 sm:flex-none">
+                      <ArrowUpDown className="w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Sort: {sortBy}</span>
+                      <span className="sm:hidden">{sortBy}</span>
                       <ChevronDown className="w-4 h-4 ml-2" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -670,34 +754,50 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">ARCO Reference</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guest</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Dates</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Source</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guests</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Payment</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Total</th>
-                      <th className="px-4 py-3"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedBookings.map((booking: any) => (
-                      <BookingRow
-                        key={booking.id}
-                        booking={booking}
-                        isSelected={selectedBookings.has(booking.id)}
-                        onSelect={handleSelectBooking}
-                        onAction={handleAction}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">ARCO Reference</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guest</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Dates</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Source</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guests</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Payment</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Total</th>
+                        <th className="px-4 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedBookings.map((booking: any) => (
+                        <BookingRow
+                          key={booking.id}
+                          booking={booking}
+                          isSelected={selectedBookings.has(booking.id)}
+                          onSelect={handleSelectBooking}
+                          onAction={handleAction}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="lg:hidden">
+                  {paginatedBookings.map((booking: any) => (
+                    <BookingRow
+                      key={booking.id}
+                      booking={booking}
+                      isSelected={selectedBookings.has(booking.id)}
+                      onSelect={handleSelectBooking}
+                      onAction={handleAction}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
 
@@ -706,20 +806,23 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
             <div className="border-t px-4 py-3 bg-gray-50">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 {/* Pagination Info */}
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                  <span className="hidden sm:inline">
                     Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedBookings.length)} of {sortedBookings.length} bookings
+                  </span>
+                  <span className="sm:hidden">
+                    {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, sortedBookings.length)} of {sortedBookings.length}
                   </span>
                 </div>
 
                 {/* Pagination Controls */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                   {/* Items per page selector */}
-                  <div className="flex items-center gap-2 mr-4">
-                    <span className="text-sm text-gray-600">Per page:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs sm:text-sm text-gray-600 hidden sm:inline">Per page:</span>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 w-16">
+                        <Button variant="outline" size="sm" className="h-8 w-12 sm:w-16 text-xs sm:text-sm">
                           {itemsPerPage}
                           <ChevronDown className="w-3 h-3 ml-1" />
                         </Button>
@@ -740,91 +843,100 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                     </DropdownMenu>
                   </div>
 
-                  {/* Previous button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-
-                  {/* Page numbers */}
                   <div className="flex items-center gap-1">
-                    {(() => {
-                      const pages = [];
-                      const maxVisible = 5;
-                      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-                      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                    {/* Previous button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
 
-                      if (endPage - startPage < maxVisible - 1) {
-                        startPage = Math.max(1, endPage - maxVisible + 1);
-                      }
+                    {/* Page numbers - Simplified for mobile */}
+                    <div className="hidden sm:flex items-center gap-1">
+                      {(() => {
+                        const pages = [];
+                        const maxVisible = 5;
+                        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
 
-                      if (startPage > 1) {
-                        pages.push(
-                          <Button
-                            key={1}
-                            variant={currentPage === 1 ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(1)}
-                            className="h-8 w-8 p-0"
-                          >
-                            1
-                          </Button>
-                        );
-                        if (startPage > 2) {
-                          pages.push(<span key="ellipsis1" className="px-2 text-gray-400">...</span>);
+                        if (endPage - startPage < maxVisible - 1) {
+                          startPage = Math.max(1, endPage - maxVisible + 1);
                         }
-                      }
 
-                      for (let i = startPage; i <= endPage; i++) {
-                        pages.push(
-                          <Button
-                            key={i}
-                            variant={currentPage === i ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(i)}
-                            className={`h-8 w-8 p-0 ${currentPage === i ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
-                          >
-                            {i}
-                          </Button>
-                        );
-                      }
-
-                      if (endPage < totalPages) {
-                        if (endPage < totalPages - 1) {
-                          pages.push(<span key="ellipsis2" className="px-2 text-gray-400">...</span>);
+                        if (startPage > 1) {
+                          pages.push(
+                            <Button
+                              key={1}
+                              variant={currentPage === 1 ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(1)}
+                              className="h-8 w-8 p-0"
+                            >
+                              1
+                            </Button>
+                          );
+                          if (startPage > 2) {
+                            pages.push(<span key="ellipsis1" className="px-2 text-gray-400">...</span>);
+                          }
                         }
-                        pages.push(
-                          <Button
-                            key={totalPages}
-                            variant={currentPage === totalPages ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(totalPages)}
-                            className="h-8 w-8 p-0"
-                          >
-                            {totalPages}
-                          </Button>
-                        );
-                      }
 
-                      return pages;
-                    })()}
+                        for (let i = startPage; i <= endPage; i++) {
+                          pages.push(
+                            <Button
+                              key={i}
+                              variant={currentPage === i ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(i)}
+                              className={`h-8 w-8 p-0 ${currentPage === i ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                            >
+                              {i}
+                            </Button>
+                          );
+                        }
+
+                        if (endPage < totalPages) {
+                          if (endPage < totalPages - 1) {
+                            pages.push(<span key="ellipsis2" className="px-2 text-gray-400">...</span>);
+                          }
+                          pages.push(
+                            <Button
+                              key={totalPages}
+                              variant={currentPage === totalPages ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(totalPages)}
+                              className="h-8 w-8 p-0"
+                            >
+                              {totalPages}
+                            </Button>
+                          );
+                        }
+
+                        return pages;
+                      })()}
+                    </div>
+
+                    {/* Mobile - Just show current page */}
+                    <div className="sm:hidden flex items-center">
+                      <span className="text-xs text-gray-600 px-2">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                    </div>
+
+                    {/* Next button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
                   </div>
-
-                  {/* Next button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
                 </div>
               </div>
             </div>
@@ -837,7 +949,7 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
 
       {/* Details Dialog */}
       <Dialog open={!!detailsBooking} onOpenChange={(open) => { if (!open) { setDetailsBooking(null); setDetailsData(null); setDetailsPayments([]); } }}>
-        <DialogContent className="max-w-3xl bg-white text-gray-900">
+        <DialogContent className="max-w-3xl bg-white text-gray-900 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Booking Details</DialogTitle>
             <DialogDescription>
@@ -861,12 +973,12 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
           )}
           {detailsData && !detailsLoading && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 rounded-lg p-4">
                 <div>
                   <Label className="text-xs text-gray-600">Booking ID</Label>
                   <p className="font-semibold text-gray-900">{detailsData.booking_id || generateArcoReference(detailsData.id)}</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
                   <div className="flex items-center gap-2">
                     <Label className="text-xs text-gray-600">Status</Label>
                     {statusBadge ? (
@@ -883,14 +995,14 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                       {paymentBadge.label}
                     </Badge>
                   </div>
-                  <div>
+                  <div className="flex items-center gap-2">
                     <Label className="text-xs text-gray-600">Source</Label>
                     <p className="font-medium capitalize text-gray-900">{(detailsData.booking_source || 'direct').replace('_', ' ')}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg border p-3">
                   <Label className="text-xs text-gray-600">Guest Name</Label>
                   <p className="font-semibold text-gray-900">{detailsData.guest_name}</p>
@@ -913,11 +1025,11 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
               <div className="grid grid-cols-2 gap-4 bg-gray-50 rounded-lg p-4">
                 <div>
                   <Label className="text-xs text-gray-600">Check-in</Label>
-                  <p className="font-semibold text-gray-900">{formatDate(detailsData.check_in_date)}</p>
+                  <p className="font-semibold text-sm sm:text-base text-gray-900">{formatDate(detailsData.check_in_date)}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-600">Check-out</Label>
-                  <p className="font-semibold text-gray-900">{formatDate(detailsData.check_out_date)}</p>
+                  <p className="font-semibold text-sm sm:text-base text-gray-900">{formatDate(detailsData.check_out_date)}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-600">Nights</Label>
@@ -929,7 +1041,7 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg border p-3">
                   <Label className="text-xs text-gray-600">Pricing</Label>
                   <p className="text-sm text-gray-800">
@@ -948,7 +1060,7 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs text-gray-500">Special Requests</Label>
                   <p className="text-sm text-gray-700 whitespace-pre-line">{detailsData.special_requests || '—'}</p>
@@ -959,86 +1071,101 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                 <p>Created: {detailsData.created_at ? formatDate(detailsData.created_at) : '—'}</p>
                 <p>Updated: {detailsData.updated_at ? formatDate(detailsData.updated_at) : '—'}</p>
               </div>
             </div>
           )}
           <DialogFooter>
-            <div className="flex flex-col sm:flex-row gap-2 w-full justify-between">
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setDetailsBooking(null)}>Close</Button>
-                <Button
-                  onClick={() => router.push(`/pms/bookings/${detailsBooking?.id}`)}
-                  disabled={detailsData && ['checked_out', 'cancelled', 'no_show'].includes(detailsData.status)}
-                  className={detailsData && ['checked_out', 'cancelled', 'no_show'].includes(detailsData.status) ? 'opacity-60' : ''}
-                >
-                  Edit
-                </Button>
-                <Button variant="outline" onClick={() => setShowLogDialog(true)}>
-                  User Log
-                </Button>
-                <Button variant="outline" onClick={() => setShowInvoiceDialog(true)}>
-                  Invoice / Receipt
-                </Button>
+            <div className="flex flex-col gap-3 w-full">
+              {/* Action buttons row */}
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setDetailsBooking(null)} className="flex-1 sm:flex-none">
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => router.push(`/pms/bookings/${detailsBooking?.id}`)}
+                    disabled={detailsData && ['checked_out', 'cancelled', 'no_show'].includes(detailsData.status)}
+                    className={`flex-1 sm:flex-none ${detailsData && ['checked_out', 'cancelled', 'no_show'].includes(detailsData.status) ? 'opacity-60' : ''}`}
+                  >
+                    Edit
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowLogDialog(true)} className="flex-1 sm:flex-none">
+                    User Log
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowInvoiceDialog(true)} className="flex-1 sm:flex-none">
+                    Invoice
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                {canCheckIn && (
-                  <Button
-                    variant="outline"
-                    disabled={statusUpdating || !detailsData}
-                    onClick={handleCheckIn}
-                  >
-                    {statusUpdating ? 'Updating…' : 'Check-in'}
-                  </Button>
-                )}
-                {canCheckOut && (
-                  <Button
-                    variant="destructive"
-                    disabled={statusUpdating || !detailsData || hasOpenBalance}
-                    onClick={handleCheckOut}
-                  >
-                    {statusUpdating ? 'Updating…' : 'Check-out'}
-                  </Button>
-                )}
-                {canUndoCheckIn && (
-                  <Button
-                    variant="outline"
-                    disabled={statusUpdating || !detailsData}
-                    onClick={() => updateBookingStatus('confirmed')}
-                  >
-                    {statusUpdating ? 'Updating…' : 'Undo Check-in'}
-                  </Button>
-                )}
-                {canUndoCheckOut && (
-                  <Button
-                    variant="outline"
-                    disabled={statusUpdating || !detailsData}
-                    onClick={() => updateBookingStatus('checked_in')}
-                  >
-                    {statusUpdating ? 'Updating…' : 'Undo Check-out'}
-                  </Button>
-                )}
-                {canUndoCancel && (
-                  <Button
-                    variant="outline"
-                    disabled={statusUpdating || !detailsData}
-                    onClick={() => updateBookingStatus('confirmed')}
-                  >
-                    {statusUpdating ? 'Updating…' : 'Undo Cancel'}
-                  </Button>
-                )}
-                {canUndoNoShow && (
-                  <Button
-                    variant="outline"
-                    disabled={statusUpdating || !detailsData}
-                    onClick={() => updateBookingStatus('confirmed')}
-                  >
-                    {statusUpdating ? 'Updating…' : 'Undo No-show'}
-                  </Button>
-                )}
-              </div>
+
+              {/* Status action buttons row */}
+              {(canCheckIn || canCheckOut || canUndoCheckIn || canUndoCheckOut || canUndoCancel || canUndoNoShow) && (
+                <div className="flex flex-wrap gap-2 w-full justify-end">
+                  {canCheckIn && (
+                    <Button
+                      variant="outline"
+                      disabled={statusUpdating || !detailsData}
+                      onClick={handleCheckIn}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {statusUpdating ? 'Updating…' : 'Check-in'}
+                    </Button>
+                  )}
+                  {canCheckOut && (
+                    <Button
+                      variant="destructive"
+                      disabled={statusUpdating || !detailsData || hasOpenBalance}
+                      onClick={handleCheckOut}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {statusUpdating ? 'Updating…' : 'Check-out'}
+                    </Button>
+                  )}
+                  {canUndoCheckIn && (
+                    <Button
+                      variant="outline"
+                      disabled={statusUpdating || !detailsData}
+                      onClick={() => updateBookingStatus('confirmed')}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {statusUpdating ? 'Updating…' : 'Undo Check-in'}
+                    </Button>
+                  )}
+                  {canUndoCheckOut && (
+                    <Button
+                      variant="outline"
+                      disabled={statusUpdating || !detailsData}
+                      onClick={() => updateBookingStatus('checked_in')}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {statusUpdating ? 'Updating…' : 'Undo Check-out'}
+                    </Button>
+                  )}
+                  {canUndoCancel && (
+                    <Button
+                      variant="outline"
+                      disabled={statusUpdating || !detailsData}
+                      onClick={() => updateBookingStatus('confirmed')}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {statusUpdating ? 'Updating…' : 'Undo Cancel'}
+                    </Button>
+                  )}
+                  {canUndoNoShow && (
+                    <Button
+                      variant="outline"
+                      disabled={statusUpdating || !detailsData}
+                      onClick={() => updateBookingStatus('confirmed')}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {statusUpdating ? 'Updating…' : 'Undo No-show'}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </DialogFooter>
         </DialogContent>
