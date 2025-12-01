@@ -282,6 +282,54 @@ export default function CalendarPage() {
     return capsules;
   }, [calendarData, currentDate]);
 
+  // Blocked date capsules
+  const blockedCapsules = useMemo(() => {
+    const dataSource = calendarData && calendarData.length > 0 ? calendarData : [];
+    const capsules: any[] = [];
+    const processedBlocked = new Set<string>();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    dataSource.forEach((dateData: any) => {
+      if (dateData.blocked && !processedBlocked.has(dateData.blocked.id)) {
+        const blocked = dateData.blocked;
+        processedBlocked.add(blocked.id);
+
+        // Find start and end dates for this blocked period
+        const blockedDates = dataSource.filter(
+          (d: any) => d.blocked?.id === blocked.id
+        );
+
+        if (blockedDates.length === 0) return;
+
+        const dates = blockedDates.map((d: any) => new Date(d.date)).sort((a, b) => a.getTime() - b.getTime());
+        const startDate = dates[0];
+        const endDate = dates[dates.length - 1];
+
+        const startDay = startDate.getDate();
+        const endDay = endDate.getDate();
+        const nights = blockedDates.length;
+
+        // Calculate row
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+        const startRow = Math.floor((firstDayOfMonth + startDay - 1) / 7);
+
+        capsules.push({
+          id: blocked.id,
+          reason: blocked.reason,
+          notes: blocked.notes,
+          startDay,
+          endDay,
+          nights,
+          row: startRow,
+          color: COLORS.red,
+        });
+      }
+    });
+
+    return capsules;
+  }, [calendarData, currentDate]);
+
   // Log capsules for debugging
   useEffect(() => {
     if (bookingCapsules.length > 0) {
@@ -491,22 +539,9 @@ export default function CalendarPage() {
                         onMouseLeave={() => setHoveredDate(null)}
                       >
                             {dayData && (
-                              <>
-                                <div className={`text-sm font-bold mb-1 ${dayData.isToday ? 'text-[#C4A572]' : 'text-gray-900'}`}>
-                                  {dayData.day}
-                                </div>
-                            {dayData.calendarDate?.blocked && (
-                              <div className="text-xs space-y-1">
-                                <div className="flex items-center gap-1 text-gray-700">
-                                  <Lock className="w-3 h-3" />
-                                  <span className="font-semibold">Blocked</span>
-                                </div>
-                                <div className="text-gray-600 text-xs truncate capitalize">
-                                  {dayData.calendarDate.blocked.reason.replace('_', ' ')}
-                                </div>
+                              <div className={`text-sm font-bold mb-1 ${dayData.isToday ? 'text-[#C4A572]' : 'text-gray-900'}`}>
+                                {dayData.day}
                               </div>
-                            )}
-                              </>
                             )}
                       </motion.div>
                     ))}
@@ -515,6 +550,7 @@ export default function CalendarPage() {
                   {/* Booking Capsules Overlay */}
                   <div className="absolute inset-0 pointer-events-none" style={{ top: '44px' }}>
                     <AnimatePresence>
+                      {/* Booking Capsules */}
                       {bookingCapsules.map((capsule, index) => {
                         const year = currentDate.getFullYear();
                         const month = currentDate.getMonth();
@@ -533,10 +569,13 @@ export default function CalendarPage() {
                         const spansMultipleRows = gridRow !== Math.floor(endIndex / 7);
                         const daysInRow = spansMultipleRows ? (7 - startCol) : (endCol - startCol + 1);
 
-                        // Positioning with 40% offset
+                        // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
-                        const startOffset = 0.4; // 40%
-                        const endOffset = 0.4; // 40%
+                        const capsuleHeight = 28; // h-7 = 28px
+                        const dayNumberHeight = 24; // approximate height for day number
+                        const verticalCenter = dayNumberHeight + (cellHeight - dayNumberHeight - capsuleHeight) / 2;
+                        const startOffset = 0.05; // 5% padding from start
+                        const endOffset = 0.05; // 5% padding from end
 
                         return (
                           <motion.div
@@ -547,7 +586,7 @@ export default function CalendarPage() {
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                             className="absolute pointer-events-auto cursor-pointer"
                             style={{
-                              top: `${gridRow * (cellHeight + gapSize) + 32}px`,
+                              top: `${gridRow * (cellHeight + gapSize) + verticalCenter}px`,
                               left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
                               width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
                               zIndex: 10,
@@ -563,6 +602,62 @@ export default function CalendarPage() {
                                 <span className="ml-2 opacity-90 text-[10px]">{capsule.nights}N</span>
                               </div>
                               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+
+                      {/* Blocked Date Capsules */}
+                      {blockedCapsules.map((capsule, index) => {
+                        const year = currentDate.getFullYear();
+                        const month = currentDate.getMonth();
+                        const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+                        // Calculate position in grid
+                        const startIndex = firstDayOfMonth + capsule.startDay - 1;
+                        const endIndex = firstDayOfMonth + capsule.endDay - 1;
+
+                        // Grid row and column
+                        const gridRow = Math.floor(startIndex / 7);
+                        const startCol = startIndex % 7;
+                        const endCol = endIndex % 7;
+
+                        // Calculate if capsule spans multiple rows
+                        const spansMultipleRows = gridRow !== Math.floor(endIndex / 7);
+                        const daysInRow = spansMultipleRows ? (7 - startCol) : (endCol - startCol + 1);
+
+                        // Positioning with centered vertical alignment
+                        const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
+                        const capsuleHeight = 28; // h-7 = 28px
+                        const dayNumberHeight = 24; // approximate height for day number
+                        const verticalCenter = dayNumberHeight + (cellHeight - dayNumberHeight - capsuleHeight) / 2;
+                        const startOffset = 0.05; // 5% padding
+                        const endOffset = 0.05; // 5% padding
+
+                        return (
+                          <motion.div
+                            key={`blocked-${capsule.id}`}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="absolute pointer-events-auto cursor-default"
+                            style={{
+                              top: `${gridRow * (cellHeight + gapSize) + verticalCenter}px`,
+                              left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
+                              width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
+                              zIndex: 10,
+                            }}
+                          >
+                            <div
+                              className="relative h-7 rounded-full shadow-md transition-all duration-200 flex items-center px-3 overflow-hidden bg-gray-400/80"
+                            >
+                              <div className="flex items-center justify-between w-full text-white text-xs font-bold truncate">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <Lock className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate capitalize">Blocked - {capsule.reason.replace('_', ' ')}</span>
+                                </div>
+                              </div>
                             </div>
                           </motion.div>
                         );
