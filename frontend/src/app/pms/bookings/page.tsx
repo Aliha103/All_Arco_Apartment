@@ -587,10 +587,6 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
             <p className="text-sm text-gray-500">Manage all property reservations</p>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="text-black flex-1 sm:flex-none">
-              <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''} sm:mr-2`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
             <Button variant="outline" size="sm" className="text-black flex-1 sm:flex-none">
               <Download className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Export</span>

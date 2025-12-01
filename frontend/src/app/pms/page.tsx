@@ -1118,46 +1118,7 @@ export default function PMSDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions Command Center - Compact */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.8 }}
-      >
-        <Card className="border border-gray-200 shadow">
-          <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-[#C4A572]/10">
-                <Sparkles className="w-5 h-5" style={{ color: COLORS.primary }} />
-              </div>
-              <CardTitle className="text-lg text-gray-900">Quick Actions</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {[
-                { href: '/pms/bookings', icon: Calendar, label: 'Booking', color: COLORS.primary },
-                { href: '/pms/calendar', icon: CalendarDays, label: 'Calendar', color: COLORS.info },
-                { href: '/pms/payments', icon: CreditCard, label: 'Payments', color: COLORS.success },
-                { href: '/pms/guests', icon: Users, label: 'Guests', color: COLORS.purple },
-                { href: '/pms/invoices', icon: Package, label: 'Invoices', color: COLORS.warning },
-                { href: '/pms/reports', icon: BarChart3, label: 'Reports', color: COLORS.error },
-              ].map(({ href, icon: Icon, label, color }) => (
-                <Link key={href} href={href}>
-                  <motion.div whileHover={{ scale: 1.05, y: -4 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4 border border-gray-300 hover:border-gray-400 hover:shadow">
-                      <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}15` }}>
-                        <Icon className="w-5 h-5" style={{ color }} />
-                      </div>
-                      <span className="text-xs font-bold text-gray-900">{label}</span>
-                    </Button>
-                  </motion.div>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* Quick Actions removed */}
 
       {/* Custom scrollbar styles */}
       <style jsx global>{`
