@@ -577,9 +577,9 @@ export default function CalendarPage() {
                               const daysInRow = rowEndIndex - currentIndex + 1;
                               if (daysInRow > 0) {
                                 const isSingleDay = capsule.startDay === capsule.endDay;
-                                // leave visible gap between adjacent capsules
-                                const startOffset = isSingleDay ? 0.15 : 0.55;
-                                const endOffset = isSingleDay ? 0.15 : 0.55;
+                                // 45/10/45 split: start near right of start cell, end near left of end cell
+                                const startOffset = isSingleDay ? 0.15 : 0.45;
+                                const endOffset = isSingleDay ? 0.15 : 0.45;
                                 const extraYOffset = isBlocked ? 6 : 0; // nudge blocked down slightly
                                 segments.push({
                                   key: `${isBlocked ? 'blocked' : 'booking'}-${capsule.id}-${gridRow}-${startCol}`,
