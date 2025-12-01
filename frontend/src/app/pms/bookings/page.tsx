@@ -359,6 +359,7 @@ export default function BookingsPage() {
         setDetailsPayments([]);
         setDetailsError(null);
         setDetailsLoading(true);
+        setBalanceWarned(false);
         (async () => {
           try {
             const [fullRes, paymentsRes] = await Promise.all([
@@ -476,14 +477,19 @@ const canCheckIn = detailsData && ['confirmed', 'paid', 'pending'].includes(deta
 const canCheckOut = detailsData && detailsData.status === 'checked_in';
 const canUndoCheckIn = detailsData && detailsData.status === 'checked_in';
 const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
-const canUndoCancel = detailsData && detailsData.status === 'cancelled';
-const canUndoNoShow = detailsData && detailsData.status === 'no_show';
+  const canUndoCancel = detailsData && detailsData.status === 'cancelled';
+  const canUndoNoShow = detailsData && detailsData.status === 'no_show';
 
-useEffect(() => {
-  if (detailsData && hasOpenBalance && !balanceWarned) {
-    toast.warning(`Payment pending: ${formatCurrency(balanceDue)} due.`);
-    setBalanceWarned(true);
-  }
+  useEffect(() => {
+    // Reset warning flag when switching bookings
+    setBalanceWarned(false);
+  }, [detailsData?.id]);
+
+  useEffect(() => {
+    if (detailsData && hasOpenBalance && !balanceWarned) {
+      toast.warning(`Payment pending: ${formatCurrency(balanceDue)} due.`);
+      setBalanceWarned(true);
+    }
 }, [detailsData, hasOpenBalance, balanceDue, balanceWarned]);
 
   return (
