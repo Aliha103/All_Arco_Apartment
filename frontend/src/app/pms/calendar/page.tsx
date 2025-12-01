@@ -555,7 +555,7 @@ export default function CalendarPage() {
                   </div>
 
                   {/* Booking Capsules Overlay */}
-                  <div className="absolute inset-0 pointer-events-none" style={{ top: '44px' }}>
+                  <div className="absolute inset-0 pointer-events-none" style={{ top: '0px' }}>
                     <AnimatePresence>
                       {/* Booking Capsules */}
                       {bookingCapsules.map((capsule, index) => {
@@ -579,13 +579,11 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        // Position capsule at true center of cell (96px cell - 28px capsule) / 2 = 34px
-                        const verticalCenter = 34; // Center position in 96px cell
-                        // Use smaller offsets for single-day capsules to avoid tiny dots
-                        // For multi-day: start from right side of check-in (50%) to left side of check-out (50%)
+                        const capsuleOffsetY = (cellHeight - capsuleHeight) / 2;
+                        // 45/10/45 split: use right side of start cell, left side of end cell
                         const isSingleDay = capsule.startDay === capsule.endDay;
-                        const startOffset = isSingleDay ? 0.1 : 0.5; // 10% for single-day, 50% for multi-day
-                        const endOffset = isSingleDay ? 0.1 : 0.5; // Creates 80% width for single-day, balanced for multi-day
+                        const startOffset = isSingleDay ? 0.55 : 0.55;
+                        const endOffset = isSingleDay ? 0.35 : 0.55;
 
                         return (
                           <motion.div
@@ -596,7 +594,7 @@ export default function CalendarPage() {
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                             className="absolute pointer-events-auto cursor-pointer"
                             style={{
-                              top: `${gridRow * (cellHeight + gapSize) + verticalCenter}px`,
+                              top: `${gridRow * (cellHeight + gapSize) + capsuleOffsetY}px`,
                               left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
                               width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
                               zIndex: 10,
@@ -639,13 +637,11 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        // Position capsule at true center of cell (96px cell - 28px capsule) / 2 = 34px
-                        const verticalCenter = 34; // Center position in 96px cell
-                        // Use smaller offsets for single-day capsules to avoid tiny dots
-                        // For multi-day: start from right side of check-in (50%) to left side of check-out (50%)
+                        const capsuleOffsetY = (cellHeight - capsuleHeight) / 2;
+                        // 45/10/45 split: use right side of start cell, left side of end cell
                         const isSingleDay = capsule.startDay === capsule.endDay;
-                        const startOffset = isSingleDay ? 0.1 : 0.5; // 10% for single-day, 50% for multi-day
-                        const endOffset = isSingleDay ? 0.1 : 0.5; // Creates 80% width for single-day, balanced for multi-day
+                        const startOffset = isSingleDay ? 0.55 : 0.55;
+                        const endOffset = isSingleDay ? 0.35 : 0.55;
 
                         return (
                           <motion.div
@@ -656,7 +652,7 @@ export default function CalendarPage() {
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                             className="absolute pointer-events-auto cursor-default"
                             style={{
-                              top: `${gridRow * (cellHeight + gapSize) + verticalCenter}px`,
+                              top: `${gridRow * (cellHeight + gapSize) + capsuleOffsetY}px`,
                               left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
                               width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
                               zIndex: 10,

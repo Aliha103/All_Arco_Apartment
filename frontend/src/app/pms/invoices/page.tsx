@@ -74,6 +74,7 @@ interface Company {
   name: string;
   vat_number: string;
   sdi: string;
+  tax_code?: string; // Codice Fiscale - optional
   address: string;
   country: string;
   email: string;
@@ -105,6 +106,7 @@ interface Booking {
   booking_id: string;
   guest_name: string;
   guest_email: string;
+  guest_tax_code?: string; // Codice Fiscale - optional
   check_in_date: string;
   check_out_date: string;
   total_price: number;
@@ -834,6 +836,12 @@ function CompanyCard({ company, onEdit, index }: CompanyCardProps) {
                 <Hash className="w-3 h-3" />
                 <span className="truncate">VAT: {company.vat_number}</span>
               </div>
+              {company.tax_code && (
+                <div className="flex items-center gap-1">
+                  <Hash className="w-3 h-3" />
+                  <span className="truncate">Tax Code: {company.tax_code}</span>
+                </div>
+              )}
               {company.sdi && (
                 <div className="flex items-center gap-1">
                   <FileText className="w-3 h-3" />
@@ -1116,12 +1124,18 @@ function CreateInvoiceModal({ isOpen, onClose, invoice, companies, onCompanyCrea
                   <p className="text-xs text-gray-600">Guest</p>
                   <p className="font-semibold text-gray-900">{selectedBooking.guest_name}</p>
                   <p className="text-sm text-gray-600">{selectedBooking.guest_email}</p>
+                  {selectedBooking.guest_tax_code && (
+                    <p className="text-xs text-gray-600">Tax Code: {selectedBooking.guest_tax_code}</p>
+                  )}
                 </div>
                 {selectedCompany && (
                   <div>
                     <p className="text-xs text-gray-600">Company</p>
                     <p className="font-semibold text-gray-900">{selectedCompany.name}</p>
                     <p className="text-sm text-gray-600">VAT: {selectedCompany.vat_number}</p>
+                    {selectedCompany.tax_code && (
+                      <p className="text-xs text-gray-600">Tax Code: {selectedCompany.tax_code}</p>
+                    )}
                   </div>
                 )}
                 <div>
@@ -1177,6 +1191,7 @@ function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
     name: '',
     vat_number: '',
     sdi: '',
+    tax_code: '',
     address: '',
     country: '',
     email: '',
@@ -1192,6 +1207,7 @@ function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
           name: company.name || '',
           vat_number: company.vat_number || '',
           sdi: company.sdi || '',
+          tax_code: company.tax_code || '',
           address: company.address || '',
           country: company.country || '',
           email: company.email || '',
@@ -1203,6 +1219,7 @@ function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
           name: '',
           vat_number: '',
           sdi: '',
+          tax_code: '',
           address: '',
           country: '',
           email: '',
@@ -1292,6 +1309,20 @@ function CompanyModal({ isOpen, onClose, company }: CompanyModalProps) {
                   value={formData.sdi}
                   onChange={(e) => setFormData({ ...formData, sdi: e.target.value })}
                   placeholder="ABCDEFG"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="tax_code">Tax Code (Codice Fiscale)</Label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="tax_code"
+                  value={formData.tax_code}
+                  onChange={(e) => setFormData({ ...formData, tax_code: e.target.value })}
+                  placeholder="RSSMRA80A01H501U"
                   className="pl-10"
                 />
               </div>

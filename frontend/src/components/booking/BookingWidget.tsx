@@ -517,7 +517,7 @@ export default function BookingWidget() {
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row">
           {/* Calendar Section */}
-          <div className="flex-1 p-4 sm:p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-gray-100 overflow-x-auto">
+          <div className="flex-1 p-4 sm:p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-gray-100 overflow-hidden">
             {/* Calendar */}
             <DayPicker
               mode="range"
@@ -530,7 +530,7 @@ export default function BookingWidget() {
               showOutsideDays={false}
               className="!font-sans [&_button]:!text-gray-900 [&_.rdp-day]:!text-gray-900"
               classNames={{
-                months: 'flex flex-col sm:flex-row gap-4 sm:gap-8',
+                months: 'grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full',
                 month: 'space-y-3 sm:space-y-4',
                 caption: 'flex justify-center relative items-center h-10',
                 caption_label: 'text-base sm:text-lg font-semibold text-gray-900',
