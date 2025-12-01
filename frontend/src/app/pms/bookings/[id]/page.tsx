@@ -171,7 +171,7 @@ export default function BookingDetailPage() {
   const canNoShow = ['confirmed', 'paid'].includes(booking.status);
   const canCancel = !['cancelled', 'checked_out'].includes(booking.status);
   const canUndoCancel = booking.status === 'cancelled' && !overlapBlocked;
-  const canUndoNoShow = booking.status === 'no_show' && !overlapBlocked;
+  const canUndoNoShow = (booking.status as string) === 'no_show' && !overlapBlocked;
 
   const handleStatusUpdate = (status: string, confirmationText: string) => {
     if (confirm(confirmationText)) {
