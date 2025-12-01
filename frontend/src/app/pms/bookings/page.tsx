@@ -58,7 +58,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import BookingFormModal from '@/components/pms/BookingFormModal';
 import { useAuth } from '@/hooks/useAuth';
-import { logResourceAction } from '@/lib/auditLogger';
+import { logResourceAction, auditLogger } from '@/lib/auditLogger';
 
 // Status configuration
 const STATUS_CONFIG = {
@@ -249,6 +249,7 @@ export default function BookingsPage() {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [bookingLogs, setBookingLogs] = useState<any[]>([]);
 
   const { user } = useAuth();
   const auditUser = user && (user as any).role_info ? user : null;
@@ -363,6 +364,9 @@ export default function BookingsPage() {
             if (auditUser?.id) {
               logResourceAction('booking_view', auditUser as any, 'booking', booking.id, { source: 'modal' });
             }
+            // Pull recent audit logs for this booking (in-memory)
+            const recentLogs = auditLogger.getRecentLogs(50).filter((entry) => entry.resourceId === booking.id);
+            setBookingLogs(recentLogs);
           } catch (error) {
             setDetailsError('Failed to load booking details');
             toast.error('Failed to load booking details');
@@ -431,6 +435,7 @@ export default function BookingsPage() {
         if (auditUser?.id) {
           logResourceAction('booking_update', auditUser as any, 'booking', detailsData.id, { newStatus: status });
         }
+        setBookingLogs(auditLogger.getRecentLogs(50).filter((entry) => entry.resourceId === detailsData.id));
       } catch (error) {
         toast.error('Failed to update booking status');
       } finally {
@@ -927,6 +932,35 @@ export default function BookingsPage() {
               <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                 <p>Created: {detailsData.created_at ? formatDate(detailsData.created_at) : '—'}</p>
                 <p>Updated: {detailsData.updated_at ? formatDate(detailsData.updated_at) : '—'}</p>
+              </div>
+
+              {/* Audit Trail */}
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-xs text-gray-600">Activity Log</Label>
+                  <span className="text-xs text-gray-500">
+                    Showing {bookingLogs.length ? bookingLogs.length : 0} recent events (session)
+                  </span>
+                </div>
+                {bookingLogs.length === 0 ? (
+                  <p className="text-sm text-gray-600">No recent activity logged for this booking.</p>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {bookingLogs.map((log) => (
+                      <div key={log.timestamp} className="text-sm text-gray-800 flex justify-between">
+                        <div className="pr-3">
+                          <p className="font-semibold capitalize">{log.action.replace('_', ' ')}</p>
+                          <p className="text-xs text-gray-600">
+                            {log.userEmail} • {log.userRole} • {log.resource || 'booking'}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 whitespace-nowrap">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
