@@ -47,7 +47,7 @@ const navigation: NavigationItem[] = [
   { name: 'Payments', href: '/pms/payments', icon: CreditCard, permission: 'payments.view' },
   { name: 'Invoices', href: '/pms/invoices', icon: FileText, permission: 'payments.view' },
   { name: 'Guests tree', href: '/pms/guests', icon: Users, permission: 'guests.view' },
-  { name: 'Users', href: '/pms/team', icon: User, permission: 'team.view' },
+  { name: 'Users', href: '/pms/users', icon: User, permission: 'team.view' },
   { name: 'Pricing', href: '/pms/pricing', icon: DollarSign, permission: 'pricing.view' },
   { name: 'Gallery', href: '/pms/gallery', icon: ImageIcon, permission: 'gallery.view' },
   { name: 'Team', href: '/pms/team', icon: UserCog, permission: 'team.view' },
