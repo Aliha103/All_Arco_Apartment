@@ -182,6 +182,11 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
         </div>
       </td>
       <td className="px-4 py-3">
+        <Badge className="bg-gray-100 text-gray-800 border text-xs font-semibold capitalize">
+          {(booking.booking_source || 'direct').replace('_', ' ')}
+        </Badge>
+      </td>
+      <td className="px-4 py-3">
         <span className="text-sm text-gray-900">{booking.guests || booking.number_of_guests}</span>
       </td>
       <td className="px-4 py-3">
@@ -664,6 +669,7 @@ useEffect(() => {
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">ARCO Reference</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guest</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Dates</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Source</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guests</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Payment</th>
