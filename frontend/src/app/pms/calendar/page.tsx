@@ -255,8 +255,13 @@ export default function CalendarPage() {
         if (checkOut < monthStart || checkIn > monthEnd) return;
 
         // Calculate start and end day numbers
+        // Note: Capsule should end on last night of stay, not checkout morning
         const startDay = checkIn.getMonth() === month ? checkIn.getDate() : 1;
-        const endDay = checkOut.getMonth() === month ? checkOut.getDate() : new Date(year, month + 1, 0).getDate();
+        let endDay = checkOut.getMonth() === month ? checkOut.getDate() : new Date(year, month + 1, 0).getDate();
+        // Subtract 1 to show last night, not checkout day
+        if (checkOut.getMonth() === month) {
+          endDay = Math.max(startDay, endDay - 1);
+        }
 
         // Calculate nights
         const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
@@ -572,7 +577,8 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        const verticalCenter = (cellHeight - capsuleHeight) / 2; // Center capsule in cell
+                        // Position capsule in visual center below day number (day# ~20px + center in remaining 76px)
+                        const verticalCenter = 44; // Fixed position for consistent centering
                         const startOffset = 0.4; // 40% padding from start
                         const endOffset = 0.4; // 40% padding from end
 
@@ -628,7 +634,8 @@ export default function CalendarPage() {
                         // Positioning with centered vertical alignment
                         const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
                         const capsuleHeight = 28; // h-7 = 28px
-                        const verticalCenter = (cellHeight - capsuleHeight) / 2; // Center capsule in cell
+                        // Position capsule in visual center below day number (day# ~20px + center in remaining 76px)
+                        const verticalCenter = 44; // Fixed position for consistent centering
                         const startOffset = 0.4; // 40% padding from start
                         const endOffset = 0.4; // 40% padding from end
 
