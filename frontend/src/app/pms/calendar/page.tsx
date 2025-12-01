@@ -312,8 +312,9 @@ export default function CalendarPage() {
         const endDate = dates[dates.length - 1];
 
         const startDay = startDate.getDate();
-        const endDay = endDate.getDate();
-        const nights = blockedDates.length;
+        // Subtract 1 from endDay to show last night, not checkout day (same as bookings)
+        const endDay = Math.max(startDay, endDate.getDate() - 1);
+        const nights = blockedDates.length - 1; // Actual nights (excluding checkout day)
 
         // Calculate row
         const firstDayOfMonth = new Date(year, month, 1).getDay();
