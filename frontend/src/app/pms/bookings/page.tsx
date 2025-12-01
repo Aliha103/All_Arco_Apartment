@@ -20,6 +20,8 @@ import {
   Clock,
   ArrowUpDown,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   X,
   Loader2,
   Mail,
@@ -233,6 +235,8 @@ export default function BookingsPage() {
   const [cancelBooking, setCancelBooking] = useState<any>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const router = useRouter();
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -273,15 +277,34 @@ export default function BookingsPage() {
     return sorted;
   }, [bookings, sortBy, sortOrder]);
 
+  // Pagination
+  const totalPages = Math.ceil(sortedBookings.length / itemsPerPage);
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedBookings.slice(startIndex, endIndex);
+  }, [sortedBookings, currentPage, itemsPerPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, statusFilter, dateFrom, dateTo, sortBy, sortOrder]);
+
   // Stats
   const stats = useMemo(() => {
-    if (!sortedBookings.length) return { total: 0, pending: 0, confirmed: 0, revenue: 0 };
-    return {
-      total: sortedBookings.length,
-      pending: sortedBookings.filter((b: any) => b.status === 'pending').length,
-      confirmed: sortedBookings.filter((b: any) => b.status === 'confirmed' || b.status === 'paid').length,
-      revenue: sortedBookings.reduce((sum: number, b: any) => sum + parseFloat(b.total_price || 0), 0),
-    };
+    if (!sortedBookings.length) return { total: 0, cancelled: 0, confirmed: 0, noShow: 0 };
+
+    return sortedBookings.reduce(
+      (acc: { total: number; cancelled: number; confirmed: number; noShow: number }, b: any) => {
+        const status = (b.status || '').toLowerCase();
+        acc.total += 1;
+        if (status === 'cancelled' || status === 'canceled') acc.cancelled += 1;
+        if (status === 'confirmed' || status === 'paid') acc.confirmed += 1;
+        if (status === 'no_show' || status === 'no-show' || status === 'noshow') acc.noShow += 1;
+        return acc;
+      },
+      { total: 0, cancelled: 0, confirmed: 0, noShow: 0 }
+    );
   }, [sortedBookings]);
 
   // Handlers
@@ -379,11 +402,11 @@ export default function BookingsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase">Pending</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.pending}</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase">Canceled</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.cancelled}</p>
                 </div>
-                <div className="p-3 bg-amber-50 rounded-lg">
-                  <Clock className="w-5 h-5 text-amber-600" />
+                <div className="p-3 bg-rose-50 rounded-lg">
+                  <XCircle className="w-5 h-5 text-rose-600" />
                 </div>
               </div>
             </CardContent>
@@ -407,11 +430,11 @@ export default function BookingsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase">Total Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(stats.revenue)}</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase">No Show</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stats.noShow}</p>
                 </div>
-                <div className="p-3 bg-violet-50 rounded-lg">
-                  <DollarSign className="w-5 h-5 text-violet-600" />
+                <div className="p-3 bg-amber-50 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -523,7 +546,7 @@ export default function BookingsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedBookings.map((booking: any) => (
+                    {paginatedBookings.map((booking: any) => (
                       <BookingRow
                         key={booking.id}
                         booking={booking}
@@ -537,6 +560,135 @@ export default function BookingsPage() {
               </div>
             )}
           </CardContent>
+
+          {/* Pagination */}
+          {!isLoading && sortedBookings.length > 0 && (
+            <div className="border-t px-4 py-3 bg-gray-50">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Pagination Info */}
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedBookings.length)} of {sortedBookings.length} bookings
+                  </span>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-2">
+                  {/* Items per page selector */}
+                  <div className="flex items-center gap-2 mr-4">
+                    <span className="text-sm text-gray-600">Per page:</span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 w-16">
+                          {itemsPerPage}
+                          <ChevronDown className="w-3 h-3 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {[10, 25, 50, 100].map((size) => (
+                          <DropdownMenuItem
+                            key={size}
+                            onClick={() => {
+                              setItemsPerPage(size);
+                              setCurrentPage(1);
+                            }}
+                          >
+                            {size}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Previous button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      const pages = [];
+                      const maxVisible = 5;
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+                      if (endPage - startPage < maxVisible - 1) {
+                        startPage = Math.max(1, endPage - maxVisible + 1);
+                      }
+
+                      if (startPage > 1) {
+                        pages.push(
+                          <Button
+                            key={1}
+                            variant={currentPage === 1 ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(1)}
+                            className="h-8 w-8 p-0"
+                          >
+                            1
+                          </Button>
+                        );
+                        if (startPage > 2) {
+                          pages.push(<span key="ellipsis1" className="px-2 text-gray-400">...</span>);
+                        }
+                      }
+
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(
+                          <Button
+                            key={i}
+                            variant={currentPage === i ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(i)}
+                            className={`h-8 w-8 p-0 ${currentPage === i ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                          >
+                            {i}
+                          </Button>
+                        );
+                      }
+
+                      if (endPage < totalPages) {
+                        if (endPage < totalPages - 1) {
+                          pages.push(<span key="ellipsis2" className="px-2 text-gray-400">...</span>);
+                        }
+                        pages.push(
+                          <Button
+                            key={totalPages}
+                            variant={currentPage === totalPages ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(totalPages)}
+                            className="h-8 w-8 p-0"
+                          >
+                            {totalPages}
+                          </Button>
+                        );
+                      }
+
+                      return pages;
+                    })()}
+                  </div>
+
+                  {/* Next button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
 
