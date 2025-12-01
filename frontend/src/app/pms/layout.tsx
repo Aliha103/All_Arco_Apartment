@@ -43,13 +43,15 @@ interface NavigationItem {
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/pms', icon: LayoutDashboard, permission: null }, // Always visible
   { name: 'Bookings', href: '/pms/bookings', icon: Calendar, permission: 'bookings.view' },
+  { name: 'Calender', href: '/pms/calendar', icon: CalendarDays, permission: 'bookings.view' },
   { name: 'Payments', href: '/pms/payments', icon: CreditCard, permission: 'payments.view' },
   { name: 'Invoices', href: '/pms/invoices', icon: FileText, permission: 'payments.view' },
-  { name: 'Guests', href: '/pms/guests', icon: Users, permission: 'guests.view' },
+  { name: 'Guests tree', href: '/pms/guests', icon: Users, permission: 'guests.view' },
+  { name: 'Users', href: '/pms/team', icon: User, permission: 'team.view' },
   { name: 'Pricing', href: '/pms/pricing', icon: DollarSign, permission: 'pricing.view' },
-  { name: 'Calendar', href: '/pms/calendar', icon: CalendarDays, permission: 'bookings.view' },
   { name: 'Gallery', href: '/pms/gallery', icon: ImageIcon, permission: 'gallery.view' },
   { name: 'Team', href: '/pms/team', icon: UserCog, permission: 'team.view' },
+  { name: 'OTA Setting', href: '/pms/settings/ota', icon: Sparkles, permission: 'bookings.view' },
   { name: 'Reports', href: '/pms/reports', icon: TrendingUp, permission: 'reports.view' },
 ];
 
