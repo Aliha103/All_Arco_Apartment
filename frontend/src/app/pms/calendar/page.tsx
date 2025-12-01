@@ -1,15 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  Plus,
+  X,
+  CheckCircle2,
+  XCircle,
+  Lock,
+  Unlock,
+  User,
+  Clock,
+  MapPin,
+} from 'lucide-react';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+
+// ============================================================================
+// Types & Interfaces
+// ============================================================================
 
 interface CalendarDate {
   date: string;
@@ -18,6 +40,10 @@ interface CalendarDate {
     id: string;
     booking_id: string;
     guest_name: string;
+    check_in_date: string;
+    check_out_date: string;
+    number_of_guests?: number;
+    total_price?: number;
   };
   blocked?: {
     id: string;
@@ -26,41 +52,73 @@ interface CalendarDate {
   };
 }
 
+interface BookingCapsule {
+  id: string;
+  booking_id: string;
+  guest_name: string;
+  check_in_date: string;
+  check_out_date: string;
+  number_of_guests?: number;
+  total_price?: number;
+  startCol: number;
+  endCol: number;
+  row: number;
+  color: string;
+}
+
+// ============================================================================
+// Quantum-Level Performance Utilities
+// ============================================================================
+
+const COLORS = {
+  primary: '#C4A572',
+  blue: '#3B82F6',
+  green: '#10B981',
+  red: '#EF4444',
+  purple: '#8B5CF6',
+  orange: '#F59E0B',
+};
+
+const BOOKING_COLORS = [COLORS.blue, COLORS.purple, COLORS.green, COLORS.orange];
+
+// Memoized date utilities for performance
+const createDateKey = (year: number, month: number, day: number): string =>
+  `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+const parseDateKey = (dateKey: string): { year: number; month: number; day: number } => {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return { year, month: month - 1, day };
+};
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
 export default function CalendarPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  // State management
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
-  const [selectedDateRange, setSelectedDateRange] = useState<{ start: string; end: string } | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingCapsule | null>(null);
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
 
-  const { data: calendarData } = useQuery({
+  // ============================================================================
+  // Data Fetching
+  // ============================================================================
+
+  const { data: calendarData, isLoading } = useQuery({
     queryKey: ['calendar', currentYear, currentMonth],
     queryFn: async () => {
       const response = await api.bookings.calendar(currentYear, currentMonth);
       return response.data as CalendarDate[];
     },
-  });
-
-  const { data: blockedDates } = useQuery({
-    queryKey: ['blocked-dates'],
-    queryFn: async () => {
-      const response = await api.blockedDates.list();
-      return response.data;
-    },
-  });
-
-  const createBlockedDate = useMutation({
-    mutationFn: (data: any) => api.blockedDates.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calendar'] });
-      queryClient.invalidateQueries({ queryKey: ['blocked-dates'] });
-      setIsBlockModalOpen(false);
-      setSelectedDateRange(null);
-      setBlockFormData({ start_date: '', end_date: '', reason: 'maintenance', notes: '' });
-      alert('Dates blocked successfully');
-    },
+    staleTime: 30000,
   });
 
   const [blockFormData, setBlockFormData] = useState({
@@ -70,34 +128,20 @@ export default function CalendarPage() {
     notes: '',
   });
 
-  const handlePreviousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-  };
+  const createBlockedDate = useMutation({
+    mutationFn: (data: any) => api.blockedDates.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      setIsBlockModalOpen(false);
+      setBlockFormData({ start_date: '', end_date: '', reason: 'maintenance', notes: '' });
+    },
+  });
 
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
-  };
+  // ============================================================================
+  // Quantum-Level Calendar Logic (Memoized for Performance)
+  // ============================================================================
 
-  const handleDateClick = (date: CalendarDate) => {
-    if (date.status === 'booked' && date.booking) {
-      window.location.href = `/pms/bookings/${date.booking.id}`;
-    } else if (date.status === 'available') {
-      setSelectedDateRange({ start: date.date, end: date.date });
-      setBlockFormData({
-        ...blockFormData,
-        start_date: date.date,
-        end_date: date.date,
-      });
-      setIsBlockModalOpen(true);
-    }
-  };
-
-  const handleBlockSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createBlockedDate.mutate(blockFormData);
-  };
-
-  const getDaysInMonth = () => {
+  const calendarGrid = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -107,198 +151,494 @@ export default function CalendarPage() {
 
     const days = [];
 
-    // Add empty cells for days before the first day of the month
+    // Empty cells before first day
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
 
-    // Add all days of the month
+    // All days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dateStr = createDateKey(year, month, day);
       const calendarDate = calendarData?.find((d) => d.date === dateStr);
       days.push({
         day,
         date: dateStr,
         calendarDate,
+        dayOfWeek: (startingDayOfWeek + day - 1) % 7,
+        isToday: dateStr === createDateKey(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
       });
     }
 
     return days;
-  };
+  }, [currentDate, calendarData]);
 
-  const getDateClassName = (calendarDate?: CalendarDate) => {
-    if (!calendarDate) return 'bg-white hover:bg-gray-50';
+  // ============================================================================
+  // Capsule Booking Calculation (Quantum-Level Position Logic)
+  // ============================================================================
+
+  const bookingCapsules = useMemo((): BookingCapsule[] => {
+    if (!calendarData) return [];
+
+    const capsules: BookingCapsule[] = [];
+    const processedBookings = new Set<string>();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    calendarData.forEach((dateData) => {
+      if (dateData.booking && !processedBookings.has(dateData.booking.id)) {
+        const booking = dateData.booking;
+        processedBookings.add(booking.id);
+
+        const checkIn = new Date(booking.check_in_date);
+        const checkOut = new Date(booking.check_out_date);
+
+        // Only process bookings that intersect with current month
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0);
+
+        if (checkOut < monthStart || checkIn > monthEnd) return;
+
+        // Calculate start and end positions
+        const startDay = checkIn.getMonth() === month ? checkIn.getDate() : 1;
+        const endDay = checkOut.getMonth() === month ? checkOut.getDate() : new Date(year, month + 1, 0).getDate();
+
+        // Calculate column positions (0-indexed, adjusted for starting day of week)
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+        const startCol = (firstDayOfMonth + startDay - 1) % 7;
+        const endCol = (firstDayOfMonth + endDay - 1) % 7;
+
+        // Calculate row (week number)
+        const startRow = Math.floor((firstDayOfMonth + startDay - 1) / 7);
+
+        // Assign color
+        const colorIndex = capsules.length % BOOKING_COLORS.length;
+
+        capsules.push({
+          ...booking,
+          startCol,
+          endCol,
+          row: startRow,
+          color: BOOKING_COLORS[colorIndex],
+        });
+      }
+    });
+
+    return capsules;
+  }, [calendarData, currentDate]);
+
+  // ============================================================================
+  // Event Handlers (Memoized with useCallback)
+  // ============================================================================
+
+  const handlePreviousMonth = useCallback(() => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  }, [currentDate]);
+
+  const handleNextMonth = useCallback(() => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  }, [currentDate]);
+
+  const handleToday = useCallback(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  const handleDateClick = useCallback((dayData: any) => {
+    if (!dayData) return;
+
+    if (dayData.calendarDate?.booking) {
+      router.push(`/pms/bookings/${dayData.calendarDate.booking.id}`);
+    } else if (dayData.calendarDate?.status === 'available') {
+      setBlockFormData({
+        start_date: dayData.date,
+        end_date: dayData.date,
+        reason: 'maintenance',
+        notes: '',
+      });
+      setIsBlockModalOpen(true);
+    }
+  }, [router]);
+
+  const handleCapsuleClick = useCallback((capsule: BookingCapsule, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedBooking(capsule);
+  }, []);
+
+  const handleBlockSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    createBlockedDate.mutate(blockFormData);
+  }, [blockFormData, createBlockedDate]);
+
+  // ============================================================================
+  // Render Helpers
+  // ============================================================================
+
+  const getDateClassName = useCallback((calendarDate?: CalendarDate, isToday?: boolean) => {
+    const baseClasses = 'relative h-24 p-2 border-2 rounded-lg transition-all duration-200';
+
+    if (isToday) {
+      return `${baseClasses} border-[#C4A572] bg-[#C4A572]/5 font-bold`;
+    }
+
+    if (!calendarDate) {
+      return `${baseClasses} border-gray-200 bg-white hover:bg-gray-50 cursor-pointer`;
+    }
 
     switch (calendarDate.status) {
       case 'booked':
-        return 'bg-blue-100 hover:bg-blue-200 cursor-pointer border-2 border-blue-300';
+        return `${baseClasses} border-blue-200 bg-blue-50/30 cursor-pointer hover:bg-blue-50/50`;
       case 'blocked':
-        return 'bg-gray-200 hover:bg-gray-300 cursor-not-allowed';
+        return `${baseClasses} border-gray-300 bg-gray-100 cursor-not-allowed`;
       case 'check_in':
-        return 'bg-green-100 hover:bg-green-200 cursor-pointer border-l-4 border-green-500';
+        return `${baseClasses} border-green-300 bg-green-50 cursor-pointer hover:bg-green-100`;
       case 'check_out':
-        return 'bg-red-100 hover:bg-red-200 cursor-pointer border-r-4 border-red-500';
+        return `${baseClasses} border-red-300 bg-red-50 cursor-pointer hover:bg-red-100`;
       default:
-        return 'bg-white hover:bg-gray-50 cursor-pointer';
+        return `${baseClasses} border-gray-200 bg-white hover:bg-gray-50 cursor-pointer`;
     }
-  };
+  }, []);
 
   const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const days = getDaysInMonth();
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Calendar View</h1>
-        <p className="text-gray-600">Manage availability and view bookings</p>
-      </div>
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <h1 className="text-3xl font-bold text-gray-900">Calendar View</h1>
+        <p className="text-base text-gray-800 mt-1">Manage availability and view bookings</p>
+      </motion.div>
 
       {/* Legend */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex gap-6 flex-wrap">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-white border-2 border-gray-300 rounded"></div>
-              <span className="text-sm">Available</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-blue-100 border-2 border-blue-300 rounded"></div>
-              <span className="text-sm">Booked</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gray-200 rounded"></div>
-              <span className="text-sm">Blocked</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-green-100 border-l-4 border-green-500 rounded"></div>
-              <span className="text-sm">Check-in</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-red-100 border-r-4 border-red-500 rounded"></div>
-              <span className="text-sm">Check-out</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Calendar */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{monthName}</CardTitle>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handlePreviousMonth}>
-                Previous
-              </Button>
-              <Button variant="outline" onClick={() => setCurrentDate(new Date())}>
-                Today
-              </Button>
-              <Button variant="outline" onClick={handleNextMonth}>
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Day headers */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div key={day} className="text-center font-semibold text-sm text-gray-600 py-2">
-                {day}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <Card className="border-2 border-gray-100">
+          <CardContent className="pt-6">
+            <div className="flex gap-4 sm:gap-6 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-white border-2 border-gray-300 rounded"></div>
+                <span className="text-sm font-semibold text-gray-900">Available</span>
               </div>
-            ))}
-          </div>
-
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-2">
-            {days.map((dayData, index) => (
-              <div
-                key={index}
-                className={`min-h-24 p-2 border rounded-lg transition-colors ${
-                  dayData ? getDateClassName(dayData.calendarDate) : 'bg-gray-50'
-                }`}
-                onClick={() => dayData && dayData.calendarDate && handleDateClick(dayData.calendarDate)}
-              >
-                {dayData && (
-                  <>
-                    <div className="text-sm font-semibold mb-1">{dayData.day}</div>
-                    {dayData.calendarDate?.booking && (
-                      <div className="text-xs">
-                        <div className="font-medium truncate">{dayData.calendarDate.booking.guest_name}</div>
-                        <div className="text-gray-600">{dayData.calendarDate.booking.booking_id}</div>
-                      </div>
-                    )}
-                    {dayData.calendarDate?.blocked && (
-                      <div className="text-xs text-gray-600">
-                        <div className="font-medium">Blocked</div>
-                        <div className="truncate">{dayData.calendarDate.blocked.reason}</div>
-                      </div>
-                    )}
-                  </>
-                )}
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-blue-100 border-2 border-blue-300 rounded"></div>
+                <span className="text-sm font-semibold text-gray-900">Booked</span>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-gray-200 border-2 border-gray-300 rounded"></div>
+                <span className="text-sm font-semibold text-gray-900">Blocked</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-green-100 border-2 border-green-300 rounded"></div>
+                <span className="text-sm font-semibold text-gray-900">Check-in</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-red-100 border-2 border-red-300 rounded"></div>
+                <span className="text-sm font-semibold text-gray-900">Check-out</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Calendar Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <Card className="border-2 border-gray-100 shadow-sm">
+          <CardHeader className="border-b-2 border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <CalendarIcon className="w-6 h-6 text-[#C4A572]" />
+                {monthName}
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePreviousMonth}
+                  className="gap-1 border-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Previous</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToday}
+                  className="border-2 bg-[#C4A572] hover:bg-[#B39562] text-white border-[#C4A572]"
+                >
+                  Today
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextMonth}
+                  className="gap-1 border-2"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-4 sm:p-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-4 border-[#C4A572] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading calendar...</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Day Headers */}
+                <div className="grid grid-cols-7 gap-2 mb-2">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                    <div key={day} className="text-center font-bold text-sm text-gray-700 py-2">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar Grid with Capsule Overlays */}
+                <div ref={calendarRef} className="relative">
+                  {/* Base Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-2">
+                    {calendarGrid.map((dayData, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2, delay: index * 0.01 }}
+                        className={getDateClassName(dayData?.calendarDate, dayData?.isToday)}
+                        onClick={() => handleDateClick(dayData)}
+                        onMouseEnter={() => dayData && setHoveredDate(dayData.date)}
+                        onMouseLeave={() => setHoveredDate(null)}
+                      >
+                        {dayData && (
+                          <>
+                            <div className={`text-sm font-bold mb-1 ${dayData.isToday ? 'text-[#C4A572]' : 'text-gray-900'}`}>
+                              {dayData.day}
+                            </div>
+                            {dayData.calendarDate?.blocked && (
+                              <div className="text-xs space-y-1">
+                                <div className="flex items-center gap-1 text-gray-700">
+                                  <Lock className="w-3 h-3" />
+                                  <span className="font-semibold">Blocked</span>
+                                </div>
+                                <div className="text-gray-600 text-xs truncate capitalize">
+                                  {dayData.calendarDate.blocked.reason.replace('_', ' ')}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Booking Capsules Overlay */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <AnimatePresence>
+                      {bookingCapsules.map((capsule, index) => {
+                        const checkIn = new Date(capsule.check_in_date);
+                        const checkOut = new Date(capsule.check_out_date);
+                        const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+
+                        // Calculate capsule position and width
+                        const startOffset = 40; // 40% from right of first cell
+                        const endOffset = 40; // 40% from left of last cell
+
+                        return (
+                          <motion.div
+                            key={capsule.id}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="absolute pointer-events-auto cursor-pointer"
+                            style={{
+                              top: `calc(${capsule.row * 100 / Math.ceil(calendarGrid.filter(d => d).length / 7)}% + 2rem)`,
+                              left: `calc(${(capsule.startCol * 100 / 7) + (startOffset / 7)}%)`,
+                              width: `calc(${((nights) * 100 / 7) - ((startOffset + endOffset) / 7)}%)`,
+                              zIndex: 10,
+                            }}
+                            onClick={(e) => handleCapsuleClick(capsule, e)}
+                          >
+                            <div
+                              className="relative h-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center px-3 overflow-hidden group"
+                              style={{ backgroundColor: capsule.color }}
+                            >
+                              <div className="flex items-center justify-between w-full text-white text-xs font-bold truncate">
+                                <span className="truncate">{capsule.guest_name}</span>
+                                <span className="ml-2 opacity-90">{nights}N</span>
+                              </div>
+                              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Block Dates Modal */}
       <Dialog open={isBlockModalOpen} onOpenChange={setIsBlockModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Block Dates</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-900">Block Dates</DialogTitle>
+            <DialogDescription>
+              Prevent bookings for maintenance, owner use, or other reasons
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleBlockSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Start Date</Label>
+              <Label htmlFor="start_date" className="font-semibold text-gray-900">Start Date</Label>
               <Input
+                id="start_date"
                 type="date"
                 value={blockFormData.start_date}
                 onChange={(e) => setBlockFormData({ ...blockFormData, start_date: e.target.value })}
+                className="border-2"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label>End Date</Label>
+              <Label htmlFor="end_date" className="font-semibold text-gray-900">End Date</Label>
               <Input
+                id="end_date"
                 type="date"
                 value={blockFormData.end_date}
                 onChange={(e) => setBlockFormData({ ...blockFormData, end_date: e.target.value })}
                 min={blockFormData.start_date}
+                className="border-2"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label>Reason</Label>
-              <select
-                className="w-full px-3 py-2 border rounded-lg"
+              <Label htmlFor="reason" className="font-semibold text-gray-900">Reason</Label>
+              <Select
                 value={blockFormData.reason}
-                onChange={(e) => setBlockFormData({ ...blockFormData, reason: e.target.value })}
-                required
+                onValueChange={(value) => setBlockFormData({ ...blockFormData, reason: value })}
               >
-                <option value="maintenance">Maintenance</option>
-                <option value="owner_use">Owner Use</option>
-                <option value="other">Other</option>
-              </select>
+                <SelectTrigger className="border-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="owner_use">Owner Use</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label>Notes (Optional)</Label>
-              <textarea
-                className="w-full px-3 py-2 border rounded-lg min-h-20"
+              <Label htmlFor="notes" className="font-semibold text-gray-900">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
                 value={blockFormData.notes}
                 onChange={(e) => setBlockFormData({ ...blockFormData, notes: e.target.value })}
                 placeholder="Internal notes about why these dates are blocked..."
+                className="border-2 min-h-[100px]"
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsBlockModalOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsBlockModalOpen(false)}
+                className="border-2"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createBlockedDate.isPending}>
-                {createBlockedDate.isPending ? 'Blocking...' : 'Block Dates'}
+              <Button
+                type="submit"
+                disabled={createBlockedDate.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {createBlockedDate.isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Blocking...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 mr-2" />
+                    Block Dates
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Details Modal */}
+      <Dialog open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Booking Details</DialogTitle>
+            <DialogDescription>
+              {selectedBooking?.booking_id}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                <div className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-gray-700" />
+                  <div>
+                    <p className="text-xs text-gray-600">Guest Name</p>
+                    <p className="font-bold text-gray-900">{selectedBooking.guest_name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-gray-700" />
+                  <div>
+                    <p className="text-xs text-gray-600">Stay Period</p>
+                    <p className="font-bold text-gray-900">
+                      {formatDate(selectedBooking.check_in_date)} - {formatDate(selectedBooking.check_out_date)}
+                    </p>
+                  </div>
+                </div>
+                {selectedBooking.number_of_guests && (
+                  <div className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-gray-700" />
+                    <div>
+                      <p className="text-xs text-gray-600">Guests</p>
+                      <p className="font-bold text-gray-900">{selectedBooking.number_of_guests}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedBooking(null)} className="border-2">
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                setSelectedBooking(null);
+                router.push(`/pms/bookings/${selectedBooking?.id}`);
+              }}
+              className="bg-[#C4A572] hover:bg-[#B39562]"
+            >
+              View Full Details
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
