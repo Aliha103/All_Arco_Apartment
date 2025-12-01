@@ -7,15 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
-  Plus,
-  X,
-  CheckCircle2,
-  XCircle,
   Lock,
-  Unlock,
   User,
-  Clock,
-  MapPin,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDate } from '@/lib/utils';
@@ -60,8 +52,9 @@ interface BookingCapsule {
   check_out_date: string;
   number_of_guests?: number;
   total_price?: number;
-  startCol: number;
-  endCol: number;
+  startDay: number;
+  endDay: number;
+  nights: number;
   row: number;
   color: string;
 }
@@ -84,11 +77,6 @@ const BOOKING_COLORS = [COLORS.blue, COLORS.purple, COLORS.green, COLORS.orange]
 // Memoized date utilities for performance
 const createDateKey = (year: number, month: number, day: number): string =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-const parseDateKey = (dateKey: string): { year: number; month: number; day: number } => {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  return { year, month: month - 1, day };
-};
 
 // ============================================================================
 // Main Component
@@ -198,16 +186,15 @@ export default function CalendarPage() {
 
         if (checkOut < monthStart || checkIn > monthEnd) return;
 
-        // Calculate start and end positions
+        // Calculate start and end day numbers
         const startDay = checkIn.getMonth() === month ? checkIn.getDate() : 1;
         const endDay = checkOut.getMonth() === month ? checkOut.getDate() : new Date(year, month + 1, 0).getDate();
 
-        // Calculate column positions (0-indexed, adjusted for starting day of week)
-        const firstDayOfMonth = new Date(year, month, 1).getDay();
-        const startCol = (firstDayOfMonth + startDay - 1) % 7;
-        const endCol = (firstDayOfMonth + endDay - 1) % 7;
+        // Calculate nights
+        const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
 
         // Calculate row (week number)
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
         const startRow = Math.floor((firstDayOfMonth + startDay - 1) / 7);
 
         // Assign color
@@ -215,8 +202,9 @@ export default function CalendarPage() {
 
         capsules.push({
           ...booking,
-          startCol,
-          endCol,
+          startDay,
+          endDay,
+          nights,
           row: startRow,
           color: BOOKING_COLORS[colorIndex],
         });
@@ -225,6 +213,13 @@ export default function CalendarPage() {
 
     return capsules;
   }, [calendarData, currentDate]);
+
+  // Log capsules for debugging
+  useEffect(() => {
+    if (bookingCapsules.length > 0) {
+      console.log('Booking Capsules:', bookingCapsules);
+    }
+  }, [bookingCapsules]);
 
   // ============================================================================
   // Event Handlers (Memoized with useCallback)
@@ -273,31 +268,35 @@ export default function CalendarPage() {
   // ============================================================================
 
   const getDateClassName = useCallback((calendarDate?: CalendarDate, isToday?: boolean) => {
-    const baseClasses = 'relative h-24 p-2 border-2 rounded-lg transition-all duration-200';
+    const baseClasses = 'relative h-24 p-2 rounded-md transition-all duration-200';
 
     if (isToday) {
-      return `${baseClasses} border-[#C4A572] bg-[#C4A572]/5 font-bold`;
+      return `${baseClasses} bg-[#C4A572]/10 ring-1 ring-[#C4A572]/30 font-bold shadow-sm`;
     }
 
     if (!calendarDate) {
-      return `${baseClasses} border-gray-200 bg-white hover:bg-gray-50 cursor-pointer`;
+      return `${baseClasses} bg-white/50 hover:bg-gray-50 cursor-pointer`;
     }
 
     switch (calendarDate.status) {
       case 'booked':
-        return `${baseClasses} border-blue-200 bg-blue-50/30 cursor-pointer hover:bg-blue-50/50`;
+        return `${baseClasses} bg-blue-50/40 cursor-pointer hover:bg-blue-50/60`;
       case 'blocked':
-        return `${baseClasses} border-gray-300 bg-gray-100 cursor-not-allowed`;
+        return `${baseClasses} bg-gray-100/70 cursor-not-allowed`;
       case 'check_in':
-        return `${baseClasses} border-green-300 bg-green-50 cursor-pointer hover:bg-green-100`;
+        return `${baseClasses} bg-green-50/50 cursor-pointer hover:bg-green-100/70`;
       case 'check_out':
-        return `${baseClasses} border-red-300 bg-red-50 cursor-pointer hover:bg-red-100`;
+        return `${baseClasses} bg-red-50/50 cursor-pointer hover:bg-red-100/70`;
       default:
-        return `${baseClasses} border-gray-200 bg-white hover:bg-gray-50 cursor-pointer`;
+        return `${baseClasses} bg-white/50 hover:bg-gray-50 cursor-pointer`;
     }
   }, []);
 
   const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  // Calculate cell dimensions for capsule positioning
+  const cellHeight = 96; // h-24 = 6rem = 96px
+  const gapSize = 4; // gap-1 = 0.25rem = 4px
 
   return (
     <div className="space-y-6 pb-8">
@@ -317,27 +316,27 @@ export default function CalendarPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <Card className="border-2 border-gray-100">
+        <Card className="border border-gray-200/50 shadow-sm">
           <CardContent className="pt-6">
             <div className="flex gap-4 sm:gap-6 flex-wrap">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-white border-2 border-gray-300 rounded"></div>
+                <div className="w-6 h-6 bg-white/50 rounded"></div>
                 <span className="text-sm font-semibold text-gray-900">Available</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-blue-100 border-2 border-blue-300 rounded"></div>
+                <div className="w-6 h-6 bg-blue-100/40 rounded"></div>
                 <span className="text-sm font-semibold text-gray-900">Booked</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gray-200 border-2 border-gray-300 rounded"></div>
+                <div className="w-6 h-6 bg-gray-200/70 rounded"></div>
                 <span className="text-sm font-semibold text-gray-900">Blocked</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-green-100 border-2 border-green-300 rounded"></div>
+                <div className="w-6 h-6 bg-green-100/50 rounded"></div>
                 <span className="text-sm font-semibold text-gray-900">Check-in</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-red-100 border-2 border-red-300 rounded"></div>
+                <div className="w-6 h-6 bg-red-100/50 rounded"></div>
                 <span className="text-sm font-semibold text-gray-900">Check-out</span>
               </div>
             </div>
@@ -351,8 +350,8 @@ export default function CalendarPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <Card className="border-2 border-gray-100 shadow-sm">
-          <CardHeader className="border-b-2 border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+        <Card className="border border-gray-200/50 shadow-sm">
+          <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50/50 to-white">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <CalendarIcon className="w-6 h-6 text-[#C4A572]" />
@@ -363,7 +362,7 @@ export default function CalendarPage() {
                   variant="outline"
                   size="sm"
                   onClick={handlePreviousMonth}
-                  className="gap-1 border-2"
+                  className="gap-1"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span className="hidden sm:inline">Previous</span>
@@ -372,7 +371,7 @@ export default function CalendarPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleToday}
-                  className="border-2 bg-[#C4A572] hover:bg-[#B39562] text-white border-[#C4A572]"
+                  className="bg-[#C4A572] hover:bg-[#B39562] text-white"
                 >
                   Today
                 </Button>
@@ -380,7 +379,7 @@ export default function CalendarPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleNextMonth}
-                  className="gap-1 border-2"
+                  className="gap-1"
                 >
                   <span className="hidden sm:inline">Next</span>
                   <ChevronRight className="w-4 h-4" />
@@ -400,7 +399,7 @@ export default function CalendarPage() {
             ) : (
               <>
                 {/* Day Headers */}
-                <div className="grid grid-cols-7 gap-2 mb-2">
+                <div className="grid grid-cols-7 gap-1 mb-2">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                     <div key={day} className="text-center font-bold text-sm text-gray-700 py-2">
                       {day}
@@ -411,13 +410,13 @@ export default function CalendarPage() {
                 {/* Calendar Grid with Capsule Overlays */}
                 <div ref={calendarRef} className="relative">
                   {/* Base Calendar Grid */}
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-1">
                     {calendarGrid.map((dayData, index) => (
                       <motion.div
                         key={index}
-                        initial={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.2, delay: index * 0.01 }}
+                        transition={{ duration: 0.15, delay: index * 0.005 }}
                         className={getDateClassName(dayData?.calendarDate, dayData?.isToday)}
                         onClick={() => handleDateClick(dayData)}
                         onMouseEnter={() => dayData && setHoveredDate(dayData.date)}
@@ -446,16 +445,30 @@ export default function CalendarPage() {
                   </div>
 
                   {/* Booking Capsules Overlay */}
-                  <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-0 pointer-events-none" style={{ top: '44px' }}>
                     <AnimatePresence>
                       {bookingCapsules.map((capsule, index) => {
-                        const checkIn = new Date(capsule.check_in_date);
-                        const checkOut = new Date(capsule.check_out_date);
-                        const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+                        const year = currentDate.getFullYear();
+                        const month = currentDate.getMonth();
+                        const firstDayOfMonth = new Date(year, month, 1).getDay();
 
-                        // Calculate capsule position and width
-                        const startOffset = 40; // 40% from right of first cell
-                        const endOffset = 40; // 40% from left of last cell
+                        // Calculate position in grid
+                        const startIndex = firstDayOfMonth + capsule.startDay - 1;
+                        const endIndex = firstDayOfMonth + capsule.endDay - 1;
+
+                        // Grid row and column
+                        const gridRow = Math.floor(startIndex / 7);
+                        const startCol = startIndex % 7;
+                        const endCol = endIndex % 7;
+
+                        // Calculate if capsule spans multiple rows
+                        const spansMultipleRows = gridRow !== Math.floor(endIndex / 7);
+                        const daysInRow = spansMultipleRows ? (7 - startCol) : (endCol - startCol + 1);
+
+                        // Positioning with 40% offset
+                        const cellWidth = `calc((100% - 6 * ${gapSize}px) / 7)`;
+                        const startOffset = 0.4; // 40%
+                        const endOffset = 0.4; // 40%
 
                         return (
                           <motion.div
@@ -466,20 +479,20 @@ export default function CalendarPage() {
                             transition={{ duration: 0.3, delay: index * 0.05 }}
                             className="absolute pointer-events-auto cursor-pointer"
                             style={{
-                              top: `calc(${capsule.row * 100 / Math.ceil(calendarGrid.filter(d => d).length / 7)}% + 2rem)`,
-                              left: `calc(${(capsule.startCol * 100 / 7) + (startOffset / 7)}%)`,
-                              width: `calc(${((nights) * 100 / 7) - ((startOffset + endOffset) / 7)}%)`,
+                              top: `${gridRow * (cellHeight + gapSize) + 32}px`,
+                              left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
+                              width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
                               zIndex: 10,
                             }}
                             onClick={(e) => handleCapsuleClick(capsule, e)}
                           >
                             <div
-                              className="relative h-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center px-3 overflow-hidden group"
+                              className="relative h-7 rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center px-3 overflow-hidden group"
                               style={{ backgroundColor: capsule.color }}
                             >
                               <div className="flex items-center justify-between w-full text-white text-xs font-bold truncate">
                                 <span className="truncate">{capsule.guest_name}</span>
-                                <span className="ml-2 opacity-90">{nights}N</span>
+                                <span className="ml-2 opacity-90 text-[10px]">{capsule.nights}N</span>
                               </div>
                               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
                             </div>
@@ -489,6 +502,13 @@ export default function CalendarPage() {
                     </AnimatePresence>
                   </div>
                 </div>
+
+                {/* Debug Info */}
+                {bookingCapsules.length > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-md text-xs text-gray-700">
+                    <strong>Debug:</strong> Found {bookingCapsules.length} booking(s) this month
+                  </div>
+                )}
               </>
             )}
           </CardContent>
@@ -512,7 +532,6 @@ export default function CalendarPage() {
                 type="date"
                 value={blockFormData.start_date}
                 onChange={(e) => setBlockFormData({ ...blockFormData, start_date: e.target.value })}
-                className="border-2"
                 required
               />
             </div>
@@ -524,7 +543,6 @@ export default function CalendarPage() {
                 value={blockFormData.end_date}
                 onChange={(e) => setBlockFormData({ ...blockFormData, end_date: e.target.value })}
                 min={blockFormData.start_date}
-                className="border-2"
                 required
               />
             </div>
@@ -534,7 +552,7 @@ export default function CalendarPage() {
                 value={blockFormData.reason}
                 onValueChange={(value) => setBlockFormData({ ...blockFormData, reason: value })}
               >
-                <SelectTrigger className="border-2">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -551,7 +569,7 @@ export default function CalendarPage() {
                 value={blockFormData.notes}
                 onChange={(e) => setBlockFormData({ ...blockFormData, notes: e.target.value })}
                 placeholder="Internal notes about why these dates are blocked..."
-                className="border-2 min-h-[100px]"
+                className="min-h-[100px]"
               />
             </div>
             <DialogFooter>
@@ -559,7 +577,6 @@ export default function CalendarPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsBlockModalOpen(false)}
-                className="border-2"
               >
                 Cancel
               </Button>
@@ -622,11 +639,15 @@ export default function CalendarPage() {
                     </div>
                   </div>
                 )}
+                <div>
+                  <p className="text-xs text-gray-600">Nights</p>
+                  <p className="font-bold text-gray-900">{selectedBooking.nights}</p>
+                </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedBooking(null)} className="border-2">
+            <Button variant="outline" onClick={() => setSelectedBooking(null)}>
               Close
             </Button>
             <Button
