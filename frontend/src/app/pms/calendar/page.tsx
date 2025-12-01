@@ -577,11 +577,13 @@ export default function CalendarPage() {
                               const daysInRow = rowEndIndex - currentIndex + 1;
                               if (daysInRow > 0) {
                                 const isSingleDay = capsule.startDay === capsule.endDay;
-                                const startOffset = isSingleDay ? 0.1 : 0.45;
-                                const endOffset = isSingleDay ? 0.1 : 0.45;
+                                // leave visible gap between adjacent capsules
+                                const startOffset = isSingleDay ? 0.15 : 0.55;
+                                const endOffset = isSingleDay ? 0.15 : 0.55;
+                                const extraYOffset = isBlocked ? 6 : 0; // nudge blocked down slightly
                                 segments.push({
                                   key: `${isBlocked ? 'blocked' : 'booking'}-${capsule.id}-${gridRow}-${startCol}`,
-                                  top: `${gridRow * (cellHeight + gapSize) + capsuleOffsetY}px`,
+                                  top: `${gridRow * (cellHeight + gapSize) + capsuleOffsetY + extraYOffset}px`,
                                   left: `calc(${startCol} * (${cellWidth} + ${gapSize}px) + ${startOffset} * ${cellWidth})`,
                                   width: `calc(${daysInRow} * ${cellWidth} + ${daysInRow - 1} * ${gapSize}px - ${startOffset + endOffset} * ${cellWidth})`,
                                   capsule,
