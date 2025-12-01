@@ -419,6 +419,7 @@ export default function CalendarPage() {
   // Calculate cell dimensions for capsule positioning
   const cellHeight = 96; // h-24 = 6rem = 96px
   const gapSize = 4; // gap-1 = 0.25rem = 4px
+  const capsuleHeight = 28;
 
   return (
     <div className="space-y-6 pb-8">
