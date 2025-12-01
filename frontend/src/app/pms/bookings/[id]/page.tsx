@@ -27,7 +27,6 @@ export default function BookingDetailPage() {
   const [issueRefund, setIssueRefund] = useState(true);
   const [newNote, setNewNote] = useState('');
   const [selectedEmailType, setSelectedEmailType] = useState('confirmation');
-  const [overlapBlocked, setOverlapBlocked] = useState(false);
 
   // Fetch booking details
   const { data: booking, isLoading, error } = useQuery({
@@ -146,7 +145,7 @@ export default function BookingDetailPage() {
       : 'unpaid';
 
   // Availability check for undo-cancel / undo no-show to avoid overbooking
-  useQuery({
+  const { data: overlapBlocked = false } = useQuery({
     queryKey: ['booking-overlaps', bookingId, booking.status],
     queryFn: async () => {
       const resp = await api.bookings.list({
@@ -162,7 +161,6 @@ export default function BookingDetailPage() {
       return overlaps.length > 0;
     },
     enabled: ['cancelled', 'no_show'].includes(booking.status),
-    onSuccess: (blocked) => setOverlapBlocked(blocked),
   });
 
   // Actions eligibility
