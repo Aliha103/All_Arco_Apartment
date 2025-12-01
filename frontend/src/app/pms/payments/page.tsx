@@ -833,8 +833,8 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create Payment Request</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-gray-900">Create Payment Request</DialogTitle>
+          <DialogDescription className="text-gray-700">
             {step === 'search' ? 'Search and select a booking' : 'Enter payment details'}
           </DialogDescription>
         </DialogHeader>
@@ -844,14 +844,14 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
             <>
               {/* Search Booking */}
               <div>
-                <Label>Search Booking</Label>
+                <Label className="text-gray-900 font-medium">Search Booking</Label>
                 <div className="relative mt-2">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
                     placeholder="Search by booking reference, guest name, or email..."
                     value={bookingSearch}
                     onChange={(e) => setBookingSearch(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 text-gray-900"
                   />
                 </div>
               </div>
@@ -928,7 +928,7 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
               {/* Payment Details Form */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="title">
+                  <Label htmlFor="title" className="text-gray-900 font-medium">
                     Title <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -936,26 +936,28 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
                     placeholder="e.g., Remaining Balance, Security Deposit"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="text-gray-900 mt-1.5"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-gray-900 font-medium">Description</Label>
                   <Textarea
                     id="description"
                     placeholder="Additional details about this payment"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
+                    className="text-gray-900 mt-1.5"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="amount">
+                    <Label htmlFor="amount" className="text-gray-900 font-medium">
                       Amount <span className="text-red-500">*</span>
                     </Label>
-                    <div className="relative">
+                    <div className="relative mt-1.5">
                       <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
                         id="amount"
@@ -964,13 +966,13 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
                         placeholder="0.00"
                         value={formData.amount}
                         onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                        className="pl-10"
+                        className="pl-10 text-gray-900"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="due_date">
+                    <Label htmlFor="due_date" className="text-gray-900 font-medium">
                       Due Date <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -978,6 +980,7 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
                       type="date"
                       value={formData.due_date}
                       onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                      className="text-gray-900 mt-1.5"
                     />
                   </div>
                 </div>
@@ -1039,8 +1042,8 @@ function MarkPaidModal({ isOpen, onClose, payment }: MarkPaidModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Mark Payment as Paid</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-gray-900">Mark Payment as Paid</DialogTitle>
+          <DialogDescription className="text-gray-700">
             How was this payment received?
           </DialogDescription>
         </DialogHeader>
@@ -1055,16 +1058,16 @@ function MarkPaidModal({ isOpen, onClose, payment }: MarkPaidModalProps) {
 
           {/* Payment Method Selection */}
           <div>
-            <Label>Payment Method <span className="text-red-500">*</span></Label>
+            <Label className="text-gray-900 font-medium">Payment Method <span className="text-red-500">*</span></Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="mt-2">
-                <SelectValue placeholder="Select payment method" />
+              <SelectTrigger className="mt-1.5">
+                <SelectValue placeholder="Select payment method" className="text-gray-900" />
               </SelectTrigger>
               <SelectContent>
                 {PAYMENT_METHODS.map((method) => {
                   const Icon = method.icon;
                   return (
-                    <SelectItem key={method.value} value={method.value}>
+                    <SelectItem key={method.value} value={method.value} className="text-gray-900">
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4" />
                         {method.label}
@@ -1130,8 +1133,8 @@ function CancelPaymentModal({ isOpen, onClose, payment }: CancelPaymentModalProp
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel Payment Request</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-gray-900">Cancel Payment Request</DialogTitle>
+          <DialogDescription className="text-gray-700">
             Why are you cancelling this payment request?
           </DialogDescription>
         </DialogHeader>
@@ -1146,7 +1149,7 @@ function CancelPaymentModal({ isOpen, onClose, payment }: CancelPaymentModalProp
 
           {/* Cancellation Reason */}
           <div>
-            <Label htmlFor="reason">
+            <Label htmlFor="reason" className="text-gray-900 font-medium">
               Cancellation Reason <span className="text-red-500">*</span>
             </Label>
             <Textarea
@@ -1155,7 +1158,7 @@ function CancelPaymentModal({ isOpen, onClose, payment }: CancelPaymentModalProp
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={4}
-              className="mt-2"
+              className="mt-1.5 text-gray-900"
             />
           </div>
 
