@@ -382,8 +382,8 @@ function GuestDetailsModal({
               Profile
             </TabsTrigger>
             <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              <Calendar className="w-4 h-4 mr-2" />
-              Bookings
+              <Users className="w-4 h-4 mr-2" />
+              Guests
             </TabsTrigger>
             <TabsTrigger value="documents" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
               <FileText className="w-4 h-4 mr-2" />
