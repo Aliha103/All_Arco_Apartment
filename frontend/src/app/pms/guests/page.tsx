@@ -291,7 +291,15 @@ function GuestDetailsModal({
 
   if (!guest) return null;
 
-  const bookings = (guest?.bookings && guest.bookings.length > 0 ? guest.bookings : guestBookings) as any[];
+  const bookings = useMemo(() => {
+    if (guest?.bookings && Array.isArray(guest.bookings) && guest.bookings.length > 0) {
+      return guest.bookings as any[];
+    }
+    if (Array.isArray(guestBookings)) {
+      return guestBookings as any[];
+    }
+    return [];
+  }, [guest?.bookings, guestBookings]);
 
   const sortedBookings = useMemo(() => {
     if (!bookings || bookings.length === 0) return [];
