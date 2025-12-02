@@ -734,7 +734,7 @@ export default function GuestsPage() {
             color="orange"
           />
           <StatCard
-            title="Online Bookings"
+            title="Online Check-ins"
             value={stats.onlineBookings}
             icon={TrendingUp}
             color="green"
