@@ -1,6 +1,7 @@
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.functions import Lower
 from django.core.exceptions import ValidationError
 
 
@@ -319,6 +320,16 @@ class User(AbstractUser):
             models.Index(fields=['legacy_role']),
             models.Index(fields=['assigned_role']),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                Lower('email'),
+                name='users_user_email_ci_unique'
+            ),
+            models.UniqueConstraint(
+                Lower('username'),
+                name='users_user_username_ci_unique'
+            ),
+        ]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
@@ -418,6 +429,12 @@ class User(AbstractUser):
         return self.assigned_role.get_permission_codes()
 
     def save(self, *args, **kwargs):
+        # Normalize identifiers to prevent duplicates with different casing/spacing
+        if self.email:
+            self.email = self.email.strip().lower()
+        if self.username:
+            self.username = self.username.strip().lower()
+
         # Set username to email if not provided
         if not self.username:
             self.username = self.email

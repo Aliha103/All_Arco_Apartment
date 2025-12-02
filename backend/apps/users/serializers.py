@@ -42,10 +42,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         invitation_code = validated_data.pop('invitation_code', None)
+        normalized_email = validated_data['email'].strip().lower()
 
         user = User.objects.create_user(
-            email=validated_data['email'],
-            username=validated_data['email'],
+            email=normalized_email,
+            username=normalized_email,
             password=validated_data['password'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
