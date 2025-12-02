@@ -259,6 +259,17 @@ function GuestDetailsModal({
   const [newNote, setNewNote] = useState('');
   const queryClient = useQueryClient();
 
+  // Fetch bookings for this guest (by email) to power check-in links and history
+  const { data: guestBookings = [], isLoading: bookingsLoading } = useQuery({
+    queryKey: ['guest-bookings', guest?.email],
+    queryFn: async () => {
+      if (!guest?.email) return [];
+      const res = await api.bookings.list({ guest_email: guest.email });
+      return res.data.results || res.data || [];
+    },
+    enabled: Boolean(guest?.email),
+  });
+
   const addNoteMutation = useMutation({
     mutationFn: (note: string) => api.users.guests.addNote(guest!.id, note),
     onSuccess: () => {
@@ -278,6 +289,16 @@ function GuestDetailsModal({
   };
 
   if (!guest) return null;
+
+  const bookings = (guest.bookings && guest.bookings.length > 0 ? guest.bookings : guestBookings) as any[];
+  const primaryBooking = bookings && bookings.length > 0 ? bookings[0] : null;
+
+  const buildCheckinLink = (booking: any) => {
+    if (!booking || !guest.email) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const confirmation = booking.confirmation_code || booking.booking_id || booking.id;
+    return `${origin}/booking/checkin?confirmation=${encodeURIComponent(confirmation)}&email=${encodeURIComponent(guest.email)}`;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -309,6 +330,33 @@ function GuestDetailsModal({
                 )}
               </div>
             </div>
+
+            {primaryBooking && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const link = buildCheckinLink(primaryBooking);
+                    navigator.clipboard.writeText(link);
+                    toast.success('Check-in link copied');
+                  }}
+                >
+                  Copy check-in link
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    const link = buildCheckinLink(primaryBooking);
+                    const mailto = `mailto:checkin@allarcoapartment.com?subject=Online check-in&body=Please complete your online check-in: ${encodeURIComponent(link)}`;
+                    window.location.href = mailto;
+                  }}
+                >
+                  Send via email
+                </Button>
+              </div>
+            )}
           </div>
         </DialogHeader>
 
@@ -428,9 +476,11 @@ function GuestDetailsModal({
                 <CardTitle>Booking History</CardTitle>
               </CardHeader>
               <CardContent>
-                {guest.bookings && guest.bookings.length > 0 ? (
+                {bookingsLoading ? (
+                  <p className="text-center py-8 text-gray-600">Loading bookings…</p>
+                ) : bookings && bookings.length > 0 ? (
                   <div className="space-y-4">
-                    {guest.bookings.map((booking) => (
+                    {bookings.map((booking) => (
                       <motion.div
                         key={booking.id}
                         initial={{ opacity: 0, x: -20 }}
@@ -460,6 +510,39 @@ function GuestDetailsModal({
                             </p>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2 mt-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const link = buildCheckinLink(booking);
+                              if (!link) return toast.error('No check-in link available for this booking');
+                              navigator.clipboard.writeText(link);
+                              toast.success('Check-in link copied');
+                            }}
+                          >
+                            Copy check-in link
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              const link = buildCheckinLink(booking);
+                              if (!link) return toast.error('No check-in link available for this booking');
+                              const mailto = `mailto:checkin@allarcoapartment.com?subject=Online check-in&body=Please complete your online check-in: ${encodeURIComponent(link)}`;
+                              window.location.href = mailto;
+                            }}
+                          >
+                            Send via email
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => window.open(`/pms/bookings/${booking.id}`, '_blank')}
+                          >
+                            Add guest details
+                          </Button>
+                        </div>
                       </motion.div>
                     ))}
                   </div>
@@ -476,7 +559,10 @@ function GuestDetailsModal({
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Documents & Photos</CardTitle>
-                  <Button size="sm">
+                  <Button
+                    size="sm"
+                    onClick={() => toast.info('Document upload coming soon')}
+                  >
                     <Upload className="w-4 h-4 mr-2" />
                     Upload
                   </Button>
