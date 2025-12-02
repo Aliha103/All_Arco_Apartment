@@ -225,6 +225,12 @@ export const api = {
     sync: (id: string) => apiClient.post(`/ota/ical-sources/${id}/sync/`),
     syncAll: () => apiClient.post('/ota/ical-sources/sync-all/'),
   },
+
+  // Alloggiati (Italian Police Reporting)
+  alloggiati: {
+    getAccount: () => apiClient.get('/alloggiati/account/'),
+    refreshToken: () => apiClient.post('/alloggiati/account/refresh_token/'),
+  },
 };
 
 export default api;

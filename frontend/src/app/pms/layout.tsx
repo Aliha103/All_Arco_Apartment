@@ -27,6 +27,7 @@ import {
   LogOut,
   Home,
   Sparkles,
+  Shield,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -52,6 +53,7 @@ const navigation: NavigationItem[] = [
   { name: 'Gallery', href: '/pms/gallery', icon: ImageIcon, permission: 'gallery.view' },
   { name: 'Team', href: '/pms/team', icon: UserCog, permission: 'team.view' },
   { name: 'OTA Setting', href: '/pms/settings/ota', icon: Sparkles, permission: 'bookings.view' },
+  { name: 'Alloggiati', href: '/pms/settings/alloggiati', icon: Shield, permission: 'bookings.view' },
   { name: 'Reports', href: '/pms/reports', icon: TrendingUp, permission: 'reports.view' },
 ];
 

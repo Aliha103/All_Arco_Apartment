@@ -379,19 +379,19 @@ function GuestDetailsModal({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-600">Email</label>
-                    <p className="text-sm mt-1">{guest.email}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.email}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Phone</label>
-                    <p className="text-sm mt-1">{guest.phone || 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.phone || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Date of Birth</label>
-                    <p className="text-sm mt-1">{guest.date_of_birth ? formatDate(guest.date_of_birth) : 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.date_of_birth ? formatDate(guest.date_of_birth) : 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Nationality</label>
-                    <p className="text-sm mt-1">{guest.nationality || 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.nationality || 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -406,19 +406,19 @@ function GuestDetailsModal({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="text-sm font-medium text-gray-600">Street Address</label>
-                    <p className="text-sm mt-1">{guest.address || 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.address || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">City</label>
-                    <p className="text-sm mt-1">{guest.city || 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.city || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Country</label>
-                    <p className="text-sm mt-1">{guest.country || 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.country || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Postal Code</label>
-                    <p className="text-sm mt-1">{guest.postal_code || 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.postal_code || 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -432,7 +432,7 @@ function GuestDetailsModal({
               <CardContent>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Passport Number</label>
-                  <p className="text-sm mt-1">{guest.passport_number || 'N/A'}</p>
+                  <p className="text-sm mt-1 text-gray-900">{guest.passport_number || 'N/A'}</p>
                 </div>
               </CardContent>
             </Card>
@@ -446,11 +446,11 @@ function GuestDetailsModal({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-600">Name</label>
-                    <p className="text-sm mt-1">{guest.emergency_contact_name || 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.emergency_contact_name || 'N/A'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Phone</label>
-                    <p className="text-sm mt-1">{guest.emergency_contact_phone || 'N/A'}</p>
+                    <p className="text-sm mt-1 text-gray-900">{guest.emergency_contact_phone || 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -463,7 +463,7 @@ function GuestDetailsModal({
                   <CardTitle className="text-lg">Preferences & Special Requests</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm">{guest.preferences}</p>
+                  <p className="text-sm text-gray-900">{guest.preferences}</p>
                 </CardContent>
               </Card>
             )}
@@ -490,23 +490,29 @@ function GuestDetailsModal({
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-2">
                             <Calendar className="w-4 h-4 text-gray-400" />
-                            <span className="font-semibold">{booking.confirmation_code}</span>
+                            <span className="font-semibold text-gray-900">
+                              {booking.confirmation_code || booking.booking_id || `#${booking.id}`}
+                            </span>
                           </div>
                           <Badge>{booking.status}</Badge>
                         </div>
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div>
                             <p className="text-gray-600">Check-in</p>
-                            <p className="font-medium">{formatDate(booking.check_in)}</p>
+                            <p className="font-medium text-gray-900">
+                              {formatDate(booking.check_in_date || booking.check_in)}
+                            </p>
                           </div>
                           <div>
                             <p className="text-gray-600">Check-out</p>
-                            <p className="font-medium">{formatDate(booking.check_out)}</p>
+                            <p className="font-medium text-gray-900">
+                              {formatDate(booking.check_out_date || booking.check_out)}
+                            </p>
                           </div>
                           <div>
                             <p className="text-gray-600">Amount</p>
                             <p className="font-semibold text-green-600">
-                              {formatCurrency(booking.total_amount)}
+                              {formatCurrency(booking.total_price || booking.total_amount || 0)}
                             </p>
                           </div>
                         </div>
@@ -571,7 +577,7 @@ function GuestDetailsModal({
               <CardContent>
                 {/* Documents Section */}
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-3">Identity Documents</h4>
+                  <h4 className="font-semibold mb-3 text-gray-900">Identity Documents</h4>
                   {guest.documents && guest.documents.length > 0 ? (
                     <div className="grid grid-cols-2 gap-4">
                       {guest.documents.map((doc) => (
@@ -585,7 +591,7 @@ function GuestDetailsModal({
                             <FileText className="w-8 h-8 text-blue-500" />
                             <Badge>{doc.document_type}</Badge>
                           </div>
-                          <p className="font-medium text-sm mb-1">{doc.file_name}</p>
+                          <p className="font-medium text-sm mb-1 text-gray-900">{doc.file_name}</p>
                           {doc.document_number && (
                             <p className="text-xs text-gray-600 mb-2">
                               #{doc.document_number}
@@ -614,7 +620,7 @@ function GuestDetailsModal({
 
                 {/* Photos Section */}
                 <div>
-                  <h4 className="font-semibold mb-3">Photos</h4>
+                  <h4 className="font-semibold mb-3 text-gray-900">Photos</h4>
                   {guest.photos && guest.photos.length > 0 ? (
                     <div className="grid grid-cols-3 gap-4">
                       {guest.photos.map((photo) => (
@@ -677,7 +683,7 @@ function GuestDetailsModal({
                         animate={{ opacity: 1, y: 0 }}
                         className="border-l-4 border-blue-500 bg-gray-50 p-4 rounded"
                       >
-                        <p className="text-sm mb-2">{note.note}</p>
+                        <p className="text-sm mb-2 text-gray-900">{note.note}</p>
                         <div className="flex items-center justify-between text-xs text-gray-600">
                           <span>By {note.created_by}</span>
                           <span>{formatDate(note.created_at)}</span>
