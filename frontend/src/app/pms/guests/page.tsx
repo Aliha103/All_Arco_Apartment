@@ -573,9 +573,9 @@ function GuestDetailsModal({
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Current Booking</CardTitle>
+                  <CardTitle className="text-gray-900">Current Booking</CardTitle>
                   {bookings && bookings.length > 1 && (
-                    <Badge variant="secondary">{bookings.length} total bookings</Badge>
+                    <Badge variant="secondary" className="text-gray-900">{bookings.length} total bookings</Badge>
                   )}
                 </div>
               </CardHeader>
@@ -601,7 +601,7 @@ function GuestDetailsModal({
                           <p className="text-sm text-gray-600">Booking Reference</p>
                         </div>
                       </div>
-                      <Badge className="text-sm">{primaryBooking.status}</Badge>
+                      <Badge className="text-sm text-gray-900">{primaryBooking.status}</Badge>
                     </div>
 
                     {/* Booking Details Grid */}
@@ -646,7 +646,7 @@ function GuestDetailsModal({
                       <Button
                         size="default"
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 text-gray-900"
                         onClick={() => {
                           const link = buildCheckinLink(primaryBooking);
                           if (!link) return toast.error('No check-in link available for this booking');
@@ -660,7 +660,7 @@ function GuestDetailsModal({
                       <Button
                         size="default"
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 text-gray-900"
                         onClick={() => {
                           const link = buildCheckinLink(primaryBooking);
                           if (!link) return toast.error('No check-in link available for this booking');
@@ -673,7 +673,7 @@ function GuestDetailsModal({
                       </Button>
                       <Button
                         size="default"
-                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                         onClick={() => window.open(`/pms/bookings/${primaryBooking.id}`, '_blank')}
                       >
                         <Eye className="w-4 h-4 mr-2" />
@@ -681,15 +681,24 @@ function GuestDetailsModal({
                       </Button>
                     </div>
 
-                    {/* Additional Info */}
-                    {bookings && bookings.length > 1 && (
-                      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-blue-900">
-                          <span className="font-semibold">Note:</span> This guest has {bookings.length} bookings in total.
-                          Showing the most recent booking. Click "View Full Details" to see complete booking history.
-                        </p>
-                      </div>
-                    )}
+                    {/* Additional Info - Only show if guest has multiple upcoming/active bookings */}
+                    {(() => {
+                      const upcomingBookings = bookings?.filter((b: any) => {
+                        const checkInDate = new Date(b.check_in_date || b.check_in);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return checkInDate >= today && b.status !== 'cancelled';
+                      }) || [];
+
+                      return upcomingBookings.length > 1 ? (
+                        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                          <p className="text-sm text-blue-900">
+                            <span className="font-semibold">Note:</span> This guest has {upcomingBookings.length} upcoming bookings.
+                            Showing the most recent one. Click "View Full Details" to see all booking history.
+                          </p>
+                        </div>
+                      ) : null;
+                    })()}
                   </motion.div>
                 ) : (
                   <div className="text-center py-12">
