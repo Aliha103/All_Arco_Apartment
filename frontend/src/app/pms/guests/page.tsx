@@ -192,25 +192,25 @@ function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
           </div>
 
           {/* Name */}
-          <h3 className="text-lg font-semibold mb-1">
+          <h3 className="text-lg font-semibold mb-1 text-gray-900">
             {guest.first_name} {guest.last_name}
           </h3>
 
           {/* Contact Info */}
           <div className="space-y-2 mb-4">
-            <div className="flex items-center text-sm text-gray-600">
-              <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
+            <div className="flex items-center text-sm text-gray-700">
+              <Mail className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
               <span className="truncate">{guest.email}</span>
             </div>
             {guest.phone && (
-              <div className="flex items-center text-sm text-gray-600">
-                <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
+              <div className="flex items-center text-sm text-gray-700">
+                <Phone className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
                 <span>{guest.phone}</span>
               </div>
             )}
             {guest.nationality && (
-              <div className="flex items-center text-sm text-gray-600">
-                <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+              <div className="flex items-center text-sm text-gray-700">
+                <MapPin className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
                 <span>{guest.nationality}</span>
               </div>
             )}
@@ -219,11 +219,11 @@ function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             <div>
-              <p className="text-xs text-gray-500">Bookings</p>
-              <p className="text-lg font-semibold">{guest.total_bookings}</p>
+              <p className="text-xs font-medium text-gray-600">Bookings</p>
+              <p className="text-lg font-semibold text-gray-900">{guest.total_bookings}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Total Spent</p>
+              <p className="text-xs font-medium text-gray-600">Total Spent</p>
               <p className="text-lg font-semibold text-green-600">
                 {formatCurrency(guest.total_spent)}
               </p>
@@ -233,7 +233,7 @@ function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
           {/* Documents Status */}
           {guest.documents && guest.documents.length > 0 && (
             <div className="mt-4 pt-4 border-t">
-              <div className="flex items-center text-xs text-green-600">
+              <div className="flex items-center text-xs font-medium text-green-600">
                 <UserCheck className="w-4 h-4 mr-1" />
                 <span>{guest.documents.length} documents verified</span>
               </div>
