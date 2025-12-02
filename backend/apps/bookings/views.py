@@ -109,6 +109,10 @@ class BookingViewSet(viewsets.ModelViewSet):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
         
+        guest_email = self.request.query_params.get('guest_email')
+        if guest_email:
+            queryset = queryset.filter(guest_email__iexact=guest_email)
+
         search = self.request.query_params.get('search', None)
         if search:
             queryset = queryset.filter(

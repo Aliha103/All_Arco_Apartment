@@ -292,7 +292,29 @@ function GuestDetailsModal({
   if (!guest) return null;
 
   const bookings = (guest.bookings && guest.bookings.length > 0 ? guest.bookings : guestBookings) as any[];
-  const primaryBooking = bookings && bookings.length > 0 ? bookings[0] : null;
+
+  const sortedBookings = useMemo(() => {
+    if (!bookings || bookings.length === 0) return [];
+    return [...bookings].sort((a: any, b: any) => {
+      const aDate = new Date(a.check_in_date || a.check_in);
+      const bDate = new Date(b.check_in_date || b.check_in);
+      return aDate.getTime() - bDate.getTime();
+    });
+  }, [bookings]);
+
+  // Pick earliest upcoming; if none upcoming, pick most recent past
+  const primaryBooking = useMemo(() => {
+    if (!sortedBookings || sortedBookings.length === 0) return null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const upcoming = sortedBookings.filter((b: any) => {
+      const d = new Date(b.check_in_date || b.check_in);
+      return d >= today;
+    });
+    if (upcoming.length > 0) {
+      return upcoming[0];
+    }
+    return sortedBookings[sortedBookings.length - 1];
+  }, [sortedBookings]);
 
   const buildCheckinLink = (booking: any) => {
     if (!booking || !guest.email) return '';
