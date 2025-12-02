@@ -302,37 +302,48 @@ function GuestDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white">
+        <DialogHeader className="border-b pb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               {guest.avatar_url ? (
                 <img
                   src={guest.avatar_url}
                   alt={`${guest.first_name} ${guest.last_name}`}
-                  className="w-16 h-16 rounded-full object-cover"
+                  className="w-20 h-20 rounded-full object-cover border-4 border-blue-100"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                   {`${guest.first_name[0]}${guest.last_name[0]}`.toUpperCase()}
                 </div>
               )}
-              <div>
-                <DialogTitle className="text-2xl">
-                  {guest.first_name} {guest.last_name}
-                </DialogTitle>
-                <p className="text-sm text-gray-600 mt-1">{guest.email}</p>
-                {guest.is_vip && (
-                  <Badge className="bg-yellow-400 text-yellow-900 mt-2">
-                    <Star className="w-3 h-3 mr-1 fill-current" />
-                    VIP Guest
-                  </Badge>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="text-2xl font-bold text-gray-900">
+                    {guest.first_name} {guest.last_name}
+                  </DialogTitle>
+                  {guest.is_vip && (
+                    <Badge className="bg-yellow-400 text-yellow-900">
+                      <Star className="w-3 h-3 mr-1 fill-current" />
+                      VIP
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-base text-gray-600 mt-1 flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  {guest.email}
+                </p>
+                {guest.phone && (
+                  <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+                    <Phone className="w-4 h-4" />
+                    {guest.phone}
+                  </p>
                 )}
               </div>
             </div>
 
             {primaryBooking && (
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <Button
                   size="sm"
                   variant="outline"
@@ -341,19 +352,22 @@ function GuestDetailsModal({
                     navigator.clipboard.writeText(link);
                     toast.success('Check-in link copied');
                   }}
+                  className="text-gray-900"
                 >
-                  Copy check-in link
+                  <FileText className="w-4 h-4 mr-2" />
+                  Copy Check-in Link
                 </Button>
                 <Button
                   size="sm"
-                  variant="secondary"
                   onClick={() => {
                     const link = buildCheckinLink(primaryBooking);
                     const mailto = `mailto:checkin@allarcoapartment.com?subject=Online check-in&body=Please complete your online check-in: ${encodeURIComponent(link)}`;
                     window.location.href = mailto;
                   }}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
-                  Send via email
+                  <Mail className="w-4 h-4 mr-2" />
+                  Send Email
                 </Button>
               </div>
             )}
@@ -361,109 +375,193 @@ function GuestDetailsModal({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1">
+            <TabsTrigger value="profile" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              <Calendar className="w-4 h-4 mr-2" />
+              Bookings
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              <FileText className="w-4 h-4 mr-2" />
+              Documents
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              <FileText className="w-4 h-4 mr-2" />
+              Notes
+            </TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
+          <TabsContent value="profile" className="space-y-4 mt-6">
             {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Contact Information</CardTitle>
+            <Card className="border-gray-200">
+              <CardHeader className="bg-gray-50">
+                <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                  Contact Information
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Email</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.email}</p>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Mail className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Phone</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.phone || 'N/A'}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      <Phone className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Phone</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.phone || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Date of Birth</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.date_of_birth ? formatDate(guest.date_of_birth) : 'N/A'}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-purple-50 rounded-lg">
+                      <Calendar className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date of Birth</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.date_of_birth ? formatDate(guest.date_of_birth) : 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Nationality</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.nationality || 'N/A'}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-orange-50 rounded-lg">
+                      <MapPin className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nationality</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.nationality || 'Not provided'}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Address</CardTitle>
+            <Card className="border-gray-200">
+              <CardHeader className="bg-gray-50">
+                <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  Address
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-gray-600">Street Address</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.address || 'N/A'}</p>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="col-span-2 flex items-start gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Street Address</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.address || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">City</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.city || 'N/A'}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      <MapPin className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">City</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.city || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Country</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.country || 'N/A'}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-purple-50 rounded-lg">
+                      <MapPin className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Country</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.country || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Postal Code</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.postal_code || 'N/A'}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-orange-50 rounded-lg">
+                      <MapPin className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Postal Code</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.postal_code || 'Not provided'}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Identification */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Identification</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Passport Number</label>
-                  <p className="text-sm mt-1 text-gray-900">{guest.passport_number || 'N/A'}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Identification */}
+              <Card className="border-gray-200">
+                <CardHeader className="bg-gray-50">
+                  <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    Identification
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Passport Number</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.passport_number || 'Not provided'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Emergency Contact */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Emergency Contact</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Name</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.emergency_contact_name || 'N/A'}</p>
+              {/* Emergency Contact */}
+              <Card className="border-gray-200">
+                <CardHeader className="bg-gray-50">
+                  <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <Phone className="w-5 h-5 text-red-600" />
+                    Emergency Contact
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-red-50 rounded-lg">
+                        <User className="w-4 h-4 text-red-600" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</label>
+                        <p className="text-sm mt-1 text-gray-900 font-medium">{guest.emergency_contact_name || 'Not provided'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-red-50 rounded-lg">
+                        <Phone className="w-4 h-4 text-red-600" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Phone</label>
+                        <p className="text-sm mt-1 text-gray-900 font-medium">{guest.emergency_contact_phone || 'Not provided'}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Phone</label>
-                    <p className="text-sm mt-1 text-gray-900">{guest.emergency_contact_phone || 'N/A'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Preferences */}
             {guest.preferences && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Preferences & Special Requests</CardTitle>
+              <Card className="border-gray-200">
+                <CardHeader className="bg-gray-50">
+                  <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    Preferences & Special Requests
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-900">{guest.preferences}</p>
+                <CardContent className="pt-6">
+                  <p className="text-sm text-gray-900 leading-relaxed">{guest.preferences}</p>
                 </CardContent>
               </Card>
             )}
@@ -473,87 +571,130 @@ function GuestDetailsModal({
           <TabsContent value="bookings">
             <Card>
               <CardHeader>
-                <CardTitle>Booking History</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Current Booking</CardTitle>
+                  {bookings && bookings.length > 1 && (
+                    <Badge variant="secondary">{bookings.length} total bookings</Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {bookingsLoading ? (
-                  <p className="text-center py-8 text-gray-600">Loading bookings…</p>
-                ) : bookings && bookings.length > 0 ? (
-                  <div className="space-y-4">
-                    {bookings.map((booking) => (
-                      <motion.div
-                        key={booking.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                  <p className="text-center py-8 text-gray-600">Loading booking information…</p>
+                ) : primaryBooking ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    {/* Booking Header */}
+                    <div className="flex items-center justify-between pb-4 border-b">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <Calendar className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg text-gray-900">
+                            {primaryBooking.confirmation_code || primaryBooking.booking_id || `#${primaryBooking.id}`}
+                          </h3>
+                          <p className="text-sm text-gray-600">Booking Reference</p>
+                        </div>
+                      </div>
+                      <Badge className="text-sm">{primaryBooking.status}</Badge>
+                    </div>
+
+                    {/* Booking Details Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-green-50 rounded-lg">
+                          <Calendar className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Check-in</label>
+                          <p className="text-base mt-1 text-gray-900 font-semibold">
+                            {formatDate(primaryBooking.check_in_date || primaryBooking.check_in)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-orange-50 rounded-lg">
+                          <Calendar className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Check-out</label>
+                          <p className="text-base mt-1 text-gray-900 font-semibold">
+                            {formatDate(primaryBooking.check_out_date || primaryBooking.check_out)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-purple-50 rounded-lg">
+                          <DollarSign className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Amount</label>
+                          <p className="text-base mt-1 text-green-600 font-bold">
+                            {formatCurrency(primaryBooking.total_price || primaryBooking.total_amount || 0)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t">
+                      <Button
+                        size="default"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          const link = buildCheckinLink(primaryBooking);
+                          if (!link) return toast.error('No check-in link available for this booking');
+                          navigator.clipboard.writeText(link);
+                          toast.success('Check-in link copied to clipboard');
+                        }}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span className="font-semibold text-gray-900">
-                              {booking.confirmation_code || booking.booking_id || `#${booking.id}`}
-                            </span>
-                          </div>
-                          <Badge>{booking.status}</Badge>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-600">Check-in</p>
-                            <p className="font-medium text-gray-900">
-                              {formatDate(booking.check_in_date || booking.check_in)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Check-out</p>
-                            <p className="font-medium text-gray-900">
-                              {formatDate(booking.check_out_date || booking.check_out)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">Amount</p>
-                            <p className="font-semibold text-green-600">
-                              {formatCurrency(booking.total_price || booking.total_amount || 0)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2 mt-3">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              const link = buildCheckinLink(booking);
-                              if (!link) return toast.error('No check-in link available for this booking');
-                              navigator.clipboard.writeText(link);
-                              toast.success('Check-in link copied');
-                            }}
-                          >
-                            Copy check-in link
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => {
-                              const link = buildCheckinLink(booking);
-                              if (!link) return toast.error('No check-in link available for this booking');
-                              const mailto = `mailto:checkin@allarcoapartment.com?subject=Online check-in&body=Please complete your online check-in: ${encodeURIComponent(link)}`;
-                              window.location.href = mailto;
-                            }}
-                          >
-                            Send via email
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => window.open(`/pms/bookings/${booking.id}`, '_blank')}
-                          >
-                            Add guest details
-                          </Button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                        <FileText className="w-4 h-4 mr-2" />
+                        Copy Check-in Link
+                      </Button>
+                      <Button
+                        size="default"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          const link = buildCheckinLink(primaryBooking);
+                          if (!link) return toast.error('No check-in link available for this booking');
+                          const mailto = `mailto:${guest.email}?subject=Complete your online check-in&body=Hi ${guest.first_name},%0D%0A%0D%0APlease complete your online check-in for your upcoming stay:%0D%0A${encodeURIComponent(link)}`;
+                          window.location.href = mailto;
+                        }}
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Send Check-in Email
+                      </Button>
+                      <Button
+                        size="default"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        onClick={() => window.open(`/pms/bookings/${primaryBooking.id}`, '_blank')}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Full Details
+                      </Button>
+                    </div>
+
+                    {/* Additional Info */}
+                    {bookings && bookings.length > 1 && (
+                      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-900">
+                          <span className="font-semibold">Note:</span> This guest has {bookings.length} bookings in total.
+                          Showing the most recent booking. Click "View Full Details" to see complete booking history.
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
                 ) : (
-                  <p className="text-center py-8 text-gray-600">No bookings found</p>
+                  <div className="text-center py-12">
+                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No bookings found for this guest</p>
+                  </div>
                 )}
               </CardContent>
             </Card>

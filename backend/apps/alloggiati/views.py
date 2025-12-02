@@ -20,6 +20,41 @@ class AlloggiatiAccountViewSet(viewsets.ViewSet):
         return Response(serializer.data if serializer else {})
 
     @action(detail=False, methods=['post'])
+    def save_credentials(self, request):
+        """
+        Save Alloggiati Web credentials (username/password).
+        Note: Password is sent in the request but stored only temporarily in env or hashed.
+        """
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response(
+                {"error": "Both username and password are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get or create the account
+        account = AlloggiatiAccount.objects.first()
+        if not account:
+            account = AlloggiatiAccount.objects.create(username=username)
+        else:
+            account.username = username
+            account.save()
+
+        # Store password in environment variable temporarily for this request
+        # Note: In production, consider encrypting and storing in database
+        import os
+        os.environ['ALLOGGIATI_USERNAME'] = username
+        os.environ['ALLOGGIATI_PASSWORD'] = password
+
+        serializer = AlloggiatiAccountSerializer(account)
+        return Response({
+            "message": "Credentials saved successfully",
+            "account": serializer.data
+        })
+
+    @action(detail=False, methods=['post'])
     def refresh_token(self, request):
         account, _ = AlloggiatiAccount.objects.get_or_create(pk=AlloggiatiAccount.objects.first() or None)
         client = AlloggiatiClient(account=account)
