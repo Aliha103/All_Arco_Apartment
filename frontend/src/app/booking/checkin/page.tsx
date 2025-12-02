@@ -76,7 +76,18 @@ function CheckInPageContent() {
   const lookupMutation = useMutation({
     mutationFn: () => api.bookings.lookup(lookupData.confirmation, lookupData.email),
     onSuccess: (response) => {
-      setBooking(response.data);
+      const data = response.data;
+      // Ensure main_guest shape exists using booking fields as fallback
+      const fallbackMain = {
+        first_name: data?.guest_name?.split(' ')?.[0] || '',
+        last_name: data?.guest_name?.split(' ')?.slice(1).join(' ') || '',
+        email: data?.guest_email || lookupData.email,
+        phone: data?.guest_phone || '',
+      };
+      setBooking({
+        ...data,
+        main_guest: data?.main_guest || fallbackMain,
+      });
       // Initialize family members array based on guests_count
       const guestsCount = response.data.guests_count || 1;
       const initialMembers = Array(Math.max(0, guestsCount - 1)).fill(null).map(() => ({
