@@ -7,6 +7,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from .models import User, GuestNote, Role, Permission, PasswordResetToken
+from apps.bookings.models import Booking
 from .serializers import (
     UserSerializer, UserCreateSerializer, LoginSerializer, GuestNoteSerializer,
     UserWithRoleSerializer, RoleSerializer, PermissionSerializer
@@ -235,6 +236,82 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     
+    def list(self, request, *args, **kwargs):
+        """
+        Return merged guests:
+        - Registered users with guest role
+        - Unique guest emails from bookings (even if not registered)
+        """
+        if not request.user.is_team_member():
+            return Response([])
+
+        search = request.query_params.get('search', '').strip()
+
+        # Registered guests
+        registered = self.get_queryset()
+        if search:
+            registered = registered.filter(
+                Q(email__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(phone__icontains=search)
+            )
+
+        merged = {}
+
+        for user in registered:
+            key = (user.email or '').lower()
+            merged[key] = {
+                'id': str(user.id),
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'phone': user.phone,
+                'total_bookings': 0,
+            }
+
+        # Guests derived from bookings (captures non-registered)
+        bookings_qs = Booking.objects.all()
+        if search:
+            bookings_qs = bookings_qs.filter(
+                Q(guest_email__icontains=search) |
+                Q(guest_name__icontains=search) |
+                Q(guest_phone__icontains=search)
+            )
+
+        for booking in bookings_qs:
+            key = (booking.guest_email or '').lower()
+            if not key:
+                continue
+
+            entry = merged.get(key, {
+                # deterministic synthetic id for non-registered guests
+                'id': f"booking-{booking.id}",
+                'first_name': '',
+                'last_name': '',
+                'email': booking.guest_email,
+                'phone': booking.guest_phone,
+                'total_bookings': 0,
+            })
+
+            # Split guest_name into first/last if missing
+            if not entry['first_name'] and booking.guest_name:
+                parts = booking.guest_name.split(' ', 1)
+                entry['first_name'] = parts[0]
+                entry['last_name'] = parts[1] if len(parts) > 1 else ''
+
+            entry['phone'] = entry['phone'] or booking.guest_phone
+            entry['total_bookings'] = entry.get('total_bookings', 0) + 1
+            merged[key] = entry
+
+        # Sort by name then email for stable display
+        data = sorted(
+            merged.values(),
+            key=lambda g: ((g.get('first_name') or '') + (g.get('last_name') or '')).lower() or g.get('email', '')
+        )
+
+        return Response(data)
+
     def get_queryset(self):
         # Only team/admin can view guests
         if not self.request.user.is_team_member():
