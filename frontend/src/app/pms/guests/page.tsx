@@ -153,7 +153,7 @@ function StatCard({
 
 // Guest Card Component
 function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
-  const initials = `${guest.first_name[0]}${guest.last_name[0]}`.toUpperCase();
+  const initials = `${(guest.first_name || '?')[0]}${(guest.last_name || '?')[0]}`.toUpperCase();
 
   return (
     <motion.div
@@ -194,7 +194,7 @@ function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
 
           {/* Name */}
           <h3 className="text-lg font-semibold mb-1 text-gray-900">
-            {guest.first_name} {guest.last_name}
+            {[guest.first_name, guest.last_name].filter(Boolean).join(' ') || 'Guest'}
           </h3>
 
           {/* Contact Info */}
@@ -317,9 +317,10 @@ function GuestDetailsModal({
   }, [sortedBookings]);
 
   const buildCheckinLink = (booking: any) => {
-    if (!booking || !guest.email) return '';
+    if (!booking || !guest?.email) return '';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const confirmation = booking.confirmation_code || booking.booking_id || booking.id;
+    if (!confirmation) return '';
     return `${origin}/booking/checkin?confirmation=${encodeURIComponent(confirmation)}&email=${encodeURIComponent(guest.email)}`;
   };
 
@@ -635,7 +636,9 @@ function GuestDetailsModal({
                         <div className="flex-1">
                           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Check-in</label>
                           <p className="text-base mt-1 text-gray-900 font-semibold">
-                            {formatDate(primaryBooking.check_in_date || primaryBooking.check_in)}
+                            {(primaryBooking.check_in_date || primaryBooking.check_in)
+                              ? formatDate(primaryBooking.check_in_date || primaryBooking.check_in)
+                              : '—'}
                           </p>
                         </div>
                       </div>
@@ -646,7 +649,9 @@ function GuestDetailsModal({
                         <div className="flex-1">
                           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Check-out</label>
                           <p className="text-base mt-1 text-gray-900 font-semibold">
-                            {formatDate(primaryBooking.check_out_date || primaryBooking.check_out)}
+                            {(primaryBooking.check_out_date || primaryBooking.check_out)
+                              ? formatDate(primaryBooking.check_out_date || primaryBooking.check_out)
+                              : '—'}
                           </p>
                         </div>
                       </div>
