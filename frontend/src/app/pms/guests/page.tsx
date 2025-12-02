@@ -291,7 +291,7 @@ function GuestDetailsModal({
 
   if (!guest) return null;
 
-  const bookings = (guest.bookings && guest.bookings.length > 0 ? guest.bookings : guestBookings) as any[];
+  const bookings = (guest?.bookings && guest.bookings.length > 0 ? guest.bookings : guestBookings) as any[];
 
   const sortedBookings = useMemo(() => {
     if (!bookings || bookings.length === 0) return [];
@@ -324,6 +324,10 @@ function GuestDetailsModal({
     return `${origin}/booking/checkin?confirmation=${encodeURIComponent(confirmation)}&email=${encodeURIComponent(guest.email)}`;
   };
 
+  const safeFirst = guest.first_name || '';
+  const safeLast = guest.last_name || '';
+  const safeInitials = `${safeFirst.charAt(0) || '?'}${safeLast.charAt(0) || '?'}`.toUpperCase();
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white">
@@ -333,18 +337,18 @@ function GuestDetailsModal({
               {guest.avatar_url ? (
                 <img
                   src={guest.avatar_url}
-                  alt={`${guest.first_name} ${guest.last_name}`}
+                  alt={`${safeFirst} ${safeLast}`.trim() || 'Guest'}
                   className="w-20 h-20 rounded-full object-cover border-4 border-blue-100"
                 />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                  {`${guest.first_name[0]}${guest.last_name[0]}`.toUpperCase()}
+                  {safeInitials}
                 </div>
               )}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <DialogTitle className="text-2xl font-bold text-gray-900">
-                    {guest.first_name} {guest.last_name}
+                    {[safeFirst, safeLast].filter(Boolean).join(' ') || 'Guest'}
                   </DialogTitle>
                   {guest.is_vip && (
                     <Badge className="bg-yellow-400 text-yellow-900">
