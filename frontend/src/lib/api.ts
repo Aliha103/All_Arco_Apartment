@@ -204,6 +204,27 @@ export const api = {
     // Public endpoint (no auth required)
     public: (type?: 'hero' | 'gallery') => apiClient.get('/gallery/images/public/', { params: { type } }),
   },
+
+  // OTA Bookings
+  otaBookings: {
+    list: (params?: any) => apiClient.get('/ota/bookings/', { params }),
+    get: (id: string) => apiClient.get(`/ota/bookings/${id}/`),
+    create: (data: any) => apiClient.post('/ota/bookings/', data),
+    update: (id: string, data: any) => apiClient.patch(`/ota/bookings/${id}/`, data),
+    delete: (id: string) => apiClient.delete(`/ota/bookings/${id}/`),
+    statistics: () => apiClient.get('/ota/bookings/statistics/'),
+  },
+
+  // iCal Sources
+  icalSources: {
+    list: () => apiClient.get('/ota/ical-sources/'),
+    get: (id: string) => apiClient.get(`/ota/ical-sources/${id}/`),
+    create: (data: any) => apiClient.post('/ota/ical-sources/', data),
+    update: (id: string, data: any) => apiClient.patch(`/ota/ical-sources/${id}/`, data),
+    delete: (id: string) => apiClient.delete(`/ota/ical-sources/${id}/`),
+    sync: (id: string) => apiClient.post(`/ota/ical-sources/${id}/sync/`),
+    syncAll: () => apiClient.post('/ota/ical-sources/sync-all/'),
+  },
 };
 
 export default api;
