@@ -364,7 +364,9 @@ export default function OTAManagementPage() {
               <Building2 className="w-7 h-7 text-blue-600" />
               OTA Management
             </h1>
-            <p className="text-sm text-gray-600 mt-1">Manage bookings from Online Travel Agencies</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Manage bookings from Online Travel Agencies and sync iCal feeds to prevent overbooking
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -373,7 +375,7 @@ export default function OTAManagementPage() {
               className="text-gray-900"
             >
               <Upload className="w-4 h-4 mr-2" />
-              iCal Sync
+              <span className="hidden sm:inline">iCal Sync</span>
             </Button>
             <Button
               onClick={() => {
@@ -383,7 +385,7 @@ export default function OTAManagementPage() {
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add OTA Booking
+              <span className="hidden sm:inline">Add OTA Booking</span>
             </Button>
           </div>
         </div>
@@ -1444,11 +1446,78 @@ interface ICalSourcesListProps {
 }
 
 function ICalSourcesList({ sources }: ICalSourcesListProps) {
+  const queryClient = useQueryClient();
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncingAll, setSyncingAll] = useState(false);
+
+  const syncSource = useMutation({
+    mutationFn: (id: string) => api.icalSources.sync(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ical-sources'] });
+      queryClient.invalidateQueries({ queryKey: ['ota-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      setSyncingId(null);
+      toast.success('iCal source synced successfully - calendar updated to prevent overbooking');
+    },
+    onError: (error: any) => {
+      setSyncingId(null);
+      toast.error(error.response?.data?.message || 'Failed to sync iCal source');
+    },
+  });
+
+  const syncAllSources = useMutation({
+    mutationFn: () => api.icalSources.syncAll(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ical-sources'] });
+      queryClient.invalidateQueries({ queryKey: ['ota-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      setSyncingAll(false);
+      toast.success('All iCal sources synced - calendar updated with all OTA bookings');
+    },
+    onError: (error: any) => {
+      setSyncingAll(false);
+      toast.error(error.response?.data?.message || 'Failed to sync all sources');
+    },
+  });
+
+  const handleSync = (id: string) => {
+    setSyncingId(id);
+    syncSource.mutate(id);
+  };
+
+  const handleSyncAll = () => {
+    setSyncingAll(true);
+    syncAllSources.mutate();
+  };
+
   return (
     <Card className="border border-gray-200">
       <CardHeader>
-        <CardTitle className="text-lg">iCal Sync Sources</CardTitle>
-        <CardDescription>Manage your OTA calendar synchronization</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">iCal Sync Sources</CardTitle>
+            <CardDescription>Manage your OTA calendar synchronization</CardDescription>
+          </div>
+          {sources.length > 0 && (
+            <Button
+              onClick={handleSyncAll}
+              disabled={syncingAll}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {syncingAll ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Syncing All...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Sync All
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {sources.length === 0 ? (
@@ -1456,7 +1525,7 @@ function ICalSourcesList({ sources }: ICalSourcesListProps) {
             <Upload className="w-12 h-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No iCal sources configured</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Add iCal URLs from your OTA platforms to automatically sync bookings
+              Add iCal URLs from your OTA platforms to automatically sync bookings and prevent overbooking
             </p>
           </div>
         ) : (
@@ -1483,8 +1552,23 @@ function ICalSourcesList({ sources }: ICalSourcesListProps) {
                       Last synced: {formatDate(source.last_synced)} · {source.bookings_count} bookings
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Sync Now
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSync(source.id)}
+                    disabled={syncingId === source.id}
+                  >
+                    {syncingId === source.id ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5 mr-1.5" />
+                        Sync Now
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -1506,8 +1590,24 @@ interface ICalSyncModalProps {
 }
 
 function ICalSyncModal({ isOpen, onClose }: ICalSyncModalProps) {
+  const queryClient = useQueryClient();
   const [otaName, setOtaName] = useState('');
   const [icalUrl, setIcalUrl] = useState('');
+
+  const createICalSource = useMutation({
+    mutationFn: (data: { ota_name: string; ical_url: string }) =>
+      api.icalSources.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ical-sources'] });
+      setOtaName('');
+      setIcalUrl('');
+      onClose();
+      toast.success('iCal source added successfully - bookings will be synced automatically');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to add iCal source');
+    },
+  });
 
   const handleSubmit = () => {
     if (!otaName || !icalUrl) {
@@ -1515,22 +1615,46 @@ function ICalSyncModal({ isOpen, onClose }: ICalSyncModalProps) {
       return;
     }
 
-    // TODO: Implement API call
-    toast.success('iCal source added successfully');
-    onClose();
+    // Validate URL format
+    try {
+      new URL(icalUrl);
+    } catch (e) {
+      toast.error('Please enter a valid iCal URL');
+      return;
+    }
+
+    createICalSource.mutate({
+      ota_name: otaName,
+      ical_url: icalUrl,
+    });
+  };
+
+  // Reset form when modal closes
+  const handleClose = (open: boolean) => {
+    if (!open) {
+      setOtaName('');
+      setIcalUrl('');
+      onClose();
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="text-gray-900">Add iCal Sync Source</DialogTitle>
           <DialogDescription className="text-gray-700">
-            Connect your OTA calendar to automatically import bookings
+            Connect your OTA calendar to automatically import bookings and prevent overbooking
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> Once added, bookings from this iCal feed will automatically sync to your calendar and block those dates to prevent double bookings.
+            </p>
+          </div>
+
           <div>
             <Label htmlFor="ota_select" className="text-gray-900 font-medium">
               OTA Platform <span className="text-red-500">*</span>
@@ -1556,7 +1680,7 @@ function ICalSyncModal({ isOpen, onClose }: ICalSyncModalProps) {
               type="url"
               value={icalUrl}
               onChange={(e) => setIcalUrl(e.target.value)}
-              placeholder="https://..."
+              placeholder="https://www.airbnb.com/calendar/ical/..."
               className="text-gray-900 mt-1.5"
             />
             <p className="text-xs text-gray-600 mt-1.5">
@@ -1566,11 +1690,26 @@ function ICalSyncModal({ isOpen, onClose }: ICalSyncModalProps) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button
+            variant="outline"
+            onClick={() => handleClose(false)}
+            disabled={createICalSource.isPending}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
-            Add Source
+          <Button
+            onClick={handleSubmit}
+            disabled={createICalSource.isPending}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {createICalSource.isPending ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Adding...
+              </>
+            ) : (
+              'Add Source'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
