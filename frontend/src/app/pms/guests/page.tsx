@@ -416,14 +416,18 @@ function GuestDetailsModal({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1">
             <TabsTrigger value="profile" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
               <User className="w-4 h-4 mr-2" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+            <TabsTrigger value="guests" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
               <Users className="w-4 h-4 mr-2" />
               Guests
+            </TabsTrigger>
+            <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+              <Calendar className="w-4 h-4 mr-2" />
+              Bookings
             </TabsTrigger>
             <TabsTrigger value="documents" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
               <FileText className="w-4 h-4 mr-2" />
@@ -606,6 +610,51 @@ function GuestDetailsModal({
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Guests Tab */}
+          <TabsContent value="guests" className="space-y-4 mt-6">
+            <Card className="border-gray-200">
+              <CardHeader className="bg-gray-50 flex flex-col gap-2">
+                <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  Guests
+                </CardTitle>
+                <p className="text-sm text-gray-600">
+                  Primary guest plus any family members or companions attached to their bookings.
+                </p>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <User className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Primary guest</p>
+                    <p className="text-base font-semibold text-gray-900">
+                      {[safeFirst, safeLast].filter(Boolean).join(' ') || 'Guest'}
+                    </p>
+                    <p className="text-sm text-gray-600">{guest.email}</p>
+                    {guest.phone && <p className="text-sm text-gray-600">{guest.phone}</p>}
+                  </div>
+                </div>
+
+                <div className="p-3 border rounded-lg bg-gray-50">
+                  <p className="text-sm text-gray-800">
+                    Additional guests are not recorded here yet. Open the booking to add family members and documents.
+                  </p>
+                  {primaryBooking && (
+                    <Button
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => window.open(`/pms/bookings/${primaryBooking.id}`, '_blank')}
+                    >
+                      Add guest details
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Bookings Tab */}
