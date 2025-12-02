@@ -240,7 +240,11 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
         if not self.request.user.is_team_member():
             return User.objects.none()
         
-        queryset = User.objects.filter(role='guest')
+        # Guests are legacy_role=guest (db column "role"); also include any explicit guest assigned role
+        queryset = User.objects.filter(
+            Q(legacy_role='guest') |
+            Q(assigned_role__slug='guest')
+        )
         
         # Search
         search = self.request.query_params.get('search', None)
@@ -270,14 +274,17 @@ class TeamViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         # Only admin can view/manage team
-        if self.request.user.role != 'admin':
+        if not self.request.user.is_team_member():
             return User.objects.none()
         
-        return User.objects.filter(role__in=['team', 'admin']).order_by('-created_at')
+        return User.objects.filter(
+            Q(legacy_role__in=['team', 'admin']) |
+            Q(assigned_role__slug__in=['team', 'admin'])
+        ).order_by('-created_at')
     
     def create(self, request, *args, **kwargs):
         # Only admin can create team members
-        if self.request.user.role != 'admin':
+        if not (request.user.is_super_admin() or request.user.legacy_role == 'admin'):
             return Response(
                 {'error': 'Permission denied'},
                 status=status.HTTP_403_FORBIDDEN
