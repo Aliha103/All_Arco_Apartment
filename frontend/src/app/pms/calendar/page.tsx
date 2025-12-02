@@ -58,6 +58,9 @@ interface BookingCapsule {
   nights: number;
   row: number;
   color: string;
+  booking_source?: string;
+  ical_uid?: string;
+  status?: string;
 }
 
 // ============================================================================
@@ -93,6 +96,8 @@ export default function CalendarPage() {
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<BookingCapsule | null>(null);
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
@@ -153,6 +158,22 @@ export default function CalendarPage() {
     onError: () => {
       toast.error('Failed to delete blocked dates');
     }
+  });
+
+  const cancelOTABooking = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      api.otaBookings.update(id, { status: 'cancelled', notes: reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-fallback'] });
+      setIsCancelModalOpen(false);
+      setSelectedBooking(null);
+      setCancelReason('');
+      toast.success('OTA booking marked as cancelled');
+    },
+    onError: () => {
+      toast.error('Failed to cancel OTA booking');
+    },
   });
 
   // ============================================================================
@@ -613,8 +634,14 @@ export default function CalendarPage() {
                               }}
                             >
                               <div
-                                className={`relative h-7 rounded-full shadow-md transition-all duration-200 flex items-center px-3 overflow-hidden ${isBlocked ? 'bg-gray-400/80' : ''}`}
-                                style={isBlocked ? undefined : { backgroundColor: capsule.color }}
+                                className={`relative h-7 rounded-full shadow-md transition-all duration-200 flex items-center px-3 overflow-hidden ${
+                                  isBlocked
+                                    ? 'bg-gray-400/80'
+                                    : capsule.status === 'cancelled'
+                                      ? 'bg-gray-400/60'
+                                      : ''
+                                }`}
+                                style={isBlocked || capsule.status === 'cancelled' ? undefined : { backgroundColor: capsule.color }}
                               >
                                 {isBlocked ? (
                                   <div className="flex items-center gap-1.5 text-white text-xs font-bold truncate">
@@ -623,8 +650,13 @@ export default function CalendarPage() {
                                   </div>
                                 ) : (
                                   <div className="flex items-center justify-between w-full text-white text-xs font-bold truncate">
-                                    <span className="truncate">{capsule.guest_name}</span>
+                                    <span className={`truncate ${capsule.status === 'cancelled' ? 'line-through opacity-75' : ''}`}>
+                                      {capsule.guest_name}
+                                    </span>
                                     <span className="ml-2 opacity-90 text-[10px]">{capsule.nights}N</span>
+                                    {capsule.status === 'cancelled' && (
+                                      <span className="ml-1 text-[9px] uppercase">CANCELLED</span>
+                                    )}
                                   </div>
                                 )}
                                 <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
@@ -742,6 +774,13 @@ export default function CalendarPage() {
           </DialogHeader>
           {selectedBooking && (
             <div className="space-y-4">
+              {selectedBooking.status === 'cancelled' && (
+                <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
+                  <p className="text-sm text-red-800 font-semibold">
+                    ⚠️ This booking has been cancelled
+                  </p>
+                </div>
+              )}
               <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                 <div className="flex items-center gap-2">
                   <User className="w-5 h-5 text-gray-700" />
@@ -775,18 +814,92 @@ export default function CalendarPage() {
               </div>
             </div>
           )}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {selectedBooking?.booking_source === 'ota' && selectedBooking?.status !== 'cancelled' && (
+              <Button
+                variant="outline"
+                onClick={() => setIsCancelModalOpen(true)}
+                className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                Mark as Cancelled
+              </Button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={() => setSelectedBooking(null)}>
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  setSelectedBooking(null);
+                  router.push(`/pms/bookings/${selectedBooking?.id}`);
+                }}
+                className="bg-[#C4A572] hover:bg-[#B39562]"
+              >
+                View Full Details
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel OTA Booking Modal */}
+      <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Cancel OTA Booking</DialogTitle>
+            <DialogDescription className="text-gray-700">
+              Mark this OTA booking as cancelled. This action will update the booking status.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+              <p className="text-sm text-yellow-800 font-medium">
+                <strong>Booking:</strong> {selectedBooking?.booking_id}
+              </p>
+              <p className="text-sm text-yellow-800 mt-1">
+                <strong>Guest:</strong> {selectedBooking?.guest_name}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cancel_reason" className="text-gray-900 font-medium">
+                Cancellation Reason (Optional)
+              </Label>
+              <Textarea
+                id="cancel_reason"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Why was this booking cancelled?"
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedBooking(null)}>
-              Close
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCancelModalOpen(false);
+                setCancelReason('');
+              }}
+            >
+              Go Back
             </Button>
             <Button
               onClick={() => {
-                setSelectedBooking(null);
-                router.push(`/pms/bookings/${selectedBooking?.id}`);
+                if (selectedBooking?.id) {
+                  cancelOTABooking.mutate({ id: selectedBooking.id, reason: cancelReason });
+                }
               }}
-              className="bg-[#C4A572] hover:bg-[#B39562]"
+              disabled={cancelOTABooking.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
-              View Full Details
+              {cancelOTABooking.isPending ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Cancelling...
+                </>
+              ) : (
+                'Confirm Cancellation'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
