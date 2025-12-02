@@ -272,7 +272,10 @@ function GuestDetailsModal({
   });
 
   const addNoteMutation = useMutation({
-    mutationFn: (note: string) => api.users.guests.addNote(guest!.id, note),
+    mutationFn: async (note: string) => {
+      if (!guest?.id) throw new Error('Guest not available');
+      return api.users.guests.addNote(guest.id, note);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-guests'] });
       queryClient.invalidateQueries({ queryKey: ['guest-notes', guest?.id] });
@@ -288,8 +291,6 @@ function GuestDetailsModal({
     if (!newNote.trim()) return;
     addNoteMutation.mutate(newNote);
   };
-
-  if (!guest) return null;
 
   const bookings = useMemo(() => {
     if (guest?.bookings && Array.isArray(guest.bookings) && guest.bookings.length > 0) {
@@ -332,9 +333,13 @@ function GuestDetailsModal({
     return `${origin}/booking/checkin?confirmation=${encodeURIComponent(confirmation)}&email=${encodeURIComponent(guest.email)}`;
   };
 
-  const safeFirst = guest.first_name || '';
-  const safeLast = guest.last_name || '';
+  const safeFirst = guest?.first_name || '';
+  const safeLast = guest?.last_name || '';
   const safeInitials = `${safeFirst.charAt(0) || '?'}${safeLast.charAt(0) || '?'}`.toUpperCase();
+
+  if (!guest) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
