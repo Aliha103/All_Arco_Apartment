@@ -269,6 +269,8 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
                 'phone': user.phone,
                 'total_bookings': 0,
                 'total_spent': 0.0,
+                'total_guests_count': 0,
+                'online_bookings': 0,
             }
 
         # Guests derived from bookings (captures non-registered)
@@ -294,6 +296,8 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
                 'phone': booking.guest_phone,
                 'total_bookings': 0,
                 'total_spent': 0.0,
+                'total_guests_count': 0,
+                'online_bookings': 0,
             })
 
             # Split guest_name into first/last if missing
@@ -305,6 +309,11 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
             entry['phone'] = entry['phone'] or booking.guest_phone
             entry['total_bookings'] = entry.get('total_bookings', 0) + 1
             entry['total_spent'] = entry.get('total_spent', 0.0) + float(booking.total_price or 0)
+            entry['total_guests_count'] = entry.get('total_guests_count', 0) + (booking.number_of_guests or 0)
+
+            # Count online bookings (website/direct treated as online self-managed)
+            if booking.booking_source in ['website', 'direct']:
+                entry['online_bookings'] = entry.get('online_bookings', 0) + 1
             merged[key] = entry
 
         # Sort by name then email for stable display

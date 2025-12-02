@@ -88,6 +88,8 @@ interface Guest {
   preferences?: string;
   total_bookings: number;
   total_spent: string;
+  total_guests_count?: number;
+  online_bookings?: number;
   date_joined: string;
   created_at: string;
   avatar_url?: string;
@@ -656,18 +658,17 @@ export default function GuestsPage() {
     if (!guests) return null;
 
     const totalGuests = guests.length;
-    const vipGuests = guests.filter((g) => g.is_vip).length;
     const totalBookings = guests.reduce((sum, g) => sum + (g.total_bookings || 0), 0);
-    const totalRevenue = guests.reduce((sum, g) => sum + parseFloat(g.total_spent || '0'), 0);
-    const repeatGuests = guests.filter((g) => (g.total_bookings || 0) > 1).length;
-    const repeatRate = totalGuests > 0 ? (repeatGuests / totalGuests) * 100 : 0;
+    const totalGuestCount = guests.reduce((sum, g) => sum + (g.total_guests_count || 0), 0);
+    const onlineBookings = guests.reduce((sum, g) => sum + (g.online_bookings || 0), 0);
 
     return {
       totalGuests,
-      vipGuests,
+      totalBookings,
       avgBookingsPerGuest: totalGuests > 0 ? (totalBookings / totalGuests).toFixed(1) : '0',
-      totalRevenue: totalRevenue.toFixed(2),
-      repeatRate: repeatRate.toFixed(0),
+      avgGuestsPerBooking:
+        totalBookings > 0 ? (totalGuestCount / totalBookings).toFixed(2) : '0.00',
+      onlineBookings,
     };
   }, [guests]);
 
@@ -699,7 +700,7 @@ export default function GuestsPage() {
 
       {/* Statistics */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Guests"
             value={stats.totalGuests}
@@ -707,29 +708,22 @@ export default function GuestsPage() {
             color="blue"
           />
           <StatCard
-            title="VIP Guests"
-            value={stats.vipGuests}
-            icon={Star}
-            color="orange"
-          />
-          <StatCard
-            title="Avg. Bookings"
-            value={stats.avgBookingsPerGuest}
+            title="Total Bookings"
+            value={stats.totalBookings}
             icon={Calendar}
             color="purple"
           />
           <StatCard
-            title="Total Revenue"
-            value={`$${stats.totalRevenue}`}
-            icon={DollarSign}
-            color="green"
+            title="Avg. Guests / Booking"
+            value={stats.avgGuestsPerBooking}
+            icon={Users}
+            color="orange"
           />
           <StatCard
-            title="Repeat Rate"
-            value={`${stats.repeatRate}%`}
+            title="Online Bookings"
+            value={stats.onlineBookings}
             icon={TrendingUp}
-            trend="Growing"
-            color="pink"
+            color="green"
           />
         </div>
       )}
