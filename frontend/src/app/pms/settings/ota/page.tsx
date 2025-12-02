@@ -139,6 +139,7 @@ interface OTAFormData {
   city_tax: string;
   extras: string;
   applied_discount: string;
+  ota_commission_percent: string;
   ota_fee: string;
   paid_amount: string;
   currency: string;
@@ -160,6 +161,19 @@ const OTA_PLATFORMS = [
   'Hotels.com',
   'Other',
 ];
+
+// Default commission percentages for each OTA
+const OTA_COMMISSION_RATES: Record<string, number> = {
+  'Airbnb': 15,
+  'Booking.com': 17,
+  'Expedia': 18,
+  'VRBO': 20,
+  'HomeAway': 18,
+  'TripAdvisor': 15,
+  'Agoda': 17,
+  'Hotels.com': 18,
+  'Other': 15,
+};
 
 const CURRENCIES = ['EUR', 'USD', 'GBP', 'CHF'];
 
@@ -778,6 +792,7 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
     city_tax: '',
     extras: '0',
     applied_discount: '0',
+    ota_commission_percent: '',
     ota_fee: '',
     paid_amount: '',
     currency: 'EUR',
@@ -787,6 +802,10 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
   // Initialize form with booking data if editing
   useEffect(() => {
     if (booking && isOpen) {
+      // Calculate commission percentage from OTA fee if editing
+      const commissionBase = booking.room_price + booking.cleaning_fee + booking.extras - booking.applied_discount;
+      const commissionPercent = commissionBase > 0 ? ((booking.ota_fee / commissionBase) * 100).toFixed(2) : '';
+
       setFormData({
         ota_name: booking.ota_name,
         ota_booking_number: booking.ota_booking_number,
@@ -805,6 +824,7 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
         city_tax: booking.city_tax.toString(),
         extras: booking.extras.toString(),
         applied_discount: booking.applied_discount.toString(),
+        ota_commission_percent: commissionPercent,
         ota_fee: booking.ota_fee.toString(),
         paid_amount: booking.paid_amount.toString(),
         currency: booking.currency,
@@ -830,6 +850,7 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
         city_tax: '',
         extras: '0',
         applied_discount: '0',
+        ota_commission_percent: '',
         ota_fee: '',
         paid_amount: '',
         currency: 'EUR',
@@ -838,22 +859,46 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
     }
   }, [booking, isOpen]);
 
-  // Calculate totals
+  // Calculate totals with commission
   const calculatedTotals = useMemo(() => {
     const roomPrice = parseFloat(formData.room_price) || 0;
     const cleaningFee = parseFloat(formData.cleaning_fee) || 0;
     const cityTax = parseFloat(formData.city_tax) || 0;
     const extras = parseFloat(formData.extras) || 0;
     const discount = parseFloat(formData.applied_discount) || 0;
+    const commissionPercent = parseFloat(formData.ota_commission_percent) || 0;
 
+    // Subtotal includes everything
     const subtotal = roomPrice + cleaningFee + cityTax + extras;
-    const total = subtotal - discount;
+
+    // Guest pays = subtotal - discount
+    const guestPays = subtotal - discount;
+
+    // Commission base excludes city tax (only on room price + cleaning + extras - discount)
+    const commissionBase = roomPrice + cleaningFee + extras - discount;
+
+    // OTA commission calculation
+    const otaCommission = (commissionBase * commissionPercent) / 100;
+
+    // What property receives after commission
+    const youReceive = guestPays - otaCommission;
+
     const paidAmount = parseFloat(formData.paid_amount) || 0;
-    const toPayAmount = total - paidAmount;
+    const toPayAmount = guestPays - paidAmount;
 
     return {
+      roomPrice,
+      cleaningFee,
+      cityTax,
+      extras,
       subtotal,
-      total,
+      discount,
+      guestPays,
+      commissionBase,
+      otaCommission,
+      commissionPercent,
+      youReceive,
+      paidAmount,
       toPayAmount,
     };
   }, [formData]);
@@ -861,12 +906,41 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
   const handleSubmit = () => {
     // Validation
     if (!formData.ota_name || !formData.ota_booking_number || !formData.first_name ||
-        !formData.last_name || !formData.check_in_date || !formData.check_out_date) {
+        !formData.last_name || !formData.check_in_date || !formData.check_out_date ||
+        !formData.ota_commission_percent) {
       toast.error('Please fill in all required fields');
       return;
     }
 
+    // Prepare data for API with calculated values
+    const submitData = {
+      ota_name: formData.ota_name,
+      ota_booking_number: formData.ota_booking_number,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      email: formData.email || undefined,
+      mobile_number: formData.mobile_number || undefined,
+      date_of_birth: formData.date_of_birth || undefined,
+      adults: parseInt(formData.adults) || 2,
+      children: parseInt(formData.children) || 0,
+      infants: parseInt(formData.infants) || 0,
+      check_in_date: formData.check_in_date,
+      check_out_date: formData.check_out_date,
+      room_price: parseFloat(formData.room_price) || 0,
+      cleaning_fee: parseFloat(formData.cleaning_fee) || 0,
+      city_tax: parseFloat(formData.city_tax) || 0,
+      extras: parseFloat(formData.extras) || 0,
+      applied_discount: parseFloat(formData.applied_discount) || 0,
+      ota_fee: calculatedTotals.otaCommission, // Calculated commission amount
+      paid_amount: parseFloat(formData.paid_amount) || 0,
+      total_amount: calculatedTotals.guestPays, // Guest pays amount
+      to_pay_amount: calculatedTotals.toPayAmount,
+      currency: formData.currency,
+      notes: formData.notes || undefined,
+    };
+
     // TODO: Implement API call
+    console.log('Submitting OTA booking:', submitData);
     toast.success(booking ? 'OTA booking updated' : 'OTA booking created');
     queryClient.invalidateQueries({ queryKey: ['ota-bookings'] });
     onClose();
@@ -895,7 +969,18 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
                 <Label htmlFor="ota_name" className="text-gray-900 font-medium">
                   OTA Platform <span className="text-red-500">*</span>
                 </Label>
-                <Select value={formData.ota_name} onValueChange={(v) => setFormData({ ...formData, ota_name: v })}>
+                <Select
+                  value={formData.ota_name}
+                  onValueChange={(v) => {
+                    // Auto-populate commission percentage based on OTA platform
+                    const defaultCommission = OTA_COMMISSION_RATES[v] || 15;
+                    setFormData({
+                      ...formData,
+                      ota_name: v,
+                      ota_commission_percent: formData.ota_commission_percent || defaultCommission.toString()
+                    });
+                  }}
+                >
                   <SelectTrigger className="mt-1.5">
                     <SelectValue placeholder="Select OTA" />
                   </SelectTrigger>
@@ -1155,20 +1240,26 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
               </div>
 
               <div>
-                <Label htmlFor="ota_fee" className="text-gray-900 font-medium">
-                  OTA Fee <span className="text-red-500">*</span>
+                <Label htmlFor="ota_commission_percent" className="text-gray-900 font-medium">
+                  OTA Commission (%) <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative mt-1.5">
                   <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    id="ota_fee"
+                    id="ota_commission_percent"
                     type="number"
-                    step="0.01"
-                    value={formData.ota_fee}
-                    onChange={(e) => setFormData({ ...formData, ota_fee: e.target.value })}
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={formData.ota_commission_percent}
+                    onChange={(e) => setFormData({ ...formData, ota_commission_percent: e.target.value })}
                     className="pl-10 text-gray-900"
+                    placeholder="15"
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  Commission is calculated on room price, cleaning fee, and extras (excluding city tax)
+                </p>
               </div>
 
               <div>
@@ -1203,31 +1294,117 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
               </div>
             </div>
 
-            {/* Calculated Totals */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600 font-medium mb-1">Subtotal</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {formatCurrency(calculatedTotals.subtotal)} {formData.currency}
-                  </p>
+            {/* Calculated Totals - Enhanced Financial Breakdown */}
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-5 border border-gray-200">
+              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-4">
+                Financial Summary
+              </h4>
+
+              {/* Line Items */}
+              <div className="space-y-2 mb-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Room Price:</span>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(calculatedTotals.roomPrice)} {formData.currency}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-gray-600 font-medium mb-1">Total</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {formatCurrency(calculatedTotals.total)} {formData.currency}
-                  </p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Cleaning Fee:</span>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(calculatedTotals.cleaningFee)} {formData.currency}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-gray-600 font-medium mb-1">To Pay</p>
-                  <p className={cn(
-                    "text-lg font-bold",
-                    calculatedTotals.toPayAmount > 0 ? "text-red-600" : "text-green-600"
-                  )}>
-                    {formatCurrency(calculatedTotals.toPayAmount)} {formData.currency}
-                  </p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">City Tax:</span>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(calculatedTotals.cityTax)} {formData.currency}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Extras:</span>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(calculatedTotals.extras)} {formData.currency}
+                  </span>
                 </div>
               </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-300 my-3"></div>
+
+              {/* Subtotal & Discount */}
+              <div className="space-y-2 mb-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-700 font-medium">Subtotal:</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatCurrency(calculatedTotals.subtotal)} {formData.currency}
+                  </span>
+                </div>
+                {calculatedTotals.discount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Discount:</span>
+                    <span className="font-medium text-red-600">
+                      -{formatCurrency(calculatedTotals.discount)} {formData.currency}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-300 my-3"></div>
+
+              {/* Guest Pays */}
+              <div className="space-y-3 mb-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-700 font-semibold">Guest Pays:</span>
+                  <span className="text-lg font-bold text-blue-600">
+                    {formatCurrency(calculatedTotals.guestPays)} {formData.currency}
+                  </span>
+                </div>
+
+                {/* OTA Commission */}
+                {calculatedTotals.commissionPercent > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 text-sm">
+                      OTA Commission ({calculatedTotals.commissionPercent}%):
+                    </span>
+                    <span className="font-semibold text-orange-600">
+                      -{formatCurrency(calculatedTotals.otaCommission)} {formData.currency}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="border-t-2 border-gray-400 my-3"></div>
+
+              {/* You Receive - Highlighted */}
+              <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-green-700 font-bold text-sm">You Receive:</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    {formatCurrency(calculatedTotals.youReceive)} {formData.currency}
+                  </span>
+                </div>
+                <p className="text-xs text-green-600 mt-1">
+                  Net revenue after OTA commission
+                </p>
+              </div>
+
+              {/* To Pay */}
+              {calculatedTotals.toPayAmount !== 0 && (
+                <>
+                  <div className="border-t border-gray-300 my-3"></div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 font-medium text-sm">To Collect from Guest:</span>
+                    <span className={cn(
+                      "text-lg font-bold",
+                      calculatedTotals.toPayAmount > 0 ? "text-red-600" : "text-green-600"
+                    )}>
+                      {formatCurrency(calculatedTotals.toPayAmount)} {formData.currency}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
