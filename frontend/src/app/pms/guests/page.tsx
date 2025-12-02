@@ -632,7 +632,10 @@ export default function GuestsPage() {
   const filteredGuests = useMemo(() => {
     if (!guests) return [];
 
-    return guests.filter((guest) => {
+    // Only show guests that are tied to at least one booking
+    const bookingGuests = guests.filter((g) => (g.total_bookings || 0) > 0);
+
+    return bookingGuests.filter((guest) => {
       const searchLower = search.toLowerCase();
       const matchesSearch =
         guest.first_name.toLowerCase().includes(searchLower) ||
@@ -657,10 +660,21 @@ export default function GuestsPage() {
   const stats = useMemo(() => {
     if (!guests) return null;
 
-    const totalGuests = guests.length;
-    const totalBookings = guests.reduce((sum, g) => sum + (g.total_bookings || 0), 0);
-    const totalGuestCount = guests.reduce((sum, g) => sum + (g.total_guests_count || 0), 0);
-    const onlineBookings = guests.reduce((sum, g) => sum + (g.online_bookings || 0), 0);
+    const bookingGuests = guests.filter((g) => (g.total_bookings || 0) > 0);
+    if (bookingGuests.length === 0) {
+      return {
+        totalGuests: 0,
+        totalBookings: 0,
+        avgBookingsPerGuest: '0',
+        avgGuestsPerBooking: '0.00',
+        onlineBookings: 0,
+      };
+    }
+
+    const totalGuests = bookingGuests.length;
+    const totalBookings = bookingGuests.reduce((sum, g) => sum + (g.total_bookings || 0), 0);
+    const totalGuestCount = bookingGuests.reduce((sum, g) => sum + (g.total_guests_count || 0), 0);
+    const onlineBookings = bookingGuests.reduce((sum, g) => sum + (g.online_bookings || 0), 0);
 
     return {
       totalGuests,
