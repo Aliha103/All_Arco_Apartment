@@ -1,0 +1,1 @@
+# Alloggiati integration app
