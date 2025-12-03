@@ -5,3 +5,7 @@ class CleaningConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.cleaning'
     verbose_name = 'Cleaning Management'
+
+    def ready(self):
+        """Import signals when app is ready."""
+        import apps.cleaning.signals
