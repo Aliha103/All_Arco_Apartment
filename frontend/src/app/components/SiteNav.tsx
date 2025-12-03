@@ -207,7 +207,7 @@ const SiteNav = () => {
                   {isAuthenticated ? (
                     <>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs ${isScrolled ? 'bg-[#C4A572] text-white' : 'bg-[#C4A572] text-white'}`}>
-                        {user?.first_name?.[0]}{user?.last_name?.[0]}
+                        {user?.first_name?.[0] || ''}{user?.last_name?.[0] || ''}
                       </div>
                       <span className="text-sm font-medium max-w-[120px] truncate">{displayName}</span>
                     </>

@@ -190,10 +190,6 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
                 className="object-contain h-10 sm:h-12 lg:h-14 w-auto"
                 priority
               />
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[#C4A572]/10 to-[#C4A572]/5 rounded-full border border-[#C4A572]/20">
-                <Sparkles className="w-4 h-4 text-[#C4A572]" />
-                <span className="text-sm font-semibold text-gray-700">PMS</span>
-              </div>
             </Link>
 
             {/* Right Section */}
@@ -216,7 +212,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
                   aria-expanded={dropdownOpen}
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#C4A572] to-[#B39562] flex items-center justify-center text-white text-sm font-semibold shadow-md">
-                    {user.first_name?.[user.first_name.length - 1]?.toUpperCase()}{user.last_name?.[0]?.toUpperCase()}
+                    {user.first_name?.[0]?.toUpperCase()}{user.last_name?.[0]?.toUpperCase()}
                   </div>
                   <div className="hidden md:block text-left max-w-[140px]">
                     <p className="text-sm font-medium text-gray-700 truncate">
