@@ -879,13 +879,13 @@ function CreateInvoiceModal({ isOpen, onClose, invoice, companies, onCompanyCrea
     if (!selectedBooking) return;
 
     const data: any = {
-      booking_id: selectedBooking.id,
+      booking: selectedBooking.id,
       type: invoiceType,
       amount: selectedBooking.total_price,
     };
 
     if (invoiceType === 'invoice' && selectedCompany) {
-      data.company_id = selectedCompany.id;
+      data.company = selectedCompany.id;
     }
 
     createInvoice.mutate(data);
