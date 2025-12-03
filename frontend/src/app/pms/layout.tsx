@@ -28,6 +28,7 @@ import {
   Home,
   Sparkles,
   Shield,
+  SprayCan,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -45,6 +46,7 @@ const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/pms', icon: LayoutDashboard, permission: null }, // Always visible
   { name: 'Bookings', href: '/pms/bookings', icon: Calendar, permission: 'bookings.view' },
   { name: 'Calender', href: '/pms/calendar', icon: CalendarDays, permission: 'bookings.view' },
+  { name: 'Cleaning', href: '/pms/cleaning', icon: SprayCan, permission: 'cleaning.view' },
   { name: 'Payments', href: '/pms/payments', icon: CreditCard, permission: 'payments.view' },
   { name: 'Invoices', href: '/pms/invoices', icon: FileText, permission: 'payments.view' },
   { name: 'Guests tree', href: '/pms/guests', icon: Users, permission: 'guests.view' },

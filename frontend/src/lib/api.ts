@@ -235,6 +235,35 @@ export const api = {
       apiClient.post('/alloggiati/account/save_credentials/', data),
     refreshToken: () => apiClient.post('/alloggiati/account/refresh_token/'),
   },
+
+  // Cleaning Management
+  cleaning: {
+    schedules: {
+      list: (params?: any) => apiClient.get('/cleaning/schedules/', { params }),
+      get: (id: string) => apiClient.get(`/cleaning/schedules/${id}/`),
+      create: (data: any) => apiClient.post('/cleaning/schedules/', data),
+      update: (id: string, data: any) => apiClient.patch(`/cleaning/schedules/${id}/`, data),
+      delete: (id: string) => apiClient.delete(`/cleaning/schedules/${id}/`),
+      assign: (id: string, userId: string) =>
+        apiClient.post(`/cleaning/schedules/${id}/assign/`, { user_id: userId }),
+      start: (id: string) => apiClient.post(`/cleaning/schedules/${id}/start/`),
+      complete: (id: string, data?: any) =>
+        apiClient.post(`/cleaning/schedules/${id}/complete/`, data),
+      inspect: (id: string, data: { quality_rating: number; inspection_notes?: string }) =>
+        apiClient.post(`/cleaning/schedules/${id}/inspect/`, data),
+      statistics: () => apiClient.get('/cleaning/schedules/statistics/'),
+      calendar: (year: number, month: number) =>
+        apiClient.get('/cleaning/schedules/calendar/', { params: { year, month } }),
+    },
+    tasks: {
+      list: (params?: any) => apiClient.get('/cleaning/tasks/', { params }),
+      get: (id: string) => apiClient.get(`/cleaning/tasks/${id}/`),
+      create: (data: any) => apiClient.post('/cleaning/tasks/', data),
+      update: (id: string, data: any) => apiClient.patch(`/cleaning/tasks/${id}/`, data),
+      delete: (id: string) => apiClient.delete(`/cleaning/tasks/${id}/`),
+      toggleComplete: (id: string) => apiClient.post(`/cleaning/tasks/${id}/toggle_complete/`),
+    },
+  },
 };
 
 export default api;

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'apps.emails',
     'apps.gallery',
     'apps.alloggiati',
+    'apps.cleaning',
 ]
 
 MIDDLEWARE = [
