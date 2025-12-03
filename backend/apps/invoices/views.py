@@ -26,34 +26,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def generate_pdf(self, request, pk=None):
         """Generate PDF for invoice."""
+        # Deprecated: PDF generation is handled via download_pdf using reportlab
         invoice = self.get_object()
-
-        try:
-            from io import BytesIO
-            from weasyprint import HTML
-
-            # Generate HTML content for the invoice
-            html_content = self._generate_invoice_html(invoice)
-
-            # Generate PDF
-            pdf_file = BytesIO()
-            HTML(string=html_content).write_pdf(pdf_file)
-            pdf_file.seek(0)
-
-            # In production, you might want to save this to storage (S3, etc.)
-            # For now, we'll just confirm it was generated
-            invoice.pdf_url = f'/api/invoices/{invoice.id}/download_pdf/'
-            invoice.save()
-
-            return Response({
-                'message': 'PDF generated successfully',
-                'pdf_url': invoice.pdf_url
-            })
-        except Exception as e:
-            return Response(
-                {'error': f'Failed to generate PDF: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        return Response({
+            'message': 'Use download_pdf endpoint for PDF generation',
+            'pdf_url': f'/api/invoices/{invoice.id}/download_pdf/'
+        })
 
     @action(detail=True, methods=['get'])
     def download_pdf(self, request, pk=None):
@@ -62,20 +40,181 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
         try:
             from io import BytesIO
-            from weasyprint import HTML
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib import colors
+            from reportlab.lib.units import cm
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.enums import TA_CENTER
 
-            # Generate HTML content for the invoice
-            html_content = self._generate_invoice_html(invoice)
+            booking = invoice.booking
 
-            # Generate PDF
-            pdf_file = BytesIO()
-            HTML(string=html_content).write_pdf(pdf_file)
-            pdf_file.seek(0)
+            # Create PDF buffer
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
 
-            # Return PDF as download
-            response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+            # Container for PDF elements
+            elements = []
+            styles = getSampleStyleSheet()
+
+            # Custom styles
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=24,
+                textColor=colors.HexColor('#C4A572'),
+                spaceAfter=12,
+                alignment=TA_CENTER
+            )
+
+            heading_style = ParagraphStyle(
+                'CustomHeading',
+                parent=styles['Heading2'],
+                fontSize=14,
+                textColor=colors.HexColor('#C4A572'),
+                spaceAfter=6
+            )
+
+            # Title
+            elements.append(Paragraph("All'Arco Apartment", title_style))
+            elements.append(Paragraph("INVOICE", title_style))
+            elements.append(Spacer(1, 12))
+
+            # Invoice details
+            invoice_data = [
+                ['Invoice #:', invoice.invoice_number],
+                ['Date:', invoice.issue_date.strftime('%B %d, %Y')],
+                ['Due Date:', invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else 'Upon receipt'],
+                ['Status:', invoice.status.upper()],
+            ]
+
+            invoice_table = Table(invoice_data, colWidths=[4*cm, 10*cm])
+            invoice_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('TEXTCOLOR', (0, 0), (0, -1), colors.grey),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ]))
+            elements.append(invoice_table)
+            elements.append(Spacer(1, 20))
+
+            # Bill To section
+            elements.append(Paragraph("Bill To:", heading_style))
+            elements.append(Paragraph(f"<b>{booking.guest_name}</b>", styles['Normal']))
+            elements.append(Paragraph(f"{booking.guest_email}", styles['Normal']))
+            elements.append(Paragraph(f"{booking.guest_phone}", styles['Normal']))
+            if hasattr(booking, 'booking_id'):
+                elements.append(Paragraph(f"Booking: {booking.booking_id}", styles['Normal']))
+            elements.append(Spacer(1, 20))
+
+            # Stay Details
+            nights = (booking.check_out_date - booking.check_in_date).days
+            elements.append(Paragraph("Stay Details:", heading_style))
+            stay_data = [
+                ['Check-in:', booking.check_in_date.strftime('%B %d, %Y')],
+                ['Check-out:', booking.check_out_date.strftime('%B %d, %Y')],
+                ['Guests:', str(getattr(booking, 'number_of_guests', ''))],
+                ['Nights:', str(nights)],
+            ]
+            stay_table = Table(stay_data, colWidths=[4*cm, 10*cm])
+            stay_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('TEXTCOLOR', (0, 0), (0, -1), colors.grey),
+            ]))
+            elements.append(stay_table)
+            elements.append(Spacer(1, 20))
+
+            # Line items
+            elements.append(Paragraph("Invoice Items:", heading_style))
+
+            # Calculate amount
+            amount = float(invoice.amount) if invoice.amount > 0 else float(booking.total_price)
+            nightly_rate = float(booking.nightly_rate)
+            accommodation_total = nightly_rate * nights
+
+            # Build line items data
+            line_items_data = [
+                ['Description', 'Unit Price', 'Qty', 'Amount']
+            ]
+
+            line_items_data.append([
+                f'Accommodation ({nights} night{"s" if nights != 1 else ""})',
+                f'€{nightly_rate:.2f}',
+                str(nights),
+                f'€{accommodation_total:.2f}'
+            ])
+
+            if float(booking.cleaning_fee) > 0:
+                line_items_data.append([
+                    'Cleaning Fee',
+                    f'€{float(booking.cleaning_fee):.2f}',
+                    '1',
+                    f'€{float(booking.cleaning_fee):.2f}'
+                ])
+
+            if float(booking.tourist_tax) > 0:
+                line_items_data.append([
+                    'Tourist Tax',
+                    f'€{float(booking.tourist_tax):.2f}',
+                    '1',
+                    f'€{float(booking.tourist_tax):.2f}'
+                ])
+
+            line_items_data.append(['', '', 'TOTAL', f'€{amount:.2f}'])
+
+            # Create table
+            line_items_table = Table(line_items_data, colWidths=[7*cm, 3*cm, 2*cm, 3*cm])
+            line_items_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#C4A572')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.beige),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, -1), (-1, -1), 12),
+                ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor('#C4A572')),
+                ('GRID', (0, 0), (-1, -2), 1, colors.grey),
+                ('LINEABOVE', (0, -1), (-1, -1), 2, colors.HexColor('#C4A572')),
+                ('LINEBELOW', (0, -1), (-1, -1), 2, colors.HexColor('#C4A572')),
+            ]))
+            elements.append(line_items_table)
+            elements.append(Spacer(1, 20))
+
+            # Payment info
+            elements.append(Paragraph("Payment Information:", heading_style))
+            elements.append(Paragraph("Please make payment to the following account:", styles['Normal']))
+            elements.append(Paragraph("<b>Bank:</b> Example Bank", styles['Normal']))
+            elements.append(Paragraph("<b>IBAN:</b> IT00 X000 0000 0000 0000 0000 000", styles['Normal']))
+            elements.append(Paragraph("<b>Reference:</b> " + invoice.invoice_number, styles['Normal']))
+            elements.append(Spacer(1, 30))
+
+            # Footer
+            footer_style = ParagraphStyle(
+                'Footer',
+                parent=styles['Normal'],
+                fontSize=9,
+                textColor=colors.grey,
+                alignment=TA_CENTER
+            )
+            elements.append(Paragraph("Thank you for choosing All'Arco Apartment!", footer_style))
+            elements.append(Paragraph("For questions, contact us at info@allarcoapartment.com", footer_style))
+
+            # Build PDF
+            doc.build(elements)
+
+            # Get PDF value
+            pdf = buffer.getvalue()
+            buffer.close()
+
+            # Return response
+            response = HttpResponse(pdf, content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="invoice-{invoice.invoice_number}.pdf"'
             return response
+
         except Exception as e:
             return Response(
                 {'error': f'Failed to generate PDF: {str(e)}'},
