@@ -11,26 +11,19 @@ This platform serves two primary purposes:
 ## 🛠 Tech Stack
 
 ### Frontend
-- **Next.js 16** with App Router
-- **React 19** with TypeScript
-- **TailwindCSS 4** for styling
-- **Radix UI** for accessible components
-- **React Query** (@tanstack/react-query) for server state
-- **Zustand** for client state
-- **Stripe** for payment processing
-- **Axios** for API calls
+- **Next.js 16 (App Router)**, **React** + **TypeScript**
+- **TailwindCSS** + **Radix UI**
+- **React Query** (@tanstack/react-query) for server state, **Zustand** for client state
+- **Axios** API client
 
 ### Backend
-- **Django 5.0** with REST Framework
-- **PostgreSQL** for database
-- **Redis** for caching & Celery broker
-- **Celery** for async tasks
-- **Stripe** for payments
-- **Zeptomail** for transactional emails
-- **WeasyPrint** for PDF generation
+- **Django 5** + **DRF**
+- **PostgreSQL**, **Redis**, **Celery**
+- **Stripe** payments, **Zeptomail** transactional email
+- **ReportLab** PDF generation (portable, no system deps)
 
 ### Deployment
-- **Railway** (both frontend and backend)
+- **Railway** (frontend, backend, Postgres, Redis)
 
 ## 📁 Project Structure
 
@@ -69,12 +62,12 @@ All_Arco_Apartment/
 
 ### Prerequisites
 
-- **Node.js 18+** and npm/yarn
+- **Node.js 20+** and npm/yarn
 - **Python 3.11+**
 - **PostgreSQL 14+**
 - **Redis 7+**
-- **Stripe Account** (for payments)
-- **Zeptomail Account** (for emails)
+- **Stripe** account (payments)
+- **Zeptomail** account (emails)
 
 ### 1. Clone Repository
 
@@ -184,6 +177,20 @@ celery -A core beat --loglevel=info
    - Occupancy analytics
    - Guest insights
    - Export to CSV
+
+10. **Cleaning Management**
+    - Auto-created cleanings for check-outs/blocks
+    - Calendar view with counts
+    - Assign, start, complete, inspect; task checklists
+
+11. **Compliance / Alloggiati**
+    - Alloggiati token scaffold + settings page
+    - Online guest check-in form (public link) with guest/family capture
+
+12. **Invoices**
+    - Single-invoice-per-booking guard
+    - PDF download (ReportLab)
+    - Receipts/invoices tied to bookings & companies
 
 ## 🔐 Authentication & Authorization
 
