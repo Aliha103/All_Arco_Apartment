@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: allarco-postgres
     environment:
-      POSTGRES_DB: allarco
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-allarco}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Error: POSTGRES_PASSWORD must be set}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -38,14 +38,14 @@ services:
       - "8080:8080"
     environment:
       # Django Settings
-      SECRET_KEY: dev-secret-key-change-in-production
-      DEBUG: "False"
-      ALLOWED_HOSTS: localhost,127.0.0.1,allarcoapartment.com
-      
+      SECRET_KEY: ${SECRET_KEY:?Error: SECRET_KEY must be set}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+
       # Database
-      PGDATABASE: allarco
-      PGUSER: postgres
-      PGPASSWORD: postgres
+      PGDATABASE: ${POSTGRES_DB:-allarco}
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Error: POSTGRES_PASSWORD must be set}
       PGHOST: postgres
       PGPORT: 5432
       
@@ -56,13 +56,15 @@ services:
       CORS_ALLOWED_ORIGINS: http://localhost:8080,https://allarcoapartment.com
       CSRF_TRUSTED_ORIGINS: http://localhost:8080,https://allarcoapartment.com
       
-      # Stripe (add your keys)
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_your_key}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-pk_test_your_key}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_your_secret}
-      
-      # Zeptomail (add your key)
-      ZEPTOMAIL_API_KEY: ${ZEPTOMAIL_API_KEY:-your_api_key}
+      # Stripe (required - no defaults for security)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?Error: STRIPE_SECRET_KEY must be set}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:?Error: STRIPE_PUBLISHABLE_KEY must be set}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?Error: STRIPE_WEBHOOK_SECRET must be set}
+
+      # Zeptomail (required - no defaults for security)
+      ZEPTOMAIL_RESERVATIONS_TOKEN: ${ZEPTOMAIL_RESERVATIONS_TOKEN:?Error: ZEPTOMAIL_RESERVATIONS_TOKEN must be set}
+      ZEPTOMAIL_SUPPORT_TOKEN: ${ZEPTOMAIL_SUPPORT_TOKEN:?Error: ZEPTOMAIL_SUPPORT_TOKEN must be set}
+      ZEPTOMAIL_CHECKIN_TOKEN: ${ZEPTOMAIL_CHECKIN_TOKEN:?Error: ZEPTOMAIL_CHECKIN_TOKEN must be set}
       
       # Next.js
       NEXT_PUBLIC_API_URL: http://localhost:8080/api

@@ -22,6 +22,12 @@ backend/celerybeat-schedule
 backend/venv/
 backend/ENV/
 
+# Docker environment files
+.env
+.env.docker
+.env.local
+.env.production
+
 # Python
 *.py[cod]
 *$py.class
