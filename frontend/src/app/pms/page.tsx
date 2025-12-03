@@ -956,12 +956,29 @@ export default function PMSDashboard() {
               </CardHeader>
               <CardContent className="p-4 overflow-hidden">
                 <ResponsiveContainer width="100%" height={260} minWidth={0}>
-                  <BarChart data={bookingCancelTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="label" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                    <Tooltip />
-                    <Legend />
+                  <BarChart data={bookingCancelTrend} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="#E5E7EB" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 11, fontWeight: 600, fill: '#374151' }}
+                      stroke="#D1D5DB"
+                      tickMargin={8}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fontWeight: 600, fill: '#374151' }}
+                      stroke="#D1D5DB"
+                      allowDecimals={false}
+                      tickMargin={6}
+                    />
+                    <Tooltip
+                      cursor={{ fill: '#F3F4F6' }}
+                      contentStyle={{ borderRadius: 8, borderColor: '#E5E7EB' }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      wrapperStyle={{ paddingTop: 8 }}
+                      formatter={(value) => <span className="text-sm text-gray-800 font-semibold">{value}</span>}
+                    />
                     <Bar dataKey="confirmed" name="Bookings" stackId="a" fill={COLORS.primary} radius={[6,6,0,0]} />
                     <Bar dataKey="cancelled" name="Cancelled" stackId="a" fill={COLORS.error} radius={[6,6,0,0]} />
                   </BarChart>
