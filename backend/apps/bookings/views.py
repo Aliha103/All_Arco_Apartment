@@ -215,6 +215,133 @@ class BookingViewSet(viewsets.ModelViewSet):
         # TODO: Implement email sending
         return Response({'message': 'Email sent successfully'})
 
+    @action(detail=True, methods=['get'], url_path='download-pdf')
+    def download_pdf(self, request, pk=None):
+        """
+        Generate and download booking confirmation PDF.
+        """
+        from django.http import HttpResponse
+        from io import BytesIO
+        from weasyprint import HTML
+        from django.template.loader import render_to_string
+
+        booking = self.get_object()
+
+        # Prepare context for template
+        context = {
+            'booking': booking,
+            'company': {
+                'name': "All'Arco Apartment",
+                'address': "Via Castellana 61, 30125 Venice, Italy",
+                'email': 'support@allarcoapartment.com',
+                'website': 'www.allarcoapartment.com',
+            },
+        }
+
+        # Simple HTML template for booking PDF
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Booking Confirmation - {booking.booking_id}</title>
+            <style>
+                @page {{ size: A4; margin: 2cm; }}
+                body {{ font-family: Arial, sans-serif; font-size: 11pt; color: #333; }}
+                .header {{ text-align: center; margin-bottom: 30px; border-bottom: 2px solid #C4A572; padding-bottom: 20px; }}
+                .company-name {{ font-size: 24pt; font-weight: bold; color: #C4A572; }}
+                .title {{ font-size: 18pt; margin-top: 20px; }}
+                .section {{ margin: 20px 0; }}
+                .label {{ font-weight: bold; color: #666; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+                th, td {{ padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }}
+                th {{ background-color: #f5f5f5; font-weight: bold; }}
+                .total {{ font-size: 14pt; font-weight: bold; color: #C4A572; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="company-name">ALL'ARCO APARTMENT</div>
+                <div>{context['company']['address']}</div>
+                <div>{context['company']['email']} | {context['company']['website']}</div>
+            </div>
+
+            <div class="title">BOOKING CONFIRMATION</div>
+
+            <div class="section">
+                <p><span class="label">Booking ID:</span> {booking.booking_id}</p>
+                <p><span class="label">Status:</span> {booking.status.replace('_', ' ').title()}</p>
+            </div>
+
+            <div class="section">
+                <h3>Guest Information</h3>
+                <p><span class="label">Name:</span> {booking.guest_name}</p>
+                <p><span class="label">Email:</span> {booking.guest_email}</p>
+                <p><span class="label">Phone:</span> {booking.guest_phone}</p>
+                {f'<p><span class="label">Country:</span> {booking.guest_country}</p>' if booking.guest_country else ''}
+            </div>
+
+            <div class="section">
+                <h3>Booking Details</h3>
+                <p><span class="label">Check-in:</span> {booking.check_in_date.strftime('%B %d, %Y')}</p>
+                <p><span class="label">Check-out:</span> {booking.check_out_date.strftime('%B %d, %Y')}</p>
+                <p><span class="label">Nights:</span> {booking.nights}</p>
+                <p><span class="label">Guests:</span> {booking.guests}</p>
+            </div>
+
+            <div class="section">
+                <h3>Pricing</h3>
+                <table>
+                    <tr>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th>Unit Price</th>
+                        <th>Amount</th>
+                    </tr>
+                    <tr>
+                        <td>Accommodation</td>
+                        <td>1</td>
+                        <td>EUR {booking.nightly_rate or 0:.2f}</td>
+                        <td>EUR {float(booking.nightly_rate or 0) * booking.nights:.2f}</td>
+                    </tr>
+                    <tr>
+                        <td>Cleaning Fee</td>
+                        <td>1</td>
+                        <td>EUR {booking.cleaning_fee or 0:.2f}</td>
+                        <td>EUR {booking.cleaning_fee or 0:.2f}</td>
+                    </tr>
+                    <tr>
+                        <td>City Tax (Venice)</td>
+                        <td>{booking.guests}</td>
+                        <td>EUR {float(booking.tourist_tax or 0) / max(booking.guests, 1):.2f}</td>
+                        <td>EUR {booking.tourist_tax or 0:.2f}</td>
+                    </tr>
+                </table>
+                <p style="text-align: right; margin-top: 20px;">
+                    <span class="total">TOTAL: EUR {booking.total_price:.2f}</span>
+                </p>
+            </div>
+
+            {f'<div class="section"><h3>Special Requests</h3><p>{booking.special_requests}</p></div>' if booking.special_requests else ''}
+
+            <div class="section" style="margin-top: 40px; font-size: 9pt; color: #666; text-align: center;">
+                <p>Thank you for choosing All'Arco Apartment Venice</p>
+                <p>{context['company']['website']}</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Generate PDF
+        pdf_file = BytesIO()
+        HTML(string=html_content).write_pdf(pdf_file)
+        pdf_file.seek(0)
+
+        # Return PDF response
+        response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="booking-{booking.booking_id}.pdf"'
+        return response
+
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel_booking(self, request, pk=None):
         """

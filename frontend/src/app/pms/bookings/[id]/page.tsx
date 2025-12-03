@@ -150,8 +150,9 @@ export default function BookingDetailPage() {
       : 'unpaid';
 
   // Availability check for undo-cancel / undo no-show to avoid overbooking
+  const shouldCheckOverlaps = ['cancelled', 'no_show'].includes(booking.status);
   const { data: overlapBlocked = false } = useQuery({
-    queryKey: ['booking-overlaps', bookingId, booking.status],
+    queryKey: ['booking-overlaps', bookingId],
     queryFn: async () => {
       const resp = await api.bookings.list({
         check_in_date_from: booking.check_in_date,
@@ -165,7 +166,7 @@ export default function BookingDetailPage() {
       );
       return overlaps.length > 0;
     },
-    enabled: ['cancelled', 'no_show'].includes(booking.status),
+    enabled: shouldCheckOverlaps,
   });
 
   // Actions eligibility

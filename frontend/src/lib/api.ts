@@ -91,6 +91,8 @@ export const api = {
     checkAvailability: (checkIn: string, checkOut: string) =>
       apiClient.get('/bookings/availability/', { params: { check_in: checkIn, check_out: checkOut } }),
     sendEmail: (id: string) => apiClient.post(`/bookings/${id}/send_email/`),
+    downloadPDF: (id: string) =>
+      apiClient.get(`/bookings/${id}/download-pdf/`, { responseType: 'blob' }),
     calendar: (year: number, month: number) =>
       apiClient.get('/bookings/calendar/month/', { params: { year, month } }),
     statistics: () => apiClient.get('/bookings/statistics/'),
