@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils';
+import { toast } from 'sonner';
 import { Booking, Payment } from '@/types';
 
 export default function BookingDetailPage() {
@@ -40,6 +41,10 @@ export default function BookingDetailPage() {
         nightly_rate?: string;
         cleaning_fee?: string;
         tourist_tax?: string;
+        guests?: any[];
+        guest_email?: string;
+        booking_id?: string;
+        guests_count?: number;
       };
     },
   });
@@ -164,7 +169,9 @@ export default function BookingDetailPage() {
   });
 
   // Actions eligibility
-  const canCheckIn = ['paid', 'confirmed'].includes(booking.status);
+  const hasGuestDetails = Array.isArray((booking as any).guests) && (booking as any).guests.length > 0;
+  const canCheckInStatus = ['paid', 'confirmed'].includes(booking.status);
+  const canCheckIn = canCheckInStatus && hasGuestDetails;
   const canCheckOut = booking.status === 'checked_in';
   const canUndoCheckIn = booking.status === 'checked_in';
   const canUndoCheckOut = booking.status === 'checked_out';
@@ -387,11 +394,33 @@ export default function BookingDetailPage() {
             {canCheckIn && (
               <Button
                 onClick={() => {
+                  if (!hasGuestDetails) {
+                    const link = `/booking/checkin?confirmation=${encodeURIComponent(booking.booking_id || '')}&email=${encodeURIComponent(booking.guest_email || '')}`;
+                    toast.error('Add guest details before checking in.');
+                    if (booking.booking_id && booking.guest_email) {
+                      window.open(link, '_blank');
+                    }
+                    return;
+                  }
                   handleStatusUpdate('checked_in', 'Mark this booking as checked in?');
                 }}
                 disabled={updateStatus.isPending}
               >
                 Mark as Checked In
+              </Button>
+            )}
+            {!hasGuestDetails && canCheckInStatus && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const link = `/booking/checkin?confirmation=${encodeURIComponent(booking.booking_id || '')}&email=${encodeURIComponent(booking.guest_email || '')}`;
+                  toast.error('Please register all guests before check-in.');
+                  if (booking.booking_id && booking.guest_email) {
+                    window.open(link, '_blank');
+                  }
+                }}
+              >
+                Add guest details
               </Button>
             )}
 
