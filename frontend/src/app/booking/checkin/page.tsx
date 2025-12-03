@@ -59,6 +59,12 @@ function CheckInPageContent() {
   const router = useRouter();
   const [step, setStep] = useState<'lookup' | 'details' | 'success'>('lookup');
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [mainGuest, setMainGuest] = useState<GuestInfo>({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+  });
   const [lookupData, setLookupData] = useState({
     confirmation: searchParams.get('confirmation') || '',
     email: searchParams.get('email') || '',
@@ -84,10 +90,12 @@ function CheckInPageContent() {
         email: data?.guest_email || lookupData.email,
         phone: data?.guest_phone || '',
       };
-      setBooking({
+      const hydrated = {
         ...data,
         main_guest: data?.main_guest || fallbackMain,
-      });
+      };
+      setBooking(hydrated);
+      setMainGuest(hydrated.main_guest);
       // Initialize family members array based on guests_count
       const guestsCount = response.data.guests_count || 1;
       const initialMembers = Array(Math.max(0, guestsCount - 1)).fill(null).map(() => ({
@@ -166,8 +174,8 @@ function CheckInPageContent() {
 
   const handleSubmitCheckin = () => {
     // Validate that at least main guest info is complete
-    if (!booking?.main_guest) {
-      toast.error('Missing main guest information');
+    if (!mainGuest.first_name || !mainGuest.last_name || !mainGuest.email) {
+      toast.error('Please complete main guest first name, last name, and email');
       return;
     }
 
@@ -177,7 +185,7 @@ function CheckInPageContent() {
     );
 
     // Combine main guest with family members
-    const allGuests = [booking.main_guest, ...validFamilyMembers];
+    const allGuests = [mainGuest, ...validFamilyMembers];
 
     checkinMutation.mutate(allGuests);
   };
@@ -296,28 +304,48 @@ function CheckInPageContent() {
                 </CardContent>
               </Card>
 
-              {/* Main Guest (Read-only) */}
+              {/* Main Guest (Editable) */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-gray-900">
                     <User className="w-5 h-5 text-blue-600" />
                     Main Guest (You)
                   </CardTitle>
-                  <CardDescription>Your information from the booking</CardDescription>
+                  <CardDescription>Review or update your information from the booking</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                    <div>
-                      <p className="text-sm text-gray-600">Name</p>
-                      <p className="font-medium text-gray-900">
-                        {booking.main_guest.first_name} {booking.main_guest.last_name}
-                      </p>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-700">First Name *</Label>
+                      <Input
+                        value={mainGuest.first_name}
+                        onChange={(e) => setMainGuest({ ...mainGuest, first_name: e.target.value })}
+                        required
+                      />
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Email</p>
-                      <p className="font-medium text-gray-900">
-                        {booking.main_guest.email || 'Not provided'}
-                      </p>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-700">Last Name *</Label>
+                      <Input
+                        value={mainGuest.last_name}
+                        onChange={(e) => setMainGuest({ ...mainGuest, last_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-700">Email *</Label>
+                      <Input
+                        type="email"
+                        value={mainGuest.email}
+                        onChange={(e) => setMainGuest({ ...mainGuest, email: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-700">Phone</Label>
+                      <Input
+                        value={mainGuest.phone || ''}
+                        onChange={(e) => setMainGuest({ ...mainGuest, phone: e.target.value })}
+                      />
                     </div>
                   </div>
                 </CardContent>
