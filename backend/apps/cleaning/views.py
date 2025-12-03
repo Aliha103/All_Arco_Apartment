@@ -227,6 +227,12 @@ class CleaningScheduleViewSet(viewsets.ModelViewSet):
             'pending': pending_cleanings,
             'in_progress': in_progress_cleanings,
             'completed': completed_cleanings,
+            'today_cleanings': today_cleanings,
+            'week_cleanings': week_cleanings,
+            'upcoming_count': upcoming,
+            'average_quality_rating': round(avg_quality, 1) if avg_quality else None,
+            'average_duration_minutes': round(avg_duration) if avg_duration else None,
+            'status_breakdown': list(status_breakdown),
             'today': {
                 'total': today_cleanings,
                 'completed': today_completed,
@@ -237,10 +243,6 @@ class CleaningScheduleViewSet(viewsets.ModelViewSet):
                 'completed': week_completed,
                 'completion_rate': round((week_completed / week_cleanings * 100), 1) if week_cleanings > 0 else 0,
             },
-            'average_quality_rating': round(avg_quality, 1) if avg_quality else None,
-            'average_duration_minutes': round(avg_duration) if avg_duration else None,
-            'status_breakdown': list(status_breakdown),
-            'upcoming_cleanings': upcoming,
         })
 
     @action(detail=False, methods=['get'])
