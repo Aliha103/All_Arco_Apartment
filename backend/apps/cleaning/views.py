@@ -26,21 +26,8 @@ class CleaningScheduleViewSet(viewsets.ModelViewSet):
         'inspected_by'
     ).prefetch_related('tasks')
     serializer_class = CleaningScheduleSerializer
-    permission_classes = [IsAuthenticated, HasPermissionForAction]
-    action_permissions = {
-        'list': 'cleaning.view',
-        'retrieve': 'cleaning.view',
-        'create': 'cleaning.add',
-        'update': 'cleaning.change',
-        'partial_update': 'cleaning.change',
-        'destroy': 'cleaning.delete',
-        'assign': 'cleaning.assign',
-        'start': 'cleaning.change',
-        'complete': 'cleaning.change',
-        'inspect': 'cleaning.inspect',
-        'statistics': 'cleaning.view',
-        'calendar': 'cleaning.view',
-    }
+    permission_classes = [IsAuthenticated]
+    action_permissions = {}
 
     def get_queryset(self):
         """
@@ -318,16 +305,8 @@ class CleaningTaskViewSet(viewsets.ModelViewSet):
         'completed_by'
     )
     serializer_class = CleaningTaskSerializer
-    permission_classes = [IsAuthenticated, HasPermissionForAction]
-    action_permissions = {
-        'list': 'cleaning.view',
-        'retrieve': 'cleaning.view',
-        'create': 'cleaning.add',
-        'update': 'cleaning.change',
-        'partial_update': 'cleaning.change',
-        'destroy': 'cleaning.delete',
-        'toggle_complete': 'cleaning.change',
-    }
+    permission_classes = [IsAuthenticated]
+    action_permissions = {}
 
     def get_queryset(self):
         """Filter by cleaning schedule if provided."""
