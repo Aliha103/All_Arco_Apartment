@@ -296,18 +296,16 @@ class CleaningScheduleViewSet(viewsets.ModelViewSet):
 
         # Group by date
         calendar_data = {}
-        for cleaning in cleanings:
-            date_key = str(cleaning.scheduled_date)
-            if date_key not in calendar_data:
-                calendar_data[date_key] = []
-
-            serializer = self.get_serializer(cleaning)
-            calendar_data[date_key].append(serializer.data)
+        serializer = self.get_serializer(cleanings, many=True)
+        for item in serializer.data:
+            date_key = item['scheduled_date']
+            calendar_data.setdefault(date_key, []).append(item)
 
         return Response({
             'year': year,
             'month': month,
             'cleanings': calendar_data,
+            'total': len(serializer.data),
         })
 
 
