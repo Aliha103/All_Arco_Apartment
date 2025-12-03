@@ -14,8 +14,28 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = '__all__'
-        read_only_fields = ['id', 'invoice_number', 'created_at', 'updated_at']
+        fields = [
+            'id',
+            'invoice_number',
+            'booking',
+            'booking_details',
+            'issue_date',
+            'due_date',
+            'issued_at',
+            'amount',
+            'total_amount',
+            'status',
+            'pdf_url',
+            'sent_at',
+            'paid_at',
+            'notes',
+            'created_at',
+            'updated_at',
+            'guest_name',
+            'company_name',
+            'type',
+        ]
+        read_only_fields = ['id', 'invoice_number', 'created_at', 'updated_at', 'issued_at', 'booking_details']
 
     def get_guest_name(self, obj):
         """Get guest name from linked booking."""
@@ -45,9 +65,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
         """
         Ensure amount is set from booking total if not provided
         and attach booking from incoming booking id.
+        Prevent duplicate invoices for the same booking.
         """
         booking = validated_data.get('booking')
         amount = validated_data.get('amount')
+
+        # Check if invoice already exists for this booking
+        if booking:
+            existing_invoice = Invoice.objects.filter(booking=booking).first()
+            if existing_invoice:
+                raise serializers.ValidationError({
+                    'booking': f'An invoice already exists for this booking: {existing_invoice.invoice_number}',
+                    'existing_invoice_id': str(existing_invoice.id)
+                })
 
         # Default amount from booking total_price when missing/zero
         if booking and (amount is None or float(amount) == 0):
