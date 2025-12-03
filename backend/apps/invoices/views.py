@@ -35,7 +35,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def download_pdf(self, request, pk=None):
-        """Download invoice PDF."""
+        """Download invoice or receipt PDF with appropriate design."""
         invoice = self.get_object()
 
         try:
@@ -43,165 +43,288 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             from reportlab.lib.pagesizes import A4
             from reportlab.lib import colors
             from reportlab.lib.units import cm
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Frame, PageTemplate
             from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-            from reportlab.lib.enums import TA_CENTER
+            from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
+            from reportlab.pdfgen import canvas as pdf_canvas
 
             booking = invoice.booking
+            is_invoice = invoice.type == 'invoice'
+            doc_type_label = 'INVOICE' if is_invoice else 'RECEIPT'
+
+            # Calculate totals
+            amount = float(invoice.amount) if invoice.amount > 0 else float(booking.total_price)
+            nights = (booking.check_out_date - booking.check_in_date).days
+
+            # For invoices, calculate VAT (13%)
+            if is_invoice:
+                subtotal = amount / 1.13  # Remove VAT to get subtotal
+                vat_amount = amount - subtotal
+            else:
+                subtotal = amount
+                vat_amount = 0
 
             # Create PDF buffer
             buffer = BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+            doc = SimpleDocTemplate(
+                buffer,
+                pagesize=A4,
+                rightMargin=2.5*cm,
+                leftMargin=2.5*cm,
+                topMargin=2*cm,
+                bottomMargin=2*cm
+            )
 
-            # Container for PDF elements
             elements = []
             styles = getSampleStyleSheet()
 
             # Custom styles
             title_style = ParagraphStyle(
-                'CustomTitle',
+                'DocTitle',
                 parent=styles['Heading1'],
-                fontSize=24,
+                fontSize=36,
                 textColor=colors.HexColor('#C4A572'),
-                spaceAfter=12,
-                alignment=TA_CENTER
+                spaceAfter=6,
+                fontName='Helvetica-Bold'
             )
 
             heading_style = ParagraphStyle(
-                'CustomHeading',
-                parent=styles['Heading2'],
-                fontSize=14,
+                'SectionHeading',
+                fontSize=11,
                 textColor=colors.HexColor('#C4A572'),
-                spaceAfter=6
+                spaceAfter=8,
+                fontName='Helvetica-Bold',
+                spaceBefore=12
             )
 
-            # Title
-            elements.append(Paragraph("All'Arco Apartment", title_style))
-            elements.append(Paragraph("INVOICE", title_style))
+            # Header with logo placeholder on right
+            header_data = [[
+                Paragraph(doc_type_label, title_style),
+                Paragraph("""<para align=center>
+                    <font size=8 color=grey>
+                    ALL'ARCO<br/>
+                    APARTMENT
+                    </font>
+                </para>""", styles['Normal'])
+            ]]
+
+            header_table = Table(header_data, colWidths=[11*cm, 5*cm])
+            header_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+                ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('RIGHTPADDING', (1, 0), (1, 0), 20),
+            ]))
+            elements.append(header_table)
+            elements.append(Spacer(1, 8))
+
+            # Document details
+            doc_details = [
+                [f'#{invoice.invoice_number}', ''],
+                [f'Date: {invoice.issue_date.strftime("%B %d, %Y")}', ''],
+                [f'Booking: {booking.booking_id}', ''],
+                [f'Check-in: {booking.check_in_date.strftime("%b %d, %Y")} | Check-out: {booking.check_out_date.strftime("%b %d, %Y")}', '']
+            ]
+
+            doc_details_table = Table(doc_details, colWidths=[16*cm])
+            doc_details_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.grey),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ]))
+            elements.append(doc_details_table)
+            elements.append(Spacer(1, 16))
+
+            # Guest Details section (always show)
+            elements.append(Paragraph("GUEST DETAILS", heading_style))
+            guest_info = [
+                [f"Name: {booking.guest_name}"],
+                [f"Email: {booking.guest_email}"]
+            ]
+            if hasattr(booking, 'guest_phone') and booking.guest_phone:
+                guest_info.append([f"Country: {getattr(booking, 'country', 'N/A')}"])
+
+            guest_table = Table(guest_info, colWidths=[16*cm])
+            guest_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ]))
+            elements.append(guest_table)
             elements.append(Spacer(1, 12))
 
-            # Invoice details
-            invoice_data = [
-                ['Invoice #:', invoice.invoice_number],
-                ['Date:', invoice.issue_date.strftime('%B %d, %Y')],
-                ['Due Date:', invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else 'Upon receipt'],
-                ['Status:', invoice.status.upper()],
-            ]
+            # Bill To section (only for invoices)
+            if is_invoice and invoice.company:
+                elements.append(Paragraph("BILL TO", heading_style))
+                company = invoice.company
+                bill_to_info = [
+                    [company.name],
+                    [f"VAT: {company.vat_number}"],
+                    [f"Country: {company.country}"],
+                    [f"Email: {company.email}"],
+                    [company.address]
+                ]
 
-            invoice_table = Table(invoice_data, colWidths=[4*cm, 10*cm])
-            invoice_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 10),
-                ('TEXTCOLOR', (0, 0), (0, -1), colors.grey),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                bill_to_table = Table(bill_to_info, colWidths=[16*cm])
+                bill_to_table.setStyle(TableStyle([
+                    ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+                ]))
+                elements.append(bill_to_table)
+                elements.append(Spacer(1, 12))
+
+            # Contact info box (right side)
+            contact_box_data = [[
+                '',
+                Paragraph("""<para align=left>
+                    <font size=8><b>ALL'ARCO APARTMENT</b></font><br/>
+                    <font size=7 color=grey>
+                    Via Castellana 61<br/>
+                    30125 Venice, Italy<br/>
+                    support@allarcoapartment.com<br/>
+                    www.allarcoapartment.com
+                    </font>
+                </para>""", styles['Normal'])
+            ]]
+
+            contact_table = Table(contact_box_data, colWidths=[10*cm, 6*cm])
+            contact_table.setStyle(TableStyle([
+                ('BOX', (1, 0), (1, 0), 1, colors.HexColor('#C4A572')),
+                ('BACKGROUND', (1, 0), (1, 0), colors.HexColor('#FDFAF5')),
+                ('TOPPADDING', (1, 0), (1, 0), 10),
+                ('BOTTOMPADDING', (1, 0), (1, 0), 10),
+                ('LEFTPADDING', (1, 0), (1, 0), 10),
+                ('RIGHTPADDING', (1, 0), (1, 0), 10),
             ]))
-            elements.append(invoice_table)
-            elements.append(Spacer(1, 20))
+            elements.append(contact_table)
+            elements.append(Spacer(1, 16))
 
-            # Bill To section
-            elements.append(Paragraph("Bill To:", heading_style))
-            elements.append(Paragraph(f"<b>{booking.guest_name}</b>", styles['Normal']))
-            elements.append(Paragraph(f"{booking.guest_email}", styles['Normal']))
-            elements.append(Paragraph(f"{booking.guest_phone}", styles['Normal']))
-            if hasattr(booking, 'booking_id'):
-                elements.append(Paragraph(f"Booking: {booking.booking_id}", styles['Normal']))
-            elements.append(Spacer(1, 20))
+            # Line items table
+            table_data = [['Description', 'Qty', 'Unit Price', 'Payment', 'Amount']]
 
-            # Stay Details
-            nights = (booking.check_out_date - booking.check_in_date).days
-            elements.append(Paragraph("Stay Details:", heading_style))
-            stay_data = [
-                ['Check-in:', booking.check_in_date.strftime('%B %d, %Y')],
-                ['Check-out:', booking.check_out_date.strftime('%B %d, %Y')],
-                ['Guests:', str(getattr(booking, 'number_of_guests', ''))],
-                ['Nights:', str(nights)],
-            ]
-            stay_table = Table(stay_data, colWidths=[4*cm, 10*cm])
-            stay_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 10),
-                ('TEXTCOLOR', (0, 0), (0, -1), colors.grey),
-            ]))
-            elements.append(stay_table)
-            elements.append(Spacer(1, 20))
+            # Accommodation
+            if is_invoice:
+                accom_unit_price = subtotal - float(booking.cleaning_fee or 0) - float(booking.tourist_tax or 0)
+                if nights > 1:
+                    accom_unit_price = accom_unit_price / nights
+                accom_total = accom_unit_price * nights if nights > 1 else accom_unit_price
+            else:
+                accom_total = amount - float(booking.cleaning_fee or 0) - float(booking.tourist_tax or 0)
+                accom_unit_price = accom_total / nights if nights > 1 else accom_total
 
-            # Line items
-            elements.append(Paragraph("Invoice Items:", heading_style))
-
-            # Calculate amount
-            amount = float(invoice.amount) if invoice.amount > 0 else float(booking.total_price)
-            nightly_rate = float(booking.nightly_rate)
-            accommodation_total = nightly_rate * nights
-
-            # Build line items data
-            line_items_data = [
-                ['Description', 'Unit Price', 'Qty', 'Amount']
-            ]
-
-            line_items_data.append([
-                f'Accommodation ({nights} night{"s" if nights != 1 else ""})',
-                f'€{nightly_rate:.2f}',
-                str(nights),
-                f'€{accommodation_total:.2f}'
+            table_data.append([
+                'Accommodation',
+                str(nights) if nights > 1 else '1',
+                f'EUR {accom_unit_price:.2f}',
+                'Included',
+                f'EUR {accom_total:.2f}'
             ])
 
-            if float(booking.cleaning_fee) > 0:
-                line_items_data.append([
+            # City Tax
+            if float(booking.tourist_tax or 0) > 0:
+                tax_label = 'City Tax (Venice)' if is_invoice else 'City Tax'
+                table_data.append([
+                    tax_label,
+                    str(nights) if nights > 1 else '1',
+                    f'EUR {float(booking.tourist_tax) / nights if nights > 1 else float(booking.tourist_tax):.2f}',
+                    'Included',
+                    f'EUR {float(booking.tourist_tax):.2f}'
+                ])
+
+            # Cleaning Fee
+            if float(booking.cleaning_fee or 0) > 0:
+                table_data.append([
                     'Cleaning Fee',
-                    f'€{float(booking.cleaning_fee):.2f}',
                     '1',
-                    f'€{float(booking.cleaning_fee):.2f}'
+                    f'EUR {float(booking.cleaning_fee):.2f}',
+                    'Included',
+                    f'EUR {float(booking.cleaning_fee):.2f}'
                 ])
 
-            if float(booking.tourist_tax) > 0:
-                line_items_data.append([
-                    'Tourist Tax',
-                    f'€{float(booking.tourist_tax):.2f}',
+            # VAT (only for invoices)
+            if is_invoice:
+                table_data.append([
+                    'VAT (13.00%)',
                     '1',
-                    f'€{float(booking.tourist_tax):.2f}'
+                    f'EUR {vat_amount:.2f}',
+                    'Included',
+                    f'EUR {vat_amount:.2f}'
                 ])
 
-            line_items_data.append(['', '', 'TOTAL', f'€{amount:.2f}'])
+            # Total row
+            table_data.append(['', '', '', 'TOTAL:', f'EUR {amount:.2f}'])
 
-            # Create table
-            line_items_table = Table(line_items_data, colWidths=[7*cm, 3*cm, 2*cm, 3*cm])
-            line_items_table.setStyle(TableStyle([
+            # Create and style table
+            col_widths = [6*cm, 2*cm, 3*cm, 2.5*cm, 2.5*cm]
+            items_table = Table(table_data, colWidths=col_widths)
+
+            items_table.setStyle(TableStyle([
+                # Header row
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#C4A572')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 11),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, -1), (-1, -1), colors.beige),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                ('TOPPADDING', (0, 0), (-1, 0), 8),
+
+                # Data rows
+                ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -2), 9),
+                ('TOPPADDING', (0, 1), (-1, -2), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, -2), 6),
+                ('GRID', (0, 0), (-1, -2), 0.5, colors.grey),
+
+                # Total row
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#F5F5F5')),
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, -1), (-1, -1), 12),
-                ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor('#C4A572')),
-                ('GRID', (0, 0), (-1, -2), 1, colors.grey),
-                ('LINEABOVE', (0, -1), (-1, -1), 2, colors.HexColor('#C4A572')),
-                ('LINEBELOW', (0, -1), (-1, -1), 2, colors.HexColor('#C4A572')),
+                ('FONTSIZE', (0, -1), (-1, -1), 11),
+                ('TOPPADDING', (0, -1), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+                ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor('#C4A572')),
+
+                # Alignment
+                ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+                ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
             ]))
-            elements.append(line_items_table)
+
+            elements.append(items_table)
             elements.append(Spacer(1, 20))
 
-            # Payment info
-            elements.append(Paragraph("Payment Information:", heading_style))
-            elements.append(Paragraph("Please make payment to the following account:", styles['Normal']))
-            elements.append(Paragraph("<b>Bank:</b> Example Bank", styles['Normal']))
-            elements.append(Paragraph("<b>IBAN:</b> IT00 X000 0000 0000 0000 0000 000", styles['Normal']))
-            elements.append(Paragraph("<b>Reference:</b> " + invoice.invoice_number, styles['Normal']))
-            elements.append(Spacer(1, 30))
+            # Payment message
+            payment_messages = {
+                'cash': 'This booking has been PAID BY CASH.',
+                'card': 'This booking has been PAID BY CARD.',
+                'bank_transfer': 'This booking has been PAID BY BANK TRANSFER.',
+                'property': 'This booking is to be PAID AT PROPERTY.',
+                'stripe': 'This booking has been PAID ONLINE.'
+            }
+
+            payment_msg = payment_messages.get(invoice.payment_method, 'Payment pending.')
+
+            payment_style = ParagraphStyle(
+                'Payment',
+                parent=styles['Normal'],
+                fontSize=10,
+                fontName='Helvetica-Bold',
+                spaceBefore=6
+            )
+
+            elements.append(Paragraph("PAYMENT:", heading_style))
+            elements.append(Paragraph(payment_msg, payment_style))
+            elements.append(Spacer(1, 40))
 
             # Footer
             footer_style = ParagraphStyle(
                 'Footer',
                 parent=styles['Normal'],
-                fontSize=9,
+                fontSize=8,
                 textColor=colors.grey,
                 alignment=TA_CENTER
             )
-            elements.append(Paragraph("Thank you for choosing All'Arco Apartment!", footer_style))
-            elements.append(Paragraph("For questions, contact us at info@allarcoapartment.com", footer_style))
+            elements.append(Paragraph("Thank you for choosing All'Arco Apartment Venice", footer_style))
+            elements.append(Paragraph("www.allarcoapartment.com", footer_style))
 
             # Build PDF
             doc.build(elements)
@@ -211,13 +334,16 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             buffer.close()
 
             # Return response
+            filename_prefix = 'invoice' if is_invoice else 'receipt'
             response = HttpResponse(pdf, content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="invoice-{invoice.invoice_number}.pdf"'
+            response['Content-Disposition'] = f'attachment; filename="{filename_prefix}-{invoice.invoice_number}.pdf"'
             return response
 
         except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
             return Response(
-                {'error': f'Failed to generate PDF: {str(e)}'},
+                {'error': f'Failed to generate PDF: {str(e)}', 'detail': error_detail},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     

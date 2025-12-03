@@ -8,6 +8,7 @@ from apps.users.models import User
 class Invoice(models.Model):
     """
     Invoice model for booking payments.
+    Supports both Invoice (for companies with VAT) and Receipt (for individuals).
     """
     STATUS_CHOICES = [
         ('draft', 'Draft'),
@@ -15,18 +16,46 @@ class Invoice(models.Model):
         ('paid', 'Paid'),
         ('overdue', 'Overdue'),
     ]
-    
+
+    TYPE_CHOICES = [
+        ('invoice', 'Invoice'),
+        ('receipt', 'Receipt'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('property', 'At Property'),
+        ('stripe', 'Stripe'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     invoice_number = models.CharField(max_length=50, unique=True, editable=False)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='receipt')
     booking = models.ForeignKey(
         Booking,
         on_delete=models.CASCADE,
         related_name='invoices'
     )
+    company = models.ForeignKey(
+        'Company',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invoices',
+        help_text='Required for invoice type, optional for receipt'
+    )
     issue_date = models.DateField(auto_now_add=True)
     due_date = models.DateField(null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='property',
+        help_text='Payment method for this invoice/receipt'
+    )
     pdf_url = models.CharField(max_length=500, blank=True, null=True)
     sent_at = models.DateTimeField(null=True, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
@@ -47,14 +76,20 @@ class Invoice(models.Model):
         return f"{self.invoice_number} - {self.booking.guest_name} - €{self.amount}"
     
     def save(self, *args, **kwargs):
-        # Generate invoice number
+        # Generate invoice/receipt number based on type
         if not self.invoice_number:
-            date_str = datetime.now().strftime('%Y%m%d')
+            # Use INV- prefix for invoices, REC- for receipts
+            prefix = 'INV' if self.type == 'invoice' else 'REC'
+            year = datetime.now().strftime('%Y')
+
+            # Count existing documents of this type for this year
             count = Invoice.objects.filter(
-                invoice_number__startswith=f'INV-{date_str}'
+                type=self.type,
+                invoice_number__startswith=f'{prefix}-{year}'
             ).count()
-            self.invoice_number = f'INV-{date_str}-{str(count + 1).zfill(3)}'
-        
+
+            self.invoice_number = f'{prefix}-{year}-{str(count + 1).zfill(5)}'
+
         super().save(*args, **kwargs)
 
 
