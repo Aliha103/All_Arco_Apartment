@@ -10,10 +10,12 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
+# No default - must be set in environment variables for security
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+# Defaults to False for production safety
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
@@ -183,28 +185,30 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
 # Stripe Configuration
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
-STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='')
-STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+# SECURITY: Must be set via environment variables
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET')
 
 # Zeptomail Configuration (EU region)
 ZEPTOMAIL_API_URL = 'https://api.zeptomail.eu/v1.1/email'
 
 # Email tokens for different sender addresses
+# SECURITY: All tokens must be set via environment variables
 ZEPTOMAIL_TOKENS = {
     'reservations': {
         'email': 'reservations@allarcoapartment.com',
-        'token': config('ZEPTOMAIL_RESERVATIONS_TOKEN', default='Zoho-enczapikey yA6KbHtS717/wGNRFUNshMDY9Y9hqvs+2i++5n/ndcUmfoW0jKE70EdrJ4HucWbcioOFta1QOttEc4G5v4xcfZBiPdIEL5TGTuv4P2uV48xh8ciEYNYkgZ6rBbgSFaROchIkDC4yQ/dt'),
+        'token': config('ZEPTOMAIL_RESERVATIONS_TOKEN'),
         'alias': '30e5b64c7b172277',
     },
     'support': {
         'email': 'support@allarcoapartment.com',
-        'token': config('ZEPTOMAIL_SUPPORT_TOKEN', default='Zoho-enczapikey yA6KbHtfuFn3xWxSRRFph5eD9dwxq/0/3i2y43y2LJZyftK1hqFrghE6cYHoITaM0dCE6KtXPo8RdY2w6thbfME1NNRWKpTGTuv4P2uV48xh8ciEYNYjgZ+tALUZEqBAcRMsAiQ4TvEgWA=='),
+        'token': config('ZEPTOMAIL_SUPPORT_TOKEN'),
         'alias': '3ef0283ad73c8a11',
     },
     'checkin': {
         'email': 'check-in@allarcoapartment.com',
-        'token': config('ZEPTOMAIL_CHECKIN_TOKEN', default='Zoho-enczapikey yA6KbHtY6Q/3lG8FFRU71MPe84k1r/w7i3m05ii2fcB2I9bpi6Fr1hM+JIC5JGaJ29LU56tQOdoTJI/vu9sML8FlMoUEL5TGTuv4P2uV48xh8ciEYNYkg52uBLgYFaBAch4hCyQ2RPgkWA=='),
+        'token': config('ZEPTOMAIL_CHECKIN_TOKEN'),
         'alias': '6b8ecc2d80aa09ef',
     },
 }
