@@ -376,12 +376,12 @@ export default function CleaningPage() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C4A572]"></div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-1.5">
                     {/* Day headers */}
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
                       <div
                         key={i}
-                        className="text-center text-xs font-semibold text-gray-600 py-1"
+                        className="text-center text-[11px] font-semibold text-gray-600 py-1"
                       >
                         {day}
                       </div>
@@ -390,7 +390,7 @@ export default function CleaningPage() {
                     {/* Calendar days */}
                     {calendarDays.map((day, index) => {
                       if (day === null) {
-                        return <div key={`empty-${index}`} className="min-h-[80px]" />;
+                        return <div key={`empty-${index}`} className="h-16" />;
                       }
 
                       const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -401,29 +401,34 @@ export default function CleaningPage() {
                       return (
                         <div
                           key={day}
-                          className={`min-h-[110px] border rounded p-1 text-xs cursor-pointer transition-all flex flex-col gap-1 ${
+                          className={`h-20 border rounded p-1.5 text-[11px] cursor-pointer transition-all flex flex-col gap-1 ${
                             isToday
                               ? 'bg-[#C4A572] text-white border-[#C4A572]'
                               : 'bg-white hover:bg-gray-50 border-gray-200'
                           }`}
                         >
-                          <div className="font-medium">{day}</div>
-                          {dayCleanings.length === 0 ? (
-                            <p className="text-[11px] text-gray-400">No cleanings</p>
-                          ) : (
+                          <div className="flex items-start justify-between">
+                            <div className="font-semibold">{day}</div>
+                            {dayCleanings.length > 0 && (
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isToday ? 'bg-white/20 text-white' : 'bg-[#C4A572]/15 text-[#8a6a32]'}`}>
+                                {dayCleanings.length}
+                              </span>
+                            )}
+                          </div>
+                          {dayCleanings.length > 0 && (
                             <div className="space-y-1">
-                              {dayCleanings.slice(0, 3).map((cleaning: any) => (
+                              {dayCleanings.slice(0, 2).map((cleaning: any) => (
                                 <div
                                   key={cleaning.id}
-                                  className={`rounded px-1 py-0.5 text-[11px] leading-tight ${isToday ? 'bg-white/20 text-white' : 'bg-[#C4A572]/10 text-gray-700'}`}
+                                  className={`rounded px-1 py-0.5 leading-tight truncate ${isToday ? 'bg-white/20 text-white' : 'bg-[#C4A572]/10 text-gray-700'}`}
                                   title={cleaning.booking?.guest_name || 'Cleaning'}
                                 >
                                   {cleaning.booking?.booking_id || 'Cleaning'}
                                 </div>
                               ))}
-                              {dayCleanings.length > 3 && (
+                              {dayCleanings.length > 2 && (
                                 <p className="text-[10px] text-gray-500">
-                                  +{dayCleanings.length - 3} more
+                                  +{dayCleanings.length - 2} more
                                 </p>
                               )}
                             </div>
