@@ -30,6 +30,7 @@ requests==2.32.3
 
 # PDF Generation
 weasyprint==63.1
+reportlab==4.2.5
 
 # Development
 django-debug-toolbar==4.4.6
