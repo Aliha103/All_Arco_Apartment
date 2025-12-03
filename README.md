@@ -11,19 +11,24 @@ This platform serves two primary purposes:
 ## 🛠 Tech Stack
 
 ### Frontend
-- **Next.js 16 (App Router)**, **React** + **TypeScript**
-- **TailwindCSS** + **Radix UI**
+- **Next.js 16 (App Router)**, **React 19** + **TypeScript**
+- **TailwindCSS** + **Radix UI** + **shadcn/ui**
 - **React Query** (@tanstack/react-query) for server state, **Zustand** for client state
-- **Axios** API client
+- **Axios** API client with session authentication
+- **Framer Motion** for animations
 
 ### Backend
-- **Django 5** + **DRF**
-- **PostgreSQL**, **Redis**, **Celery**
-- **Stripe** payments, **Zeptomail** transactional email
-- **ReportLab** PDF generation (portable, no system deps)
+- **Django 5.1** + **Django REST Framework 3.15**
+- **PostgreSQL 15**, **Redis 7**, **Celery** + **Beat**
+- **Stripe** payments, **Zeptomail** (EU) transactional emails
+- **ReportLab** for PDF generation (production-ready, no system dependencies)
+- **Session-based authentication** with CSRF protection
 
-### Deployment
-- **Railway** (frontend, backend, Postgres, Redis)
+### Infrastructure
+- **Railway** deployment (auto-deploy from GitHub)
+- **Docker** support with docker-compose
+- **Nginx** reverse proxy
+- **Gunicorn** WSGI server
 
 ## 📁 Project Structure
 
@@ -49,25 +54,54 @@ All_Arco_Apartment/
 │   │   ├── users/          # Authentication & user management
 │   │   ├── bookings/       # Booking system
 │   │   ├── payments/       # Stripe integration
-│   │   ├── invoices/       # Invoice management
+│   │   ├── invoices/       # Invoice & Receipt system
 │   │   ├── pricing/        # Pricing rules
-│   │   └── emails/         # Email service
+│   │   ├── emails/         # Email service (Zeptomail)
+│   │   ├── cleaning/       # Cleaning schedule management
+│   │   ├── alloggiati/     # Guest compliance (Italian law)
+│   │   └── gallery/        # Image management
 │   ├── manage.py
 │   └── requirements.txt
 │
+├── docker-compose.yml      # Docker orchestration
+├── Dockerfile              # Docker image
+├── nginx.conf              # Nginx configuration
+├── railway.toml            # Railway deployment config
 └── README.md               # This file
 ```
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Docker Compose (Recommended)
+
+```bash
+# Clone repository
+git clone <repository-url>
+cd All_Arco_Apartment
+
+# Create environment file
+cp .env.docker.example .env
+# Edit .env with your credentials
+
+# Start all services
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f app
+```
+
+Access the application at `http://localhost:8080`
+
+### Option 2: Manual Setup
+
+#### Prerequisites
 
 - **Node.js 20+** and npm/yarn
 - **Python 3.11+**
-- **PostgreSQL 14+**
+- **PostgreSQL 15+**
 - **Redis 7+**
 - **Stripe** account (payments)
-- **Zeptomail** account (emails)
+- **Zeptomail** account (transactional emails)
 
 ### 1. Clone Repository
 
@@ -145,11 +179,18 @@ celery -A core beat --loglevel=info
    - Refund processing
    - Transaction history
 
-4. **Invoices**
-   - Invoice generation
-   - PDF download
-   - Email sending
-   - Status tracking
+4. **Invoices & Receipts**
+   - **Dual document types:**
+     - **Invoices** - For companies with VAT calculation (13%)
+     - **Receipts** - For individual guests without VAT
+   - Separate numbering: INV-YYYY-xxxxx / REC-YYYY-xxxxx
+   - Company management with VAT numbers
+   - Payment method tracking (Cash, Card, Bank Transfer, At Property, Stripe)
+   - Professional PDF generation with All'Arco branding
+   - Automatic amount calculation from bookings
+   - Duplicate prevention (one invoice + one receipt per booking max)
+   - Email delivery
+   - Status tracking (Draft, Sent, Paid, Overdue)
 
 5. **Guests Database**
    - Guest profiles
@@ -192,18 +233,49 @@ celery -A core beat --loglevel=info
     - PDF download (ReportLab)
     - Receipts/invoices tied to bookings & companies
 
-## 🔐 Authentication & Authorization
+## 🔐 Security & Authentication
 
-### User Roles
+### Authentication & Authorization
+
+#### User Roles
 - **Guest** - Can book, view own bookings, manage profile
 - **Team Member** - Access to PMS (all sections except Team Management)
 - **Admin** - Full access including team management
 
-### Session-Based Authentication
+#### Session-Based Authentication
 - Django session cookies
 - Secure, httpOnly cookies
-- CSRF protection
+- CSRF protection with trusted origins
 - 2-week session duration
+- Role-based access control (RBAC)
+
+### Security Features
+
+✅ **Credentials Management**
+- All secrets via environment variables (no hardcoded credentials)
+- Secret key required (no insecure defaults)
+- Zeptomail tokens secured per sender address
+- Stripe keys with validation
+
+✅ **Infrastructure Security**
+- Nginx runs as non-root user
+- Docker security best practices
+- PostgreSQL with strong passwords
+- Redis secured connection
+
+✅ **Application Security**
+- DEBUG defaults to False for production
+- ALLOWED_HOSTS validation
+- CORS with explicit origin whitelist
+- Content-Type validation
+- SQL injection protection via ORM
+- XSS protection in templates
+
+✅ **API Security**
+- Session authentication with CSRF tokens
+- Permission classes on all endpoints
+- Input validation via DRF serializers
+- Rate limiting ready (Django-ratelimit compatible)
 
 ## 💳 Payment Flow
 
@@ -235,16 +307,20 @@ celery -A core beat --loglevel=info
 ## 🗄 Database Schema
 
 ### Main Models
-- **User** - Custom user with roles
-- **Booking** - Reservation records
-- **Payment** - Stripe payment records
+- **User** - Custom user with roles (Guest, Team, Admin)
+- **Booking** - Reservation records with payment tracking
+- **Payment** - Stripe payment records and webhooks
 - **Refund** - Refund transactions
-- **Invoice** - Invoice records
-- **BlockedDate** - Unavailable dates
-- **PricingRule** - Seasonal pricing
+- **Invoice** - Dual-type invoices/receipts with company links
+- **Company** - Company details for invoicing (VAT, address)
+- **BlockedDate** - Unavailable dates for maintenance
+- **PricingRule** - Seasonal pricing rules
+- **CleaningSchedule** - Auto-created cleaning tasks
+- **CleaningTask** - Checklist items per cleaning
+- **HeroImage** - Gallery image management
 - **Settings** - Global configuration
-- **GuestNote** - Internal notes
-- **EmailLog** - Email history
+- **GuestNote** - Internal notes per guest
+- **EmailLog** - Email delivery history
 
 ## 🚢 Deployment
 
@@ -284,17 +360,41 @@ See backend/.env.example
 
 ### Environment Variables
 
-**Frontend:**
+#### Frontend
 - `NEXT_PUBLIC_API_URL` - Backend API URL
 
-**Backend:**
-- `SECRET_KEY` - Django secret
+#### Backend (All Required - No Defaults)
+
+**Django Core:**
+- `SECRET_KEY` - Django secret (generate with Django command)
+- `DEBUG` - Debug mode (default: False)
 - `ALLOWED_HOSTS` - Comma-separated domains
-- `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGHOST`, `PGPORT` - PostgreSQL
-- `REDIS_URL` - Redis connection
-- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
-- `ZEPTOMAIL_API_KEY`
-- `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`
+
+**Database (PostgreSQL):**
+- `PGDATABASE` - Database name
+- `PGUSER` - Database user
+- `PGPASSWORD` - Database password (REQUIRED)
+- `PGHOST` - Database host
+- `PGPORT` - Database port
+
+**Redis & Celery:**
+- `REDIS_URL` - Redis connection URL
+
+**Security:**
+- `CORS_ALLOWED_ORIGINS` - Frontend URLs (comma-separated)
+- `CSRF_TRUSTED_ORIGINS` - Trusted origins (comma-separated)
+
+**Payments (Stripe):**
+- `STRIPE_SECRET_KEY` - Stripe secret key (REQUIRED)
+- `STRIPE_PUBLISHABLE_KEY` - Stripe publishable key (REQUIRED)
+- `STRIPE_WEBHOOK_SECRET` - Webhook secret (REQUIRED)
+
+**Email (Zeptomail - EU Region):**
+- `ZEPTOMAIL_RESERVATIONS_TOKEN` - Reservations sender (REQUIRED)
+- `ZEPTOMAIL_SUPPORT_TOKEN` - Support sender (REQUIRED)
+- `ZEPTOMAIL_CHECKIN_TOKEN` - Check-in sender (REQUIRED)
+
+See [.env.example](backend/.env.example) and [.env.docker.example](.env.docker.example) for complete templates.
 
 ## 📊 API Documentation
 
