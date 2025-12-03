@@ -103,7 +103,7 @@ export default function CleaningPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedCleaning, setSelectedCleaning] = useState<CleaningSchedule | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
 
   // Form state for creating cleaning
   const [formData, setFormData] = useState({
@@ -132,7 +132,7 @@ export default function CleaningPage() {
       const response = await api.cleaning.schedules.calendar(currentYear, currentMonth);
       return response.data;
     },
-    enabled: showCalendar,
+    enabled: true,
   });
 
   // Fetch all cleanings for the list view
@@ -376,7 +376,7 @@ export default function CleaningPage() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C4A572]"></div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-7 gap-1">
+                  <div className="grid grid-cols-7 gap-2">
                     {/* Day headers */}
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
                       <div
@@ -390,7 +390,7 @@ export default function CleaningPage() {
                     {/* Calendar days */}
                     {calendarDays.map((day, index) => {
                       if (day === null) {
-                        return <div key={`empty-${index}`} className="aspect-square" />;
+                        return <div key={`empty-${index}`} className="min-h-[80px]" />;
                       }
 
                       const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -401,16 +401,31 @@ export default function CleaningPage() {
                       return (
                         <div
                           key={day}
-                          className={`aspect-square border rounded p-1 text-xs cursor-pointer transition-all ${
+                          className={`min-h-[110px] border rounded p-1 text-xs cursor-pointer transition-all flex flex-col gap-1 ${
                             isToday
                               ? 'bg-[#C4A572] text-white border-[#C4A572]'
                               : 'bg-white hover:bg-gray-50 border-gray-200'
                           }`}
                         >
                           <div className="font-medium">{day}</div>
-                          {dayCleanings.length > 0 && (
-                            <div className="mt-0.5">
-                              <div className={`w-full h-1 rounded ${isToday ? 'bg-white' : 'bg-[#C4A572]'}`} />
+                          {dayCleanings.length === 0 ? (
+                            <p className="text-[11px] text-gray-400">No cleanings</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {dayCleanings.slice(0, 3).map((cleaning: any) => (
+                                <div
+                                  key={cleaning.id}
+                                  className={`rounded px-1 py-0.5 text-[11px] leading-tight ${isToday ? 'bg-white/20 text-white' : 'bg-[#C4A572]/10 text-gray-700'}`}
+                                  title={cleaning.booking?.guest_name || 'Cleaning'}
+                                >
+                                  {cleaning.booking?.booking_id || 'Cleaning'}
+                                </div>
+                              ))}
+                              {dayCleanings.length > 3 && (
+                                <p className="text-[10px] text-gray-500">
+                                  +{dayCleanings.length - 3} more
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
