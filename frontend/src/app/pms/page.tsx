@@ -67,7 +67,7 @@ import {
   Line,
   Legend,
 } from 'recharts';
-import { format, subDays, isToday, subMonths, startOfMonth, endOfMonth, formatISO } from 'date-fns';
+import { format, subDays, isToday, subMonths, startOfMonth, endOfMonth, formatISO, addMonths } from 'date-fns';
 
 // Professional color palette
 const COLORS = {
@@ -421,8 +421,10 @@ export default function PMSDashboard() {
   // 12-month booking vs cancellation trend (month + year to avoid collisions)
   const bookingCancelTrend = useMemo(() => {
     const months: { key: string; label: string; confirmed: number; cancelled: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const start = startOfMonth(subMonths(new Date(), i));
+    // Start 7 months back so current month sits near the middle of the 12 slots
+    const startMonth = startOfMonth(addMonths(new Date(), -7));
+    for (let i = 0; i < 12; i++) {
+      const start = startOfMonth(addMonths(startMonth, i));
       const key = format(start, 'yyyy-MM');
       const label = format(start, 'MMM yy');
       months.push({ key, label, confirmed: 0, cancelled: 0 });
