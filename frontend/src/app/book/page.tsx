@@ -143,7 +143,13 @@ export default function BookingPage() {
                         min="1"
                         max="6"
                         value={guests}
-                        onChange={(e) => setGuests(parseInt(e.target.value))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          const value = parseInt(e.target.value, 10);
+                          // Validate: must be a number, >= 1, <= 6
+                          if (!isNaN(value) && value >= 1 && value <= 6) {
+                            setGuests(value);
+                          }
+                        }}
                       />
                       <p className="text-sm text-gray-600">Maximum 6 guests</p>
                     </div>
