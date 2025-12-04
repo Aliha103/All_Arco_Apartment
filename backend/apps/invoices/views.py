@@ -80,6 +80,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             dark_gray = colors.HexColor('#333333')
             medium_gray = colors.HexColor('#666666')
             light_gray = colors.HexColor('#F8F8F8')
+            success_green = colors.HexColor('#4CAF50')
+            soft_cream = colors.HexColor('#FAF8F3')
 
             # Custom styles
             title_style = ParagraphStyle(
@@ -150,6 +152,43 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
             ]))
             elements.append(line_table)
+            elements.append(Spacer(1, 6))
+
+            # Payment Status Badge
+            status_text = 'PAID' if invoice.status == 'paid' else ('PENDING' if invoice.status == 'pending' else 'UNPAID')
+            status_color = success_green if invoice.status == 'paid' else (gold if invoice.status == 'pending' else medium_gray)
+
+            status_badge_style = ParagraphStyle(
+                'StatusBadge',
+                parent=styles['Normal'],
+                fontSize=9,
+                fontName='Helvetica-Bold',
+                textColor=colors.white,
+                alignment=TA_RIGHT,
+                letterSpacing=1
+            )
+
+            status_para = Paragraph(status_text, status_badge_style)
+            status_table = Table([[status_para]], colWidths=[3*cm])
+            status_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), status_color),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('ROUNDEDCORNERS', [3, 3, 3, 3]),
+            ]))
+
+            # Align badge to the right
+            badge_wrapper = Table([[None, status_table]], colWidths=[13*cm, 3*cm])
+            badge_wrapper.setStyle(TableStyle([
+                ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ]))
+            elements.append(badge_wrapper)
+            elements.append(Spacer(1, 10))
 
             # TWO-COLUMN LAYOUT: Left side (Guest/Bill) | Right side (Details/Contact)
 
@@ -213,14 +252,24 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             left_para = Paragraph(left_html, styles['Normal'])
             right_para = Paragraph(right_html, styles['Normal'])
 
-            # Create two-column table
+            # Create two-column table with elegant backgrounds
             two_column_data = [[left_para, right_para]]
             two_column_table = Table(two_column_data, colWidths=[8*cm, 8*cm])
             two_column_table.setStyle(TableStyle([
+                # Subtle cream backgrounds for both columns
+                ('BACKGROUND', (0, 0), (0, 0), soft_cream),
+                ('BACKGROUND', (1, 0), (1, 0), soft_cream),
+
+                # Alignment and padding
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                ('RIGHTPADDING', (0, 0), (0, 0), 10),
-                ('LEFTPADDING', (1, 0), (1, 0), 10),
+                ('LEFTPADDING', (0, 0), (-1, -1), 12),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+                ('TOPPADDING', (0, 0), (-1, -1), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+
+                # Add subtle border around each box
+                ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#E8E3D5')),
+                ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#E8E3D5')),
             ]))
             elements.append(two_column_table)
             elements.append(Spacer(1, 12))
@@ -268,36 +317,39 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             col_widths = [6*cm, 2*cm, 3*cm, 2.5*cm, 2.5*cm]
             items_table = Table(table_data, colWidths=col_widths)
 
-            # Build table style with alternating row colors
+            # Build table style with cleaner, more professional design
             table_style = [
-                # Header row - elegant gold gradient
+                # Header row - elegant gold
                 ('BACKGROUND', (0, 0), (-1, 0), gold),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 7),
-                ('TOPPADDING', (0, 0), (-1, 0), 7),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('TOPPADDING', (0, 0), (-1, 0), 10),
+                ('LEFTPADDING', (0, 0), (-1, 0), 12),
+                ('RIGHTPADDING', (0, 0), (-1, 0), 12),
 
-                # Data rows
+                # Data rows - increased padding for breathing room
                 ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
                 ('FONTSIZE', (0, 1), (-1, -2), 9),
                 ('TEXTCOLOR', (0, 1), (-1, -2), dark_gray),
-                ('TOPPADDING', (0, 1), (-1, -2), 6),
-                ('BOTTOMPADDING', (0, 1), (-1, -2), 6),
-                ('LEFTPADDING', (0, 1), (-1, -2), 8),
-                ('RIGHTPADDING', (0, 1), (-1, -2), 8),
+                ('TOPPADDING', (0, 1), (-1, -2), 10),
+                ('BOTTOMPADDING', (0, 1), (-1, -2), 10),
+                ('LEFTPADDING', (0, 1), (-1, -2), 12),
+                ('RIGHTPADDING', (0, 1), (-1, -2), 12),
 
-                # Vertical grid lines only
-                ('LINEAFTER', (0, 0), (-2, -2), 0.5, colors.HexColor('#E5E5E5')),
-                ('LINEBEFORE', (0, 0), (0, -2), 0.5, colors.HexColor('#E5E5E5')),
+                # Horizontal lines between rows only (no vertical lines)
+                ('LINEBELOW', (0, 0), (-1, -2), 0.5, colors.HexColor('#E5E5E5')),
 
-                # Total row - subtle and clean
+                # Total row - prominent but clean
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, -1), (-1, -1), 12),
+                ('FONTSIZE', (0, -1), (-1, -1), 13),
                 ('TEXTCOLOR', (0, -1), (-1, -1), dark_gray),
-                ('TOPPADDING', (0, -1), (-1, -1), 12),
-                ('BOTTOMPADDING', (0, -1), (-1, -1), 8),
-                ('LINEABOVE', (0, -1), (-1, -1), 1.5, gold),
+                ('TOPPADDING', (0, -1), (-1, -1), 14),
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+                ('LEFTPADDING', (0, -1), (-1, -1), 12),
+                ('RIGHTPADDING', (0, -1), (-1, -1), 12),
+                ('LINEABOVE', (0, -1), (-1, -1), 2, gold),
 
                 # Alignment
                 ('ALIGN', (1, 0), (1, -1), 'CENTER'),
@@ -305,17 +357,17 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ]
 
-            # Add alternating row colors
+            # Add subtle alternating row backgrounds
             for i in range(1, len(table_data) - 1):
                 if i % 2 == 0:
-                    table_style.append(('BACKGROUND', (0, i), (-1, i), light_gray))
+                    table_style.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor('#FAFAFA')))
 
             items_table.setStyle(TableStyle(table_style))
 
             elements.append(items_table)
-            elements.append(Spacer(1, 10))
+            elements.append(Spacer(1, 18))
 
-            # Payment message
+            # Payment section with elegant box
             payment_messages = {
                 'cash': 'This booking has been PAID BY CASH.',
                 'card': 'This booking has been PAID BY CARD.',
@@ -326,17 +378,52 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
             payment_msg = payment_messages.get(invoice.payment_method, 'Payment pending.')
 
-            payment_style = ParagraphStyle(
-                'Payment',
+            payment_box_style = ParagraphStyle(
+                'PaymentBox',
                 parent=styles['Normal'],
                 fontSize=10,
                 fontName='Helvetica-Bold',
-                spaceBefore=0
+                textColor=dark_gray,
+                leading=14
             )
 
-            elements.append(Paragraph("PAYMENT:", heading_style))
-            elements.append(Paragraph(payment_msg, payment_style))
-            elements.append(Spacer(1, 15))
+            payment_text = f'<b><font size=9 color=#A68B5B>PAYMENT STATUS</font></b><br/><font size=10>{payment_msg}</font>'
+            payment_para = Paragraph(payment_text, payment_box_style)
+
+            payment_table = Table([[payment_para]], colWidths=[16*cm])
+            payment_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), soft_cream),
+                ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#E8E3D5')),
+                ('LEFTPADDING', (0, 0), (-1, -1), 15),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+                ('TOPPADDING', (0, 0), (-1, -1), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ]))
+            elements.append(payment_table)
+            elements.append(Spacer(1, 20))
+
+            # Notes/Terms section (if any special notes exist)
+            if hasattr(booking, 'special_requests') and booking.special_requests:
+                notes_heading_style = ParagraphStyle(
+                    'NotesHeading',
+                    fontSize=9,
+                    textColor=dark_gold,
+                    fontName='Helvetica-Bold',
+                    spaceAfter=4,
+                    letterSpacing=0.5
+                )
+
+                notes_text_style = ParagraphStyle(
+                    'NotesText',
+                    fontSize=8,
+                    textColor=dark_gray,
+                    fontName='Helvetica',
+                    leading=11
+                )
+
+                elements.append(Paragraph("SPECIAL REQUESTS & NOTES", notes_heading_style))
+                elements.append(Paragraph(booking.special_requests, notes_text_style))
+                elements.append(Spacer(1, 15))
 
             # Footer - Professional with decorative line
             # Decorative line before footer
@@ -349,13 +436,24 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             ]))
             elements.append(footer_line_table)
 
-            footer_style = ParagraphStyle(
-                'Footer',
+            footer_thanks_style = ParagraphStyle(
+                'FooterThanks',
                 parent=styles['Normal'],
-                fontSize=9,
+                fontSize=10,
+                textColor=dark_gray,
+                alignment=TA_CENTER,
+                spaceAfter=8,
+                fontName='Helvetica-Bold'
+            )
+
+            footer_info_style = ParagraphStyle(
+                'FooterInfo',
+                parent=styles['Normal'],
+                fontSize=8,
                 textColor=medium_gray,
                 alignment=TA_CENTER,
-                spaceAfter=3
+                spaceAfter=2,
+                leading=11
             )
 
             footer_url_style = ParagraphStyle(
@@ -364,11 +462,26 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 fontSize=8,
                 textColor=dark_gold,
                 alignment=TA_CENTER,
-                fontName='Helvetica-Bold'
+                fontName='Helvetica-Bold',
+                spaceAfter=6
             )
 
-            elements.append(Paragraph("Thank you for choosing All'Arco Apartment Venice", footer_style))
+            footer_legal_style = ParagraphStyle(
+                'FooterLegal',
+                parent=styles['Normal'],
+                fontSize=7,
+                textColor=colors.HexColor('#999999'),
+                alignment=TA_CENTER,
+                leading=9
+            )
+
+            elements.append(Paragraph("Thank you for choosing All'Arco Apartment Venice", footer_thanks_style))
             elements.append(Paragraph("www.allarcoapartment.com", footer_url_style))
+            elements.append(Paragraph("Via Castellana 61, 30125 Venice, Italy", footer_info_style))
+            elements.append(Paragraph("Email: support@allarcoapartment.com | Phone: Available upon request", footer_info_style))
+            elements.append(Spacer(1, 4))
+            elements.append(Paragraph("This document serves as official confirmation of your booking and payment.", footer_legal_style))
+            elements.append(Paragraph("All prices are in EUR. Tourist tax is calculated per person per night as per local regulations.", footer_legal_style))
 
             # Build PDF
             doc.build(elements)
