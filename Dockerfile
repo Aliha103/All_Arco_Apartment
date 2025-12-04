@@ -74,9 +74,11 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Create necessary directories
-RUN mkdir -p /app/backend/staticfiles /app/backend/media /var/log/supervisor \
-    && chmod -R 755 /app
+# Create necessary directories and set permissions for nginx
+RUN mkdir -p /app/backend/staticfiles /app/backend/media /var/log/supervisor /var/log/nginx /run \
+    && chmod -R 755 /app \
+    && chown -R www-data:www-data /var/log/nginx /run \
+    && chmod 755 /var/log/nginx
 
 # Expose port
 EXPOSE 8080
