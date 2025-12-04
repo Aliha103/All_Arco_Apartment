@@ -151,13 +151,15 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             ]))
             elements.append(line_table)
 
-            # Document details - more prominent with badge-style number
+            # TWO-COLUMN LAYOUT: Left side (Guest/Bill) | Right side (Details/Contact)
+
+            # Styles for this section
             doc_number_style = ParagraphStyle(
                 'DocNumber',
                 fontSize=12,
                 textColor=dark_gray,
                 fontName='Helvetica-Bold',
-                spaceAfter=2
+                spaceAfter=4
             )
 
             doc_detail_style = ParagraphStyle(
@@ -168,112 +170,62 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 spaceAfter=2
             )
 
-            # Document number in a subtle box
-            doc_number_data = [[Paragraph(f'<b>{invoice.invoice_number}</b>', doc_number_style)]]
-            doc_number_table = Table(doc_number_data, colWidths=[16*cm])
-            doc_number_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), light_gray),
-                ('BOX', (0, 0), (-1, -1), 0.5, gold),
-                ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ]))
-            elements.append(doc_number_table)
-            elements.append(Spacer(1, 6))
-
-            elements.append(Paragraph(f'<b>Date:</b> {invoice.issue_date.strftime("%B %d, %Y")}', doc_detail_style))
-            if hasattr(booking, 'booking_id') and booking.booking_id:
-                elements.append(Paragraph(f'<b>Booking:</b> {booking.booking_id}', doc_detail_style))
-            elements.append(Paragraph(
-                f'<b>Check-in:</b> {booking.check_in_date.strftime("%b %d, %Y")} | <b>Check-out:</b> {booking.check_out_date.strftime("%b %d, %Y")}',
-                doc_detail_style
-            ))
-            elements.append(Spacer(1, 10))
-
-            # Guest Details section (always show)
-            elements.append(Paragraph("GUEST DETAILS", heading_style))
-            guest_info = [
-                [f"Full Name: {booking.guest_name}"],
-                [f"Email: {booking.guest_email}"]
-            ]
-
-            # Add tax code if available
+            # Build left column content as string-based paragraphs for table cell
+            left_html = f"""
+                <para><b><font size=10 color=#A68B5B>GUEST DETAILS</font></b></para>
+                <para><font size=9>Full Name: {booking.guest_name}</font></para>
+                <para><font size=9>Email: {booking.guest_email}</font></para>
+            """
             if hasattr(booking, 'guest_tax_code') and booking.guest_tax_code:
-                guest_info.append([f"Tax ID: {booking.guest_tax_code}"])
-
-            # Add phone if available
+                left_html += f'<para><font size=9>Tax ID: {booking.guest_tax_code}</font></para>'
             if hasattr(booking, 'guest_phone') and booking.guest_phone:
-                guest_info.append([f"Phone: {booking.guest_phone}"])
-
-            # Add country (always show)
+                left_html += f'<para><font size=9>Phone: {booking.guest_phone}</font></para>'
             if hasattr(booking, 'guest_country') and booking.guest_country:
-                guest_info.append([f"Country: {booking.guest_country}"])
-
-            # Add address if available
+                left_html += f'<para><font size=9>Country: {booking.guest_country}</font></para>'
             if hasattr(booking, 'guest_address') and booking.guest_address:
-                guest_info.append([f"Address: {booking.guest_address}"])
+                left_html += f'<para><font size=9>Address: {booking.guest_address}</font></para>'
 
-            guest_table = Table(guest_info, colWidths=[16*cm])
-            guest_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-                ('TOPPADDING', (0, 0), (-1, -1), 1),
-            ]))
-            elements.append(guest_table)
-            elements.append(Spacer(1, 10))
-
-            # Bill To section (only for invoices)
+            # Add Bill To if invoice
             if is_invoice and invoice.company:
-                elements.append(Paragraph("BILL TO", heading_style))
                 company = invoice.company
-                bill_to_info = [
-                    [company.name],
-                    [f"VAT: {company.vat_number}"],
-                    [f"Country: {company.country}"],
-                    [f"Email: {company.email}"],
-                    [company.address]
-                ]
+                left_html += f"""
+                    <para spaceBefore=12><b><font size=10 color=#A68B5B>BILL TO</font></b></para>
+                    <para><font size=9>{company.name}</font></para>
+                    <para><font size=9>VAT: {company.vat_number}</font></para>
+                    <para><font size=9>Country: {company.country}</font></para>
+                    <para><font size=9>Email: {company.email}</font></para>
+                    <para><font size=9>{company.address}</font></para>
+                """
 
-                bill_to_table = Table(bill_to_info, colWidths=[16*cm])
-                bill_to_table.setStyle(TableStyle([
-                    ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 9),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-                ]))
-                elements.append(bill_to_table)
-                elements.append(Spacer(1, 12))
+            # Build right column content
+            right_html = f"""
+                <para><b><font size=12 color=#333333>{invoice.invoice_number}</font></b></para>
+                <para spaceBefore=6><font size=9 color=#666666><b>Date:</b> {invoice.issue_date.strftime("%B %d, %Y")}</font></para>
+            """
+            if hasattr(booking, 'booking_id') and booking.booking_id:
+                right_html += f'<para><font size=9 color=#666666><b>Booking:</b> {booking.booking_id}</font></para>'
+            right_html += f"""
+                <para><font size=9 color=#666666><b>Check-in:</b> {booking.check_in_date.strftime("%b %d, %Y")} | <b>Check-out:</b> {booking.check_out_date.strftime("%b %d, %Y")}</font></para>
+                <para spaceBefore=12><b><font size=11 color=#A68B5B>ALL'ARCO APARTMENT</font></b></para>
+                <para><font size=9 color=#333333>Via Castellana 61<br/>30125 Venice, Italy</font></para>
+                <para spaceBefore=6><font size=8 color=#666666>support@allarcoapartment.com<br/>www.allarcoapartment.com</font></para>
+            """
 
-            # Contact info box - More prominent and elegant
-            contact_box_data = [[
-                '',
-                Paragraph("""<para align=center>
-                    <font size=12 color=#A68B5B><b>ALL'ARCO APARTMENT</b></font><br/>
-                    <font size=9 color=#333333>
-                    Via Castellana 61<br/>
-                    30125 Venice, Italy<br/><br/>
-                    </font>
-                    <font size=8 color=#666666>
-                    support@allarcoapartment.com<br/>
-                    www.allarcoapartment.com
-                    </font>
-                </para>""", styles['Normal'])
-            ]]
+            # Create paragraphs for both columns
+            left_para = Paragraph(left_html, styles['Normal'])
+            right_para = Paragraph(right_html, styles['Normal'])
 
-            contact_table = Table(contact_box_data, colWidths=[7*cm, 9*cm])
-            contact_table.setStyle(TableStyle([
-                ('BOX', (1, 0), (1, 0), 1.5, gold),
-                ('BACKGROUND', (1, 0), (1, 0), light_cream),
-                ('TOPPADDING', (1, 0), (1, 0), 14),
-                ('BOTTOMPADDING', (1, 0), (1, 0), 14),
-                ('LEFTPADDING', (1, 0), (1, 0), 14),
-                ('RIGHTPADDING', (1, 0), (1, 0), 14),
-                ('VALIGN', (1, 0), (1, 0), 'MIDDLE'),
-                ('ROUNDEDCORNERS', [3, 3, 3, 3]),
+            # Create two-column table
+            two_column_data = [[left_para, right_para]]
+            two_column_table = Table(two_column_data, colWidths=[8*cm, 8*cm])
+            two_column_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (0, 0), 10),
+                ('LEFTPADDING', (1, 0), (1, 0), 10),
             ]))
-            elements.append(contact_table)
-            elements.append(Spacer(1, 10))
+            elements.append(two_column_table)
+            elements.append(Spacer(1, 12))
 
             # Line items table
             table_data = [['Description', 'Qty', 'Unit Price', 'Payment', 'Amount']]
