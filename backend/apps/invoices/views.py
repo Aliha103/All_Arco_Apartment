@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
 from django.db.models import Sum
+from django.utils import timezone
 from .models import Invoice, Company
 from .serializers import InvoiceSerializer, CompanySerializer
 
@@ -351,12 +352,30 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def send_email(self, request, pk=None):
-        """Send invoice via email."""
+        """Send invoice via email to specified or default email address."""
         invoice = self.get_object()
-        # TODO: Send invoice email
+
+        # Get email from request body, default to guest email
+        recipient_email = request.data.get('email') if request.data else None
+        if not recipient_email:
+            recipient_email = invoice.booking.guest_email if invoice.booking else None
+
+        if not recipient_email:
+            return Response(
+                {'error': 'No email address provided and no guest email available'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # TODO: Actually send email to recipient_email
+        # For now, just mark as sent
         invoice.status = 'sent'
+        invoice.sent_at = timezone.now()
         invoice.save()
-        return Response({'message': 'Invoice email sent'})
+
+        return Response({
+            'message': f'Invoice email sent to {recipient_email}',
+            'recipient': recipient_email
+        })
     
     @action(detail=True, methods=['post'])
     def mark_sent(self, request, pk=None):

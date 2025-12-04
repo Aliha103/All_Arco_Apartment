@@ -133,7 +133,7 @@ export const api = {
     generatePDF: (id: string) => apiClient.post(`/invoices/${id}/generate_pdf/`),
     downloadPDF: (id: string) =>
       apiClient.get(`/invoices/${id}/download_pdf/`, { responseType: 'blob' }),
-    sendEmail: (id: string) => apiClient.post(`/invoices/${id}/send_email/`),
+    sendEmail: (id: string, data?: { email?: string }) => apiClient.post(`/invoices/${id}/send_email/`, data),
     markSent: (id: string) => apiClient.post(`/invoices/${id}/mark_sent/`),
     markPaid: (id: string) => apiClient.post(`/invoices/${id}/mark_paid/`),
     cancel: (id: string) => apiClient.post(`/invoices/${id}/cancel/`),
