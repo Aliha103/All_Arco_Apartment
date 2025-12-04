@@ -199,8 +199,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
             # Build right column content
             right_html = f"""
-                <para><b><font size=12 color=#333333>{invoice.invoice_number}</font></b></para>
-                <para spaceBefore=6><font size=9 color=#666666><b>Date:</b> {invoice.issue_date.strftime("%B %d, %Y")}</font></para>
+                <para><b><font size=13 color=#C4A572>{invoice.invoice_number}</font></b></para>
+                <para spaceBefore=4><font size=9 color=#666666><b>Date:</b> {invoice.issue_date.strftime("%B %d, %Y")}</font></para>
             """
             if hasattr(booking, 'booking_id') and booking.booking_id:
                 right_html += f'<para><font size=9 color=#666666><b>Booking:</b> {booking.booking_id}</font></para>'
@@ -293,15 +293,13 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 ('LINEAFTER', (0, 0), (-2, -2), 0.5, colors.HexColor('#E5E5E5')),
                 ('LINEBEFORE', (0, 0), (0, -2), 0.5, colors.HexColor('#E5E5E5')),
 
-                # Total row - prominent
-                ('BACKGROUND', (0, -1), (-1, -1), light_cream),
+                # Total row - subtle and clean
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, -1), (-1, -1), 11),
-                ('TEXTCOLOR', (0, -1), (-1, -1), dark_gold),
-                ('TOPPADDING', (0, -1), (-1, -1), 10),
-                ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
-                ('LINEABOVE', (0, -1), (-1, -1), 2, gold),
-                ('BOX', (0, -1), (-1, -1), 1, gold),
+                ('FONTSIZE', (0, -1), (-1, -1), 12),
+                ('TEXTCOLOR', (0, -1), (-1, -1), dark_gray),
+                ('TOPPADDING', (0, -1), (-1, -1), 12),
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 8),
+                ('LINEABOVE', (0, -1), (-1, -1), 1.5, gold),
 
                 # Alignment
                 ('ALIGN', (1, 0), (1, -1), 'CENTER'),
