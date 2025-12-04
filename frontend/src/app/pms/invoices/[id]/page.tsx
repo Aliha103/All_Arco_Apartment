@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,14 @@ export default function InvoiceDetailPage() {
       return response.data as Invoice;
     },
   });
+
+  // Set page title when invoice data is loaded
+  useEffect(() => {
+    if (invoice) {
+      const docType = invoice.invoice_number.startsWith('INV') ? 'Invoice' : 'Receipt';
+      document.title = `${docType} ${invoice.invoice_number} - All'Arco Apartment`;
+    }
+  }, [invoice]);
 
   // Download PDF
   const downloadPDF = async () => {
@@ -60,22 +69,6 @@ export default function InvoiceDetailPage() {
     },
   });
 
-  // Mark as paid
-  const markPaid = useMutation({
-    mutationFn: () => api.invoices.markPaid(invoiceId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
-    },
-  });
-
-  // Cancel invoice
-  const cancelInvoice = useMutation({
-    mutationFn: () => api.invoices.cancel(invoiceId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
-    },
-  });
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -101,8 +94,6 @@ export default function InvoiceDetailPage() {
   }
 
   const canSendEmail = invoice.status === 'draft' || invoice.status === 'sent';
-  const canMarkPaid = invoice.status === 'sent' || invoice.status === 'overdue';
-  const canCancel = invoice.status !== 'cancelled' && invoice.status !== 'paid';
 
   return (
     <div>
@@ -268,39 +259,10 @@ export default function InvoiceDetailPage() {
               </Button>
             )}
 
-            {canMarkPaid && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (confirm('Mark this invoice as paid?')) {
-                    markPaid.mutate();
-                  }
-                }}
-                disabled={markPaid.isPending}
-              >
-                Mark as Paid
-              </Button>
-            )}
-
             {invoice.pdf_url && (
               <a href={invoice.pdf_url} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline">View PDF</Button>
               </a>
-            )}
-
-            {canCancel && (
-              <Button
-                variant="outline"
-                className="text-red-600 border-red-300 hover:bg-red-50"
-                onClick={() => {
-                  if (confirm('Cancel this invoice? This action cannot be undone.')) {
-                    cancelInvoice.mutate();
-                  }
-                }}
-                disabled={cancelInvoice.isPending}
-              >
-                Cancel Invoice
-              </Button>
             )}
           </div>
         </CardContent>
