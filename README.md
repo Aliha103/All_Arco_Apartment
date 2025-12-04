@@ -181,10 +181,10 @@ celery -A core beat --loglevel=info
 
 4. **Invoices & Receipts**
    - **Dual document types:**
-     - **Invoices** - For companies with VAT calculation (13%)
-     - **Receipts** - For individual guests without VAT
+     - **Invoices** - For companies with detailed billing information
+     - **Receipts** - For individual guests
    - Separate numbering: INV-YYYY-xxxxx / REC-YYYY-xxxxx
-   - Company management with VAT numbers
+   - Company management with business details
    - Payment method tracking (Cash, Card, Bank Transfer, At Property, Stripe)
    - Professional PDF generation with All'Arco branding
    - Automatic amount calculation from bookings
@@ -312,7 +312,7 @@ celery -A core beat --loglevel=info
 - **Payment** - Stripe payment records and webhooks
 - **Refund** - Refund transactions
 - **Invoice** - Dual-type invoices/receipts with company links
-- **Company** - Company details for invoicing (VAT, address)
+- **Company** - Company details for invoicing (business info, address)
 - **BlockedDate** - Unavailable dates for maintenance
 - **PricingRule** - Seasonal pricing rules
 - **CleaningSchedule** - Auto-created cleaning tasks

@@ -56,14 +56,6 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             amount = float(invoice.amount) if invoice.amount > 0 else float(booking.total_price)
             nights = (booking.check_out_date - booking.check_in_date).days
 
-            # For invoices, calculate VAT (13%)
-            if is_invoice:
-                subtotal = amount / 1.13  # Remove VAT to get subtotal
-                vat_amount = amount - subtotal
-            else:
-                subtotal = amount
-                vat_amount = 0
-
             # Create PDF buffer
             buffer = BytesIO()
             doc = SimpleDocTemplate(
@@ -205,14 +197,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             table_data = [['Description', 'Qty', 'Unit Price', 'Payment', 'Amount']]
 
             # Accommodation
-            if is_invoice:
-                accom_unit_price = subtotal - float(booking.cleaning_fee or 0) - float(booking.tourist_tax or 0)
-                if nights > 1:
-                    accom_unit_price = accom_unit_price / nights
-                accom_total = accom_unit_price * nights if nights > 1 else accom_unit_price
-            else:
-                accom_total = amount - float(booking.cleaning_fee or 0) - float(booking.tourist_tax or 0)
-                accom_unit_price = accom_total / nights if nights > 1 else accom_total
+            accom_total = amount - float(booking.cleaning_fee or 0) - float(booking.tourist_tax or 0)
+            accom_unit_price = accom_total / nights if nights > 1 else accom_total
 
             table_data.append([
                 'Accommodation',
@@ -241,16 +227,6 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                     f'EUR {float(booking.cleaning_fee):.2f}',
                     'Included',
                     f'EUR {float(booking.cleaning_fee):.2f}'
-                ])
-
-            # VAT (only for invoices)
-            if is_invoice:
-                table_data.append([
-                    'VAT (13.00%)',
-                    '1',
-                    f'EUR {vat_amount:.2f}',
-                    'Included',
-                    f'EUR {vat_amount:.2f}'
                 ])
 
             # Total row
