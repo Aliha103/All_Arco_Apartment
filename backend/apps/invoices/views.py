@@ -87,9 +87,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 'SectionHeading',
                 fontSize=11,
                 textColor=colors.HexColor('#C4A572'),
-                spaceAfter=8,
+                spaceAfter=6,
                 fontName='Helvetica-Bold',
-                spaceBefore=12
+                spaceBefore=8
             )
 
             # Header with logo on right
@@ -232,14 +232,14 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             contact_table.setStyle(TableStyle([
                 ('BOX', (1, 0), (1, 0), 1.5, colors.HexColor('#C4A572')),
                 ('BACKGROUND', (1, 0), (1, 0), colors.HexColor('#FDFAF5')),
-                ('TOPPADDING', (1, 0), (1, 0), 15),
-                ('BOTTOMPADDING', (1, 0), (1, 0), 15),
-                ('LEFTPADDING', (1, 0), (1, 0), 15),
-                ('RIGHTPADDING', (1, 0), (1, 0), 15),
+                ('TOPPADDING', (1, 0), (1, 0), 12),
+                ('BOTTOMPADDING', (1, 0), (1, 0), 12),
+                ('LEFTPADDING', (1, 0), (1, 0), 12),
+                ('RIGHTPADDING', (1, 0), (1, 0), 12),
                 ('VALIGN', (1, 0), (1, 0), 'MIDDLE'),
             ]))
             elements.append(contact_table)
-            elements.append(Spacer(1, 12))
+            elements.append(Spacer(1, 10))
 
             # Line items table
             table_data = [['Description', 'Qty', 'Unit Price', 'Payment', 'Amount']]
@@ -290,22 +290,22 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-                ('TOPPADDING', (0, 0), (-1, 0), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+                ('TOPPADDING', (0, 0), (-1, 0), 6),
 
                 # Data rows
                 ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
                 ('FONTSIZE', (0, 1), (-1, -2), 9),
-                ('TOPPADDING', (0, 1), (-1, -2), 6),
-                ('BOTTOMPADDING', (0, 1), (-1, -2), 6),
+                ('TOPPADDING', (0, 1), (-1, -2), 5),
+                ('BOTTOMPADDING', (0, 1), (-1, -2), 5),
                 ('GRID', (0, 0), (-1, -2), 0.5, colors.grey),
 
                 # Total row
                 ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#F5F5F5')),
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, -1), (-1, -1), 11),
-                ('TOPPADDING', (0, -1), (-1, -1), 10),
-                ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+                ('TOPPADDING', (0, -1), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 8),
                 ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor('#C4A572')),
 
                 # Alignment
@@ -314,7 +314,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             ]))
 
             elements.append(items_table)
-            elements.append(Spacer(1, 20))
+            elements.append(Spacer(1, 10))
 
             # Payment message
             payment_messages = {
@@ -332,12 +332,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 parent=styles['Normal'],
                 fontSize=10,
                 fontName='Helvetica-Bold',
-                spaceBefore=6
+                spaceBefore=0
             )
 
             elements.append(Paragraph("PAYMENT:", heading_style))
             elements.append(Paragraph(payment_msg, payment_style))
-            elements.append(Spacer(1, 40))
+            elements.append(Spacer(1, 15))
 
             # Footer
             footer_style = ParagraphStyle(
