@@ -66,7 +66,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 pagesize=A4,
                 rightMargin=2.5*cm,
                 leftMargin=2.5*cm,
-                topMargin=2*cm,
+                topMargin=1.5*cm,
                 bottomMargin=2*cm
             )
 
@@ -77,9 +77,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             title_style = ParagraphStyle(
                 'DocTitle',
                 parent=styles['Heading1'],
-                fontSize=36,
+                fontSize=32,
                 textColor=colors.HexColor('#C4A572'),
-                spaceAfter=6,
+                spaceAfter=4,
                 fontName='Helvetica-Bold'
             )
 
@@ -129,7 +129,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 ('RIGHTPADDING', (1, 0), (1, 0), 20),
             ]))
             elements.append(header_table)
-            elements.append(Spacer(1, 12))
+            elements.append(Spacer(1, 6))
 
             # Document details - more prominent
             doc_number_style = ParagraphStyle(
@@ -156,25 +156,40 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 f'Check-in: {booking.check_in_date.strftime("%b %d, %Y")} | Check-out: {booking.check_out_date.strftime("%b %d, %Y")}',
                 doc_detail_style
             ))
-            elements.append(Spacer(1, 16))
+            elements.append(Spacer(1, 12))
 
             # Guest Details section (always show)
             elements.append(Paragraph("GUEST DETAILS", heading_style))
             guest_info = [
-                [f"Name: {booking.guest_name}"],
+                [f"Full Name: {booking.guest_name}"],
                 [f"Email: {booking.guest_email}"]
             ]
+
+            # Add tax code if available
+            if hasattr(booking, 'guest_tax_code') and booking.guest_tax_code:
+                guest_info.append([f"Tax ID: {booking.guest_tax_code}"])
+
+            # Add phone if available
             if hasattr(booking, 'guest_phone') and booking.guest_phone:
-                guest_info.append([f"Country: {getattr(booking, 'country', 'N/A')}"])
+                guest_info.append([f"Phone: {booking.guest_phone}"])
+
+            # Add country (always show)
+            if hasattr(booking, 'guest_country') and booking.guest_country:
+                guest_info.append([f"Country: {booking.guest_country}"])
+
+            # Add address if available
+            if hasattr(booking, 'guest_address') and booking.guest_address:
+                guest_info.append([f"Address: {booking.guest_address}"])
 
             guest_table = Table(guest_info, colWidths=[16*cm])
             guest_table.setStyle(TableStyle([
                 ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
                 ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 1),
             ]))
             elements.append(guest_table)
-            elements.append(Spacer(1, 12))
+            elements.append(Spacer(1, 10))
 
             # Bill To section (only for invoices)
             if is_invoice and invoice.company:
@@ -197,31 +212,34 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 elements.append(bill_to_table)
                 elements.append(Spacer(1, 12))
 
-            # Contact info box (right side)
+            # Contact info box (right side) - More prominent
             contact_box_data = [[
                 '',
-                Paragraph("""<para align=left>
-                    <font size=8><b>ALL'ARCO APARTMENT</b></font><br/>
-                    <font size=7 color=grey>
+                Paragraph("""<para align=center>
+                    <font size=11 color=#C4A572><b>ALL'ARCO APARTMENT</b></font><br/>
+                    <font size=9>
                     Via Castellana 61<br/>
-                    30125 Venice, Italy<br/>
+                    30125 Venice, Italy<br/><br/>
+                    </font>
+                    <font size=8 color=#666666>
                     support@allarcoapartment.com<br/>
                     www.allarcoapartment.com
                     </font>
                 </para>""", styles['Normal'])
             ]]
 
-            contact_table = Table(contact_box_data, colWidths=[10*cm, 6*cm])
+            contact_table = Table(contact_box_data, colWidths=[8*cm, 8*cm])
             contact_table.setStyle(TableStyle([
-                ('BOX', (1, 0), (1, 0), 1, colors.HexColor('#C4A572')),
+                ('BOX', (1, 0), (1, 0), 1.5, colors.HexColor('#C4A572')),
                 ('BACKGROUND', (1, 0), (1, 0), colors.HexColor('#FDFAF5')),
-                ('TOPPADDING', (1, 0), (1, 0), 10),
-                ('BOTTOMPADDING', (1, 0), (1, 0), 10),
-                ('LEFTPADDING', (1, 0), (1, 0), 10),
-                ('RIGHTPADDING', (1, 0), (1, 0), 10),
+                ('TOPPADDING', (1, 0), (1, 0), 15),
+                ('BOTTOMPADDING', (1, 0), (1, 0), 15),
+                ('LEFTPADDING', (1, 0), (1, 0), 15),
+                ('RIGHTPADDING', (1, 0), (1, 0), 15),
+                ('VALIGN', (1, 0), (1, 0), 'MIDDLE'),
             ]))
             elements.append(contact_table)
-            elements.append(Spacer(1, 16))
+            elements.append(Spacer(1, 12))
 
             # Line items table
             table_data = [['Description', 'Qty', 'Unit Price', 'Payment', 'Amount']]
