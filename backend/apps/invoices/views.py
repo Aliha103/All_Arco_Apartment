@@ -39,14 +39,16 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice = self.get_object()
 
         try:
+            import os
             from io import BytesIO
             from reportlab.lib.pagesizes import A4
             from reportlab.lib import colors
             from reportlab.lib.units import cm
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Frame, PageTemplate
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Frame, PageTemplate, Image
             from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
             from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
             from reportlab.pdfgen import canvas as pdf_canvas
+            from django.conf import settings
 
             booking = invoice.booking
             is_invoice = invoice.type == 'invoice'
@@ -90,33 +92,37 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             )
 
             # Header with logo on right
-            logo_style = ParagraphStyle(
-                'Logo',
-                fontSize=14,
-                textColor=colors.HexColor('#C4A572'),
-                fontName='Helvetica-Bold',
-                alignment=TA_CENTER,
-                leading=16
-            )
+            # Try to load company logo image
+            logo_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'logos', 'allarco_logo.png')
+            logo_element = None
 
-            header_data = [[
-                Paragraph(doc_type_label, title_style),
-                Paragraph("""<para align=center>
+            if os.path.exists(logo_path):
+                try:
+                    # Use actual logo image
+                    logo_img = Image(logo_path, width=4*cm, height=4*cm)
+                    logo_element = logo_img
+                except:
+                    pass
+
+            # Fallback to text logo if image doesn't exist or fails to load
+            if logo_element is None:
+                logo_element = Paragraph("""<para align=center>
                     <font size=14 color=#C4A572><b>ALL'ARCO</b></font><br/>
                     <font size=12 color=#C4A572><b>APARTMENT</b></font><br/>
                     <font size=7 color=grey>Venice, Italy</font>
                 </para>""", styles['Normal'])
+
+            header_data = [[
+                Paragraph(doc_type_label, title_style),
+                logo_element
             ]]
 
             header_table = Table(header_data, colWidths=[11*cm, 5*cm])
             header_table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (0, 0), 'LEFT'),
                 ('ALIGN', (1, 0), (1, 0), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('RIGHTPADDING', (1, 0), (1, 0), 20),
-                ('BOX', (1, 0), (1, 0), 1.5, colors.HexColor('#C4A572')),
-                ('TOPPADDING', (1, 0), (1, 0), 10),
-                ('BOTTOMPADDING', (1, 0), (1, 0), 10),
             ]))
             elements.append(header_table)
             elements.append(Spacer(1, 12))
