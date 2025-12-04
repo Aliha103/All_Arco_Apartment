@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -606,6 +607,7 @@ interface InvoiceActionsProps {
 }
 
 function InvoiceActions({ invoice, onEdit }: InvoiceActionsProps) {
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const downloadPDF = useMutation({
@@ -639,7 +641,7 @@ function InvoiceActions({ invoice, onEdit }: InvoiceActionsProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(invoice)}>
+        <DropdownMenuItem onClick={() => router.push(`/pms/invoices/${invoice.id}`)}>
           <Eye className="w-4 h-4 mr-2 text-gray-700" />
           View Details
         </DropdownMenuItem>
