@@ -170,46 +170,44 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 spaceAfter=2
             )
 
-            # Build left column content as string-based paragraphs for table cell
-            left_html = f"""
-                <para><b><font size=10 color=#A68B5B>GUEST DETAILS</font></b></para>
-                <para><font size=9>Full Name: {booking.guest_name}</font></para>
-                <para><font size=9>Email: {booking.guest_email}</font></para>
-            """
+            # Build left column content with line breaks (single para tag)
+            left_html = f'<b><font size=10 color=#A68B5B>GUEST DETAILS</font></b><br/>'
+            left_html += f'<font size=9>Full Name: {booking.guest_name}</font><br/>'
+            left_html += f'<font size=9>Email: {booking.guest_email}</font><br/>'
+
             if hasattr(booking, 'guest_tax_code') and booking.guest_tax_code:
-                left_html += f'<para><font size=9>Tax ID: {booking.guest_tax_code}</font></para>'
+                left_html += f'<font size=9>Tax ID: {booking.guest_tax_code}</font><br/>'
             if hasattr(booking, 'guest_phone') and booking.guest_phone:
-                left_html += f'<para><font size=9>Phone: {booking.guest_phone}</font></para>'
+                left_html += f'<font size=9>Phone: {booking.guest_phone}</font><br/>'
             if hasattr(booking, 'guest_country') and booking.guest_country:
-                left_html += f'<para><font size=9>Country: {booking.guest_country}</font></para>'
+                left_html += f'<font size=9>Country: {booking.guest_country}</font><br/>'
             if hasattr(booking, 'guest_address') and booking.guest_address:
-                left_html += f'<para><font size=9>Address: {booking.guest_address}</font></para>'
+                left_html += f'<font size=9>Address: {booking.guest_address}</font><br/>'
 
             # Add Bill To if invoice
             if is_invoice and invoice.company:
                 company = invoice.company
-                left_html += f"""
-                    <para spaceBefore=12><b><font size=10 color=#A68B5B>BILL TO</font></b></para>
-                    <para><font size=9>{company.name}</font></para>
-                    <para><font size=9>VAT: {company.vat_number}</font></para>
-                    <para><font size=9>Country: {company.country}</font></para>
-                    <para><font size=9>Email: {company.email}</font></para>
-                    <para><font size=9>{company.address}</font></para>
-                """
+                left_html += f'<br/><b><font size=10 color=#A68B5B>BILL TO</font></b><br/>'
+                left_html += f'<font size=9>{company.name}</font><br/>'
+                left_html += f'<font size=9>VAT: {company.vat_number}</font><br/>'
+                left_html += f'<font size=9>Country: {company.country}</font><br/>'
+                left_html += f'<font size=9>Email: {company.email}</font><br/>'
+                left_html += f'<font size=9>{company.address}</font>'
 
-            # Build right column content
-            right_html = f"""
-                <para><b><font size=13 color=#C4A572>{invoice.invoice_number}</font></b></para>
-                <para spaceBefore=4><font size=9 color=#666666><b>Date:</b> {invoice.issue_date.strftime("%B %d, %Y")}</font></para>
-            """
+            # Build right column content with line breaks (single para tag)
+            right_html = f'<b><font size=13 color=#C4A572>{invoice.invoice_number}</font></b><br/>'
+            right_html += f'<br/>'  # spaceBefore=4 equivalent
+            right_html += f'<font size=9 color=#666666><b>Date:</b> {invoice.issue_date.strftime("%B %d, %Y")}</font><br/>'
+
             if hasattr(booking, 'booking_id') and booking.booking_id:
-                right_html += f'<para><font size=9 color=#666666><b>Booking:</b> {booking.booking_id}</font></para>'
-            right_html += f"""
-                <para><font size=9 color=#666666><b>Check-in:</b> {booking.check_in_date.strftime("%b %d, %Y")} | <b>Check-out:</b> {booking.check_out_date.strftime("%b %d, %Y")}</font></para>
-                <para spaceBefore=12><b><font size=11 color=#A68B5B>ALL'ARCO APARTMENT</font></b></para>
-                <para><font size=9 color=#333333>Via Castellana 61<br/>30125 Venice, Italy</font></para>
-                <para spaceBefore=6><font size=8 color=#666666>support@allarcoapartment.com<br/>www.allarcoapartment.com</font></para>
-            """
+                right_html += f'<font size=9 color=#666666><b>Booking:</b> {booking.booking_id}</font><br/>'
+
+            right_html += f'<font size=9 color=#666666><b>Check-in:</b> {booking.check_in_date.strftime("%b %d, %Y")} | <b>Check-out:</b> {booking.check_out_date.strftime("%b %d, %Y")}</font><br/>'
+            right_html += f'<br/><br/>'  # spaceBefore=12 equivalent (more space)
+            right_html += f'<b><font size=11 color=#A68B5B>ALL\'ARCO APARTMENT</font></b><br/>'
+            right_html += f'<font size=9 color=#333333>Via Castellana 61<br/>30125 Venice, Italy</font><br/>'
+            right_html += f'<br/>'  # spaceBefore=6 equivalent
+            right_html += f'<font size=8 color=#666666>support@allarcoapartment.com<br/>www.allarcoapartment.com</font>'
 
             # Create paragraphs for both columns
             left_para = Paragraph(left_html, styles['Normal'])
