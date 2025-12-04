@@ -102,8 +102,11 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                     # Use actual logo image
                     logo_img = Image(logo_path, width=4*cm, height=4*cm)
                     logo_element = logo_img
-                except:
-                    pass
+                except Exception as e:
+                    # Log the error but continue with text fallback
+                    print(f"Failed to load logo image: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
 
             # Fallback to text logo if image doesn't exist or fails to load
             if logo_element is None:
