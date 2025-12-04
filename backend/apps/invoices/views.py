@@ -89,14 +89,22 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 spaceBefore=12
             )
 
-            # Header with logo placeholder on right
+            # Header with logo on right
+            logo_style = ParagraphStyle(
+                'Logo',
+                fontSize=14,
+                textColor=colors.HexColor('#C4A572'),
+                fontName='Helvetica-Bold',
+                alignment=TA_CENTER,
+                leading=16
+            )
+
             header_data = [[
                 Paragraph(doc_type_label, title_style),
                 Paragraph("""<para align=center>
-                    <font size=8 color=grey>
-                    ALL'ARCO<br/>
-                    APARTMENT
-                    </font>
+                    <font size=14 color=#C4A572><b>ALL'ARCO</b></font><br/>
+                    <font size=12 color=#C4A572><b>APARTMENT</b></font><br/>
+                    <font size=7 color=grey>Venice, Italy</font>
                 </para>""", styles['Normal'])
             ]]
 
@@ -106,26 +114,38 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 ('ALIGN', (1, 0), (1, 0), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('RIGHTPADDING', (1, 0), (1, 0), 20),
+                ('BOX', (1, 0), (1, 0), 1.5, colors.HexColor('#C4A572')),
+                ('TOPPADDING', (1, 0), (1, 0), 10),
+                ('BOTTOMPADDING', (1, 0), (1, 0), 10),
             ]))
             elements.append(header_table)
-            elements.append(Spacer(1, 8))
+            elements.append(Spacer(1, 12))
 
-            # Document details
-            doc_details = [
-                [f'#{invoice.invoice_number}', ''],
-                [f'Date: {invoice.issue_date.strftime("%B %d, %Y")}', ''],
-                [f'Booking: {booking.booking_id}', ''],
-                [f'Check-in: {booking.check_in_date.strftime("%b %d, %Y")} | Check-out: {booking.check_out_date.strftime("%b %d, %Y")}', '']
-            ]
+            # Document details - more prominent
+            doc_number_style = ParagraphStyle(
+                'DocNumber',
+                fontSize=11,
+                textColor=colors.HexColor('#333333'),
+                fontName='Helvetica-Bold',
+                spaceAfter=4
+            )
 
-            doc_details_table = Table(doc_details, colWidths=[16*cm])
-            doc_details_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('TEXTCOLOR', (0, 0), (-1, -1), colors.grey),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-            ]))
-            elements.append(doc_details_table)
+            doc_detail_style = ParagraphStyle(
+                'DocDetail',
+                fontSize=9,
+                textColor=colors.grey,
+                fontName='Helvetica',
+                spaceAfter=3
+            )
+
+            elements.append(Paragraph(f'{invoice.invoice_number}', doc_number_style))
+            elements.append(Paragraph(f'Date: {invoice.issue_date.strftime("%B %d, %Y")}', doc_detail_style))
+            if hasattr(booking, 'booking_id') and booking.booking_id:
+                elements.append(Paragraph(f'Booking: {booking.booking_id}', doc_detail_style))
+            elements.append(Paragraph(
+                f'Check-in: {booking.check_in_date.strftime("%b %d, %Y")} | Check-out: {booking.check_out_date.strftime("%b %d, %Y")}',
+                doc_detail_style
+            ))
             elements.append(Spacer(1, 16))
 
             # Guest Details section (always show)
