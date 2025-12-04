@@ -139,9 +139,8 @@ export default function InvoicesPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'invoices' | 'companies'>('invoices');
 
-  // Search and filters
+  // Search
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const debouncedSearch = useDebounce(search, 300);
 
   // Modals
@@ -156,11 +155,10 @@ export default function InvoicesPage() {
 
   // Fetch invoices list
   const { data: invoicesData, isLoading: invoicesLoading } = useQuery({
-    queryKey: ['all-invoices', debouncedSearch, statusFilter],
+    queryKey: ['all-invoices', debouncedSearch],
     queryFn: async () => {
       const params: any = {};
       if (debouncedSearch) params.search = debouncedSearch;
-      if (statusFilter.length > 0) params.status = statusFilter.join(',');
       const response = await api.invoices.list(params);
       return response.data.results || response.data || [];
     },
@@ -191,11 +189,9 @@ export default function InvoicesPage() {
         invoice.guest_name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         invoice.guest_email?.toLowerCase().includes(debouncedSearch.toLowerCase());
 
-      const matchesStatus = statusFilter.length === 0 || statusFilter.includes(invoice.status);
-
-      return matchesSearch && matchesStatus;
+      return matchesSearch;
     });
-  }, [invoices, debouncedSearch, statusFilter]);
+  }, [invoices, debouncedSearch]);
 
   // Statistics
   const totalInvoices = invoices.length || 0;
@@ -209,15 +205,8 @@ export default function InvoicesPage() {
   // Handlers
   // ============================================================================
 
-  const handleToggleStatus = (status: string) => {
-    setStatusFilter(prev =>
-      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
-    );
-  };
-
   const handleClearFilters = () => {
     setSearch('');
-    setStatusFilter([]);
   };
 
   const handleCreateInvoice = () => {
@@ -290,8 +279,6 @@ export default function InvoicesPage() {
               isLoading={invoicesLoading}
               search={search}
               setSearch={setSearch}
-              statusFilter={statusFilter}
-              onToggleStatus={handleToggleStatus}
               onClearFilters={handleClearFilters}
               onCreate={handleCreateInvoice}
               onEdit={handleEditInvoice}
@@ -344,8 +331,6 @@ interface InvoicesTabProps {
   isLoading: boolean;
   search: string;
   setSearch: (value: string) => void;
-  statusFilter: string[];
-  onToggleStatus: (status: string) => void;
   onClearFilters: () => void;
   onCreate: () => void;
   onEdit: (invoice: Invoice) => void;
@@ -356,8 +341,6 @@ function InvoicesTab({
   isLoading,
   search,
   setSearch,
-  statusFilter,
-  onToggleStatus,
   onClearFilters,
   onCreate,
   onEdit,
@@ -376,7 +359,7 @@ function InvoicesTab({
           </Button>
         </div>
 
-        {/* Search and Filters */}
+        {/* Search */}
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -387,38 +370,6 @@ function InvoicesTab({
               className="pl-10"
             />
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="w-4 h-4" />
-                Status {statusFilter.length > 0 && `(${statusFilter.length})`}
-                <ChevronDown className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {Object.entries(STATUS_CONFIG).map(([status, config]) => (
-                <DropdownMenuItem
-                  key={status}
-                  onClick={() => onToggleStatus(status)}
-                  className="flex items-center justify-between"
-                >
-                  <span>{config.label}</span>
-                  {statusFilter.includes(status) && (
-                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-              {statusFilter.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onClearFilters} className="text-red-600">
-                    Clear filters
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </CardHeader>
 
@@ -433,7 +384,7 @@ function InvoicesTab({
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No invoices yet</h3>
             <p className="text-sm text-gray-600 mb-6">
-              {search || statusFilter.length > 0 ? 'Try adjusting your filters' : 'Get started by creating your first invoice'}
+              {search ? 'No invoices match your search' : 'Get started by creating your first invoice'}
             </p>
             <Button onClick={onCreate} className="bg-blue-600">
               <Plus className="w-4 h-4 mr-2" />
@@ -452,7 +403,6 @@ function InvoicesTab({
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Type</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Date</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Amount</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -492,9 +442,6 @@ interface InvoiceRowProps {
 }
 
 function InvoiceRow({ invoice, onEdit, index }: InvoiceRowProps) {
-  const statusConfig = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.draft;
-  const StatusIcon = statusConfig.icon;
-
   return (
     <motion.tr
       initial={{ opacity: 0, y: -10 }}
@@ -531,12 +478,6 @@ function InvoiceRow({ invoice, onEdit, index }: InvoiceRowProps) {
         <span className="font-bold text-sm text-gray-900">{formatCurrency(parseFloat(invoice.total_amount || '0'))}</span>
       </td>
       <td className="px-4 py-3">
-        <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
-          <StatusIcon className="w-3 h-3 mr-1" />
-          {statusConfig.label}
-        </Badge>
-      </td>
-      <td className="px-4 py-3">
         <InvoiceActions invoice={invoice} onEdit={onEdit} />
       </td>
     </motion.tr>
@@ -548,9 +489,6 @@ function InvoiceRow({ invoice, onEdit, index }: InvoiceRowProps) {
 // ============================================================================
 
 function InvoiceCard({ invoice, onEdit, index }: InvoiceRowProps) {
-  const statusConfig = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.draft;
-  const StatusIcon = statusConfig.icon;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -584,10 +522,6 @@ function InvoiceCard({ invoice, onEdit, index }: InvoiceRowProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
-            <StatusIcon className="w-3 h-3 mr-1" />
-            {statusConfig.label}
-          </Badge>
           <Badge className="bg-gray-100 text-gray-800 border text-xs font-semibold capitalize">
             {invoice.type || 'receipt'}
           </Badge>
@@ -609,6 +543,9 @@ interface InvoiceActionsProps {
 function InvoiceActions({ invoice, onEdit }: InvoiceActionsProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailAddress, setEmailAddress] = useState(invoice.guest_email || '');
+  const [useCustomEmail, setUseCustomEmail] = useState(false);
 
   const downloadPDF = useMutation({
     mutationFn: async (id: string) => {
@@ -625,41 +562,140 @@ function InvoiceActions({ invoice, onEdit }: InvoiceActionsProps) {
   });
 
   const sendEmail = useMutation({
-    mutationFn: async (id: string) => {
-      await api.invoices.sendEmail(id);
+    mutationFn: async ({ id, email }: { id: string; email: string }) => {
+      await api.invoices.sendEmail(id, { email });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-invoices'] });
+      setIsEmailDialogOpen(false);
+      alert('Invoice sent successfully');
+    },
+    onError: () => {
+      alert('Failed to send invoice email');
     },
   });
 
+  const handleSendEmail = () => {
+    if (!emailAddress || !emailAddress.includes('@')) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    sendEmail.mutate({ id: invoice.id, email: emailAddress });
+  };
+
+  const handleOpenEmailDialog = () => {
+    // Reset to guest email when opening dialog
+    setEmailAddress(invoice.guest_email || '');
+    setUseCustomEmail(false);
+    setIsEmailDialogOpen(true);
+  };
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <MoreHorizontal className="w-4 h-4 text-gray-700" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => router.push(`/pms/invoices/${invoice.id}`)}>
-          <Eye className="w-4 h-4 mr-2 text-gray-700" />
-          View Details
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => downloadPDF.mutate(invoice.id)}>
-          <Download className="w-4 h-4 mr-2 text-gray-700" />
-          Download PDF
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => sendEmail.mutate(invoice.id)}>
-          <Mail className="w-4 h-4 mr-2 text-gray-700" />
-          Send Email
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onEdit(invoice)}>
-          <Edit className="w-4 h-4 mr-2 text-gray-700" />
-          Edit
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <MoreHorizontal className="w-4 h-4 text-gray-700" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => router.push(`/pms/invoices/${invoice.id}`)}>
+            <Eye className="w-4 h-4 mr-2 text-gray-700" />
+            View Details
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => downloadPDF.mutate(invoice.id)}>
+            <Download className="w-4 h-4 mr-2 text-gray-700" />
+            Download PDF
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleOpenEmailDialog}>
+            <Mail className="w-4 h-4 mr-2 text-gray-700" />
+            Send Email
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => onEdit(invoice)}>
+            <Edit className="w-4 h-4 mr-2 text-gray-700" />
+            Edit
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Email Selection Dialog */}
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Invoice via Email</DialogTitle>
+            <DialogDescription>
+              Choose the email address to send {invoice.invoice_number} to
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Guest Email Option */}
+            {invoice.guest_email && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="guest-email"
+                  name="email-option"
+                  checked={!useCustomEmail}
+                  onChange={() => {
+                    setUseCustomEmail(false);
+                    setEmailAddress(invoice.guest_email);
+                  }}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <label htmlFor="guest-email" className="flex-1 cursor-pointer">
+                  <div className="font-medium text-gray-900">Guest Email</div>
+                  <div className="text-sm text-gray-600">{invoice.guest_email}</div>
+                </label>
+              </div>
+            )}
+
+            {/* Custom Email Option */}
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="custom-email"
+                  name="email-option"
+                  checked={useCustomEmail}
+                  onChange={() => setUseCustomEmail(true)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <label htmlFor="custom-email" className="font-medium text-gray-900 cursor-pointer">
+                  Send to different email
+                </label>
+              </div>
+              {useCustomEmail && (
+                <Input
+                  type="email"
+                  placeholder="Enter email address"
+                  value={emailAddress}
+                  onChange={(e) => setEmailAddress(e.target.value)}
+                  className="ml-6"
+                />
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEmailDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendEmail}
+              disabled={sendEmail.isPending || !emailAddress}
+              className="bg-blue-600"
+            >
+              {sendEmail.isPending ? 'Sending...' : 'Send Email'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
