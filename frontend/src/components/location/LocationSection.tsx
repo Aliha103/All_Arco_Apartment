@@ -166,6 +166,23 @@ export default function LocationSection() {
                 </div>
               </motion.div>
             </div>
+
+            {/* Desktop/Tablet CTA under map */}
+            <motion.a
+              variants={fadeIn}
+              initial="hidden"
+              animate={isInView ? 'visible' : 'hidden'}
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center justify-center gap-3 w-full mt-4 py-4 bg-[#C4A572] text-white font-medium rounded-2xl
+                         hover:bg-[#B39562] transition-all duration-300 hover:shadow-lg hover:shadow-[#C4A572]/25
+                         focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2"
+            >
+              <MapPin className="w-5 h-5" />
+              View on Google Maps
+              <ArrowUpRight className="w-4 h-4" />
+            </motion.a>
           </motion.div>
 
           {/* Info Panel - Takes 2 columns */}
@@ -240,12 +257,12 @@ export default function LocationSection() {
             {/* CTA Button */}
             <motion.a
               variants={fadeIn}
+              className="flex sm:hidden items-center justify-center gap-3 w-full py-4 bg-[#C4A572] text-white font-medium rounded-2xl
+                         hover:bg-[#B39562] transition-all duration-300 hover:shadow-lg hover:shadow-[#C4A572]/25
+                         focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2"
               href={googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-4 bg-[#C4A572] text-white font-medium rounded-2xl
-                         hover:bg-[#B39562] transition-all duration-300 hover:shadow-lg hover:shadow-[#C4A572]/25
-                         focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2"
             >
               <MapPin className="w-5 h-5" />
               View on Google Maps
