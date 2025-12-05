@@ -37,24 +37,22 @@ function getApiBase(request: NextRequest) {
 async function verifyAuthentication(request: NextRequest): Promise<{ authenticated: boolean; isTeamMember: boolean }> {
   try {
     const apiBase = getApiBase(request);
+    const cookieHeader = request.headers.get('cookie');
     const sessionCookie = request.cookies.get('sessionid');
-    const csrfCookie = request.cookies.get('csrftoken');
-
-    if (!sessionCookie) {
-      return { authenticated: false, isTeamMember: false };
-    }
 
     // Verify session with Django backend
     const response = await fetch(`${apiBase}/auth/me/`, {
       method: 'GET',
       headers: {
-        'Cookie': `sessionid=${sessionCookie.value}${csrfCookie ? `; csrftoken=${csrfCookie.value}` : ''}`,
+        // Forward full cookie header to preserve any auth/session cookies
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
       },
       cache: 'no-store',
       next: { revalidate: 0 }, // Disable Next.js caching
+      credentials: 'include',
     });
 
     if (!response.ok) {
