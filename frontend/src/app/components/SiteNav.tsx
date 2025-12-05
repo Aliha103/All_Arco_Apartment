@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'framer-motion';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserUrls } from '@/hooks/useUserUrls';
 import {
   Calendar,
@@ -44,7 +44,7 @@ const SiteNav = () => {
   const [isVisible, setIsVisible] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuth();
   const isTeamMember = !!user && (user.is_super_admin || user.is_team_member);
   const userUrls = useUserUrls();
 

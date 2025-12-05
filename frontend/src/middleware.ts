@@ -37,8 +37,11 @@ async function verifyAuthentication(request: NextRequest): Promise<{ authenticat
       headers: {
         'Cookie': `sessionid=${sessionCookie.value}${csrfCookie ? `; csrftoken=${csrfCookie.value}` : ''}`,
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
       },
       cache: 'no-store',
+      next: { revalidate: 0 }, // Disable Next.js caching
     });
 
     if (!response.ok) {

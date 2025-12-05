@@ -61,7 +61,18 @@ def login_view(request):
 def logout_view(request):
     """User logout endpoint."""
     logout(request)
-    return Response({'message': 'Logged out successfully'})
+    response = Response({'message': 'Logged out successfully'})
+
+    # Explicitly delete session cookies
+    response.delete_cookie('sessionid', path='/', samesite='Lax')
+    response.delete_cookie('csrftoken', path='/', samesite='Lax')
+
+    # Add cache control headers to prevent caching
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+
+    return response
 
 
 @api_view(['POST'])
