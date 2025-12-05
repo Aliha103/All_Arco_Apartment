@@ -20,10 +20,23 @@ declare const process: {
 };
 
 // Get API URL from environment variable
-const DJANGO_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+function getApiBase(request: NextRequest) {
+  // Use explicit env when it is an absolute URL; otherwise fall back to current origin
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (envUrl && /^https?:\/\//i.test(envUrl)) {
+    return envUrl.replace(/\/$/, '');
+  }
+
+  const relativeBase = envUrl && envUrl.trim() !== '' ? envUrl : '/api';
+  const normalizedRelative = (relativeBase.startsWith('/') ? relativeBase : `/${relativeBase}`).replace(/\/$/, '');
+
+  return `${request.nextUrl.origin}${normalizedRelative}`;
+}
 
 async function verifyAuthentication(request: NextRequest): Promise<{ authenticated: boolean; isTeamMember: boolean }> {
   try {
+    const apiBase = getApiBase(request);
     const sessionCookie = request.cookies.get('sessionid');
     const csrfCookie = request.cookies.get('csrftoken');
 
@@ -32,7 +45,7 @@ async function verifyAuthentication(request: NextRequest): Promise<{ authenticat
     }
 
     // Verify session with Django backend
-    const response = await fetch(`${DJANGO_API_URL}/auth/me/`, {
+    const response = await fetch(`${apiBase}/auth/me/`, {
       method: 'GET',
       headers: {
         'Cookie': `sessionid=${sessionCookie.value}${csrfCookie ? `; csrftoken=${csrfCookie.value}` : ''}`,
