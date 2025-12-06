@@ -129,7 +129,7 @@ const VersionInfo = () => {
       {/* Floating Button */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="fixed left-4 bottom-4 z-50 w-10 h-10 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-gray-400 hover:text-[#C4A572] rounded-full shadow-lg shadow-black/20 flex items-center justify-center transition-colors duration-300 border border-gray-800 hover:border-[#C4A572]/30"
+        className="fixed right-4 bottom-4 z-50 w-10 h-10 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-gray-400 hover:text-[#C4A572] rounded-full shadow-lg shadow-black/20 flex items-center justify-center transition-colors duration-300 border border-gray-800 hover:border-[#C4A572]/30"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         aria-label="Version information"
@@ -157,7 +157,7 @@ const VersionInfo = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed left-4 right-4 bottom-4 sm:left-4 sm:right-auto sm:bottom-4 sm:w-[400px] max-h-[80vh] bg-[#121212] rounded-2xl shadow-2xl z-[101] overflow-hidden border border-gray-800"
+              className="fixed left-4 right-4 bottom-4 sm:left-auto sm:right-4 sm:bottom-4 sm:w-[400px] max-h-[80vh] bg-[#121212] rounded-2xl shadow-2xl z-[101] overflow-hidden border border-gray-800"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-800">
