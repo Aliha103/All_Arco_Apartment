@@ -11,13 +11,17 @@ class Expense(models.Model):
     """
 
     CATEGORY_CHOICES = [
-        ('utilities', 'Utilities'),
+        ('gas', 'Gas'),
+        ('electricity', 'Electricity'),
+        ('water', 'Water'),
+        ('internet', 'Internet'),
+        ('garbage_fee', 'Garbage Fee'),
+        ('insurance', 'Insurance'),
         ('maintenance', 'Maintenance & Repairs'),
         ('cleaning', 'Cleaning Supplies'),
         ('amenities', 'Guest Amenities'),
         ('marketing', 'Marketing & Advertising'),
         ('software', 'Software & Subscriptions'),
-        ('insurance', 'Insurance'),
         ('taxes', 'Taxes & Fees'),
         ('supplies', 'Office Supplies'),
         ('professional', 'Professional Services'),

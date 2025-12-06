@@ -55,13 +55,17 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 
 // Expense categories
 const EXPENSE_CATEGORIES = [
-  { value: 'utilities', label: 'Utilities' },
+  { value: 'gas', label: 'Gas' },
+  { value: 'electricity', label: 'Electricity' },
+  { value: 'water', label: 'Water' },
+  { value: 'internet', label: 'Internet' },
+  { value: 'garbage_fee', label: 'Garbage Fee' },
+  { value: 'insurance', label: 'Insurance' },
   { value: 'maintenance', label: 'Maintenance & Repairs' },
   { value: 'cleaning', label: 'Cleaning Supplies' },
   { value: 'amenities', label: 'Guest Amenities' },
   { value: 'marketing', label: 'Marketing & Advertising' },
   { value: 'software', label: 'Software & Subscriptions' },
-  { value: 'insurance', label: 'Insurance' },
   { value: 'taxes', label: 'Taxes & Fees' },
   { value: 'supplies', label: 'Office Supplies' },
   { value: 'professional', label: 'Professional Services' },
@@ -354,7 +358,7 @@ export default function ExpensesPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created By</th>
@@ -386,7 +390,17 @@ export default function ExpensesPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{formatDate(expense.expense_date)}</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-900">
+                            {new Date(expense.expense_date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(expense.expense_date)}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm text-gray-600">{expense.vendor || '—'}</span>
@@ -456,7 +470,7 @@ export default function ExpensesPage() {
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g., Water Bill - December"
+                  placeholder="e.g., Electricity - December 2024"
                   required
                 />
               </div>
@@ -495,7 +509,7 @@ export default function ExpensesPage() {
               </div>
 
               <div>
-                <Label htmlFor="expense_date">Expense Date *</Label>
+                <Label htmlFor="expense_date">Expense Date (Month/Period) *</Label>
                 <Input
                   id="expense_date"
                   type="date"
