@@ -164,7 +164,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
   // Filter navigation based on permissions
   const filteredNav = useMemo(
     () => navigation.filter((item) => !item.permission || hasPermission(item.permission)),
-    [hasPermission]
+    [hasPermission, user?.id]
   );
 
   const navItems = useMemo(
