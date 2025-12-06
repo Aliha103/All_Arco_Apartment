@@ -275,17 +275,24 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
 
             # Header with logo and title
-            logo_path = os.path.join(settings.BASE_DIR, 'static', 'allarco-logo.png')
+            logo_path = os.path.join(settings.BASE_DIR, 'static', 'logos', 'allarco_logo.png')
             logo_element = Paragraph("", styles['Normal'])
 
             if os.path.exists(logo_path):
                 try:
                     logo_element = Image(logo_path, width=4*cm, height=1.5*cm)
-                except Exception:
+                except Exception as e:
+                    logger.error(f"Error loading logo: {str(e)}")
                     logo_element = Paragraph("""
                         <para align=center>
                             <b><font size=16 color=#C4A572>ALL'ARCO<br/>APARTMENT</font></b>
                         </para>""", styles['Normal'])
+            else:
+                logger.warning(f"Logo file not found at {logo_path}")
+                logo_element = Paragraph("""
+                    <para align=center>
+                        <b><font size=16 color=#C4A572>ALL'ARCO<br/>APARTMENT</font></b>
+                    </para>""", styles['Normal'])
 
             header_data = [[
                 Paragraph("BOOKING CONFIRMATION", title_style),
