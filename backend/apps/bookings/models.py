@@ -1,5 +1,6 @@
 import uuid
 import random
+import string
 from datetime import datetime
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -128,10 +129,11 @@ class Booking(models.Model):
     def save(self, *args, **kwargs):
         # Generate booking ID
         if not self.booking_id:
-            # Generate unique random 6-digit ID
+            # Generate unique random 6-character alphanumeric ID
             while True:
-                random_digits = str(random.randint(100000, 999999))
-                booking_id = f'ARCO{random_digits}'
+                # Use uppercase letters and digits for alphanumeric ID
+                characters = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                booking_id = f'ARCO{characters}'
                 # Check if this ID already exists
                 if not Booking.objects.filter(booking_id=booking_id).exists():
                     self.booking_id = booking_id
