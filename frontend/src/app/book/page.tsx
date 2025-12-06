@@ -1,10 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-
-// Force dynamic rendering for this page since it uses useSearchParams
-export const dynamic = 'force-dynamic';
 import { format, isAfter, isValid, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -36,7 +33,7 @@ function sanitizeDate(value: string | null): string {
   return isValid(parsed) ? format(parsed, 'yyyy-MM-dd') : '';
 }
 
-export default function BookingPage() {
+function BookingPageContent() {
   const searchParams = useSearchParams();
 
   const [step, setStep] = useState<Step>('plan');
@@ -462,5 +459,13 @@ export default function BookingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <BookingPageContent />
+    </Suspense>
   );
 }
