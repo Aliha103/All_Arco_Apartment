@@ -15,6 +15,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,6 +114,8 @@ function BookingPageContent() {
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    let createdBooking: any = null;
+
     try {
       const bookingData = {
         check_in_date: dates.checkIn,
@@ -121,14 +124,29 @@ function BookingPageContent() {
         ...guestInfo,
       };
 
-      const booking = await createBooking.mutateAsync(bookingData);
-      const checkout = await createCheckout.mutateAsync(booking.id);
+      createdBooking = await createBooking.mutateAsync(bookingData);
+      const checkout = await createCheckout.mutateAsync(createdBooking.id);
 
-      if (checkout.session_url) {
+      if (checkout?.session_url) {
         window.location.href = checkout.session_url;
+        return;
       }
+
+      throw new Error('Checkout session could not be created');
     } catch (error) {
       console.error('Booking failed:', error);
+
+      // Attempt to roll back orphaned booking if payment session failed
+      if (createdBooking?.id) {
+        try {
+          await api.bookings.delete(createdBooking.id);
+          toast.error('Payment failed to start. Booking was not completed—please try again.');
+          return;
+        } catch (cleanupError) {
+          console.warn('Failed to roll back booking after checkout failure', cleanupError);
+        }
+      }
+
       toast.error('Failed to create booking. Please try again.');
     }
   };
