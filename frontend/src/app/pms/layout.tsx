@@ -74,6 +74,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   const [hasSessionCookie, setHasSessionCookie] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const originalBodyStyles = useRef<{ overflow: string; touchAction: string } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
 
@@ -137,16 +138,26 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
 
   // Lock body scroll when mobile menu open
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    if (!originalBodyStyles.current) {
+      originalBodyStyles.current = {
+        overflow: document.body.style.overflow,
+        touchAction: document.body.style.touchAction,
+      };
+    }
+
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
     } else {
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
+      document.body.style.overflow = originalBodyStyles.current?.overflow || '';
+      document.body.style.touchAction = originalBodyStyles.current?.touchAction || '';
     }
+
     return () => {
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
+      document.body.style.overflow = originalBodyStyles.current?.overflow || '';
+      document.body.style.touchAction = originalBodyStyles.current?.touchAction || '';
     };
   }, [mobileMenuOpen]);
 
