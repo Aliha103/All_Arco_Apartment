@@ -22,6 +22,7 @@ export default function BookingDetailPage() {
   const [isClient, setIsClient] = useState(false);
 
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isNonRefundableConfirmOpen, setIsNonRefundableConfirmOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -105,11 +106,16 @@ export default function BookingDetailPage() {
       api.bookings.update(bookingId, {
         status: 'cancelled',
         cancellation_reason: cancelNotes || cancelReason,
+        issue_refund: issueRefund,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
       queryClient.invalidateQueries({ queryKey: ['all-bookings'] });
       setIsCancelModalOpen(false);
+      setIsNonRefundableConfirmOpen(false);
+      setCancelReason('guest_cancellation');
+      setCancelNotes('');
+      setIssueRefund(true);
       toast.success('Booking cancelled successfully');
     },
     onError: (error: any) => {
@@ -160,6 +166,36 @@ export default function BookingDetailPage() {
         special_requests: booking.special_requests || '',
       });
       setIsEditModalOpen(true);
+    }
+  };
+
+  // Check if booking is in non-refundable period (within 7 days of check-in or past check-in)
+  const isNonRefundablePeriod = () => {
+    if (!booking?.check_in_date) return false;
+    const checkInDate = new Date(booking.check_in_date);
+    const today = new Date();
+    const daysUntilCheckIn = Math.ceil((checkInDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilCheckIn <= 7;
+  };
+
+  // Handle cancel booking button click
+  const handleCancelBooking = () => {
+    // Validate "Other" reason requires additional notes
+    if (cancelReason === 'other' && !cancelNotes.trim()) {
+      toast.error('Please provide a reason for "Other" cancellation');
+      return;
+    }
+
+    // Check if booking has successful payments
+    const hasSuccessfulPayment = payments && payments.some((p) => p.status === 'succeeded');
+
+    // If non-refundable period and has payment, show confirmation
+    if (hasSuccessfulPayment && isNonRefundablePeriod()) {
+      setIsCancelModalOpen(false);
+      setIsNonRefundableConfirmOpen(true);
+    } else {
+      // Proceed with cancellation
+      cancelBooking.mutate();
     }
   };
 
@@ -610,7 +646,7 @@ export default function BookingDetailPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Cancellation Reason</Label>
+              <Label>Cancellation Reason *</Label>
               <select
                 className="w-full px-3 py-2 border rounded-lg text-gray-900"
                 value={cancelReason}
@@ -623,13 +659,24 @@ export default function BookingDetailPage() {
               </select>
             </div>
             <div className="space-y-2">
-              <Label>Additional Notes (Optional)</Label>
+              <Label>
+                Additional Notes {cancelReason === 'other' && <span className="text-red-600">*</span>}
+                {cancelReason !== 'other' && <span className="text-gray-500">(Optional)</span>}
+              </Label>
               <textarea
                 className="w-full px-3 py-2 border rounded-lg min-h-20 text-gray-900"
                 value={cancelNotes}
                 onChange={(e) => setCancelNotes(e.target.value)}
-                placeholder="Enter any additional details..."
+                placeholder={
+                  cancelReason === 'other'
+                    ? 'Please provide a reason for cancellation...'
+                    : 'Enter any additional details...'
+                }
+                required={cancelReason === 'other'}
               />
+              {cancelReason === 'other' && !cancelNotes.trim() && (
+                <p className="text-sm text-red-600">Required when "Other" is selected</p>
+              )}
             </div>
             {payments && payments.some((p) => p.status === 'succeeded') && (
               <div className="flex items-center gap-2">
@@ -654,8 +701,8 @@ export default function BookingDetailPage() {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => cancelBooking.mutate()}
-              disabled={cancelBooking.isPending}
+              onClick={handleCancelBooking}
+              disabled={cancelBooking.isPending || (cancelReason === 'other' && !cancelNotes.trim())}
             >
               {cancelBooking.isPending ? 'Cancelling...' : 'Cancel Booking'}
             </Button>
@@ -812,6 +859,86 @@ export default function BookingDetailPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Non-Refundable Cancellation Confirmation Dialog */}
+      <Dialog open={isNonRefundableConfirmOpen} onOpenChange={setIsNonRefundableConfirmOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-red-700">Non-Refundable Cancellation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800 font-semibold mb-2">
+                ⚠️ This booking is in the non-refundable period
+              </p>
+              <p className="text-sm text-red-700">
+                The check-in date is within 7 days (or has passed). According to the cancellation policy,
+                this booking is non-refundable.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm text-gray-700 font-medium">
+                Do you still want to proceed with the cancellation?
+              </p>
+
+              <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
+                <Label className="text-sm font-semibold text-gray-700">Refund Options:</Label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="refund-option"
+                      checked={issueRefund}
+                      onChange={() => setIssueRefund(true)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Yes, issue refund anyway (override non-refundable policy)
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="refund-option"
+                      checked={!issueRefund}
+                      onChange={() => setIssueRefund(false)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm text-gray-700">
+                      No, cancel without refund (keep payment)
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>Cancellation Reason:</strong> {cancelReason === 'other' ? cancelNotes : cancelReason.replace('_', ' ')}
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsNonRefundableConfirmOpen(false);
+                setIsCancelModalOpen(true);
+              }}
+            >
+              Go Back
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => cancelBooking.mutate()}
+              disabled={cancelBooking.isPending}
+            >
+              {cancelBooking.isPending ? 'Cancelling...' : 'Confirm Cancellation'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

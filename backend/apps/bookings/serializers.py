@@ -6,11 +6,11 @@ from apps.users.serializers import UserSerializer
 class BookingSerializer(serializers.ModelSerializer):
     """Full serializer for Booking model."""
     user_details = UserSerializer(source='user', read_only=True)
-    
+
     class Meta:
         model = Booking
         fields = '__all__'
-        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'created_at', 'updated_at', 'cancelled_at']
 
 
 class BookingListSerializer(serializers.ModelSerializer):

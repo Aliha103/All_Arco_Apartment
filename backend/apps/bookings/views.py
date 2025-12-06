@@ -189,6 +189,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         Update booking and handle status changes.
 
         When status changes to 'checked_out', mark any pending referral credits as earned.
+        When status changes to 'cancelled', set cancelled_at timestamp and handle refund.
         """
         from django.utils import timezone
         from apps.users.models import ReferralCredit
@@ -196,6 +197,23 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Get the old status before updating
         booking = self.get_object()
         old_status = booking.status
+
+        # Handle cancellation
+        if 'status' in serializer.validated_data and serializer.validated_data['status'] == 'cancelled':
+            if old_status != 'cancelled':
+                # Set cancelled_at timestamp
+                serializer.validated_data['cancelled_at'] = timezone.now()
+
+                # Check if refund should be issued
+                issue_refund = self.request.data.get('issue_refund', False)
+                serializer.validated_data['issue_refund'] = issue_refund
+
+                # TODO: If issue_refund is True, trigger refund processing
+                # This would typically involve:
+                # 1. Finding the payment record for this booking
+                # 2. Calling Stripe API to issue refund
+                # 3. Updating payment status to 'refunded'
+                # For now, we just store the flag in the database
 
         # Save the updated booking
         updated_booking = serializer.save()

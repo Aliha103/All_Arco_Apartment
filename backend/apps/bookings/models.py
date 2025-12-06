@@ -90,6 +90,10 @@ class Booking(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     cancellation_reason = models.TextField(blank=True, null=True)
+    issue_refund = models.BooleanField(
+        default=False,
+        help_text='Whether to issue refund when cancelling this booking'
+    )
 
     # No-show handling: marks the date from which nights are released
     # For full no-show: equals check_in_date (all nights released)
