@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, calculateNights } from '@/lib/utils';
 import { PriceCalculation } from '@/types';
+import { toast } from 'sonner';
 
 interface BookingFormModalProps {
   isOpen: boolean;
@@ -71,14 +72,14 @@ export default function BookingFormModal({ isOpen, onClose, onSuccess }: Booking
       onClose();
       resetForm();
       if (onSuccess) onSuccess();
-      alert('Booking created successfully!');
+      toast.success('Booking created successfully!');
     },
     onError: (error: any) => {
       const errorData = error.response?.data;
       if (errorData && typeof errorData === 'object') {
         setFormErrors(errorData);
       } else {
-        alert(errorData?.message || 'Failed to create booking');
+        toast.error(errorData?.message || 'Failed to create booking');
       }
     },
   });
@@ -144,7 +145,7 @@ export default function BookingFormModal({ isOpen, onClose, onSuccess }: Booking
     if (!validateForm()) return;
 
     if (availability && !availability.available) {
-      alert('Selected dates are not available');
+      toast.error('Selected dates are not available');
       return;
     }
 

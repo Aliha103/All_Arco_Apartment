@@ -29,7 +29,7 @@ import {
   RefreshCw,
   AlertTriangle,
 } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -570,7 +570,6 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
 
   return (
     <>
-      <Toaster position="top-right" />
 
       <div className="space-y-6 pb-8">
         {/* Header */}

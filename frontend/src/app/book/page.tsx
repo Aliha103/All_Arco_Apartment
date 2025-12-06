@@ -14,6 +14,7 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -99,11 +100,11 @@ function BookingPageContent() {
 
   const handleContinueToGuest = () => {
     if (!dates.checkIn || !dates.checkOut) {
-      alert('Please select check-in and check-out dates');
+      toast.error('Please select check-in and check-out dates');
       return;
     }
     if (!availability?.available) {
-      alert('Selected dates are not available');
+      toast.error('Selected dates are not available');
       return;
     }
     setStep('guest');
@@ -128,7 +129,7 @@ function BookingPageContent() {
       }
     } catch (error) {
       console.error('Booking failed:', error);
-      alert('Failed to create booking. Please try again.');
+      toast.error('Failed to create booking. Please try again.');
     }
   };
 

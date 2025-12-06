@@ -12,6 +12,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import PricingRuleModal from '@/components/pms/PricingRuleModal';
 import { PricingRule } from '@/types';
+import { toast } from 'sonner';
 
 export default function PricingPage() {
   const queryClient = useQueryClient();
@@ -47,7 +48,10 @@ export default function PricingPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-settings'] });
       setIsEditingSettings(false);
-      alert('Settings updated successfully');
+      toast.success('Settings updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to update settings');
     },
   });
 
@@ -73,9 +77,10 @@ export default function PricingPage() {
     mutationFn: (ruleId: string) => api.pricing.deleteRule(ruleId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pricing-rules'] });
+      toast.success('Pricing rule deleted');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.message || 'Failed to delete pricing rule');
+      toast.error(error.response?.data?.message || 'Failed to delete pricing rule');
     },
   });
 

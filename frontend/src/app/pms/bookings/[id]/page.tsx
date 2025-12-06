@@ -82,10 +82,10 @@ export default function BookingDetailPage() {
       api.bookings.sendEmail(bookingId),
     onSuccess: () => {
       setIsEmailModalOpen(false);
-      alert('Email sent successfully');
+      toast.success('Email sent successfully');
     },
     onError: () => {
-      alert('Failed to send email');
+      toast.error('Failed to send email');
     },
   });
 
@@ -100,7 +100,10 @@ export default function BookingDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
       queryClient.invalidateQueries({ queryKey: ['all-bookings'] });
       setIsCancelModalOpen(false);
-      alert('Booking cancelled successfully');
+      toast.success('Booking cancelled successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to cancel booking');
     },
   });
 

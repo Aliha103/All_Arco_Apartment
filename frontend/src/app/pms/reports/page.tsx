@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function ReportsPage() {
   const currentYear = new Date().getFullYear();
@@ -206,7 +207,7 @@ export default function ReportsPage() {
 
   const handleExportCSV = () => {
     if (!allBookings || allBookings.length === 0) {
-      alert('No data to export');
+      toast.info('No data to export');
       return;
     }
 

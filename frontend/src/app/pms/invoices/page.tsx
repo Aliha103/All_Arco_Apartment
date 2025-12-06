@@ -65,6 +65,7 @@ import {
 import api from '@/lib/api';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
+import { toast } from 'sonner';
 
 // ============================================================================
 // Types & Interfaces
@@ -568,16 +569,16 @@ function InvoiceActions({ invoice, onEdit }: InvoiceActionsProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-invoices'] });
       setIsEmailDialogOpen(false);
-      alert('Invoice sent successfully');
+      toast.success('Invoice sent successfully');
     },
     onError: () => {
-      alert('Failed to send invoice email');
+      toast.error('Failed to send invoice email');
     },
   });
 
   const handleSendEmail = () => {
     if (!emailAddress || !emailAddress.includes('@')) {
-      alert('Please enter a valid email address');
+      toast.error('Please enter a valid email address');
       return;
     }
     sendEmail.mutate({ id: invoice.id, email: emailAddress });

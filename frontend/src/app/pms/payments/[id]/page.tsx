@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils';
 import { Payment, Booking, Refund } from '@/types';
+import { toast } from 'sonner';
 
 export default function PaymentDetailPage() {
   const params = useParams();
@@ -51,10 +52,10 @@ export default function PaymentDetailPage() {
       setIsRefundModalOpen(false);
       setRefundAmount('');
       setRefundNotes('');
-      alert('Refund processed successfully');
+      toast.success('Refund processed successfully');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.message || 'Failed to process refund');
+      toast.error(error.response?.data?.message || 'Failed to process refund');
     },
   });
 

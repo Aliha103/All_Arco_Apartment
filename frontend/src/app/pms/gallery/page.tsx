@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/utils';
 import { HeroImage } from '@/types';
+import { toast } from 'sonner';
 
 export default function GalleryPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -74,10 +75,10 @@ export default function GalleryPage() {
       queryClient.invalidateQueries({ queryKey: ['gallery-images'] });
       setIsUploadModalOpen(false);
       resetUploadForm();
-      alert('Image uploaded successfully!');
+      toast.success('Image uploaded successfully!');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.message || error.response?.data?.error || 'Failed to upload image');
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to upload image');
     },
   });
 
@@ -87,10 +88,10 @@ export default function GalleryPage() {
       queryClient.invalidateQueries({ queryKey: ['gallery-images'] });
       setIsEditModalOpen(false);
       setSelectedImage(null);
-      alert('Image updated successfully!');
+      toast.success('Image updated successfully!');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.message || error.response?.data?.error || 'Failed to update image');
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to update image');
     },
   });
 
@@ -98,10 +99,10 @@ export default function GalleryPage() {
     mutationFn: (id: string) => api.gallery.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gallery-images'] });
-      alert('Image deleted successfully!');
+      toast.success('Image deleted successfully!');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.message || 'Failed to delete image');
+      toast.error(error.response?.data?.message || 'Failed to delete image');
     },
   });
 

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PricingRule } from '@/types';
+import { toast } from 'sonner';
 
 interface PricingRuleModalProps {
   isOpen: boolean;
@@ -64,13 +65,14 @@ export default function PricingRuleModal({
       queryClient.invalidateQueries({ queryKey: ['pricing-rules'] });
       handleClose();
       if (onSuccess) onSuccess();
+      toast.success('Pricing rule created');
     },
     onError: (error: any) => {
       const errorData = error.response?.data;
       if (errorData && typeof errorData === 'object') {
         setFormErrors(errorData);
       } else {
-        alert(errorData?.message || 'Failed to create pricing rule');
+        toast.error(errorData?.message || 'Failed to create pricing rule');
       }
     },
   });
@@ -82,13 +84,14 @@ export default function PricingRuleModal({
       queryClient.invalidateQueries({ queryKey: ['pricing-rules'] });
       handleClose();
       if (onSuccess) onSuccess();
+      toast.success('Pricing rule updated');
     },
     onError: (error: any) => {
       const errorData = error.response?.data;
       if (errorData && typeof errorData === 'object') {
         setFormErrors(errorData);
       } else {
-        alert(errorData?.message || 'Failed to update pricing rule');
+        toast.error(errorData?.message || 'Failed to update pricing rule');
       }
     },
   });

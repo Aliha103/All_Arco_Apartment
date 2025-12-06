@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils';
 import { Invoice } from '@/types';
+import { toast } from 'sonner';
 
 export default function InvoiceDetailPage() {
   const params = useParams();
@@ -45,7 +46,7 @@ export default function InvoiceDetailPage() {
       a.download = `${invoice.invoice_number}.pdf`;
       a.click();
     } catch (error) {
-      alert('Failed to download PDF');
+      toast.error('Failed to download PDF');
     }
   };
 
@@ -54,10 +55,10 @@ export default function InvoiceDetailPage() {
     mutationFn: () => api.invoices.sendEmail(invoiceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
-      alert('Invoice email sent successfully');
+      toast.success('Invoice email sent successfully');
     },
     onError: () => {
-      alert('Failed to send email');
+      toast.error('Failed to send email');
     },
   });
 

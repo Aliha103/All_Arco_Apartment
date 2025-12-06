@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/utils';
 import { Role, Permission } from '@/types';
+import { toast } from 'sonner';
 
 export default function TeamPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -89,10 +90,10 @@ export default function TeamPage() {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       setIsInviteModalOpen(false);
       setInviteFormData({ email: '', first_name: '', last_name: '', assigned_role_id: '' });
-      alert('Team member invited successfully. Invitation email sent.');
+      toast.success('Team member invited successfully. Invitation email sent.');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.message || 'Failed to invite team member');
+      toast.error(error.response?.data?.message || 'Failed to invite team member');
     },
   });
 
@@ -102,7 +103,10 @@ export default function TeamPage() {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       setIsEditModalOpen(false);
       setSelectedMember(null);
-      alert('Team member updated successfully');
+      toast.success('Team member updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to update team member');
     },
   });
 
@@ -110,7 +114,10 @@ export default function TeamPage() {
     mutationFn: (id: string) => api.users.team.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      alert('Team member removed successfully');
+      toast.success('Team member removed successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to remove team member');
     },
   });
 
@@ -121,7 +128,10 @@ export default function TeamPage() {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsRoleModalOpen(false);
       setRoleFormData({ name: '', description: '' });
-      alert('Role created successfully');
+      toast.success('Role created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to create role');
     },
   });
 
@@ -131,7 +141,10 @@ export default function TeamPage() {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsRoleModalOpen(false);
       setSelectedRole(null);
-      alert('Role updated successfully');
+      toast.success('Role updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to update role');
     },
   });
 
@@ -139,7 +152,10 @@ export default function TeamPage() {
     mutationFn: (id: string) => api.users.roles.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      alert('Role deleted successfully');
+      toast.success('Role deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to delete role');
     },
   });
 
@@ -151,7 +167,10 @@ export default function TeamPage() {
       setIsPermissionModalOpen(false);
       setSelectedRole(null);
       setSelectedPermissions([]);
-      alert('Permissions updated successfully');
+      toast.success('Permissions updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to update permissions');
     },
   });
 

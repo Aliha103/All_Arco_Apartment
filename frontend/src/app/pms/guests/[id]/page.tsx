@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils';
 import { User, Booking } from '@/types';
+import { toast } from 'sonner';
 
 interface GuestNote {
   id: string;
@@ -64,9 +65,10 @@ export default function GuestDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['guest-notes', guestId] });
       setIsAddNoteModalOpen(false);
       setNewNote('');
+      toast.success('Note added');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.message || 'Failed to add note');
+      toast.error(error.response?.data?.message || 'Failed to add note');
     },
   });
 
