@@ -308,7 +308,11 @@ function BookingPageContent() {
               )}
 
               {step === 'guest' && (
-                <form onSubmit={handleSubmitBooking} className="space-y-5">
+                <form
+                  onSubmit={handleSubmitBooking}
+                  className="space-y-5"
+                  aria-busy={createBooking.isPending || createCheckout.isPending}
+                >
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="guest_name" className="text-white/80">Full Name</Label>
@@ -328,7 +332,11 @@ function BookingPageContent() {
                         type="email"
                         placeholder="you@example.com"
                         value={guestInfo.guest_email}
-                        onChange={(e) => setGuestInfo({ ...guestInfo, guest_email: e.target.value })}
+                        onChange={(e) =>
+                          !createBooking.isPending &&
+                          !createCheckout.isPending &&
+                          setGuestInfo({ ...guestInfo, guest_email: e.target.value })
+                        }
                         required
                         className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
                       />
@@ -343,7 +351,11 @@ function BookingPageContent() {
                         type="tel"
                         placeholder="+39 123 456 7890"
                         value={guestInfo.guest_phone}
-                        onChange={(e) => setGuestInfo({ ...guestInfo, guest_phone: e.target.value })}
+                        onChange={(e) =>
+                          !createBooking.isPending &&
+                          !createCheckout.isPending &&
+                          setGuestInfo({ ...guestInfo, guest_phone: e.target.value })
+                        }
                         required
                         className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
                       />
@@ -362,7 +374,11 @@ function BookingPageContent() {
                       id="special_requests"
                       placeholder="Late check-in, allergies, anniversary notes…"
                       value={guestInfo.special_requests}
-                      onChange={(e) => setGuestInfo({ ...guestInfo, special_requests: e.target.value })}
+                      onChange={(e) =>
+                        !createBooking.isPending &&
+                        !createCheckout.isPending &&
+                        setGuestInfo({ ...guestInfo, special_requests: e.target.value })
+                      }
                       className="bg-white/5 border-white/10 text-white placeholder:text-white/40 min-h-[120px]"
                     />
                   </div>
