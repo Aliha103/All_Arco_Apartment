@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -177,8 +177,40 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
   }
 
   // Filter navigation based on permissions
-  const filteredNav = navigation.filter(
-    (item) => !item.permission || hasPermission(item.permission)
+  const filteredNav = useMemo(
+    () => navigation.filter((item) => !item.permission || hasPermission(item.permission)),
+    [hasPermission]
+  );
+
+  const navItems = useMemo(
+    () =>
+      filteredNav.map((item, index) => {
+        const isActive = pathname === item.href;
+        const Icon = item.icon;
+        return (
+          <motion.div
+            key={item.href}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05, duration: 0.3 }}
+          >
+            <Link
+              href={item.href}
+              className={`flex items-center ${
+                isSidebarCollapsed ? 'justify-center px-2.5' : 'gap-2.5 px-3.5'
+              } py-2 rounded-lg text-sm font-medium transition-all ${
+                isActive
+                  ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white shadow-lg shadow-[#C4A572]/30'
+                  : 'text-gray-700 hover:bg-gray-100 hover:translate-x-1'
+              }`}
+            >
+              <Icon className="w-5 h-5 flex-shrink-0" />
+              {isSidebarCollapsed ? <span className="sr-only">{item.name}</span> : item.name}
+            </Link>
+          </motion.div>
+        );
+      }),
+    [filteredNav, isSidebarCollapsed, pathname]
   );
 
   const roleLabel = user.role_info?.name || 'Team Member';
@@ -407,34 +439,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
           className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-16' : 'w-40'} bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem] transition-[width] duration-300 ease-out`}
         >
           <nav className="p-2 space-y-0.5 flex-1 overflow-y-auto">
-            {filteredNav.map((item, index) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={item.href}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05, duration: 0.3 }}
-                >
-                  <Link
-                    href={item.href}
-                    className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-2.5' : 'gap-2.5 px-3.5'} py-2 rounded-lg text-sm font-medium transition-all ${
-                      isActive
-                        ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white shadow-lg shadow-[#C4A572]/30'
-                        : 'text-gray-700 hover:bg-gray-100 hover:translate-x-1'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    {isSidebarCollapsed ? (
-                      <span className="sr-only">{item.name}</span>
-                    ) : (
-                      item.name
-                    )}
-                  </Link>
-                </motion.div>
-              );
-            })}
+            {navItems}
           </nav>
           <div className="p-2 border-t border-gray-100 sticky bottom-0 bg-white">
             <button
