@@ -280,7 +280,8 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             if os.path.exists(logo_path):
                 try:
-                    logo_element = Image(logo_path, width=4*cm, height=1.5*cm)
+                    # Preserve aspect ratio by only specifying width
+                    logo_element = Image(logo_path, width=3.5*cm)
                 except Exception as e:
                     logger.error(f"Error loading logo: {str(e)}")
                     logo_element = Paragraph("""
