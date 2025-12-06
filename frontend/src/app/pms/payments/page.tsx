@@ -476,7 +476,7 @@ export default function PaymentsPage() {
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 <AnimatePresence mode="popLayout">
                   {filteredPayments.map((payment, index) => (
                     <PaymentCard
@@ -548,16 +548,16 @@ function PaymentCard({
   const isOverdue = payment.status === 'overdue';
 
   // Status-based styling
-  const getBorderColor = () => {
+  const getAccent = () => {
     switch (payment.status) {
       case 'overdue':
-        return 'border-l-red-500';
+        return 'from-red-50 to-white border-red-100';
       case 'pending':
-        return 'border-l-yellow-500';
+        return 'from-amber-50 to-white border-amber-100';
       case 'paid':
-        return 'border-l-green-500';
+        return 'from-emerald-50 to-white border-emerald-100';
       default:
-        return 'border-l-gray-400';
+        return 'from-gray-50 to-white border-gray-100';
     }
   };
 
@@ -569,13 +569,13 @@ function PaymentCard({
       transition={{ duration: 0.3, delay: index * 0.05 }}
       layout
       className={cn(
-        'rounded-lg border border-l-4 hover:shadow-sm transition-all duration-200 bg-white',
-        getBorderColor()
+        'rounded-xl border hover:shadow-md transition-all duration-200 bg-gradient-to-br',
+        getAccent()
       )}
     >
-      <div className="p-5 space-y-4">
+      <div className="p-5 space-y-5 backdrop-blur-sm">
         {/* Header Section */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <h3 className="text-lg font-semibold text-gray-900 truncate">{payment.title}</h3>
@@ -593,7 +593,7 @@ function PaymentCard({
           </div>
 
           {/* Amount */}
-          <div className="flex flex-col items-end">
+          <div className="flex flex-row md:flex-col items-start md:items-end gap-2">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Amount
             </span>
@@ -617,7 +617,7 @@ function PaymentCard({
         </div>
 
         {/* Details Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 border-t border-gray-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-3 border-t border-gray-200">
           <div className="flex items-start gap-2.5">
             <div className="p-1.5 bg-blue-50 rounded border border-blue-100">
               <FileText className="w-3.5 h-3.5 text-blue-600" />
@@ -692,11 +692,11 @@ function PaymentCard({
 
         {/* Actions Section */}
         {isPending && (
-          <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-3 border-t border-gray-200">
             <Button
               onClick={() => onSendEmail(payment)}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
             >
               <Mail className="w-3.5 h-3.5 mr-1.5" />
               Send Email
@@ -705,6 +705,7 @@ function PaymentCard({
               onClick={() => onCopyUrl(payment.payment_url)}
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
             >
               <Copy className="w-3.5 h-3.5 mr-1.5" />
               Copy URL
@@ -713,6 +714,7 @@ function PaymentCard({
               onClick={() => onMarkPaid(payment)}
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
             >
               <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
               Mark as Paid
@@ -721,7 +723,7 @@ function PaymentCard({
               onClick={() => onCancel(payment)}
               variant="outline"
               size="sm"
-              className="ml-auto"
+              className="w-full sm:w-auto sm:ml-auto"
             >
               <Ban className="w-3.5 h-3.5 mr-1.5" />
               Cancel
