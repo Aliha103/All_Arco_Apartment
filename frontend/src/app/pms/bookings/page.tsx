@@ -1080,8 +1080,8 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
                   </Button>
                   <Button
                     onClick={() => router.push(`/pms/bookings/${detailsBooking?.id}`)}
-                    disabled={detailsData && ['checked_out', 'cancelled', 'no_show'].includes(detailsData.status)}
-                    className={`flex-1 sm:flex-none ${detailsData && ['checked_out', 'cancelled', 'no_show'].includes(detailsData.status) ? 'opacity-60' : ''}`}
+                    disabled={detailsData && ['checked_out', 'cancelled'].includes(detailsData.status)}
+                    className={`flex-1 sm:flex-none ${detailsData && ['checked_out', 'cancelled'].includes(detailsData.status) ? 'opacity-60' : ''}`}
                   >
                     Edit
                   </Button>
