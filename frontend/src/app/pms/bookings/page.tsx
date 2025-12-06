@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -342,6 +342,25 @@ export default function BookingsPage() {
   const auditUser = user && (user as any).role_info ? user : null;
   const router = useRouter();
   const debouncedSearch = useDebouncedValue(search, 300);
+  const queryClient = useQueryClient();
+
+  // Cancel booking mutation
+  const cancelBookingMutation = useMutation({
+    mutationFn: (data: { id: string; reason: string }) =>
+      api.bookings.update(data.id, {
+        status: 'cancelled',
+        cancellation_reason: data.reason,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-bookings'] });
+      setCancelBooking(null);
+      setCancelReason('');
+      toast.success('Booking cancelled successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to cancel booking');
+    },
+  });
 
   // Fetch bookings
   const { data: bookings, isLoading, isFetching, refetch } = useQuery({
@@ -1374,15 +1393,17 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
             <Button variant="outline" onClick={() => { setCancelBooking(null); setCancelReason(''); }}>Keep Booking</Button>
             <Button
               variant="destructive"
-              disabled={!cancelReason.trim()}
+              disabled={!cancelReason.trim() || cancelBookingMutation.isPending}
               onClick={() => {
-                toast.success('Booking cancelled');
-                setCancelBooking(null);
-                setCancelReason('');
-                refetch();
+                if (cancelBooking) {
+                  cancelBookingMutation.mutate({
+                    id: cancelBooking.id,
+                    reason: cancelReason,
+                  });
+                }
               }}
             >
-              Confirm Cancellation
+              {cancelBookingMutation.isPending ? 'Cancelling...' : 'Confirm Cancellation'}
             </Button>
           </DialogFooter>
         </DialogContent>
