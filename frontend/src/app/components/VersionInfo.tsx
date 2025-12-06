@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Search } from 'lucide-react';
+import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Search, ChevronRight } from 'lucide-react';
 
 const APP_VERSION = '1.1.6';
 
