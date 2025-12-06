@@ -4,9 +4,21 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HelpCircle, X, Sparkles, Calendar, Shield, Globe, Search } from 'lucide-react';
 
-const APP_VERSION = '1.1.5';
+const APP_VERSION = '1.1.6';
 
 const updates = [
+  {
+    version: '1.1.6',
+    date: 'December 2025',
+    icon: ChevronRight,
+    title: 'PMS UI refinements',
+    changes: [
+      'Collapsible PMS sidebar with sticky toggle for more workspace',
+      'Fixed booking detail render order to prevent React hook errors',
+      'Version helper moved to bottom-right for consistent visibility',
+      'Build stability: added missing PostCSS plugin',
+    ],
+  },
   {
     version: '1.1.5',
     date: 'November 2025',
