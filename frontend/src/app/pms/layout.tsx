@@ -100,7 +100,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, isTeamMember, router]);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click and handle Escape key
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -117,11 +117,12 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [setDropdownOpen, setMobileMenuOpen]);
 
   // Lock body scroll when mobile menu open
   useEffect(() => {
