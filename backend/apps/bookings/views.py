@@ -198,15 +198,18 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         old_status = booking.status
 
+        # Prepare extra fields for save
+        save_kwargs = {}
+
         # Handle cancellation
         if 'status' in serializer.validated_data and serializer.validated_data['status'] == 'cancelled':
             if old_status != 'cancelled':
                 # Set cancelled_at timestamp
-                serializer.validated_data['cancelled_at'] = timezone.now()
+                save_kwargs['cancelled_at'] = timezone.now()
 
-                # Check if refund should be issued
+                # Check if refund should be issued (comes from frontend)
                 issue_refund = self.request.data.get('issue_refund', False)
-                serializer.validated_data['issue_refund'] = issue_refund
+                save_kwargs['issue_refund'] = issue_refund
 
                 # TODO: If issue_refund is True, trigger refund processing
                 # This would typically involve:
@@ -215,8 +218,8 @@ class BookingViewSet(viewsets.ModelViewSet):
                 # 3. Updating payment status to 'refunded'
                 # For now, we just store the flag in the database
 
-        # Save the updated booking
-        updated_booking = serializer.save()
+        # Save the updated booking with extra fields
+        updated_booking = serializer.save(**save_kwargs)
 
         # If status changed to checked_out, mark referral credits as earned
         if old_status != 'checked_out' and updated_booking.status == 'checked_out':

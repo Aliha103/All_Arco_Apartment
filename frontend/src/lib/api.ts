@@ -268,6 +268,19 @@ export const api = {
       toggleComplete: (id: string) => apiClient.post(`/cleaning/tasks/${id}/toggle_complete/`),
     },
   },
+
+  // Expense Management
+  expenses: {
+    list: (params?: any) => apiClient.get('/expenses/', { params }),
+    get: (id: string) => apiClient.get(`/expenses/${id}/`),
+    create: (data: any) => apiClient.post('/expenses/', data),
+    update: (id: string, data: any) => apiClient.patch(`/expenses/${id}/`, data),
+    delete: (id: string) => apiClient.delete(`/expenses/${id}/`),
+    approve: (id: string) => apiClient.post(`/expenses/${id}/approve/`),
+    reject: (id: string, reason?: string) =>
+      apiClient.post(`/expenses/${id}/reject/`, { reason }),
+    statistics: () => apiClient.get('/expenses/statistics/'),
+  },
 };
 
 export default api;
