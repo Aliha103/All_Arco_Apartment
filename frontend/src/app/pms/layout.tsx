@@ -401,7 +401,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2, ease: smoothEase }}
-          className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-16' : 'w-56'} bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem] transition-[width] duration-300 ease-out`}
+          className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-16' : 'w-30'} bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem] transition-[width] duration-300 ease-out`}
         >
           <nav className="p-2 space-y-0.5 flex-1 overflow-y-auto">
             {filteredNav.map((item, index) => {
