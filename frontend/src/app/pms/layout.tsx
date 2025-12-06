@@ -92,9 +92,12 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     // Only perform auth checks after component is mounted to prevent flash during hydration
     if (!isMounted) return;
 
-    if (!isLoading && (!user || !isTeamMember())) {
+    // Wait for auth to complete before making any decisions
+    if (isLoading) return;
+
+    if (!user || !isTeamMember()) {
       router.push('/auth/login');
-    } else if (!isLoading && user && isTeamMember()) {
+    } else {
       // Log successful PMS access for security audit
       logPMSAccess(user);
     }
@@ -138,19 +141,45 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     };
   }, [mobileMenuOpen]);
 
-  // Show loading until mounted and auth is complete
-  if (!isMounted || isLoading || !user || !isTeamMember()) {
+  // Show loading screen during authentication and initial mount
+  // This prevents flash of login page on refresh
+  if (!isMounted || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
+          className="flex flex-col items-center gap-4"
         >
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 border-4 border-[#C4A572] border-t-transparent rounded-full animate-spin" />
-            <p className="text-gray-600">Loading PMS...</p>
+          <div className="relative">
+            {/* Outer ring */}
+            <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
+            {/* Spinning ring */}
+            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-[#C4A572] border-t-transparent rounded-full animate-spin"></div>
           </div>
+          <div className="text-center">
+            <p className="text-lg font-semibold text-gray-900">Loading PMS</p>
+            <p className="text-sm text-gray-500 mt-1">Verifying authentication...</p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // If auth is complete and user is not authorized, don't render anything
+  // The useEffect will handle the redirect
+  if (!user || !isTeamMember()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="w-16 h-16 border-4 border-[#C4A572] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
         </motion.div>
       </div>
     );
