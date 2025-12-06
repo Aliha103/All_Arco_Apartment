@@ -573,7 +573,9 @@ const canUndoCheckOut = detailsData && detailsData.status === 'checked_out';
       toast.warning(`Payment pending: ${formatCurrency(balanceDue)} due.`);
       setBalanceWarned(true);
     }
-}, [detailsData, hasOpenBalance, balanceDue, balanceWarned]);
+    // balanceWarned removed from deps to prevent infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailsData, hasOpenBalance, balanceDue]);
 
   return (
     <>
