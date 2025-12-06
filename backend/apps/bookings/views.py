@@ -361,7 +361,6 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             # Booking details in elegant boxes
             left_html = f'<b><font size=10 color=#A68B5B>BOOKING DETAILS</font></b><br/>'
-            left_html += f'<font size=9><b>Booking ID:</b> {booking.booking_id}</font><br/>'
             left_html += f'<font size=9><b>Created:</b> {booking.created_at.strftime("%B %d, %Y")}</font><br/>'
             left_html += f'<font size=9><b>Source:</b> {booking.booking_source.replace("_", " ").title() if booking.booking_source else "Direct"}</font><br/>'
             left_html += f'<br/><b><font size=10 color=#A68B5B>GUEST INFORMATION</font></b><br/>'
