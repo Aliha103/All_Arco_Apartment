@@ -626,7 +626,7 @@ export default function PMSDashboard() {
   const apartment = dashboardData?.apartment || { is_occupied: false, guest_count: 0 };
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-8">
+    <div className="space-y-3 sm:space-y-4 pb-6">
       {/* Personalized Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -701,7 +701,7 @@ export default function PMSDashboard() {
       </motion.div>
 
       {/* Main Grid Layout */}
-      <div className="grid lg:grid-cols-12 xl:grid-cols-12 gap-4 sm:gap-6">
+      <div className="grid lg:grid-cols-12 xl:grid-cols-12 gap-4">
         {/* Left Column - Main Content (8 columns on lg, 9 on xl) */}
         <div className="lg:col-span-8 xl:col-span-9 space-y-4 sm:space-y-6">
           {/* Key Performance Indicators */}
@@ -856,20 +856,20 @@ export default function PMSDashboard() {
             transition={{ duration: 0.5, delay: 0.48 }}
             className="w-full max-w-full"
           >
-            <Card className="border border-gray-200 shadow w-full overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
-                    <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
+              <Card className="border border-gray-200 shadow w-full overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-2.5 px-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
+                      <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base text-gray-900 truncate">Revenue Trend (Last 30 Days)</CardTitle>
+                      <CardDescription className="text-xs font-medium text-gray-800 truncate">Daily revenue performance</CardDescription>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base text-gray-900 truncate">Revenue Trend (Last 30 Days)</CardTitle>
-                    <CardDescription className="text-xs font-medium text-gray-800 truncate">Daily revenue performance</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 overflow-hidden">
-                <ResponsiveContainer width="100%" height={250} minWidth={0}>
+                </CardHeader>
+              <CardContent className="p-3 overflow-hidden">
+                <ResponsiveContainer width="100%" height={220} minWidth={0}>
                   <AreaChart data={revenueData}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -915,7 +915,7 @@ export default function PMSDashboard() {
               className="w-full max-w-full"
             >
               <Card className="border border-gray-200 shadow w-full h-full overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-2.5 px-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
                       <Activity className="w-5 h-5" style={{ color: COLORS.primary }} />
@@ -926,8 +926,8 @@ export default function PMSDashboard() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4 overflow-hidden">
-                  <ResponsiveContainer width="100%" height={250} minWidth={0}>
+                <CardContent className="p-3 overflow-hidden">
+                  <ResponsiveContainer width="100%" height={220} minWidth={0}>
                     <LineChart data={occupancyTrendData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
@@ -989,7 +989,7 @@ export default function PMSDashboard() {
               className="w-full max-w-full"
             >
               <Card className="border border-gray-200 shadow w-full h-full overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-2.5 px-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
                       <Users className="w-5 h-5" style={{ color: COLORS.primary }} />
@@ -1000,8 +1000,8 @@ export default function PMSDashboard() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4 overflow-hidden">
-                  <ResponsiveContainer width="100%" height={250} minWidth={0}>
+                <CardContent className="p-3 overflow-hidden">
+                  <ResponsiveContainer width="100%" height={220} minWidth={0}>
                     <AreaChart data={guestTrendData}>
                       <defs>
                         <linearGradient id="colorGuests" x1="0" y1="0" x2="0" y2="1">
@@ -1049,7 +1049,7 @@ export default function PMSDashboard() {
             className="w-full"
           >
             <Card className="border border-gray-200 shadow w-full overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-3 px-4">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 py-2.5 px-3">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-[#C4A572]/10 flex-shrink-0">
                     <BarChart3 className="w-5 h-5" style={{ color: COLORS.primary }} />
@@ -1060,8 +1060,8 @@ export default function PMSDashboard() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 overflow-hidden">
-                <ResponsiveContainer width="100%" height={260} minWidth={0}>
+              <CardContent className="p-3 overflow-hidden">
+                <ResponsiveContainer width="100%" height={230} minWidth={0}>
                   <BarChart data={bookingCancelTrend} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="2 4" stroke="#E5E7EB" vertical={false} />
                     <XAxis
