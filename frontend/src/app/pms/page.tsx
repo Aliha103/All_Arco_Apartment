@@ -499,7 +499,10 @@ export default function PMSDashboard() {
     const byMonth: Record<string, number> = {};
     months.forEach((m) => (byMonth[m.key] = 0));
 
+    const activeStatuses = new Set(['confirmed', 'paid', 'checked_in', 'checked_out', 'pending']);
     bookingsArray.forEach((b: any) => {
+      const status = (b.status || '').toLowerCase();
+      if (!activeStatuses.has(status)) return; // skip cancelled / no_show so guests match real arrivals
       const monthKey = format(startOfMonth(new Date(b.check_in_date)), 'yyyy-MM');
       if (monthKey in byMonth) {
         byMonth[monthKey] += Number(b.number_of_guests || b.guests || 0);
