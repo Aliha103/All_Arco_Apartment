@@ -119,6 +119,27 @@ export default function BookingDetailPage() {
     },
   });
 
+  // Availability check for undo-cancel / undo no-show to avoid overbooking
+  const shouldCheckOverlaps = !!booking && ['cancelled', 'no_show'].includes(booking.status);
+  const { data: overlapBlocked = false } = useQuery({
+    queryKey: ['booking-overlaps', bookingId],
+    queryFn: async () => {
+      if (!booking) return false;
+      const resp = await api.bookings.list({
+        check_in_date_from: booking.check_in_date,
+        check_in_date_to: booking.check_out_date,
+      });
+      const list = resp.data.results || resp.data || [];
+      const overlaps = list.filter(
+        (b: any) =>
+          b.id !== booking.id &&
+          ['pending', 'confirmed', 'paid', 'checked_in'].includes((b.status || '').toLowerCase())
+      );
+      return overlaps.length > 0;
+    },
+    enabled: isClient && shouldCheckOverlaps && !!booking?.check_in_date && !!booking?.check_out_date,
+  });
+
   if (!isClient || isLoading) {
     return (
       <div className="space-y-6">
@@ -155,26 +176,6 @@ export default function BookingDetailPage() {
       : paidAmount > 0
       ? 'partial'
       : 'unpaid';
-
-  // Availability check for undo-cancel / undo no-show to avoid overbooking
-  const shouldCheckOverlaps = ['cancelled', 'no_show'].includes(booking.status);
-  const { data: overlapBlocked = false } = useQuery({
-    queryKey: ['booking-overlaps', bookingId],
-    queryFn: async () => {
-      const resp = await api.bookings.list({
-        check_in_date_from: booking.check_in_date,
-        check_in_date_to: booking.check_out_date,
-      });
-      const list = resp.data.results || resp.data || [];
-      const overlaps = list.filter(
-        (b: any) =>
-          b.id !== booking.id &&
-          ['pending', 'confirmed', 'paid', 'checked_in'].includes((b.status || '').toLowerCase())
-      );
-      return overlaps.length > 0;
-    },
-    enabled: isClient && shouldCheckOverlaps,
-  });
 
   // Actions eligibility
   const hasGuestDetails = Array.isArray((booking as any).guests) && (booking as any).guests.length > 0;
