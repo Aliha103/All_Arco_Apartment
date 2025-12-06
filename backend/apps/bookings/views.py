@@ -361,7 +361,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             if booking.guest_address:
                 left_html += f'<font size=9><b>Address:</b> {booking.guest_address}</font>'
 
-            right_html = f'<b><font size=13 color=#C4A572>{booking.confirmation_code or "—"}</font></b><br/>'
+            right_html = f'<b><font size=13 color=#C4A572>{booking.booking_id or "—"}</font></b><br/>'
             right_html += f'<br/><b><font size=10 color=#A68B5B>STAY DATES</font></b><br/>'
             right_html += f'<font size=9><b>Check-in:</b> {booking.check_in_date.strftime("%B %d, %Y")}</font><br/>'
             right_html += f'<font size=9><b>Check-out:</b> {booking.check_out_date.strftime("%B %d, %Y")}</font><br/>'
