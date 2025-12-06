@@ -67,7 +67,6 @@ export default function BookingFormModal({ isOpen, onClose, onSuccess }: Booking
     mutationFn: (data: any) => api.bookings.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['recent-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['booking-stats'] });
       onClose();
       resetForm();

@@ -10,7 +10,7 @@ import {
   MoreHorizontal,
   Eye,
   Check,
-  Clock,
+  Timer,
   X,
   Receipt,
   TrendingUp,
@@ -77,7 +77,7 @@ const PAYMENT_METHODS = [
 ];
 
 const STATUS_CONFIG = {
-  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Clock },
+  pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', icon: Timer },
   approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-800', icon: Check },
   rejected: { label: 'Rejected', color: 'bg-rose-100 text-rose-800', icon: X },
 };
