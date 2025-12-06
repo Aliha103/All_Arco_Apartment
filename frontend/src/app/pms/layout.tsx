@@ -403,7 +403,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
           transition={{ duration: 0.5, delay: 0.2, ease: smoothEase }}
           className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem] transition-[width] duration-300 ease-out`}
         >
-          <nav className="p-3 space-y-1 flex-1">
+          <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
             {filteredNav.map((item, index) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -433,7 +433,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-          <div className="p-3 border-t border-gray-100">
+          <div className="p-3 border-t border-gray-100 sticky bottom-0 bg-white">
             <button
               onClick={() => setIsSidebarCollapsed((prev) => !prev)}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
