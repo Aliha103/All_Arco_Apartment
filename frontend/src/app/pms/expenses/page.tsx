@@ -584,7 +584,7 @@ export default function ExpensesPage() {
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g., Electricity - December 2024"
                     required
-                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572]"
+                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
                   />
                 </div>
 
@@ -594,7 +594,7 @@ export default function ExpensesPage() {
                     value={formData.category}
                     onValueChange={(value) => setFormData({ ...formData, category: value })}
                   >
-                    <SelectTrigger className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572]">
+                    <SelectTrigger className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -618,7 +618,7 @@ export default function ExpensesPage() {
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                     placeholder="0.00"
                     required
-                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572]"
+                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
                   />
                 </div>
 
@@ -630,7 +630,7 @@ export default function ExpensesPage() {
                     value={formData.expense_date}
                     onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
                     required
-                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572]"
+                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
                   />
                 </div>
 
@@ -640,7 +640,7 @@ export default function ExpensesPage() {
                     value={formData.payment_method}
                     onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
                   >
-                    <SelectTrigger className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572]">
+                    <SelectTrigger className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -660,7 +660,7 @@ export default function ExpensesPage() {
                     value={formData.vendor}
                     onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
                     placeholder="e.g., Venice Water Company"
-                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572]"
+                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
                   />
                 </div>
 
@@ -672,7 +672,7 @@ export default function ExpensesPage() {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Additional notes about this expense..."
                     rows={3}
-                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572]"
+                    className="mt-1.5 border-gray-300 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
                   />
                 </div>
               </div>
