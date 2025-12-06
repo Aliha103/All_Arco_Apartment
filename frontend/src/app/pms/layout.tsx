@@ -7,7 +7,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { logPMSAccess } from '@/lib/auditLogger';
 import {
   LayoutDashboard,
@@ -36,6 +36,8 @@ import type { LucideIcon } from 'lucide-react';
 
 // Smooth easing
 const smoothEase = [0.22, 1, 0.36, 1] as const;
+// Alias to keep existing motion.* usage while using LazyMotion for smaller bundles
+const motion = m;
 
 interface NavigationItem {
   name: string;
@@ -182,14 +184,15 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
   const roleLabel = user.role_info?.name || 'Team Member';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Professional Header - Matching Homepage */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: smoothEase }}
-        className={`
-          fixed top-0 left-0 right-0 z-50
+    <LazyMotion features={domAnimation}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Professional Header - Matching Homepage */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: smoothEase }}
+          className={`
+            fixed top-0 left-0 right-0 z-50
           transition-all duration-500 ease-out
           ${isScrolled
             ? 'bg-white/98 backdrop-blur-xl shadow-lg shadow-black/5'
@@ -327,7 +330,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
-      </motion.header>
+        </motion.header>
 
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
@@ -401,7 +404,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2, ease: smoothEase }}
-          className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-16' : 'w-30'} bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem] transition-[width] duration-300 ease-out`}
+          className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-16' : 'w-40'} bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem] transition-[width] duration-300 ease-out`}
         >
           <nav className="p-2 space-y-0.5 flex-1 overflow-y-auto">
             {filteredNav.map((item, index) => {
@@ -465,6 +468,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
           </motion.div>
         </main>
       </div>
-    </div>
+      </div>
+    </LazyMotion>
   );
 }

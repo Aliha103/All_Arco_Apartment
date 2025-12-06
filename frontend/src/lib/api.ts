@@ -21,13 +21,17 @@ let csrfToken: string | null = null;
 
 export const getCSRFToken = (): string | null => {
   if (typeof document === 'undefined') return null;
-
-  const cookieValue = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('csrftoken='))
-    ?.split('=')[1];
-
-  return cookieValue || null;
+  try {
+    const cookieValue = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith('csrftoken='))
+      ?.split('=')[1];
+    return cookieValue || null;
+  } catch (error) {
+    // Malformed cookies or inaccessible document.cookie
+    console.warn('CSRF token unavailable', error);
+    return null;
+  }
 };
 
 // Request interceptor to add CSRF token
