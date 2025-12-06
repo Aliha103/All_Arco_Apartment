@@ -220,127 +220,316 @@ class BookingViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='download-pdf')
     def download_pdf(self, request, pk=None):
         """
-        Generate and download booking confirmation PDF.
+        Generate and download professional booking confirmation PDF with logo.
         """
+        import os
         from django.http import HttpResponse
         from io import BytesIO
-        from weasyprint import HTML
-        from django.template.loader import render_to_string
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib import colors
+        from reportlab.lib.units import cm
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
+        from django.conf import settings
 
         booking = self.get_object()
 
-        # Prepare context for template
-        context = {
-            'booking': booking,
-            'company': {
-                'name': "All'Arco Apartment",
-                'address': "Via Castellana 61, 30125 Venice, Italy",
-                'email': 'support@allarcoapartment.com',
-                'website': 'www.allarcoapartment.com',
-            },
-        }
+        # Create PDF buffer
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=2.5*cm,
+            leftMargin=2.5*cm,
+            topMargin=1.5*cm,
+            bottomMargin=2*cm
+        )
 
-        # Simple HTML template for booking PDF
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>Booking Confirmation - {booking.booking_id}</title>
-            <style>
-                @page {{ size: A4; margin: 2cm; }}
-                body {{ font-family: Arial, sans-serif; font-size: 11pt; color: #333; }}
-                .header {{ text-align: center; margin-bottom: 30px; border-bottom: 2px solid #C4A572; padding-bottom: 20px; }}
-                .company-name {{ font-size: 24pt; font-weight: bold; color: #C4A572; }}
-                .title {{ font-size: 18pt; margin-top: 20px; }}
-                .section {{ margin: 20px 0; }}
-                .label {{ font-weight: bold; color: #666; }}
-                table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
-                th, td {{ padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }}
-                th {{ background-color: #f5f5f5; font-weight: bold; }}
-                .total {{ font-size: 14pt; font-weight: bold; color: #C4A572; }}
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <div class="company-name">ALL'ARCO APARTMENT</div>
-                <div>{context['company']['address']}</div>
-                <div>{context['company']['email']} | {context['company']['website']}</div>
-            </div>
+        elements = []
+        styles = getSampleStyleSheet()
 
-            <div class="title">BOOKING CONFIRMATION</div>
+        # Professional color palette (matching invoice design)
+        gold = colors.HexColor('#C4A572')
+        dark_gold = colors.HexColor('#A68B5B')
+        light_cream = colors.HexColor('#FDFAF5')
+        dark_gray = colors.HexColor('#333333')
+        medium_gray = colors.HexColor('#666666')
+        light_gray = colors.HexColor('#F8F8F8')
+        soft_cream = colors.HexColor('#FAF8F3')
+        success_green = colors.HexColor('#4CAF50')
 
-            <div class="section">
-                <p><span class="label">Booking ID:</span> {booking.booking_id}</p>
-                <p><span class="label">Status:</span> {booking.status.replace('_', ' ').title()}</p>
-            </div>
+        # Custom styles
+        title_style = ParagraphStyle(
+            'DocTitle',
+            parent=styles['Heading1'],
+            fontSize=28,
+            textColor=gold,
+            spaceAfter=2,
+            fontName='Helvetica-Bold',
+            letterSpacing=1
+        )
 
-            <div class="section">
-                <h3>Guest Information</h3>
-                <p><span class="label">Name:</span> {booking.guest_name}</p>
-                <p><span class="label">Email:</span> {booking.guest_email}</p>
-                <p><span class="label">Phone:</span> {booking.guest_phone}</p>
-                {f'<p><span class="label">Country:</span> {booking.guest_country}</p>' if booking.guest_country else ''}
-            </div>
+        # Header with logo and title
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'allarco-logo.png')
+        logo_element = Paragraph("", styles['Normal'])
 
-            <div class="section">
-                <h3>Booking Details</h3>
-                <p><span class="label">Check-in:</span> {booking.check_in_date.strftime('%B %d, %Y')}</p>
-                <p><span class="label">Check-out:</span> {booking.check_out_date.strftime('%B %d, %Y')}</p>
-                <p><span class="label">Nights:</span> {booking.nights}</p>
-                <p><span class="label">Guests:</span> {booking.guests}</p>
-            </div>
+        if os.path.exists(logo_path):
+            try:
+                logo_element = Image(logo_path, width=4*cm, height=1.5*cm)
+            except Exception:
+                logo_element = Paragraph("""
+                    <para align=center>
+                        <b><font size=16 color=#C4A572>ALL'ARCO<br/>APARTMENT</font></b>
+                    </para>""", styles['Normal'])
 
-            <div class="section">
-                <h3>Pricing</h3>
-                <table>
-                    <tr>
-                        <th>Description</th>
-                        <th>Qty</th>
-                        <th>Unit Price</th>
-                        <th>Amount</th>
-                    </tr>
-                    <tr>
-                        <td>Accommodation</td>
-                        <td>1</td>
-                        <td>EUR {booking.nightly_rate or 0:.2f}</td>
-                        <td>EUR {float(booking.nightly_rate or 0) * booking.nights:.2f}</td>
-                    </tr>
-                    <tr>
-                        <td>Cleaning Fee</td>
-                        <td>1</td>
-                        <td>EUR {booking.cleaning_fee or 0:.2f}</td>
-                        <td>EUR {booking.cleaning_fee or 0:.2f}</td>
-                    </tr>
-                    <tr>
-                        <td>City Tax (Venice)</td>
-                        <td>{booking.guests}</td>
-                        <td>EUR {float(booking.tourist_tax or 0) / max(booking.guests, 1):.2f}</td>
-                        <td>EUR {booking.tourist_tax or 0:.2f}</td>
-                    </tr>
-                </table>
-                <p style="text-align: right; margin-top: 20px;">
-                    <span class="total">TOTAL: EUR {booking.total_price:.2f}</span>
-                </p>
-            </div>
+        header_data = [[
+            Paragraph("BOOKING CONFIRMATION", title_style),
+            logo_element
+        ]]
 
-            {f'<div class="section"><h3>Special Requests</h3><p>{booking.special_requests}</p></div>' if booking.special_requests else ''}
+        header_table = Table(header_data, colWidths=[11*cm, 5*cm])
+        header_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('RIGHTPADDING', (1, 0), (1, 0), 20),
+        ]))
+        elements.append(header_table)
 
-            <div class="section" style="margin-top: 40px; font-size: 9pt; color: #666; text-align: center;">
-                <p>Thank you for choosing All'Arco Apartment Venice</p>
-                <p>{context['company']['website']}</p>
-            </div>
-        </body>
-        </html>
-        """
+        # Decorative line
+        line_data = [['']]
+        line_table = Table(line_data, colWidths=[16*cm])
+        line_table.setStyle(TableStyle([
+            ('LINEBELOW', (0, 0), (-1, 0), 2, gold),
+            ('TOPPADDING', (0, 0), (-1, 0), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ]))
+        elements.append(line_table)
+        elements.append(Spacer(1, 6))
 
-        # Generate PDF
-        pdf_file = BytesIO()
-        HTML(string=html_content).write_pdf(pdf_file)
-        pdf_file.seek(0)
+        # Status badge
+        status_display = booking.status.replace('_', ' ').title()
+        status_color = success_green if booking.status == 'confirmed' else (gold if booking.status == 'pending' else medium_gray)
+
+        status_badge_style = ParagraphStyle(
+            'StatusBadge',
+            parent=styles['Normal'],
+            fontSize=9,
+            fontName='Helvetica-Bold',
+            textColor=colors.white,
+            alignment=TA_RIGHT,
+            letterSpacing=1
+        )
+
+        status_para = Paragraph(status_display.upper(), status_badge_style)
+        status_table = Table([[status_para]], colWidths=[3*cm])
+        status_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), status_color),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('ROUNDEDCORNERS', [3, 3, 3, 3]),
+        ]))
+
+        badge_wrapper = Table([[None, status_table]], colWidths=[13*cm, 3*cm])
+        badge_wrapper.setStyle(TableStyle([
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        elements.append(badge_wrapper)
+        elements.append(Spacer(1, 10))
+
+        # Booking details in elegant boxes
+        left_html = f'<b><font size=10 color=#A68B5B>BOOKING DETAILS</font></b><br/>'
+        left_html += f'<font size=9><b>Booking ID:</b> {booking.booking_id}</font><br/>'
+        left_html += f'<font size=9><b>Created:</b> {booking.created_at.strftime("%B %d, %Y")}</font><br/>'
+        left_html += f'<font size=9><b>Source:</b> {booking.source.title() if booking.source else "Direct"}</font><br/>'
+        left_html += f'<br/><b><font size=10 color=#A68B5B>GUEST INFORMATION</font></b><br/>'
+        left_html += f'<font size=9><b>Name:</b> {booking.guest_name}</font><br/>'
+        left_html += f'<font size=9><b>Email:</b> {booking.guest_email}</font><br/>'
+        if booking.guest_phone:
+            left_html += f'<font size=9><b>Phone:</b> {booking.guest_phone}</font><br/>'
+        if booking.guest_country:
+            left_html += f'<font size=9><b>Country:</b> {booking.guest_country}</font><br/>'
+        if booking.guest_address:
+            left_html += f'<font size=9><b>Address:</b> {booking.guest_address}</font>'
+
+        right_html = f'<b><font size=13 color=#C4A572>{booking.confirmation_code or "—"}</font></b><br/>'
+        right_html += f'<br/><b><font size=10 color=#A68B5B>STAY DATES</font></b><br/>'
+        right_html += f'<font size=9><b>Check-in:</b> {booking.check_in_date.strftime("%B %d, %Y")}</font><br/>'
+        right_html += f'<font size=9><b>Check-out:</b> {booking.check_out_date.strftime("%B %d, %Y")}</font><br/>'
+        right_html += f'<font size=9><b>Nights:</b> {booking.nights}</font><br/>'
+        right_html += f'<font size=9><b>Guests:</b> {booking.guests}</font><br/>'
+        right_html += f'<br/><b><font size=10 color=#A68B5B>PROPERTY</font></b><br/>'
+        right_html += f'<font size=9>ALL\'ARCO APARTMENT</font><br/>'
+        right_html += f'<font size=9>Via Castellana 61</font><br/>'
+        right_html += f'<font size=9>30125 Venice, Italy</font>'
+
+        left_para = Paragraph(left_html, styles['Normal'])
+        right_para = Paragraph(right_html, styles['Normal'])
+
+        two_column_data = [[left_para, right_para]]
+        two_column_table = Table(two_column_data, colWidths=[8*cm, 8*cm])
+        two_column_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, 0), soft_cream),
+            ('BACKGROUND', (1, 0), (1, 0), soft_cream),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#E8E3D5')),
+            ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#E8E3D5')),
+        ]))
+        elements.append(two_column_table)
+        elements.append(Spacer(1, 18))
+
+        # Pricing table
+        table_data = [['Description', 'Qty', 'Unit Price', 'Amount']]
+
+        nightly_total = float(booking.nightly_rate or 0) * booking.nights
+        table_data.append([
+            f'Accommodation ({booking.nights} night{"s" if booking.nights != 1 else ""})',
+            '1',
+            f'EUR {booking.nightly_rate or 0:.2f}',
+            f'EUR {nightly_total:.2f}'
+        ])
+
+        if booking.cleaning_fee:
+            table_data.append([
+                'Cleaning Fee',
+                '1',
+                f'EUR {booking.cleaning_fee:.2f}',
+                f'EUR {booking.cleaning_fee:.2f}'
+            ])
+
+        if booking.tourist_tax:
+            tax_per_guest = float(booking.tourist_tax) / max(booking.guests, 1)
+            table_data.append([
+                'Tourist Tax (Venice)',
+                str(booking.guests),
+                f'EUR {tax_per_guest:.2f}',
+                f'EUR {booking.tourist_tax:.2f}'
+            ])
+
+        # Total row
+        table_data.append(['', '', 'TOTAL', f'EUR {booking.total_price:.2f}'])
+
+        col_widths = [8*cm, 2*cm, 3*cm, 3*cm]
+        pricing_table = Table(table_data, colWidths=col_widths)
+
+        table_style = [
+            # Header row
+            ('BACKGROUND', (0, 0), (-1, 0), gold),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
+            ('LEFTPADDING', (0, 0), (-1, 0), 12),
+            ('RIGHTPADDING', (0, 0), (-1, 0), 12),
+
+            # Data rows
+            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -2), 9),
+            ('TEXTCOLOR', (0, 1), (-1, -2), dark_gray),
+            ('TOPPADDING', (0, 1), (-1, -2), 10),
+            ('BOTTOMPADDING', (0, 1), (-1, -2), 10),
+            ('LEFTPADDING', (0, 1), (-1, -2), 12),
+            ('RIGHTPADDING', (0, 1), (-1, -2), 12),
+
+            # Horizontal lines
+            ('LINEBELOW', (0, 0), (-1, -2), 0.5, colors.HexColor('#E5E5E5')),
+
+            # Total row
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 13),
+            ('TEXTCOLOR', (0, -1), (-1, -1), dark_gray),
+            ('TOPPADDING', (0, -1), (-1, -1), 14),
+            ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+            ('LEFTPADDING', (0, -1), (-1, -1), 12),
+            ('RIGHTPADDING', (0, -1), (-1, -1), 12),
+            ('LINEABOVE', (0, -1), (-1, -1), 2, gold),
+
+            # Alignment
+            ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]
+
+        # Alternating row colors
+        for i in range(1, len(table_data) - 1):
+            if i % 2 == 0:
+                table_style.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor('#FAFAFA')))
+
+        pricing_table.setStyle(TableStyle(table_style))
+        elements.append(pricing_table)
+        elements.append(Spacer(1, 18))
+
+        # Special requests section
+        if booking.special_requests:
+            notes_text = f'<b><font size=9 color=#A68B5B>SPECIAL REQUESTS</font></b><br/><font size=9>{booking.special_requests}</font>'
+            notes_para = Paragraph(notes_text, styles['Normal'])
+
+            notes_table = Table([[notes_para]], colWidths=[16*cm])
+            notes_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), soft_cream),
+                ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#E8E3D5')),
+                ('LEFTPADDING', (0, 0), (-1, -1), 15),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+                ('TOPPADDING', (0, 0), (-1, -1), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ]))
+            elements.append(notes_table)
+            elements.append(Spacer(1, 15))
+
+        # Footer
+        footer_line_data = [['']]
+        footer_line_table = Table(footer_line_data, colWidths=[16*cm])
+        footer_line_table.setStyle(TableStyle([
+            ('LINEABOVE', (0, 0), (-1, 0), 1.5, gold),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ]))
+        elements.append(footer_line_table)
+
+        footer_thanks_style = ParagraphStyle(
+            'FooterThanks',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=dark_gray,
+            alignment=TA_CENTER,
+            spaceAfter=8,
+            fontName='Helvetica-Bold'
+        )
+
+        footer_info_style = ParagraphStyle(
+            'FooterInfo',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=medium_gray,
+            alignment=TA_CENTER,
+            spaceAfter=2,
+            leading=11
+        )
+
+        elements.append(Paragraph("Thank you for choosing All'Arco Apartment Venice", footer_thanks_style))
+        elements.append(Paragraph("www.allarcoapartment.com", footer_info_style))
+        elements.append(Paragraph("Via Castellana 61, 30125 Venice, Italy", footer_info_style))
+        elements.append(Paragraph("Email: support@allarcoapartment.com", footer_info_style))
+
+        # Build PDF
+        doc.build(elements)
 
         # Return PDF response
-        response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+        pdf = buffer.getvalue()
+        buffer.close()
+
+        response = HttpResponse(pdf, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="booking-{booking.booking_id}.pdf"'
         return response
 
