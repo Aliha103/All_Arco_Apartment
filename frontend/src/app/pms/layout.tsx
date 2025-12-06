@@ -21,6 +21,8 @@ import {
   UserCog,
   TrendingUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Menu,
   X,
   User,
@@ -68,6 +70,8 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [hasSessionCookie, setHasSessionCookie] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
 
@@ -82,8 +86,11 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     }
   });
 
-  // Set mounted state to prevent hydration flash
+  // Check for session cookie on mount to enable optimistic rendering
   useEffect(() => {
+    const cookies = document.cookie;
+    const hasSession = cookies.includes('sessionid=');
+    setHasSessionCookie(hasSession);
     setIsMounted(true);
   }, []);
 
@@ -394,9 +401,9 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2, ease: smoothEase }}
-          className="hidden lg:block w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem]"
+          className={`hidden lg:flex flex-col ${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 min-h-[calc(100vh-5rem)] sticky top-[5rem] transition-[width] duration-300 ease-out`}
         >
-          <nav className="p-4 space-y-1">
+          <nav className="p-3 space-y-1 flex-1">
             {filteredNav.map((item, index) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -409,19 +416,42 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
                 >
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-3' : 'gap-3 px-4'} py-3 rounded-lg text-sm font-medium transition-all ${
                       isActive
                         ? 'bg-gradient-to-r from-[#C4A572] to-[#B39562] text-white shadow-lg shadow-[#C4A572]/30'
                         : 'text-gray-700 hover:bg-gray-100 hover:translate-x-1'
                     }`}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />
-                    {item.name}
+                    {isSidebarCollapsed ? (
+                      <span className="sr-only">{item.name}</span>
+                    ) : (
+                      item.name
+                    )}
                   </Link>
                 </motion.div>
               );
             })}
           </nav>
+          <div className="p-3 border-t border-gray-100">
+            <button
+              onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label={isSidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+            >
+              {isSidebarCollapsed ? (
+                <>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="sr-only">Expand</span>
+                </>
+              ) : (
+                <>
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Collapse sidebar</span>
+                </>
+              )}
+            </button>
+          </div>
         </motion.aside>
 
         {/* Main Content */}
