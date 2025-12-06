@@ -247,7 +247,12 @@ class BookingViewSet(viewsets.ModelViewSet):
                 rightMargin=2.5*cm,
                 leftMargin=2.5*cm,
                 topMargin=1.5*cm,
-                bottomMargin=2*cm
+                bottomMargin=2*cm,
+                title=f'Booking Confirmation - {booking.booking_id}',
+                author="All'Arco Apartment Venice",
+                subject='Booking Confirmation',
+                creator="All'Arco Apartment Venice",
+                producer="All'Arco Apartment Venice"
             )
 
             elements = []
