@@ -31,6 +31,7 @@ import {
   Sparkles,
   Shield,
   SprayCan,
+  Receipt,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -53,6 +54,7 @@ const navigation: NavigationItem[] = [
   { name: 'Cleaning', href: '/pms/cleaning', icon: SprayCan, permission: 'cleaning.view' },
   { name: 'Payments', href: '/pms/payments', icon: CreditCard, permission: 'payments.view' },
   { name: 'Invoices', href: '/pms/invoices', icon: FileText, permission: 'payments.view' },
+  { name: 'Expenses', href: '/pms/expenses', icon: Receipt, permission: 'payments.view' },
   { name: 'Guests tree', href: '/pms/guests', icon: Users, permission: 'guests.view' },
   { name: 'Users', href: '/pms/users', icon: User, permission: 'team.view' },
   { name: 'Pricing', href: '/pms/pricing', icon: DollarSign, permission: 'pricing.view' },

@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/gallery/', include('apps.gallery.urls')),
     path('api/alloggiati/', include('apps.alloggiati.urls')),
     path('api/cleaning/', include('apps.cleaning.urls')),
+    path('api/expenses/', include('apps.expenses.urls')),
     path('api/', include('apps.users.urls')),  # For /api/guests/ and /api/team/
 ]
 

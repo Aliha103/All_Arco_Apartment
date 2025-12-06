@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.gallery',
     'apps.alloggiati',
     'apps.cleaning',
+    'apps.expenses',
 ]
 
 MIDDLEWARE = [
