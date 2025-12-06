@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+
+// Force dynamic rendering for this page since it uses useSearchParams
+export const dynamic = 'force-dynamic';
 import { format, isAfter, isValid, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
