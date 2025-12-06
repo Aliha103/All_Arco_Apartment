@@ -329,57 +329,136 @@ export default function PMSDashboard() {
     staleTime: 30000,
   });
 
-  // Generate revenue data for last 30 days (TODO: Replace with real API data)
+  const bookingsArray = useMemo(
+    () => (Array.isArray(bookingsLastYear) ? bookingsLastYear : []),
+    [bookingsLastYear]
+  );
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+
+  // Revenue + bookings per day for the last 30 days from real bookings
   const revenueData = useMemo(() => {
-    const data = [];
-    let baseRevenue = 400;
-    for (let i = 29; i >= 0; i--) {
-      const date = subDays(new Date(), i);
-      // Create smoother data with trending pattern
-      const dayOfWeek = date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const weekendBoost = isWeekend ? 150 : 0;
-      const randomVariation = Math.sin(i / 3) * 80; // Smoother sine wave variation
-      baseRevenue += (Math.random() - 0.5) * 30; // Gradual drift
-      baseRevenue = Math.max(250, Math.min(800, baseRevenue)); // Keep in range
+    const today = new Date();
+    const start = subDays(today, 29);
+    const days: { [key: string]: { date: string; revenue: number; bookings: number } } = {};
 
-      data.push({
-        date: format(date, 'MMM dd'),
-        revenue: Math.floor(baseRevenue + weekendBoost + randomVariation),
-        bookings: Math.floor(Math.random() * 6) + 1,
-      });
+    for (let i = 0; i < 30; i++) {
+      const d = subDays(today, 29 - i);
+      const key = format(d, 'yyyy-MM-dd');
+      days[key] = { date: format(d, 'MMM dd'), revenue: 0, bookings: 0 };
     }
-    return data;
-  }, []);
 
-  // Booking source data (TODO: Replace with real API data)
-  const bookingSourceData = [
-    { name: 'Direct Website', value: 45, color: COLORS.chart[0] },
-    { name: 'Booking.com', value: 25, color: COLORS.chart[1] },
-    { name: 'Airbnb', value: 20, color: COLORS.chart[2] },
-    { name: 'Expedia', value: 7, color: COLORS.chart[3] },
-    { name: 'Walk-in', value: 3, color: COLORS.chart[4] },
-  ];
+    bookingsArray
+      .filter((b: any) => b.status && b.status !== 'cancelled')
+      .forEach((b: any) => {
+        const checkIn = new Date(b.check_in_date);
+        const checkOut = new Date(b.check_out_date);
+        const totalPrice = Number(b.total_price || 0);
+        const nights = b.nights || Math.max(1, Math.round((checkOut.getTime() - checkIn.getTime()) / msPerDay));
 
-  // Occupancy trend data (last 6 months)
+        const overlapStart = checkIn > start ? checkIn : start;
+        const overlapEnd = checkOut < today ? checkOut : today;
+        if (overlapEnd <= overlapStart) return;
+
+        const overlapNights = Math.max(
+          0,
+          Math.round((overlapEnd.getTime() - overlapStart.getTime()) / msPerDay)
+        );
+        if (overlapNights <= 0) return;
+
+        const nightlyRevenue = totalPrice / nights;
+        for (let i = 0; i < overlapNights; i++) {
+          const day = new Date(overlapStart.getTime() + i * msPerDay);
+          const key = format(day, 'yyyy-MM-dd');
+          if (days[key]) {
+            days[key].revenue += nightlyRevenue;
+            days[key].bookings += 1;
+          }
+        }
+      });
+
+    return Object.values(days);
+  }, [bookingsArray]);
+
+  // Booking source distribution from real bookings
+  const bookingSourceData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    bookingsArray.forEach((b: any) => {
+      if (b.status === 'cancelled') return;
+      const source = (b.booking_source || 'direct').replace('_', ' ');
+      counts[source] = (counts[source] || 0) + 1;
+    });
+    const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+    const palette = COLORS.chart;
+    return Object.entries(counts).map(([name, value], idx) => ({
+      name: name
+        .split(' ')
+        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(' '),
+      value: Number(((value / total) * 100).toFixed(1)),
+      color: palette[idx % palette.length],
+    }));
+  }, [bookingsArray]);
+
+  // Occupancy & revenue trend for last 6 months from real bookings
   const occupancyTrendData = useMemo(() => {
-    const months = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
-    let baseOccupancy = 55;
-    let baseRevenue = 3500;
-    return months.map((month, index) => {
-      // Create smoother trending data
-      baseOccupancy += (Math.random() - 0.4) * 8; // Slight upward trend
-      baseRevenue += (Math.random() - 0.4) * 400;
-      baseOccupancy = Math.max(40, Math.min(85, baseOccupancy));
-      baseRevenue = Math.max(2000, Math.min(5500, baseRevenue));
+    const today = new Date();
+    const months: { label: string; key: string; occupancy: number; revenue: number }[] = [];
 
+    for (let i = 5; i >= 0; i--) {
+      const start = startOfMonth(subMonths(today, i));
+      const end = endOfMonth(start);
+      const key = format(start, 'yyyy-MM');
+      months.push({ label: format(start, 'MMM'), key, occupancy: 0, revenue: 0 });
+    }
+
+    const byMonth: Record<
+      string,
+      { occupiedNights: number; revenue: number; daysInMonth: number }
+    > = {};
+
+    months.forEach((m) => {
+      const start = new Date(`${m.key}-01T00:00:00`);
+      const end = endOfMonth(start);
+      const daysInMonth = Math.round((end.getTime() - start.getTime()) / msPerDay) + 1;
+      byMonth[m.key] = { occupiedNights: 0, revenue: 0, daysInMonth };
+    });
+
+    bookingsArray.forEach((b: any) => {
+      if (b.status === 'cancelled') return;
+      const checkIn = new Date(b.check_in_date);
+      const checkOut = new Date(b.check_out_date);
+      const totalPrice = Number(b.total_price || 0);
+      const nights = b.nights || Math.max(1, Math.round((checkOut.getTime() - checkIn.getTime()) / msPerDay));
+      const nightly = totalPrice / nights;
+
+      months.forEach((m) => {
+        const monthStart = new Date(`${m.key}-01T00:00:00`);
+        const monthEnd = endOfMonth(monthStart);
+        const overlapStart = checkIn > monthStart ? checkIn : monthStart;
+        const overlapEnd = checkOut < monthEnd ? checkOut : monthEnd;
+        if (overlapEnd <= overlapStart) return;
+        const overlapNights = Math.max(
+          0,
+          Math.round((overlapEnd.getTime() - overlapStart.getTime()) / msPerDay)
+        );
+        if (overlapNights <= 0) return;
+        byMonth[m.key].occupiedNights += overlapNights;
+        byMonth[m.key].revenue += nightly * overlapNights;
+      });
+    });
+
+    return months.map((m) => {
+      const data = byMonth[m.key];
+      const occupancyPct =
+        data.daysInMonth > 0 ? Math.round((data.occupiedNights / data.daysInMonth) * 100) : 0;
       return {
-        month,
-        occupancy: Math.floor(baseOccupancy),
-        revenue: Math.floor(baseRevenue),
+        month: m.label,
+        occupancy: occupancyPct,
+        revenue: Math.round(data.revenue),
       };
     });
-  }, []);
+  }, [bookingsArray, msPerDay]);
 
   // Booking status distribution
   const bookingStatusData = useMemo(() => {
@@ -392,31 +471,43 @@ export default function PMSDashboard() {
     ].filter(item => item.value > 0);
   }, [dashboardData]);
 
-  // Payment status data
-  const paymentStatusData = [
-    { name: 'Paid', value: 75, color: COLORS.success },
-    { name: 'Pending', value: 15, color: COLORS.warning },
-    { name: 'Refunded', value: 10, color: COLORS.error },
-  ];
+  // Payment status data from real bookings
+  const paymentStatusData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    bookingsArray.forEach((b: any) => {
+      const status = (b.payment_status || 'unpaid').toLowerCase();
+      counts[status] = (counts[status] || 0) + 1;
+    });
+    const entries = Object.entries(counts);
+    const palette = [COLORS.success, COLORS.warning, COLORS.error, COLORS.info, COLORS.purple];
+    return entries.map(([name, value], idx) => ({
+      name: name.replace('_', ' '),
+      value,
+      color: palette[idx % palette.length],
+    }));
+  }, [bookingsArray]);
 
-  // Guest count trend (last 12 months)
+  // Guest count trend (last 12 months) from real bookings
   const guestTrendData = useMemo(() => {
-    const data = [];
-    let baseGuests = 15;
+    const today = new Date();
+    const months: { key: string; label: string; guests: number }[] = [];
     for (let i = 11; i >= 0; i--) {
-      const date = subDays(new Date(), i * 30);
-      // Create smoother data with seasonal pattern
-      const seasonalFactor = Math.sin((11 - i) * Math.PI / 6) * 8; // Seasonal variation
-      baseGuests += (Math.random() - 0.45) * 3; // Slight upward trend
-      baseGuests = Math.max(8, Math.min(35, baseGuests));
-
-      data.push({
-        month: format(date, 'MMM'),
-        guests: Math.floor(baseGuests + seasonalFactor),
-      });
+      const start = startOfMonth(subMonths(today, i));
+      const key = format(start, 'yyyy-MM');
+      months.push({ key, label: format(start, 'MMM'), guests: 0 });
     }
-    return data;
-  }, []);
+    const byMonth: Record<string, number> = {};
+    months.forEach((m) => (byMonth[m.key] = 0));
+
+    bookingsArray.forEach((b: any) => {
+      const monthKey = format(startOfMonth(new Date(b.check_in_date)), 'yyyy-MM');
+      if (monthKey in byMonth) {
+        byMonth[monthKey] += Number(b.number_of_guests || b.guests || 0);
+      }
+    });
+
+    return months.map((m) => ({ month: m.label, guests: byMonth[m.key] || 0 }));
+  }, [bookingsArray]);
 
   // 12-month booking vs cancellation trend (month + year to avoid collisions)
   const bookingCancelTrend = useMemo(() => {
