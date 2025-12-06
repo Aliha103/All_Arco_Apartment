@@ -141,9 +141,9 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     };
   }, [mobileMenuOpen]);
 
-  // Show loading screen during authentication and initial mount
-  // This prevents flash of login page on refresh
-  if (!isMounted || isLoading) {
+  // Show loading screen during authentication, initial mount, or when user is not authorized
+  // This prevents any flash of content during auth checks and redirects
+  if (!isMounted || isLoading || !user || !isTeamMember()) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
         <motion.div
@@ -162,24 +162,6 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
             <p className="text-lg font-semibold text-gray-900">Loading PMS</p>
             <p className="text-sm text-gray-500 mt-1">Verifying authentication...</p>
           </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // If auth is complete and user is not authorized, don't render anything
-  // The useEffect will handle the redirect
-  if (!user || !isTeamMember()) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <div className="w-16 h-16 border-4 border-[#C4A572] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600">Redirecting to login...</p>
         </motion.div>
       </div>
     );
