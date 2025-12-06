@@ -71,8 +71,6 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const [hasSessionCookie, setHasSessionCookie] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const originalBodyStyles = useRef<{ overflow: string; touchAction: string } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -89,19 +87,8 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     }
   });
 
-  // Check for session cookie on mount to enable optimistic rendering
-  useEffect(() => {
-    const cookies = document.cookie;
-    const hasSession = cookies.includes('sessionid=');
-    setHasSessionCookie(hasSession);
-    setIsMounted(true);
-  }, []);
-
   // Redirect if not team member and log PMS access
   useEffect(() => {
-    // Only perform auth checks after component is mounted to prevent flash during hydration
-    if (!isMounted) return;
-
     // Wait for auth to complete before making any decisions
     if (isLoading) return;
 
@@ -111,7 +98,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
       // Log successful PMS access for security audit
       logPMSAccess(user);
     }
-  }, [user, isLoading, isTeamMember, router, isMounted]);
+  }, [user, isLoading, isTeamMember, router]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -200,7 +187,7 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
 
   // Show loading screen during authentication, initial mount, or when user is not authorized
   // This prevents any flash of content during auth checks and redirects
-  if (!isMounted || isLoading || !user || !isTeamMember()) {
+  if (isLoading || !user || !isTeamMember()) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
         <motion.div
