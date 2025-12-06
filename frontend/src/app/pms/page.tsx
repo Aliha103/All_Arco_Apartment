@@ -1085,8 +1085,20 @@ export default function PMSDashboard() {
                       wrapperStyle={{ paddingTop: 8 }}
                       formatter={(value) => <span className="text-sm text-gray-800 font-semibold">{value}</span>}
                     />
-                    <Bar dataKey="confirmed" name="Bookings" stackId="a" fill={COLORS.primary} radius={[6,6,0,0]} />
-                    <Bar dataKey="cancelled" name="Cancelled" stackId="a" fill={COLORS.error} radius={[6,6,0,0]} />
+                    <Bar
+                      dataKey="confirmed"
+                      name="Bookings"
+                      fill={COLORS.primary}
+                      radius={[6, 6, 0, 0]}
+                      barSize={26}
+                    />
+                    <Bar
+                      dataKey="cancelled"
+                      name="Cancelled"
+                      fill={COLORS.error}
+                      radius={[6, 6, 0, 0]}
+                      barSize={26}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
