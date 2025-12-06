@@ -350,7 +350,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             left_html = f'<b><font size=10 color=#A68B5B>BOOKING DETAILS</font></b><br/>'
             left_html += f'<font size=9><b>Booking ID:</b> {booking.booking_id}</font><br/>'
             left_html += f'<font size=9><b>Created:</b> {booking.created_at.strftime("%B %d, %Y")}</font><br/>'
-            left_html += f'<font size=9><b>Source:</b> {booking.source.title() if booking.source else "Direct"}</font><br/>'
+            left_html += f'<font size=9><b>Source:</b> {booking.booking_source.replace("_", " ").title() if booking.booking_source else "Direct"}</font><br/>'
             left_html += f'<br/><b><font size=10 color=#A68B5B>GUEST INFORMATION</font></b><br/>'
             left_html += f'<font size=9><b>Name:</b> {booking.guest_name}</font><br/>'
             left_html += f'<font size=9><b>Email:</b> {booking.guest_email}</font><br/>'
@@ -366,7 +366,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             right_html += f'<font size=9><b>Check-in:</b> {booking.check_in_date.strftime("%B %d, %Y")}</font><br/>'
             right_html += f'<font size=9><b>Check-out:</b> {booking.check_out_date.strftime("%B %d, %Y")}</font><br/>'
             right_html += f'<font size=9><b>Nights:</b> {booking.nights}</font><br/>'
-            right_html += f'<font size=9><b>Guests:</b> {booking.guests}</font><br/>'
+            right_html += f'<font size=9><b>Guests:</b> {booking.number_of_guests}</font><br/>'
             right_html += f'<br/><b><font size=10 color=#A68B5B>PROPERTY</font></b><br/>'
             right_html += f'<font size=9>ALL\'ARCO APARTMENT</font><br/>'
             right_html += f'<font size=9>Via Castellana 61</font><br/>'
@@ -411,10 +411,10 @@ class BookingViewSet(viewsets.ModelViewSet):
                 ])
 
             if booking.tourist_tax:
-                tax_per_guest = float(booking.tourist_tax) / max(booking.guests, 1)
+                tax_per_guest = float(booking.tourist_tax) / max(booking.number_of_guests, 1)
                 table_data.append([
                     'Tourist Tax (Venice)',
-                    str(booking.guests),
+                    str(booking.number_of_guests),
                     f'EUR {tax_per_guest:.2f}',
                     f'EUR {booking.tourist_tax:.2f}'
                 ])
