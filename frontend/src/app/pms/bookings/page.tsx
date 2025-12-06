@@ -10,7 +10,6 @@ import {
   Plus,
   MoreHorizontal,
   Eye,
-  Edit,
   Ban,
   Calendar,
   Users,
@@ -219,10 +218,6 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
                 <Eye className="w-4 h-4 mr-2 text-gray-700" />
                 View Details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAction('edit', booking)}>
-                <Edit className="w-4 h-4 mr-2 text-gray-700" />
-                Edit
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onAction('cancel', booking)} className="text-rose-600">
                 <Ban className="w-4 h-4 mr-2" />
@@ -254,10 +249,6 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
                 <DropdownMenuItem onClick={() => onAction('view', booking)}>
                   <Eye className="w-4 h-4 mr-2 text-gray-700" />
                   View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onAction('edit', booking)}>
-                  <Edit className="w-4 h-4 mr-2 text-gray-700" />
-                  Edit
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onAction('cancel', booking)} className="text-rose-600">
