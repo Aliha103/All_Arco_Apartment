@@ -447,7 +447,10 @@ export default function GalleryPage() {
                 type="number"
                 min="0"
                 value={uploadFormData.order}
-                onChange={(e) => setUploadFormData({ ...uploadFormData, order: parseInt(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const order = Number.parseInt(e.target.value, 10);
+                  setUploadFormData({ ...uploadFormData, order: Number.isNaN(order) ? 0 : order });
+                }}
               />
               <p className="text-xs text-gray-500">Lower numbers appear first</p>
             </div>
@@ -547,7 +550,10 @@ export default function GalleryPage() {
                 type="number"
                 min="0"
                 value={editFormData.order}
-                onChange={(e) => setEditFormData({ ...editFormData, order: parseInt(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const order = Number.parseInt(e.target.value, 10);
+                  setEditFormData({ ...editFormData, order: Number.isNaN(order) ? 0 : order });
+                }}
               />
             </div>
             {selectedImage && (

@@ -267,7 +267,10 @@ export default function BookingFormModal({ isOpen, onClose, onSuccess }: Booking
                 min={1}
                 max={6}
                 value={formData.guests}
-                onChange={(e) => handleChange('guests', parseInt(e.target.value) || 1)}
+                onChange={(e) => {
+                  const value = Number.parseInt(e.target.value, 10);
+                  handleChange('guests', Number.isNaN(value) ? 1 : value);
+                }}
               />
               {formErrors.guests && (
                 <p className="text-sm text-red-600">{formErrors.guests}</p>
