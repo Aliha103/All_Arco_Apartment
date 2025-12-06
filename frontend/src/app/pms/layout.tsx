@@ -150,32 +150,6 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
     };
   }, [mobileMenuOpen]);
 
-  // Show loading screen during authentication, initial mount, or when user is not authorized
-  // This prevents any flash of content during auth checks and redirects
-  if (!isMounted || isLoading || !user || !isTeamMember()) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <div className="relative">
-            {/* Outer ring */}
-            <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
-            {/* Spinning ring */}
-            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-[#C4A572] border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-semibold text-gray-900">Loading PMS</p>
-            <p className="text-sm text-gray-500 mt-1">Verifying authentication...</p>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
   // Filter navigation based on permissions
   const filteredNav = useMemo(
     () => navigation.filter((item) => !item.permission || hasPermission(item.permission)),
@@ -212,6 +186,32 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
       }),
     [filteredNav, isSidebarCollapsed, pathname]
   );
+
+  // Show loading screen during authentication, initial mount, or when user is not authorized
+  // This prevents any flash of content during auth checks and redirects
+  if (!isMounted || isLoading || !user || !isTeamMember()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="relative">
+            {/* Outer ring */}
+            <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
+            {/* Spinning ring */}
+            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-[#C4A572] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-semibold text-gray-900">Loading PMS</p>
+            <p className="text-sm text-gray-500 mt-1">Verifying authentication...</p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   const roleLabel = user.role_info?.name || 'Team Member';
 
