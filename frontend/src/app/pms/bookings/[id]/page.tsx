@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ export default function BookingDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const bookingId = params.id as string;
+  const [isClient, setIsClient] = useState(false);
 
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -28,6 +29,11 @@ export default function BookingDetailPage() {
   const [issueRefund, setIssueRefund] = useState(true);
   const [newNote, setNewNote] = useState('');
   const [selectedEmailType, setSelectedEmailType] = useState('confirmation');
+
+  // Only run queries on the client to avoid SSR/CSR mismatch that can render duplicate screens
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Fetch booking details
   const { data: booking, isLoading, error } = useQuery({
@@ -47,6 +53,7 @@ export default function BookingDetailPage() {
         guests_count?: number;
       };
     },
+    enabled: isClient && !!bookingId,
   });
 
   // Fetch payments for this booking
@@ -56,7 +63,7 @@ export default function BookingDetailPage() {
       const response = await api.payments.list({ booking: bookingId });
       return (response.data.results || response.data) as Payment[];
     },
-    enabled: !!booking,
+    enabled: isClient && !!booking,
   });
 
   // Update booking status
@@ -112,7 +119,7 @@ export default function BookingDetailPage() {
     },
   });
 
-  if (isLoading) {
+  if (!isClient || isLoading) {
     return (
       <div className="space-y-6">
         <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
@@ -166,7 +173,7 @@ export default function BookingDetailPage() {
       );
       return overlaps.length > 0;
     },
-    enabled: shouldCheckOverlaps,
+    enabled: isClient && shouldCheckOverlaps,
   });
 
   // Actions eligibility
