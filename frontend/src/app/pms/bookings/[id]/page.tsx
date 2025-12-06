@@ -24,11 +24,21 @@ export default function BookingDetailPage() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('guest_cancellation');
   const [cancelNotes, setCancelNotes] = useState('');
   const [issueRefund, setIssueRefund] = useState(true);
   const [newNote, setNewNote] = useState('');
   const [selectedEmailType, setSelectedEmailType] = useState('confirmation');
+  const [editFormData, setEditFormData] = useState({
+    guest_name: '',
+    guest_email: '',
+    guest_phone: '',
+    check_in_date: '',
+    check_out_date: '',
+    guests: 1,
+    special_requests: '',
+  });
 
   // Only run queries on the client to avoid SSR/CSR mismatch that can render duplicate screens
   useEffect(() => {
@@ -121,6 +131,37 @@ export default function BookingDetailPage() {
       setNewNote('');
     },
   });
+
+  // Update booking details
+  const updateBooking = useMutation({
+    mutationFn: (data: typeof editFormData) =>
+      api.bookings.update(bookingId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
+      queryClient.invalidateQueries({ queryKey: ['all-bookings'] });
+      setIsEditModalOpen(false);
+      toast.success('Booking updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to update booking');
+    },
+  });
+
+  // Open edit modal with current booking data
+  const handleOpenEditModal = () => {
+    if (booking) {
+      setEditFormData({
+        guest_name: booking.guest_name || '',
+        guest_email: booking.guest_email || '',
+        guest_phone: booking.guest_phone || '',
+        check_in_date: booking.check_in_date || '',
+        check_out_date: booking.check_out_date || '',
+        guests: booking.guests || 1,
+        special_requests: booking.special_requests || '',
+      });
+      setIsEditModalOpen(true);
+    }
+  };
 
   // Availability check for undo-cancel / undo no-show to avoid overbooking
   const shouldCheckOverlaps = !!booking && ['cancelled', 'no_show'].includes(booking.status);
@@ -398,6 +439,14 @@ export default function BookingDetailPage() {
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
+              onClick={handleOpenEditModal}
+              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-300"
+            >
+              Edit Booking
+            </Button>
+
+            <Button
+              variant="outline"
               onClick={() => setIsEmailModalOpen(true)}
             >
               Send Email
@@ -526,7 +575,7 @@ export default function BookingDetailPage() {
             <div className="space-y-2">
               <Label>Email Type</Label>
               <select
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg text-gray-900"
                 value={selectedEmailType}
                 onChange={(e) => setSelectedEmailType(e.target.value)}
               >
@@ -563,7 +612,7 @@ export default function BookingDetailPage() {
             <div className="space-y-2">
               <Label>Cancellation Reason</Label>
               <select
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg text-gray-900"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
               >
@@ -576,7 +625,7 @@ export default function BookingDetailPage() {
             <div className="space-y-2">
               <Label>Additional Notes (Optional)</Label>
               <textarea
-                className="w-full px-3 py-2 border rounded-lg min-h-20"
+                className="w-full px-3 py-2 border rounded-lg min-h-20 text-gray-900"
                 value={cancelNotes}
                 onChange={(e) => setCancelNotes(e.target.value)}
                 placeholder="Enter any additional details..."
@@ -624,7 +673,7 @@ export default function BookingDetailPage() {
             <div className="space-y-2">
               <Label>Note</Label>
               <textarea
-                className="w-full px-3 py-2 border rounded-lg min-h-32"
+                className="w-full px-3 py-2 border rounded-lg min-h-32 text-gray-900"
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Enter your note..."
@@ -645,6 +694,124 @@ export default function BookingDetailPage() {
               {addNote.isPending ? 'Saving...' : 'Add Note'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Booking Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">Edit Booking Details</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            updateBooking.mutate(editFormData);
+          }} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="guest_name" className="text-sm font-semibold text-gray-700">Guest Name *</Label>
+                <input
+                  id="guest_name"
+                  type="text"
+                  value={editFormData.guest_name}
+                  onChange={(e) => setEditFormData({ ...editFormData, guest_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-1.5 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
+                  required
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label htmlFor="guest_email" className="text-sm font-semibold text-gray-700">Guest Email *</Label>
+                <input
+                  id="guest_email"
+                  type="email"
+                  value={editFormData.guest_email}
+                  onChange={(e) => setEditFormData({ ...editFormData, guest_email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-1.5 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
+                  required
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label htmlFor="guest_phone" className="text-sm font-semibold text-gray-700">Guest Phone *</Label>
+                <input
+                  id="guest_phone"
+                  type="tel"
+                  value={editFormData.guest_phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, guest_phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-1.5 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="check_in_date" className="text-sm font-semibold text-gray-700">Check-in Date *</Label>
+                <input
+                  id="check_in_date"
+                  type="date"
+                  value={editFormData.check_in_date}
+                  onChange={(e) => setEditFormData({ ...editFormData, check_in_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-1.5 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="check_out_date" className="text-sm font-semibold text-gray-700">Check-out Date *</Label>
+                <input
+                  id="check_out_date"
+                  type="date"
+                  value={editFormData.check_out_date}
+                  onChange={(e) => setEditFormData({ ...editFormData, check_out_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-1.5 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
+                  required
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label htmlFor="guests" className="text-sm font-semibold text-gray-700">Number of Guests *</Label>
+                <input
+                  id="guests"
+                  type="number"
+                  min="1"
+                  max="6"
+                  value={editFormData.guests}
+                  onChange={(e) => setEditFormData({ ...editFormData, guests: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-1.5 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
+                  required
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label htmlFor="special_requests" className="text-sm font-semibold text-gray-700">Special Requests</Label>
+                <textarea
+                  id="special_requests"
+                  value={editFormData.special_requests}
+                  onChange={(e) => setEditFormData({ ...editFormData, special_requests: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mt-1.5 min-h-24 focus:border-[#C4A572] focus:ring-[#C4A572] text-gray-900"
+                  placeholder="Any special requests or notes..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditModalOpen(false)}
+                className="border-gray-300 hover:bg-gray-50"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-gradient-to-r from-[#C4A572] to-[#B39562] hover:from-[#B39562] hover:to-[#A08552] text-white"
+                disabled={updateBooking.isPending}
+              >
+                {updateBooking.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
