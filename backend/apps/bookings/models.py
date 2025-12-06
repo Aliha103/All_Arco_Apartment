@@ -1,4 +1,5 @@
 import uuid
+import random
 from datetime import datetime
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -127,9 +128,14 @@ class Booking(models.Model):
     def save(self, *args, **kwargs):
         # Generate booking ID
         if not self.booking_id:
-            # Get total count of all bookings to generate sequential ID
-            count = Booking.objects.count()
-            self.booking_id = f'ARCO{str(count + 1).zfill(6)}'
+            # Generate unique random 6-digit ID
+            while True:
+                random_digits = str(random.randint(100000, 999999))
+                booking_id = f'ARCO{random_digits}'
+                # Check if this ID already exists
+                if not Booking.objects.filter(booking_id=booking_id).exists():
+                    self.booking_id = booking_id
+                    break
         
         # Calculate nights
         if self.check_in_date and self.check_out_date:
