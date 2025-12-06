@@ -91,6 +91,11 @@ const STATUS_CONFIG = {
     color: 'bg-rose-100 text-rose-800 border-rose-200',
     icon: XCircle,
   },
+  no_show: {
+    label: 'No Show',
+    color: 'bg-slate-100 text-slate-800 border-slate-200',
+    icon: XCircle,
+  },
 };
 
 const PAYMENT_STATUS_CONFIG = {
