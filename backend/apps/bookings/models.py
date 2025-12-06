@@ -127,11 +127,9 @@ class Booking(models.Model):
     def save(self, *args, **kwargs):
         # Generate booking ID
         if not self.booking_id:
-            date_str = datetime.now().strftime('%Y%m%d')
-            count = Booking.objects.filter(
-                booking_id__startswith=f'ARK-{date_str}'
-            ).count()
-            self.booking_id = f'ARK-{date_str}-{str(count + 1).zfill(4)}'
+            # Get total count of all bookings to generate sequential ID
+            count = Booking.objects.count()
+            self.booking_id = f'ARCO{str(count + 1).zfill(6)}'
         
         # Calculate nights
         if self.check_in_date and self.check_out_date:
