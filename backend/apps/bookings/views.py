@@ -272,11 +272,11 @@ class BookingViewSet(viewsets.ModelViewSet):
             title_style = ParagraphStyle(
                 'DocTitle',
                 parent=styles['Heading1'],
-                fontSize=28,
+                fontSize=20,
                 textColor=gold,
                 spaceAfter=2,
                 fontName='Helvetica-Bold',
-                letterSpacing=1
+                letterSpacing=0.5
             )
 
             # Header with logo and title
@@ -285,8 +285,8 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             if os.path.exists(logo_path):
                 try:
-                    # Preserve aspect ratio by only specifying width
-                    logo_element = Image(logo_path, width=3.5*cm)
+                    # Preserve aspect ratio by only specifying width (smaller size)
+                    logo_element = Image(logo_path, width=2*cm)
                 except Exception as e:
                     logger.error(f"Error loading logo: {str(e)}")
                     logo_element = Paragraph("""
@@ -323,7 +323,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
             ]))
             elements.append(line_table)
-            elements.append(Spacer(1, 6))
+            elements.append(Spacer(1, 3))
 
             # Status badge
             status_display = booking.status.replace('_', ' ').title()
@@ -357,7 +357,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ]))
             elements.append(badge_wrapper)
-            elements.append(Spacer(1, 10))
+            elements.append(Spacer(1, 5))
 
             # Booking details in elegant boxes
             left_html = f'<b><font size=10 color=#A68B5B>BOOKING DETAILS</font></b><br/>'
@@ -402,7 +402,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                 ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#E8E3D5')),
             ]))
             elements.append(two_column_table)
-            elements.append(Spacer(1, 18))
+            elements.append(Spacer(1, 10))
 
             # Pricing table
             table_data = [['Description', 'Qty', 'Unit Price', 'Amount']]
@@ -484,7 +484,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             pricing_table.setStyle(TableStyle(table_style))
             elements.append(pricing_table)
-            elements.append(Spacer(1, 18))
+            elements.append(Spacer(1, 10))
 
             # Special requests section
             if booking.special_requests:
@@ -501,7 +501,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
                 ]))
                 elements.append(notes_table)
-                elements.append(Spacer(1, 15))
+                elements.append(Spacer(1, 8))
 
             # Footer
             footer_line_data = [['']]
