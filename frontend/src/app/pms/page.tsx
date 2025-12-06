@@ -931,8 +931,19 @@ export default function PMSDashboard() {
                     <LineChart data={occupancyTrendData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                      <YAxis yAxisId="left" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <YAxis
+                        yAxisId="left"
+                        tick={{ fontSize: 11, fontWeight: 600 }}
+                        stroke="#6B7280"
+                        domain={[0, 'dataMax + 10']}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        tick={{ fontSize: 11, fontWeight: 600 }}
+                        stroke="#6B7280"
+                        domain={[0, 'dataMax + 500']}
+                      />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: 'white',
@@ -944,7 +955,7 @@ export default function PMSDashboard() {
                       <Legend wrapperStyle={{ fontWeight: 600, fontSize: '12px' }} />
                       <Line
                         yAxisId="left"
-                        type="natural"
+                        type="monotone"
                         dataKey="occupancy"
                         stroke={COLORS.info}
                         strokeWidth={3}
@@ -955,7 +966,7 @@ export default function PMSDashboard() {
                       />
                       <Line
                         yAxisId="right"
-                        type="natural"
+                        type="monotone"
                         dataKey="revenue"
                         stroke={COLORS.success}
                         strokeWidth={3}
@@ -1000,7 +1011,11 @@ export default function PMSDashboard() {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
-                      <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#6B7280" />
+                      <YAxis
+                        tick={{ fontSize: 11, fontWeight: 600 }}
+                        stroke="#6B7280"
+                        domain={[0, 'dataMax + 2']}
+                      />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: 'white',
@@ -1010,7 +1025,7 @@ export default function PMSDashboard() {
                         }}
                       />
                       <Area
-                        type="natural"
+                        type="monotone"
                         dataKey="guests"
                         stroke={COLORS.purple}
                         strokeWidth={3}
