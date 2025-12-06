@@ -122,7 +122,11 @@ export default function LoginPage() {
         router.replace(isTeam ? '/pms' : '/dashboard');
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Invalid email or password');
+      const message =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        'Email or password is incorrect';
+      setError(message);
     } finally {
       setLoading(false);
     }
