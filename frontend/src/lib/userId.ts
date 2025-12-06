@@ -23,7 +23,7 @@ export function generateUserId(user: User | null): string {
   // Take multiple segments of UUID and combine for better distribution
   const uuidParts = uuid.replace(/-/g, '').match(/.{1,8}/g) || [];
   const hash = uuidParts.reduce((acc, part, idx) => {
-    const num = parseInt(part.substring(0, 8), 16);
+    const num = Number.parseInt(part.substring(0, 8), 16);
     return acc + (num * (idx + 1));
   }, 0);
 

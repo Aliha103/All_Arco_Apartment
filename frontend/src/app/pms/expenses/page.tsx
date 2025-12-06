@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   Eye,
   Check,
+  Clock,
   X,
   Receipt,
   TrendingUp,
@@ -21,7 +22,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '@/lib/api';
+import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -124,7 +125,7 @@ export default function ExpensesPage() {
       if (categoryFilter !== 'all') params.append('category', categoryFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await api.get(`/expenses/?${params.toString()}`);
+      const response = await apiClient.get(`/expenses/?${params.toString()}`);
       return response.data.results || response.data;
     },
   });
@@ -133,7 +134,7 @@ export default function ExpensesPage() {
   const { data: stats } = useQuery({
     queryKey: ['expense-statistics'],
     queryFn: async () => {
-      const response = await api.get('/expenses/statistics/');
+      const response = await apiClient.get('/expenses/statistics/');
       return response.data;
     },
   });
@@ -141,7 +142,7 @@ export default function ExpensesPage() {
   // Create expense mutation with optimistic update
   const createExpense = useMutation({
     mutationFn: async (data: any) => {
-      const response = await api.post('/expenses/', data);
+      const response = await apiClient.post('/expenses/', data);
       return response.data;
     },
     onMutate: async (newExpense) => {
@@ -184,7 +185,7 @@ export default function ExpensesPage() {
   // Delete expense
   const deleteExpense = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/expenses/${id}/`);
+      await apiClient.delete(`/expenses/${id}/`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
@@ -199,7 +200,7 @@ export default function ExpensesPage() {
   // Approve expense
   const approveExpense = useMutation({
     mutationFn: async (id: string) => {
-      await api.post(`/expenses/${id}/approve/`);
+      await apiClient.post(`/expenses/${id}/approve/`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
@@ -211,7 +212,7 @@ export default function ExpensesPage() {
   // Reject expense
   const rejectExpense = useMutation({
     mutationFn: async ({id, reason}: {id: string, reason?: string}) => {
-      await api.post(`/expenses/${id}/reject/`, { reason });
+      await apiClient.post(`/expenses/${id}/reject/`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
