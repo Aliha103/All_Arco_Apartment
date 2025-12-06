@@ -271,12 +271,12 @@ class BookingViewSet(viewsets.ModelViewSet):
             # Custom styles
             title_style = ParagraphStyle(
                 'DocTitle',
-                parent=styles['Heading1'],
-                fontSize=20,
+                parent=styles['Normal'],
+                fontSize=14,
                 textColor=gold,
                 spaceAfter=2,
-                fontName='Helvetica-Bold',
-                letterSpacing=0.5
+                fontName='Helvetica',
+                letterSpacing=0
             )
 
             # Header with logo and title
@@ -285,8 +285,8 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             if os.path.exists(logo_path):
                 try:
-                    # Preserve aspect ratio by only specifying width (smaller size)
-                    logo_element = Image(logo_path, width=2*cm)
+                    # Set both width and height to control size and prevent stretching
+                    logo_element = Image(logo_path, width=2*cm, height=2*cm)
                 except Exception as e:
                     logger.error(f"Error loading logo: {str(e)}")
                     logo_element = Paragraph("""
