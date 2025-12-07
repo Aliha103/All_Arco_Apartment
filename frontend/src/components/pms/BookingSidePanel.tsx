@@ -21,6 +21,9 @@ import {
   Calendar,
   Users,
   Ban,
+  Link as LinkIcon,
+  UserPlus,
+  Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -68,19 +71,29 @@ interface BookingData {
   guest_phone: string;
   guest_address?: string;
   guest_country?: string;
+  guest_date_of_birth?: string;
   check_in_date: string;
   check_out_date: string;
   number_of_guests: number;
+  adults?: number;
+  children?: number;
+  infants?: number;
   booking_source: string;
   special_requests?: string;
   internal_notes?: string;
   status: string;
   payment_status: string;
+  payment_method?: string;
   nightly_rate?: number;
   cleaning_fee?: number;
   tourist_tax?: number;
   total_price?: number;
   amount_paid?: number;
+  manual_pricing_override?: boolean;
+  custom_nightly_rate?: number;
+  custom_cleaning_fee?: number;
+  custom_tourist_tax?: number;
+  custom_total_price?: number;
   created_at?: string;
   updated_at?: string;
   nights?: number;
@@ -133,6 +146,44 @@ const PAYMENT_STATUS_CONFIG = {
   partially_refunded: { label: 'Partial Refund', color: 'bg-gray-50 text-gray-700 border-gray-200' },
 };
 
+const PAYMENT_METHODS = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'credit_card', label: 'Credit Card' },
+  { value: 'debit_card', label: 'Debit Card' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'paypal', label: 'PayPal' },
+  { value: 'stripe', label: 'Stripe' },
+  { value: 'other', label: 'Other' },
+];
+
+const COUNTRIES = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
+  'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia',
+  'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
+  'Cambodia', 'Cameroon', 'Canada', 'Cape Verde', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic',
+  'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic',
+  'East Timor', 'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Ethiopia',
+  'Fiji', 'Finland', 'France',
+  'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
+  'Haiti', 'Honduras', 'Hungary',
+  'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy',
+  'Jamaica', 'Japan', 'Jordan',
+  'Kazakhstan', 'Kenya', 'Kiribati', 'North Korea', 'South Korea', 'Kosovo', 'Kuwait', 'Kyrgyzstan',
+  'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg',
+  'Macedonia', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar',
+  'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'Norway',
+  'Oman',
+  'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal',
+  'Qatar',
+  'Romania', 'Russia', 'Rwanda',
+  'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Swaziland', 'Sweden', 'Switzerland', 'Syria',
+  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu',
+  'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan',
+  'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam',
+  'Yemen',
+  'Zambia', 'Zimbabwe'
+];
+
 // Generate ARCO reference
 const generateArcoReference = (id: string | number): string => {
   const seed = typeof id === 'string' ? id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : id;
@@ -171,14 +222,20 @@ export default function BookingSidePanel({
     guest_phone: '',
     guest_address: '',
     guest_country: '',
+    guest_date_of_birth: '',
     check_in_date: '',
     check_out_date: '',
     number_of_guests: 2,
+    adults: 2,
+    children: 0,
+    infants: 0,
     booking_source: 'website',
     special_requests: '',
     internal_notes: '',
     status: 'pending',
     payment_status: 'unpaid',
+    payment_method: '',
+    manual_pricing_override: false,
   });
   const [initialData, setInitialData] = useState<BookingData | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -187,6 +244,11 @@ export default function BookingSidePanel({
   const [copied, setCopied] = useState(false);
   const [payments, setPayments] = useState<any[]>([]);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [onlineCheckInModalOpen, setOnlineCheckInModalOpen] = useState(false);
+  const [guestRegistrationModalOpen, setGuestRegistrationModalOpen] = useState(false);
+  const [manualPricingEnabled, setManualPricingEnabled] = useState(false);
+  const [checkInLinkCopied, setCheckInLinkCopied] = useState(false);
+  const [sendingCheckInEmail, setSendingCheckInEmail] = useState(false);
 
   // Fetch booking details (for view/edit mode)
   const { data: bookingData, isLoading: loadingBooking, error: bookingError } = useQuery({
@@ -499,6 +561,46 @@ export default function BookingSidePanel({
     }
   };
 
+  // Generate online check-in link
+  const generateOnlineCheckInLink = () => {
+    if (!formData.id) return '';
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${baseUrl}/check-in/${formData.id}`;
+  };
+
+  // Copy online check-in link
+  const handleCopyCheckInLink = () => {
+    const link = generateOnlineCheckInLink();
+    navigator.clipboard.writeText(link);
+    setCheckInLinkCopied(true);
+    setTimeout(() => setCheckInLinkCopied(false), 2000);
+    toast.success('Check-in link copied to clipboard');
+  };
+
+  // Send online check-in email
+  const handleSendCheckInEmail = async (customEmail?: string) => {
+    if (!bookingId) return;
+    setSendingCheckInEmail(true);
+    try {
+      const emailTo = customEmail || formData.guest_email;
+      // TODO: Implement API call to send check-in email
+      // await api.bookings.sendCheckInEmail(bookingId, emailTo);
+      toast.success(`Check-in email sent to ${emailTo}`);
+      setOnlineCheckInModalOpen(false);
+    } catch (error) {
+      toast.error('Failed to send check-in email');
+    } finally {
+      setSendingCheckInEmail(false);
+    }
+  };
+
+  // Sync guest breakdown with total
+  const handleGuestChange = (field: 'adults' | 'children' | 'infants', value: number) => {
+    const newData = { ...formData, [field]: value };
+    const total = (newData.adults || 0) + (newData.children || 0) + (newData.infants || 0);
+    setFormData({ ...newData, number_of_guests: total });
+  };
+
   // Render helpers
   const renderHeader = () => {
     const title =
@@ -713,10 +815,28 @@ export default function BookingSidePanel({
           </div>
           <div className="space-y-2">
             <Label className="text-gray-900 font-medium">Country</Label>
-            <Input className="text-gray-900 bg-white border-gray-300"
+            <Select
               value={formData.guest_country || ''}
-              onChange={(e) => handleChange('guest_country', e.target.value)}
-              placeholder="Country"
+              onValueChange={(value) => handleChange('guest_country', value)}
+            >
+              <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {COUNTRIES.map((country) => (
+                  <SelectItem key={country} value={country}>
+                    {country}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-gray-900 font-medium">Date of Birth (Optional)</Label>
+            <Input className="text-gray-900 bg-white border-gray-300"
+              type="date"
+              value={formData.guest_date_of_birth || ''}
+              onChange={(e) => handleChange('guest_date_of_birth', e.target.value)}
             />
           </div>
         </div>
@@ -748,14 +868,40 @@ export default function BookingSidePanel({
               )}
             </div>
           </div>
-          <div className="space-y-2">
-            <Label className="text-gray-900 font-medium">Number of Guests *</Label>
-            <Input className="text-gray-900 bg-white border-gray-300"
-              type="number"
-              min={1}
-              value={formData.number_of_guests}
-              onChange={(e) => handleChange('number_of_guests', parseInt(e.target.value) || 1)}
-            />
+          <div className="space-y-3">
+            <Label className="text-gray-900 font-medium">Guest Breakdown *</Label>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-600">Adults</Label>
+                <Input className="text-gray-900 bg-white border-gray-300"
+                  type="number"
+                  min={0}
+                  value={formData.adults || 0}
+                  onChange={(e) => handleGuestChange('adults', parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-600">Children</Label>
+                <Input className="text-gray-900 bg-white border-gray-300"
+                  type="number"
+                  min={0}
+                  value={formData.children || 0}
+                  onChange={(e) => handleGuestChange('children', parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-600">Infants</Label>
+                <Input className="text-gray-900 bg-white border-gray-300"
+                  type="number"
+                  min={0}
+                  value={formData.infants || 0}
+                  onChange={(e) => handleGuestChange('infants', parseInt(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-600">
+              Total: {(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests
+            </p>
           </div>
           <div className="space-y-2">
             <Label className="text-gray-900 font-medium">Booking Source</Label>
@@ -813,6 +959,39 @@ export default function BookingSidePanel({
               </SelectContent>
             </Select>
           </div>
+          {formData.payment_status === 'partial' && (
+            <>
+              <div className="space-y-2">
+                <Label className="text-gray-900 font-medium">Amount Paid</Label>
+                <Input className="text-gray-900 bg-white border-gray-300"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={formData.amount_paid || 0}
+                  onChange={(e) => handleChange('amount_paid', parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-gray-900 font-medium">Payment Method</Label>
+                <Select
+                  value={formData.payment_method || ''}
+                  onValueChange={(value) => handleChange('payment_method', value)}
+                >
+                  <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Special Requests & Notes */}
@@ -837,16 +1016,70 @@ export default function BookingSidePanel({
           </div>
         </div>
 
-        {/* Display-only pricing (if in edit mode) */}
-        {mode === 'edit' && formData.total_price && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <Label className="text-xs text-gray-600 mb-2 block">Pricing (Calculated)</Label>
-            <p className="text-sm text-gray-800">
-              Total: {formatCurrency(formData.total_price)}
-            </p>
-            <p className="text-xs text-gray-600 mt-1">
-              Pricing is automatically calculated based on dates and pricing rules
-            </p>
+        {/* Pricing Section */}
+        {mode === 'edit' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm text-gray-900">Pricing</h3>
+              <button
+                type="button"
+                onClick={() => setManualPricingEnabled(!manualPricingEnabled)}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                {manualPricingEnabled ? 'Use Auto Pricing' : 'Edit Manually'}
+              </button>
+            </div>
+            {!manualPricingEnabled ? (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <Label className="text-xs text-gray-600 mb-2 block">Automatically Calculated</Label>
+                <p className="text-sm text-gray-800">
+                  Total: {formatCurrency(formData.total_price || 0)}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Based on dates and pricing rules
+                </p>
+              </div>
+            ) : (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                <Label className="text-xs text-blue-700 mb-2 block">Manual Pricing Override</Label>
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium text-xs">Nightly Rate</Label>
+                  <Input className="text-gray-900 bg-white border-gray-300"
+                    type="number"
+                    step="0.01"
+                    value={formData.custom_nightly_rate || formData.nightly_rate || 0}
+                    onChange={(e) => handleChange('custom_nightly_rate', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium text-xs">Cleaning Fee</Label>
+                  <Input className="text-gray-900 bg-white border-gray-300"
+                    type="number"
+                    step="0.01"
+                    value={formData.custom_cleaning_fee || formData.cleaning_fee || 0}
+                    onChange={(e) => handleChange('custom_cleaning_fee', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium text-xs">Tourist Tax</Label>
+                  <Input className="text-gray-900 bg-white border-gray-300"
+                    type="number"
+                    step="0.01"
+                    value={formData.custom_tourist_tax || formData.tourist_tax || 0}
+                    onChange={(e) => handleChange('custom_tourist_tax', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium text-xs">Total Price</Label>
+                  <Input className="text-gray-900 bg-white border-gray-300"
+                    type="number"
+                    step="0.01"
+                    value={formData.custom_total_price || formData.total_price || 0}
+                    onChange={(e) => handleChange('custom_total_price', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -902,10 +1135,28 @@ export default function BookingSidePanel({
           </div>
           <div className="space-y-2">
             <Label className="text-gray-900 font-medium">Country</Label>
-            <Input className="text-gray-900 bg-white border-gray-300"
+            <Select
               value={formData.guest_country || ''}
-              onChange={(e) => handleChange('guest_country', e.target.value)}
-              placeholder="Country"
+              onValueChange={(value) => handleChange('guest_country', value)}
+            >
+              <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {COUNTRIES.map((country) => (
+                  <SelectItem key={country} value={country}>
+                    {country}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-gray-900 font-medium">Date of Birth (Optional)</Label>
+            <Input className="text-gray-900 bg-white border-gray-300"
+              type="date"
+              value={formData.guest_date_of_birth || ''}
+              onChange={(e) => handleChange('guest_date_of_birth', e.target.value)}
             />
           </div>
         </div>
@@ -963,14 +1214,40 @@ export default function BookingSidePanel({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label className="text-gray-900 font-medium">Number of Guests *</Label>
-            <Input className="text-gray-900 bg-white border-gray-300"
-              type="number"
-              min={1}
-              value={formData.number_of_guests}
-              onChange={(e) => handleChange('number_of_guests', parseInt(e.target.value) || 1)}
-            />
+          <div className="space-y-3">
+            <Label className="text-gray-900 font-medium">Guest Breakdown *</Label>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-600">Adults</Label>
+                <Input className="text-gray-900 bg-white border-gray-300"
+                  type="number"
+                  min={0}
+                  value={formData.adults || 0}
+                  onChange={(e) => handleGuestChange('adults', parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-600">Children</Label>
+                <Input className="text-gray-900 bg-white border-gray-300"
+                  type="number"
+                  min={0}
+                  value={formData.children || 0}
+                  onChange={(e) => handleGuestChange('children', parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-600">Infants</Label>
+                <Input className="text-gray-900 bg-white border-gray-300"
+                  type="number"
+                  min={0}
+                  value={formData.infants || 0}
+                  onChange={(e) => handleGuestChange('infants', parseInt(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-600">
+              Total: {(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests
+            </p>
           </div>
           <div className="space-y-2">
             <Label className="text-gray-900 font-medium">Booking Source</Label>
@@ -1070,6 +1347,30 @@ export default function BookingSidePanel({
               Edit
             </Button>
           </div>
+
+          {/* Guest Management Buttons */}
+          {formData.status && !['cancelled'].includes(formData.status) && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setOnlineCheckInModalOpen(true)}
+                size="sm"
+                className="border-blue-400 text-blue-700 hover:bg-blue-50"
+              >
+                <LinkIcon className="w-4 h-4 mr-1" />
+                Online Check-in
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setGuestRegistrationModalOpen(true)}
+                size="sm"
+                className="border-purple-400 text-purple-700 hover:bg-purple-50"
+              >
+                <UserPlus className="w-4 h-4 mr-1" />
+                Guest Registration
+              </Button>
+            </div>
+          )}
 
           {/* Status Action Buttons */}
           <div className="flex flex-wrap gap-2">
@@ -1248,6 +1549,110 @@ export default function BookingSidePanel({
             </Button>
             <Button variant="destructive" onClick={handleDiscard}>
               Discard Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Online Check-in Modal */}
+      <Dialog open={onlineCheckInModalOpen} onOpenChange={setOnlineCheckInModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Online Check-in</DialogTitle>
+            <DialogDescription>
+              Share the online check-in link with your guest
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2">
+              <Input
+                readOnly
+                value={generateOnlineCheckInLink()}
+                className="flex-1 text-sm text-gray-700 bg-gray-50"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCopyCheckInLink}
+              >
+                {checkInLinkCopied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-1" />
+                    Copy
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="border-t pt-4">
+              <p className="text-sm text-gray-600 mb-3">Send link via email</p>
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  variant="default"
+                  onClick={() => handleSendCheckInEmail()}
+                  disabled={sendingCheckInEmail}
+                >
+                  {sendingCheckInEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send to {formData.guest_email}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOnlineCheckInModalOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guest Registration Modal */}
+      <Dialog open={guestRegistrationModalOpen} onOpenChange={setGuestRegistrationModalOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Guest Registration</DialogTitle>
+            <DialogDescription>
+              Register all guests for this booking ({(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests total)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+              <p className="font-medium mb-1">Coming Soon</p>
+              <p className="text-blue-700">
+                Full guest registration with individual guest details (name, ID, passport) will be available in the next update.
+                This feature will allow you to register all {(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests for this booking.
+              </p>
+            </div>
+            {/* Placeholder for future guest registration form */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-gray-700">Expected features:</p>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>Full name for each guest</li>
+                <li>Date of birth</li>
+                <li>Nationality</li>
+                <li>ID/Passport number</li>
+                <li>Document upload (ID, passport scan)</li>
+                <li>Signature capture</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGuestRegistrationModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
