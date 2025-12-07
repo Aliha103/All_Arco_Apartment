@@ -43,11 +43,12 @@ class HeroImageViewSet(viewsets.ModelViewSet):
     queryset = HeroImage.objects.all()
     serializer_class = HeroImageSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    required_permission = 'gallery.manage'
     
     def get_permissions(self):
         if self.action == 'public':
             return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated(), HasPermission('gallery.manage')]
+        return [permissions.IsAuthenticated(), HasPermission()]
     
     def get_queryset(self):
         queryset = super().get_queryset()
