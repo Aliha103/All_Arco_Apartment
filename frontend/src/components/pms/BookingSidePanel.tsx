@@ -335,10 +335,14 @@ export default function BookingSidePanel({
     }
   }, [paymentsData]);
 
-  // Reset mode when initialMode changes
+  // Reset mode when initialMode changes or when panel opens
   useEffect(() => {
-    setMode(initialMode);
-  }, [initialMode]);
+    if (isOpen) {
+      setMode(initialMode);
+      setHasChanges(false);
+      setFormErrors({});
+    }
+  }, [initialMode, isOpen]);
 
   // Track changes
   useEffect(() => {
@@ -667,7 +671,7 @@ export default function BookingSidePanel({
         <div className="space-y-3">
           <h3 className="font-semibold text-sm text-gray-900">Guest Information</h3>
           <div className="space-y-2">
-            <Label>Guest Name *</Label>
+            <Label className="text-gray-900 font-medium">Guest Name *</Label>
             <Input
               value={formData.guest_name}
               onChange={(e) => handleChange('guest_name', e.target.value)}
@@ -678,7 +682,7 @@ export default function BookingSidePanel({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Email *</Label>
+            <Label className="text-gray-900 font-medium">Email *</Label>
             <Input
               type="email"
               value={formData.guest_email}
@@ -690,7 +694,7 @@ export default function BookingSidePanel({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Phone</Label>
+            <Label className="text-gray-900 font-medium">Phone</Label>
             <Input
               type="tel"
               value={formData.guest_phone}
@@ -699,7 +703,7 @@ export default function BookingSidePanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>Address</Label>
+            <Label className="text-gray-900 font-medium">Address</Label>
             <Textarea
               value={formData.guest_address || ''}
               onChange={(e) => handleChange('guest_address', e.target.value)}
@@ -708,7 +712,7 @@ export default function BookingSidePanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>Country</Label>
+            <Label className="text-gray-900 font-medium">Country</Label>
             <Input
               value={formData.guest_country || ''}
               onChange={(e) => handleChange('guest_country', e.target.value)}
@@ -722,7 +726,7 @@ export default function BookingSidePanel({
           <h3 className="font-semibold text-sm text-gray-900">Booking Details</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Check-in *</Label>
+              <Label className="text-gray-900 font-medium">Check-in *</Label>
               <Input
                 type="date"
                 value={formData.check_in_date}
@@ -733,7 +737,7 @@ export default function BookingSidePanel({
               )}
             </div>
             <div className="space-y-2">
-              <Label>Check-out *</Label>
+              <Label className="text-gray-900 font-medium">Check-out *</Label>
               <Input
                 type="date"
                 value={formData.check_out_date}
@@ -745,7 +749,7 @@ export default function BookingSidePanel({
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Number of Guests *</Label>
+            <Label className="text-gray-900 font-medium">Number of Guests *</Label>
             <Input
               type="number"
               min={1}
@@ -754,7 +758,7 @@ export default function BookingSidePanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>Booking Source</Label>
+            <Label className="text-gray-900 font-medium">Booking Source</Label>
             <Select
               value={formData.booking_source}
               onValueChange={(value) => handleChange('booking_source', value)}
@@ -772,7 +776,7 @@ export default function BookingSidePanel({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Status</Label>
+            <Label className="text-gray-900 font-medium">Status</Label>
             <Select
               value={formData.status}
               onValueChange={(value) => handleChange('status', value)}
@@ -792,7 +796,7 @@ export default function BookingSidePanel({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Payment Status</Label>
+            <Label className="text-gray-900 font-medium">Payment Status</Label>
             <Select
               value={formData.payment_status}
               onValueChange={(value) => handleChange('payment_status', value)}
@@ -814,7 +818,7 @@ export default function BookingSidePanel({
         {/* Special Requests & Notes */}
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label>Special Requests</Label>
+            <Label className="text-gray-900 font-medium">Special Requests</Label>
             <Textarea
               value={formData.special_requests || ''}
               onChange={(e) => handleChange('special_requests', e.target.value)}
@@ -823,7 +827,7 @@ export default function BookingSidePanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>Internal Notes</Label>
+            <Label className="text-gray-900 font-medium">Internal Notes</Label>
             <Textarea
               value={formData.internal_notes || ''}
               onChange={(e) => handleChange('internal_notes', e.target.value)}
@@ -856,7 +860,7 @@ export default function BookingSidePanel({
         <div className="space-y-3">
           <h3 className="font-semibold text-sm text-gray-900">Guest Information</h3>
           <div className="space-y-2">
-            <Label>Guest Name *</Label>
+            <Label className="text-gray-900 font-medium">Guest Name *</Label>
             <Input
               value={formData.guest_name}
               onChange={(e) => handleChange('guest_name', e.target.value)}
@@ -867,7 +871,7 @@ export default function BookingSidePanel({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Email *</Label>
+            <Label className="text-gray-900 font-medium">Email *</Label>
             <Input
               type="email"
               value={formData.guest_email}
@@ -879,7 +883,7 @@ export default function BookingSidePanel({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Phone</Label>
+            <Label className="text-gray-900 font-medium">Phone</Label>
             <Input
               type="tel"
               value={formData.guest_phone}
@@ -888,7 +892,7 @@ export default function BookingSidePanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>Address</Label>
+            <Label className="text-gray-900 font-medium">Address</Label>
             <Textarea
               value={formData.guest_address || ''}
               onChange={(e) => handleChange('guest_address', e.target.value)}
@@ -897,7 +901,7 @@ export default function BookingSidePanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>Country</Label>
+            <Label className="text-gray-900 font-medium">Country</Label>
             <Input
               value={formData.guest_country || ''}
               onChange={(e) => handleChange('guest_country', e.target.value)}
@@ -911,7 +915,7 @@ export default function BookingSidePanel({
           <h3 className="font-semibold text-sm text-gray-900">Booking Details</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Check-in *</Label>
+              <Label className="text-gray-900 font-medium">Check-in *</Label>
               <Input
                 type="date"
                 value={formData.check_in_date}
@@ -923,7 +927,7 @@ export default function BookingSidePanel({
               )}
             </div>
             <div className="space-y-2">
-              <Label>Check-out *</Label>
+              <Label className="text-gray-900 font-medium">Check-out *</Label>
               <Input
                 type="date"
                 value={formData.check_out_date}
@@ -960,7 +964,7 @@ export default function BookingSidePanel({
           )}
 
           <div className="space-y-2">
-            <Label>Number of Guests *</Label>
+            <Label className="text-gray-900 font-medium">Number of Guests *</Label>
             <Input
               type="number"
               min={1}
@@ -969,7 +973,7 @@ export default function BookingSidePanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>Booking Source</Label>
+            <Label className="text-gray-900 font-medium">Booking Source</Label>
             <Select
               value={formData.booking_source}
               onValueChange={(value) => handleChange('booking_source', value)}
@@ -1018,7 +1022,7 @@ export default function BookingSidePanel({
         {/* Special Requests & Notes */}
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label>Special Requests</Label>
+            <Label className="text-gray-900 font-medium">Special Requests</Label>
             <Textarea
               value={formData.special_requests || ''}
               onChange={(e) => handleChange('special_requests', e.target.value)}
@@ -1027,7 +1031,7 @@ export default function BookingSidePanel({
             />
           </div>
           <div className="space-y-2">
-            <Label>Internal Notes</Label>
+            <Label className="text-gray-900 font-medium">Internal Notes</Label>
             <Textarea
               value={formData.internal_notes || ''}
               onChange={(e) => handleChange('internal_notes', e.target.value)}
@@ -1044,31 +1048,37 @@ export default function BookingSidePanel({
     if (mode === 'view') {
       const canCheckIn = formData.status && ['confirmed', 'paid', 'pending'].includes(formData.status);
       const canCheckOut = formData.status === 'checked_in';
+      const canCancel = formData.status && !['cancelled', 'checked_out', 'no_show'].includes(formData.status);
+      const canMarkNoShow = formData.status && ['confirmed', 'paid'].includes(formData.status);
 
       return (
         <div className="border-t px-6 py-4 bg-gray-50 space-y-3">
+          {/* Primary Action Buttons */}
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none">
               Close
             </Button>
             <Button
               onClick={() => setMode('edit')}
-              disabled={!!formData.status && ['checked_out', 'cancelled'].includes(formData.status)}
-              className="flex-1 sm:flex-none"
+              disabled={!!formData.status && ['checked_out', 'cancelled', 'no_show'].includes(formData.status)}
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white"
             >
               <EditIcon className="w-4 h-4 mr-2" />
               Edit
             </Button>
           </div>
+
           {/* Status Action Buttons */}
-          <div className="flex flex-wrap gap-2 justify-end">
+          <div className="flex flex-wrap gap-2">
             {canCheckIn && (
               <Button
                 variant="outline"
                 disabled={statusUpdating}
                 onClick={() => handleStatusUpdate('checked_in')}
                 size="sm"
+                className="border-violet-300 text-violet-700 hover:bg-violet-50"
               >
+                <CheckCircle2 className="w-4 h-4 mr-1" />
                 {statusUpdating ? 'Updating...' : 'Check-in'}
               </Button>
             )}
@@ -1078,8 +1088,35 @@ export default function BookingSidePanel({
                 disabled={statusUpdating || balanceDue > 0}
                 onClick={() => handleStatusUpdate('checked_out')}
                 size="sm"
+                className="border-gray-400 text-gray-700 hover:bg-gray-100"
+                title={balanceDue > 0 ? 'Cannot check out with outstanding balance' : ''}
               >
+                <CheckCircle2 className="w-4 h-4 mr-1" />
                 {statusUpdating ? 'Updating...' : 'Check-out'}
+              </Button>
+            )}
+            {canMarkNoShow && (
+              <Button
+                variant="outline"
+                disabled={statusUpdating}
+                onClick={() => handleStatusUpdate('no_show')}
+                size="sm"
+                className="border-slate-400 text-slate-700 hover:bg-slate-100"
+              >
+                <Ban className="w-4 h-4 mr-1" />
+                {statusUpdating ? 'Updating...' : 'No Show'}
+              </Button>
+            )}
+            {canCancel && (
+              <Button
+                variant="outline"
+                disabled={statusUpdating}
+                onClick={() => handleStatusUpdate('cancelled')}
+                size="sm"
+                className="border-rose-400 text-rose-700 hover:bg-rose-50"
+              >
+                <XCircle className="w-4 h-4 mr-1" />
+                {statusUpdating ? 'Updating...' : 'Cancel Booking'}
               </Button>
             )}
           </div>
