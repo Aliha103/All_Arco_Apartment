@@ -22,13 +22,15 @@ import {
   Percent,
 } from 'lucide-react';
 import 'react-day-picker/dist/style.css';
+import api from '@/lib/api';
+import { parseISO, isWithinInterval } from 'date-fns';
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 const CONFIG = {
   pricing: {
-    baseRate: 189,
+    baseRate: 189, // Default fallback if API fails
     cleaningShort: 25,
     cleaningLong: 35,
     petShort: 15,
@@ -74,12 +76,7 @@ interface Promotion {
   description: string;
 }
 
-// Available promo codes (in production, this would come from API/database)
-const PROMOTIONS: Record<string, Promotion> = {
-  'WELCOME10': { code: 'WELCOME10', percent: 10, description: '10% off your first stay' },
-  'EARLYBIRD': { code: 'EARLYBIRD', percent: 15, description: '15% early bird discount' },
-  'LONGSTAY20': { code: 'LONGSTAY20', percent: 20, description: '20% off for 7+ nights' },
-};
+// Promo codes are now fetched and validated from API in real-time
 
 // ============================================================================
 // HOOKS
@@ -249,11 +246,13 @@ function PriceModal({
   onClose,
   pricing,
   guests,
+  baseRate,
 }: {
   isOpen: boolean;
   onClose: () => void;
   pricing: PricingBreakdown;
   guests: GuestState;
+  baseRate: number;
 }) {
   const modalRef = useRef<HTMLDivElement>(null);
   useClickOutside(modalRef, onClose);
@@ -301,7 +300,7 @@ function PriceModal({
             <div className="p-6 space-y-4">
               <div className="flex justify-between text-base">
                 <span className="text-gray-600">
-                  €{CONFIG.pricing.baseRate} × {pricing.nights} nights
+                  €{baseRate} × {pricing.nights} nights
                 </span>
                 <span className="font-medium text-gray-900">€{pricing.accommodation}</span>
               </div>
@@ -370,6 +369,12 @@ function PriceModal({
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
+interface BlockedRange {
+  start: string;
+  end: string;
+  type: 'booking' | 'blocked';
+}
+
 export default function BookingWidget() {
   // State
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -380,8 +385,47 @@ export default function BookingWidget() {
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<Promotion | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
+  const [baseRate, setBaseRate] = useState(CONFIG.pricing.baseRate);
+  const [blockedRanges, setBlockedRanges] = useState<BlockedRange[]>([]);
+  const [isLoadingPricing, setIsLoadingPricing] = useState(true);
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(true);
 
   const today = startOfDay(new Date());
+
+  // Fetch pricing from API
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await api.pricing.getSettings();
+        const settings = response.data;
+        if (settings.default_nightly_rate) {
+          setBaseRate(Number(settings.default_nightly_rate));
+        }
+      } catch (error) {
+        // Silently fall back to default rate
+      } finally {
+        setIsLoadingPricing(false);
+      }
+    };
+
+    fetchPricing();
+  }, []);
+
+  // Fetch blocked dates from API
+  useEffect(() => {
+    const fetchBlockedDates = async () => {
+      try {
+        const response = await api.bookings.getBlockedDates();
+        setBlockedRanges(response.data.blocked_ranges || []);
+      } catch (error) {
+        // Silently fall back to empty array
+      } finally {
+        setIsLoadingAvailability(false);
+      }
+    };
+
+    fetchBlockedDates();
+  }, []);
 
   // Computed values
   const nights = useMemo(() => {
@@ -394,11 +438,34 @@ export default function BookingWidget() {
   const maxAdults = CONFIG.guests.maxTotal - guests.children;
   const maxChildren = CONFIG.guests.maxTotal - guests.adults;
 
+  // Calculate disabled dates from blocked ranges
+  const disabledDates = useMemo(() => {
+    const disabled: Date[] = [];
+
+    blockedRanges.forEach((range) => {
+      const startDate = parseISO(range.start);
+      const endDate = parseISO(range.end);
+
+      // For bookings: block all dates from start to (end - 1 day)
+      // This makes the checkout date (end) available for new check-ins
+      let current = new Date(startDate);
+      const lastBlockedDate = new Date(endDate);
+      lastBlockedDate.setDate(lastBlockedDate.getDate() - 1);
+
+      while (current <= lastBlockedDate) {
+        disabled.push(new Date(current));
+        current.setDate(current.getDate() + 1);
+      }
+    });
+
+    return disabled;
+  }, [blockedRanges]);
+
   // Pricing calculation
   const pricing = useMemo((): PricingBreakdown | null => {
     if (!isValidBooking) return null;
 
-    const accommodation = CONFIG.pricing.baseRate * nights;
+    const accommodation = baseRate * nights;
     const cleaning = nights <= 2 ? CONFIG.pricing.cleaningShort : CONFIG.pricing.cleaningLong;
     const pet = hasPet ? (nights <= 2 ? CONFIG.pricing.petShort : CONFIG.pricing.petLong) : 0;
     const subtotal = accommodation + cleaning + pet;
@@ -412,7 +479,7 @@ export default function BookingWidget() {
     const cityTax = guests.adults * CONFIG.pricing.cityTaxPerAdult * cityTaxNights;
 
     return { nights, accommodation, cleaning, pet, discount, discountPercent, subtotal, total, cityTax, cityTaxNights };
-  }, [nights, hasPet, guests.adults, isValidBooking, appliedPromo]);
+  }, [nights, hasPet, guests.adults, isValidBooking, appliedPromo, baseRate]);
 
   // Handlers
   const handleGuestChange = useCallback((type: keyof GuestState, value: number) => {
@@ -434,7 +501,7 @@ export default function BookingWidget() {
   }, []);
 
   // Promo code handlers
-  const handleApplyPromo = useCallback(() => {
+  const handleApplyPromo = useCallback(async () => {
     const code = promoCode.trim().toUpperCase();
     setPromoError(null);
 
@@ -443,20 +510,30 @@ export default function BookingWidget() {
       return;
     }
 
-    const promo = PROMOTIONS[code];
-    if (promo) {
-      // Check if LONGSTAY20 requires 7+ nights
-      if (code === 'LONGSTAY20' && nights < 7) {
-        setPromoError('This code requires 7+ nights stay');
-        return;
+    try {
+      // Calculate booking amount for validation (if dates are selected)
+      const bookingAmount = pricing ? pricing.subtotal : undefined;
+
+      // Call API to validate promo code
+      const response = await api.pricing.validatePromoCode(code, bookingAmount);
+
+      if (response.data.valid) {
+        // Convert API response to Promotion format
+        const promo: Promotion = {
+          code: response.data.code,
+          percent: response.data.discount_value,
+          description: response.data.description,
+        };
+        setAppliedPromo(promo);
+        setPromoError(null);
       }
-      setAppliedPromo(promo);
-      setPromoError(null);
-    } else {
-      setPromoError('Invalid promo code');
+    } catch (error: any) {
+      // Handle validation errors
+      const message = error.response?.data?.message || 'Invalid promo code';
+      setPromoError(message);
       setAppliedPromo(null);
     }
-  }, [promoCode, nights]);
+  }, [promoCode, pricing]);
 
   const handleRemovePromo = useCallback(() => {
     setAppliedPromo(null);
@@ -492,13 +569,13 @@ export default function BookingWidget() {
               <span className="text-sm text-gray-400">From</span>
               {appliedPromo ? (
                 <>
-                  <span className="text-lg text-gray-500 line-through">€{CONFIG.pricing.baseRate}</span>
+                  <span className="text-lg text-gray-500 line-through">€{baseRate}</span>
                   <span className="text-3xl font-bold text-white">
-                    €{Math.round(CONFIG.pricing.baseRate * (1 - appliedPromo.percent / 100))}
+                    €{Math.round(baseRate * (1 - appliedPromo.percent / 100))}
                   </span>
                 </>
               ) : (
-                <span className="text-3xl font-bold text-white">€{CONFIG.pricing.baseRate}</span>
+                <span className="text-3xl font-bold text-white">€{baseRate}</span>
               )}
               <span className="text-gray-400">/ night</span>
               {appliedPromo && (
@@ -526,7 +603,7 @@ export default function BookingWidget() {
               numberOfMonths={2}
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
-              disabled={[{ before: today }]}
+              disabled={[{ before: today }, ...disabledDates]}
               showOutsideDays={false}
               className="!font-sans [&_button]:!text-gray-900 [&_.rdp-day]:!text-gray-900"
               classNames={{
@@ -801,6 +878,7 @@ export default function BookingWidget() {
           onClose={() => setShowPriceModal(false)}
           pricing={pricing}
           guests={guests}
+          baseRate={baseRate}
         />
       )}
     </>

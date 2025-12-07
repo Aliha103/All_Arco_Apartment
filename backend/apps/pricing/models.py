@@ -133,3 +133,311 @@ class PricingRule(models.Model):
     def clean(self):
         if self.end_date < self.start_date:
             raise ValidationError('End date must be on or after start date')
+
+
+class Promotion(models.Model):
+    """
+    Promotional discount codes for marketing campaigns.
+    Team members create these for public use.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    description = models.CharField(max_length=255)
+    discount_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        help_text='Percentage discount (e.g., 10.00 for 10%)'
+    )
+    min_spend = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='Minimum booking amount to use this promotion'
+    )
+    max_uses = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text='Maximum number of times this code can be used (null = unlimited)'
+    )
+    current_uses = models.IntegerField(default=0, editable=False)
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When this promotion expires (null = never expires)'
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='promotions_created'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pricing_promotion'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['code']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.code} - {self.discount_percent}% off"
+
+    def clean(self):
+        # Uppercase the code
+        if self.code:
+            self.code = self.code.upper()
+
+        # Validate discount
+        if self.discount_percent <= 0 or self.discount_percent > 100:
+            raise ValidationError('Discount must be between 0 and 100')
+
+        # Validate min spend
+        if self.min_spend < 0:
+            raise ValidationError('Minimum spend cannot be negative')
+
+        # Validate max uses
+        if self.max_uses is not None and self.max_uses < 1:
+            raise ValidationError('Max uses must be at least 1 or null for unlimited')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def is_valid(self, booking_amount=None):
+        """
+        Check if promotion is currently valid for use.
+
+        Args:
+            booking_amount: Optional booking amount to check min_spend requirement
+
+        Returns:
+            (is_valid: bool, reason: str)
+        """
+        from django.utils import timezone
+
+        # Check if active
+        if not self.is_active:
+            return (False, 'This promotion is no longer active')
+
+        # Check expiry
+        if self.expires_at and timezone.now() > self.expires_at:
+            return (False, 'This promotion has expired')
+
+        # Check usage limit
+        if self.max_uses is not None and self.current_uses >= self.max_uses:
+            return (False, 'This promotion has reached its usage limit')
+
+        # Check minimum spend
+        if booking_amount is not None and booking_amount < self.min_spend:
+            return (False, f'Minimum spend of €{self.min_spend} required')
+
+        return (True, 'Valid')
+
+    def increment_usage(self):
+        """Increment usage counter atomically."""
+        from django.db.models import F
+        Promotion.objects.filter(pk=self.pk).update(current_uses=F('current_uses') + 1)
+        self.refresh_from_db()
+
+
+class Voucher(models.Model):
+    """
+    Single-use or limited-use voucher codes (e.g., for refunds, gifts).
+    Similar to promotions but typically more restricted.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    description = models.CharField(max_length=255)
+    discount_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('percent', 'Percentage'),
+            ('fixed', 'Fixed Amount'),
+        ],
+        default='percent'
+    )
+    discount_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text='Percentage (e.g., 15.00) or fixed amount (e.g., 50.00)'
+    )
+    min_spend = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='Minimum booking amount to use this voucher'
+    )
+    max_uses = models.IntegerField(
+        default=1,
+        help_text='Maximum number of times this code can be used'
+    )
+    current_uses = models.IntegerField(default=0, editable=False)
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When this voucher expires (null = never expires)'
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='vouchers_created'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pricing_voucher'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['code']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def __str__(self):
+        if self.discount_type == 'percent':
+            return f"{self.code} - {self.discount_value}% off"
+        else:
+            return f"{self.code} - €{self.discount_value} off"
+
+    def clean(self):
+        # Uppercase the code
+        if self.code:
+            self.code = self.code.upper()
+
+        # Validate discount
+        if self.discount_type == 'percent':
+            if self.discount_value <= 0 or self.discount_value > 100:
+                raise ValidationError('Percentage discount must be between 0 and 100')
+        else:
+            if self.discount_value <= 0:
+                raise ValidationError('Fixed discount must be greater than 0')
+
+        # Validate min spend
+        if self.min_spend < 0:
+            raise ValidationError('Minimum spend cannot be negative')
+
+        # Validate max uses
+        if self.max_uses < 1:
+            raise ValidationError('Max uses must be at least 1')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def is_valid(self, booking_amount=None):
+        """
+        Check if voucher is currently valid for use.
+
+        Args:
+            booking_amount: Optional booking amount to check min_spend requirement
+
+        Returns:
+            (is_valid: bool, reason: str)
+        """
+        from django.utils import timezone
+
+        # Check if active
+        if not self.is_active:
+            return (False, 'This voucher is no longer active')
+
+        # Check expiry
+        if self.expires_at and timezone.now() > self.expires_at:
+            return (False, 'This voucher has expired')
+
+        # Check usage limit
+        if self.current_uses >= self.max_uses:
+            return (False, 'This voucher has been fully used')
+
+        # Check minimum spend
+        if booking_amount is not None and booking_amount < self.min_spend:
+            return (False, f'Minimum spend of €{self.min_spend} required')
+
+        return (True, 'Valid')
+
+    def increment_usage(self):
+        """Increment usage counter atomically."""
+        from django.db.models import F
+        Voucher.objects.filter(pk=self.pk).update(current_uses=F('current_uses') + 1)
+        self.refresh_from_db()
+
+    def calculate_discount(self, booking_amount):
+        """Calculate discount amount for given booking amount."""
+        if self.discount_type == 'percent':
+            return booking_amount * (self.discount_value / 100)
+        else:
+            # Fixed amount, but don't exceed booking amount
+            return min(self.discount_value, booking_amount)
+
+
+class PromoUsage(models.Model):
+    """
+    Track promotion and voucher usage by users/bookings.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('promotion', 'Promotion'),
+            ('voucher', 'Voucher'),
+        ]
+    )
+    promotion = models.ForeignKey(
+        Promotion,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='usages'
+    )
+    voucher = models.ForeignKey(
+        Voucher,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='usages'
+    )
+    booking = models.ForeignKey(
+        'bookings.Booking',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='promo_usages'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='promo_usages'
+    )
+    guest_email = models.EmailField(help_text='Email of guest who used the code')
+    booking_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    used_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'pricing_promousage'
+        ordering = ['-used_at']
+        indexes = [
+            models.Index(fields=['code_type']),
+            models.Index(fields=['guest_email']),
+            models.Index(fields=['used_at']),
+        ]
+
+    def __str__(self):
+        code = self.promotion.code if self.promotion else self.voucher.code
+        return f"{code} used by {self.guest_email}"
+
+    def clean(self):
+        # Ensure exactly one of promotion or voucher is set
+        if self.code_type == 'promotion' and not self.promotion:
+            raise ValidationError('Promotion must be set for promotion type')
+        if self.code_type == 'voucher' and not self.voucher:
+            raise ValidationError('Voucher must be set for voucher type')
