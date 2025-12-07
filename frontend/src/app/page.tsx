@@ -253,8 +253,10 @@ export default function Home() {
     loadHostAndReviews();
   }, []);
 
-  // Check auth to show edit shortcut for super admins
+  // Check auth to show edit shortcut for super admins (skip if no session cookie)
   useEffect(() => {
+    const hasSession = typeof document !== 'undefined' && document.cookie.includes('sessionid=');
+    if (!hasSession) return;
     const loadMe = async () => {
       try {
         const res = await api.auth.me();
@@ -458,7 +460,7 @@ export default function Home() {
               <div className="flex items-center gap-4 pt-6 border-t border-gray-100 relative">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold overflow-hidden">
                   {hostProfile?.avatar ? (
-                    <Image src={hostProfile.avatar} alt={hostProfile.display_name} fill className="object-cover" unoptimized />
+                    <Image src={hostProfile.avatar || '/allarco-logo.png'} alt={hostProfile.display_name} fill className="object-cover" unoptimized />
                   ) : (
                     (hostProfile?.display_name || 'Host')
                       .split(' ')
