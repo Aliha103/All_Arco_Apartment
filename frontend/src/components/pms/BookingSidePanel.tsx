@@ -2242,11 +2242,11 @@ export default function BookingSidePanel({
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h4 className="font-bold text-gray-900">Registration Progress</h4>
-                      <p className="text-xs text-gray-600 mt-0.5">Track guest registration completion</p>
+                      <p className="text-xs text-gray-600 mt-0.5">Expected: {formData.number_of_guests || 0} guest(s)</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-blue-600">
-                        {bookingGuestsData?.length || 0}/{(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)}
+                        {bookingGuestsData?.length || 0}/{formData.number_of_guests || 0}
                       </p>
                       <p className="text-xs text-gray-600">guests registered</p>
                     </div>
@@ -2256,35 +2256,35 @@ export default function BookingSidePanel({
                     <div
                       className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
                       style={{
-                        width: `${Math.min(100, ((bookingGuestsData?.length || 0) / Math.max(1, (formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))) * 100)}%`,
+                        width: `${Math.min(100, ((bookingGuestsData?.length || 0) / Math.max(1, formData.number_of_guests || 0)) * 100)}%`,
                       }}
                     />
                   </div>
 
-                  {bookingGuestsData && bookingGuestsData.length !== ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)) && (
+                  {bookingGuestsData && bookingGuestsData.length !== (formData.number_of_guests || 0) && (
                     <div className={`mt-3 flex items-start gap-2 p-2 rounded-lg border ${
-                      bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                      bookingGuestsData.length > (formData.number_of_guests || 0)
                         ? 'bg-amber-50 border-amber-300'
                         : 'bg-orange-50 border-orange-300'
                     }`}>
                       <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-                        bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                        bookingGuestsData.length > (formData.number_of_guests || 0)
                           ? 'text-amber-600'
                           : 'text-orange-600'
                       }`} />
                       <p className={`text-xs ${
-                        bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                        bookingGuestsData.length > (formData.number_of_guests || 0)
                           ? 'text-amber-800'
                           : 'text-orange-800'
                       }`}>
-                        {bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
-                          ? `${bookingGuestsData.length} guests registered but booking is for ${(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)}`
-                          : `${((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)) - bookingGuestsData.length} more guest(s) needed`}
+                        {bookingGuestsData.length > (formData.number_of_guests || 0)
+                          ? `${bookingGuestsData.length} guests registered but booking is for ${formData.number_of_guests || 0}`
+                          : `${(formData.number_of_guests || 0) - bookingGuestsData.length} more guest(s) needed`}
                       </p>
                     </div>
                   )}
 
-                  {bookingGuestsData && bookingGuestsData.length > 0 && bookingGuestsData.length === ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)) && (
+                  {bookingGuestsData && bookingGuestsData.length > 0 && bookingGuestsData.length === (formData.number_of_guests || 0) && (
                     <div className="mt-3 flex items-center gap-2 p-2 rounded-lg bg-emerald-50 border border-emerald-300">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                       <p className="text-xs font-semibold text-emerald-900">

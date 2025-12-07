@@ -112,7 +112,7 @@ class BookingGuestSerializer(serializers.ModelSerializer):
             'document_issue_country', 'document_issue_province', 'document_issue_city',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'booking', 'created_at', 'updated_at']
 
     def validate(self, data):
         """Validate Italian-specific requirements."""
