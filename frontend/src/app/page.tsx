@@ -242,8 +242,22 @@ export default function Home() {
           api.host.get(),
           api.reviews.list(),
         ]);
-        setHostProfile(hostRes.data || null);
-        setPublicReviews(reviewsRes.data || []);
+        const hostData = hostRes.data || null;
+        const reviewsData = reviewsRes.data;
+        const normalizedReviews = Array.isArray(reviewsData?.results)
+          ? reviewsData.results
+          : Array.isArray(reviewsData)
+            ? reviewsData
+            : [];
+        setHostProfile(
+          hostData
+            ? {
+                ...hostData,
+                languages: Array.isArray(hostData.languages) ? hostData.languages : [],
+              }
+            : null
+        );
+        setPublicReviews(normalizedReviews);
       } catch (error) {
         console.error('Failed to load host/reviews', error);
       } finally {

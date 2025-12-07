@@ -120,8 +120,9 @@ export default function ForgotPasswordPage() {
     const loadReviews = async () => {
       try {
         const res = await api.reviews.list();
-        if (res.data && res.data.length) {
-          setReviews(res.data);
+        const incoming = res.data?.results || res.data;
+        if (Array.isArray(incoming) && incoming.length) {
+          setReviews(incoming);
         }
       } catch (error) {
         console.error('Failed to load reviews', error);
