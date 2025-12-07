@@ -201,7 +201,7 @@ export default function Home() {
           setHeroImages(images.map((img: GalleryImage) => ({
             src: img.url || '',
             alt: img.alt_text || img.title || 'Hero image'
-          })).filter(img => img.src)); // Filter out empty URLs
+          })).filter((img: { src: string; alt: string }) => img.src)); // Filter out empty URLs
         }
       } catch (error) {
         console.error('Failed to fetch hero images:', error);
@@ -222,7 +222,7 @@ export default function Home() {
           setGalleryImages(images.map((img: GalleryImage) => ({
             src: img.url || '',
             alt: img.alt_text || img.title || 'Gallery image'
-          })).filter(img => img.src)); // Filter out empty URLs
+          })).filter((img: { src: string; alt: string }) => img.src)); // Filter out empty URLs
         }
       } catch (error) {
         console.error('Failed to fetch gallery images:', error);
