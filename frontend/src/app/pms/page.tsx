@@ -349,7 +349,7 @@ export default function PMSDashboard() {
     }
 
     bookingsArray
-      .filter((b: any) => b.status && b.status !== 'cancelled')
+      .filter((b: any) => b.status && !['cancelled'].includes(b.status.toLowerCase()))
       .forEach((b: any) => {
         const checkIn = new Date(b.check_in_date);
         const checkOut = new Date(b.check_out_date);
@@ -530,7 +530,8 @@ export default function PMSDashboard() {
         const bucket = months.find((m) => m.key === key);
         if (!bucket) return;
         const status = (b.status || '').toLowerCase();
-        if (['confirmed', 'paid', 'checked_in'].includes(status)) {
+        // no_show counts as confirmed booking (guest booked but didn't arrive)
+        if (['confirmed', 'paid', 'checked_in', 'no_show'].includes(status)) {
           bucket.confirmed += 1;
         } else if (status === 'cancelled') {
           bucket.cancelled += 1;

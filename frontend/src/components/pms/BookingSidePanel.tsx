@@ -1050,6 +1050,8 @@ export default function BookingSidePanel({
       const canCheckOut = formData.status === 'checked_in';
       const canCancel = formData.status && !['cancelled', 'checked_out', 'no_show'].includes(formData.status);
       const canMarkNoShow = formData.status && ['confirmed', 'paid'].includes(formData.status);
+      const canUndoNoShow = formData.status === 'no_show';
+      const canUndoCancel = formData.status === 'cancelled';
 
       return (
         <div className="border-t px-6 py-4 bg-gray-50 space-y-3">
@@ -1105,6 +1107,30 @@ export default function BookingSidePanel({
               >
                 <Ban className="w-4 h-4 mr-1" />
                 {statusUpdating ? 'Updating...' : 'No Show'}
+              </Button>
+            )}
+            {canUndoNoShow && (
+              <Button
+                variant="outline"
+                disabled={statusUpdating}
+                onClick={() => handleStatusUpdate('confirmed')}
+                size="sm"
+                className="border-green-400 text-green-700 hover:bg-green-50"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+                {statusUpdating ? 'Updating...' : 'Undo No Show'}
+              </Button>
+            )}
+            {canUndoCancel && (
+              <Button
+                variant="outline"
+                disabled={statusUpdating}
+                onClick={() => handleStatusUpdate('confirmed')}
+                size="sm"
+                className="border-green-400 text-green-700 hover:bg-green-50"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+                {statusUpdating ? 'Updating...' : 'Undo Cancellation'}
               </Button>
             )}
             {canCancel && (
