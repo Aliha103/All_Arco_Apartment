@@ -389,7 +389,7 @@ function BookingPageContent() {
   const isProcessing = createBooking.isPending || createCheckout.isPending;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0B0C10] via-[#101119] to-[#0B0C10] text-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#F9F6F1] via-[#F5F0E8] to-[#EDE7DC] text-gray-900">
       {/* Navigation */}
       <SiteNav />
 
@@ -404,10 +404,10 @@ function BookingPageContent() {
             <Sparkles className="w-4 h-4 animate-pulse" />
             Seamless Booking Experience
           </div>
-          <h1 className="text-3xl sm:text-4xl font-light text-white leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-light text-gray-900 leading-tight">
             Your Venetian escape awaits. Book in moments, not minutes.
           </h1>
-          <p className="text-white/70 max-w-2xl">
+          <p className="text-gray-700 max-w-2xl">
             Transparent pricing, real-time availability, and instant confirmation. Simply select your dates, enter your details, and secure your stay with confidence.
           </p>
           {/* Security Badge */}
@@ -415,7 +415,7 @@ function BookingPageContent() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center gap-2 text-sm text-white/60 mt-2"
+            className="flex items-center gap-2 text-sm text-gray-600 mt-2"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>Bank-level encryption • Instant confirmation</span>
@@ -425,7 +425,7 @@ function BookingPageContent() {
         <div className="grid lg:grid-cols-[2fr_1fr] gap-6 lg:gap-8 items-start">
           {/* Booking Flow Card */}
           <motion.div variants={itemVariants}>
-            <Card className="bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
+            <Card className="bg-[#11131A]/80 border-white/5 backdrop-blur-xl shadow-2xl overflow-hidden">
               <CardHeader className="border-b border-white/5 bg-gradient-to-r from-white/5 to-transparent">
                 <div className="flex items-center justify-between gap-4">
                   <div>
