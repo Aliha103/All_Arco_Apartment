@@ -13,6 +13,8 @@ export function useAuth() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, setUser, setLoading, logout: storeLogout } = useAuthStore();
+  const hasSession =
+    typeof document !== 'undefined' && document.cookie.includes('sessionid=');
 
   const redirectAfterAuth = (nextUser: User) => {
     const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
@@ -28,6 +30,7 @@ export function useAuth() {
       return response.data;
     },
     retry: false,
+    enabled: hasSession,
   });
 
   useEffect(() => {
