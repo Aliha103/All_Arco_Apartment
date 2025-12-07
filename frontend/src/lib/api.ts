@@ -107,6 +107,15 @@ export const api = {
       apiClient.post('/bookings/lookup/update/', { confirmation, email, updates }),
     lookupCheckin: (confirmation: string, email: string, guests: any[]) =>
       apiClient.post('/bookings/lookup/checkin/', { confirmation, email, guests }),
+    // Booking Guests management
+    guests: {
+      list: (bookingId: string) => apiClient.get(`/bookings/${bookingId}/guests/`),
+      create: (bookingId: string, data: any) => apiClient.post(`/bookings/${bookingId}/guests/`, data),
+      update: (bookingId: string, guestId: string, data: any) =>
+        apiClient.patch(`/bookings/${bookingId}/guests/${guestId}/`, data),
+      delete: (bookingId: string, guestId: string) =>
+        apiClient.delete(`/bookings/${bookingId}/guests/${guestId}/`),
+    },
   },
 
   // Blocked Dates
