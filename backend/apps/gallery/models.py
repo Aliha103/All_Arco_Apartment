@@ -16,7 +16,7 @@ class HeroImage(models.Model):
     
     title = models.CharField(max_length=200)
     alt_text = models.CharField(max_length=255, help_text="Alt text for accessibility")
-    image = models.ImageField(upload_to='gallery/hero/')
+    image = models.ImageField(upload_to='gallery/hero/', blank=True, null=True, help_text="Upload an image file")
     image_url = models.URLField(blank=True, null=True, help_text="External image URL (alternative to upload)")
     image_type = models.CharField(max_length=10, choices=IMAGE_TYPE_CHOICES, default='both')
     order = models.PositiveIntegerField(default=0, help_text="Display order (lower = first)")
@@ -43,8 +43,13 @@ class HeroImage(models.Model):
     @property
     def url(self):
         """Return the image URL - either uploaded file or external URL."""
-        if self.image:
-            return self.image.url
+        # Prefer uploaded file over external URL
+        if self.image and hasattr(self.image, 'url'):
+            try:
+                return self.image.url
+            except ValueError:
+                # Handle case where file reference exists but file doesn't
+                pass
         return self.image_url or ''
     
     def save(self, *args, **kwargs):
