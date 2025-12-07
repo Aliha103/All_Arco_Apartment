@@ -803,13 +803,15 @@ export default function PMSDashboard() {
                         </Button>
                       </Link>
                     </div>
-                    <div className="space-y-2 flex-1 flex flex-col min-h-[140px]">
+                    <div className="flex-1 flex flex-col">
                       {todaysOps.arrivals && todaysOps.arrivals.length > 0 ? (
-                        todaysOps.arrivals.map((booking: any) => (
-                          <BookingItem key={booking.id} booking={booking} type="arrival" hideData={hideSensitiveData} />
-                        ))
+                        <div className="space-y-2 flex-1 flex flex-col justify-center min-h-[160px]">
+                          {todaysOps.arrivals.map((booking: any) => (
+                            <BookingItem key={booking.id} booking={booking} type="arrival" hideData={hideSensitiveData} />
+                          ))}
+                        </div>
                       ) : (
-                        <div className="flex items-center justify-center text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex-1">
+                        <div className="flex items-center justify-center text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex-1 min-h-[160px]">
                           <div>
                             <UserCheck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                             <p className="text-sm text-gray-600 font-medium">No arrivals scheduled</p>
@@ -837,13 +839,15 @@ export default function PMSDashboard() {
                         </Button>
                       </Link>
                     </div>
-                    <div className="space-y-2 flex-1 flex flex-col min-h-[140px]">
+                    <div className="flex-1 flex flex-col">
                       {todaysOps.departures && todaysOps.departures.length > 0 ? (
-                        todaysOps.departures.map((booking: any) => (
-                          <BookingItem key={booking.id} booking={booking} type="departure" hideData={hideSensitiveData} />
-                        ))
+                        <div className="space-y-2 flex-1 flex flex-col justify-center min-h-[160px]">
+                          {todaysOps.departures.map((booking: any) => (
+                            <BookingItem key={booking.id} booking={booking} type="departure" hideData={hideSensitiveData} />
+                          ))}
+                        </div>
                       ) : (
-                        <div className="flex items-center justify-center text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex-1">
+                        <div className="flex items-center justify-center text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex-1 min-h-[160px]">
                           <div>
                             <UserX className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                             <p className="text-sm text-gray-600 font-medium">No departures scheduled</p>
