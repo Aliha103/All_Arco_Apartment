@@ -61,6 +61,18 @@ const mapStyles = `
     font-family: inherit;
     height: 100%;
     width: 100%;
+    z-index: 0 !important; /* keep map below surrounding overlays */
+  }
+
+  .leaflet-pane,
+  .leaflet-top,
+  .leaflet-bottom {
+    z-index: 0 !important;
+  }
+
+  .leaflet-control-container .leaflet-top,
+  .leaflet-control-container .leaflet-bottom {
+    z-index: 10 !important; /* keep controls clickable without covering other sections */
   }
 
   .leaflet-control-zoom {
