@@ -56,26 +56,11 @@ interface GalleryImage {
   order: number;
 }
 
-// Helper to check if URL is external (requires unoptimized for unknown domains)
-const isExternalUrl = (url: string): boolean => {
-  if (!url) return false;
-  // Relative URLs are local
-  if (url.startsWith('/')) return false;
-  // Check if it's from a known/configured domain
-  const knownDomains = [
-    'images.unsplash.com',
-    'allarcoapartment.com',
-    'www.allarcoapartment.com',
-    'res.cloudinary.com',
-    'amazonaws.com',
-    'railway.app',
-  ];
-  try {
-    const urlObj = new URL(url);
-    return !knownDomains.some(domain => urlObj.hostname.includes(domain));
-  } catch {
-    return false;
-  }
+// Normalize media URLs to absolute to avoid _next/image proxy errors
+const normalizeImageUrl = (url: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `https://www.allarcoapartment.com${url}`;
 };
 
 // Property data
@@ -199,7 +184,7 @@ export default function Home() {
         const images = response.data;
         if (images && images.length > 0) {
           setHeroImages(images.map((img: GalleryImage) => ({
-            src: img.url || '',
+            src: normalizeImageUrl(img.url || ''),
             alt: img.alt_text || img.title || 'Hero image'
           })).filter((img: { src: string; alt: string }) => img.src)); // Filter out empty URLs
         }
@@ -220,7 +205,7 @@ export default function Home() {
         const images = response.data;
         if (images && images.length > 0) {
           setGalleryImages(images.map((img: GalleryImage) => ({
-            src: img.url || '',
+            src: normalizeImageUrl(img.url || ''),
             alt: img.alt_text || img.title || 'Gallery image'
           })).filter((img: { src: string; alt: string }) => img.src)); // Filter out empty URLs
         }
@@ -275,7 +260,7 @@ export default function Home() {
                   className="object-cover"
                   priority={currentImageIndex === 0}
                   sizes="100vw"
-                  unoptimized={isExternalUrl(heroImages[currentImageIndex].src)}
+                  unoptimized
                 />
               </motion.div>
             </AnimatePresence>
@@ -451,7 +436,7 @@ export default function Home() {
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, 25vw"
-                        unoptimized={isExternalUrl(galleryImages[0].src)}
+                        unoptimized
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -467,7 +452,7 @@ export default function Home() {
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, 25vw"
-                        unoptimized={isExternalUrl(galleryImages[1].src)}
+                        unoptimized
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -485,7 +470,7 @@ export default function Home() {
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, 25vw"
-                        unoptimized={isExternalUrl(galleryImages[2].src)}
+                        unoptimized
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -501,7 +486,7 @@ export default function Home() {
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, 25vw"
-                        unoptimized={isExternalUrl(galleryImages[3].src)}
+                        unoptimized
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -608,7 +593,7 @@ export default function Home() {
                       fill
                       className="object-cover hover:scale-110 transition-transform duration-500"
                       sizes="(max-width: 768px) 50vw, 25vw"
-                      unoptimized={isExternalUrl(image.src)}
+                      unoptimized
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
