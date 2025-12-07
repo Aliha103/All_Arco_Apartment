@@ -21,6 +21,9 @@ import {
   Calendar,
   Users,
   Ban,
+  Link as LinkIcon,
+  UserPlus,
+  Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -1345,6 +1348,30 @@ export default function BookingSidePanel({
             </Button>
           </div>
 
+          {/* Guest Management Buttons */}
+          {formData.status && !['cancelled'].includes(formData.status) && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setOnlineCheckInModalOpen(true)}
+                size="sm"
+                className="border-blue-400 text-blue-700 hover:bg-blue-50"
+              >
+                <LinkIcon className="w-4 h-4 mr-1" />
+                Online Check-in
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setGuestRegistrationModalOpen(true)}
+                size="sm"
+                className="border-purple-400 text-purple-700 hover:bg-purple-50"
+              >
+                <UserPlus className="w-4 h-4 mr-1" />
+                Guest Registration
+              </Button>
+            </div>
+          )}
+
           {/* Status Action Buttons */}
           <div className="flex flex-wrap gap-2">
             {canCheckIn && (
@@ -1522,6 +1549,110 @@ export default function BookingSidePanel({
             </Button>
             <Button variant="destructive" onClick={handleDiscard}>
               Discard Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Online Check-in Modal */}
+      <Dialog open={onlineCheckInModalOpen} onOpenChange={setOnlineCheckInModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Online Check-in</DialogTitle>
+            <DialogDescription>
+              Share the online check-in link with your guest
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2">
+              <Input
+                readOnly
+                value={generateOnlineCheckInLink()}
+                className="flex-1 text-sm text-gray-700 bg-gray-50"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCopyCheckInLink}
+              >
+                {checkInLinkCopied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-1" />
+                    Copy
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="border-t pt-4">
+              <p className="text-sm text-gray-600 mb-3">Send link via email</p>
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  variant="default"
+                  onClick={() => handleSendCheckInEmail()}
+                  disabled={sendingCheckInEmail}
+                >
+                  {sendingCheckInEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send to {formData.guest_email}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOnlineCheckInModalOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guest Registration Modal */}
+      <Dialog open={guestRegistrationModalOpen} onOpenChange={setGuestRegistrationModalOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Guest Registration</DialogTitle>
+            <DialogDescription>
+              Register all guests for this booking ({(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests total)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+              <p className="font-medium mb-1">Coming Soon</p>
+              <p className="text-blue-700">
+                Full guest registration with individual guest details (name, ID, passport) will be available in the next update.
+                This feature will allow you to register all {(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests for this booking.
+              </p>
+            </div>
+            {/* Placeholder for future guest registration form */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-gray-700">Expected features:</p>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>Full name for each guest</li>
+                <li>Date of birth</li>
+                <li>Nationality</li>
+                <li>ID/Passport number</li>
+                <li>Document upload (ID, passport scan)</li>
+                <li>Signature capture</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGuestRegistrationModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
