@@ -442,19 +442,33 @@ export default function BookingWidget() {
   const disabledDates = useMemo(() => {
     const disabled: Date[] = [];
 
+    if (!Array.isArray(blockedRanges)) {
+      return disabled;
+    }
+
     blockedRanges.forEach((range) => {
-      const startDate = parseISO(range.start);
-      const endDate = parseISO(range.end);
+      try {
+        if (!range || !range.start || !range.end) return;
 
-      // For bookings: block all dates from start to (end - 1 day)
-      // This makes the checkout date (end) available for new check-ins
-      let current = new Date(startDate);
-      const lastBlockedDate = new Date(endDate);
-      lastBlockedDate.setDate(lastBlockedDate.getDate() - 1);
+        const startDate = parseISO(range.start);
+        const endDate = parseISO(range.end);
 
-      while (current <= lastBlockedDate) {
-        disabled.push(new Date(current));
-        current.setDate(current.getDate() + 1);
+        // Validate dates
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return;
+
+        // For bookings: block all dates from start to (end - 1 day)
+        // This makes the checkout date (end) available for new check-ins
+        let current = new Date(startDate);
+        const lastBlockedDate = new Date(endDate);
+        lastBlockedDate.setDate(lastBlockedDate.getDate() - 1);
+
+        while (current <= lastBlockedDate) {
+          disabled.push(new Date(current));
+          current.setDate(current.getDate() + 1);
+        }
+      } catch (error) {
+        // Skip invalid date ranges
+        return;
       }
     });
 
@@ -603,7 +617,7 @@ export default function BookingWidget() {
               numberOfMonths={2}
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
-              disabled={[{ before: today }, ...disabledDates]}
+              disabled={[{ before: today }, ...(Array.isArray(disabledDates) ? disabledDates : [])]}
               showOutsideDays={false}
               className="!font-sans [&_button]:!text-gray-900 [&_.rdp-day]:!text-gray-900"
               classNames={{
