@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -9,16 +9,21 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  Users,
   TrendingUp,
   ChevronLeft,
   ChevronRight,
   Sparkles,
   CheckSquare,
-  XCircle,
   PlayCircle,
   ListTodo,
-  X,
+  Trophy,
+  Target,
+  BarChart3,
+  Filter,
+  Search,
+  MoreVertical,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,8 +34,25 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-// Types
+// ============================================================================
+// Types & Interfaces
+// ============================================================================
+
 interface CleaningSchedule {
   id: string;
   booking?: {
@@ -68,44 +90,106 @@ interface Statistics {
   upcoming_count: number;
 }
 
-const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  assigned: 'bg-blue-100 text-blue-800 border-blue-300',
-  in_progress: 'bg-purple-100 text-purple-800 border-purple-300',
-  completed: 'bg-green-100 text-green-800 border-green-300',
-  cancelled: 'bg-red-100 text-red-800 border-red-300',
+// ============================================================================
+// Configuration & Constants
+// ============================================================================
+
+const STATUS_CONFIG = {
+  pending: {
+    label: 'Scheduled',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    icon: Clock,
+    iconColor: 'text-amber-600',
+  },
+  assigned: {
+    label: 'Assigned',
+    color: 'bg-blue-50 text-blue-700 border-blue-200',
+    icon: Target,
+    iconColor: 'text-blue-600',
+  },
+  in_progress: {
+    label: 'In Progress',
+    color: 'bg-purple-50 text-purple-700 border-purple-200',
+    icon: PlayCircle,
+    iconColor: 'text-purple-600',
+  },
+  completed: {
+    label: 'Completed',
+    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    icon: CheckCircle2,
+    iconColor: 'text-emerald-600',
+  },
+  cancelled: {
+    label: 'Cancelled',
+    color: 'bg-gray-50 text-gray-700 border-gray-200',
+    icon: AlertCircle,
+    iconColor: 'text-gray-600',
+  },
 };
 
-const statusLabels = {
-  pending: 'TODO',
-  assigned: 'TODO',
-  in_progress: 'In Process',
-  completed: 'Done',
-  cancelled: 'Cancelled',
+const PRIORITY_CONFIG = {
+  low: {
+    label: 'Low Priority',
+    color: 'bg-slate-100 text-slate-700 border-slate-200',
+  },
+  medium: {
+    label: 'Medium Priority',
+    color: 'bg-orange-100 text-orange-700 border-orange-200',
+  },
+  high: {
+    label: 'High Priority',
+    color: 'bg-rose-100 text-rose-700 border-rose-200',
+  },
 };
 
-const priorityColors = {
-  low: 'bg-gray-100 text-gray-700',
-  medium: 'bg-orange-100 text-orange-700',
-  high: 'bg-red-100 text-red-700',
+const STAT_CARD_VARIANTS = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.5,
+      ease: [0.4, 0, 0.2, 1],
+    },
+  }),
 };
 
-const statusIcons = {
-  pending: ListTodo,
-  assigned: Users,
-  in_progress: PlayCircle,
-  completed: CheckCircle2,
-  cancelled: XCircle,
+const CLEANING_CARD_VARIANTS = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      duration: 0.4,
+      ease: [0.4, 0, 0.2, 1],
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: {
+      duration: 0.2,
+    },
+  },
 };
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export default function CleaningPage() {
   const queryClient = useQueryClient();
+
+  // State management
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedCleaning, setSelectedCleaning] = useState<CleaningSchedule | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCalendar, setShowCalendar] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCleaning, setSelectedCleaning] = useState<CleaningSchedule | null>(null);
 
-  // Form state for creating cleaning
+  // Form state
   const [formData, setFormData] = useState({
     scheduled_date: '',
     scheduled_time: '10:00',
@@ -116,35 +200,40 @@ export default function CleaningPage() {
   const currentMonth = selectedDate.getMonth() + 1;
   const currentYear = selectedDate.getFullYear();
 
-  // Fetch statistics
-  const { data: stats } = useQuery<Statistics>({
+  // ============================================================================
+  // Data Fetching
+  // ============================================================================
+
+  const { data: stats, isLoading: statsLoading } = useQuery<Statistics>({
     queryKey: ['cleaning-stats'],
     queryFn: async () => {
       const response = await api.cleaning.schedules.statistics();
       return response.data;
     },
+    refetchInterval: 30000,
   });
 
-  // Fetch calendar data for current month
   const { data: calendarData, isLoading: calendarLoading } = useQuery({
     queryKey: ['cleaning-calendar', currentYear, currentMonth],
     queryFn: async () => {
       const response = await api.cleaning.schedules.calendar(currentYear, currentMonth);
       return response.data;
     },
-    enabled: true,
   });
 
-  // Fetch all cleanings for the list view
   const { data: cleanings, isLoading: cleaningsLoading } = useQuery<CleaningSchedule[]>({
     queryKey: ['cleaning-schedules'],
     queryFn: async () => {
       const response = await api.cleaning.schedules.list();
       return response.data.results || response.data;
     },
+    refetchInterval: 30000,
   });
 
-  // Create cleaning mutation
+  // ============================================================================
+  // Mutations
+  // ============================================================================
+
   const createCleaning = useMutation({
     mutationFn: (data: any) => api.cleaning.schedules.create(data),
     onSuccess: () => {
@@ -152,60 +241,75 @@ export default function CleaningPage() {
       queryClient.invalidateQueries({ queryKey: ['cleaning-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['cleaning-stats'] });
       setShowCreateModal(false);
-      setFormData({
-        scheduled_date: '',
-        scheduled_time: '10:00',
-        priority: 'medium',
-        special_instructions: '',
-      });
-      toast.success('Cleaning scheduled successfully!');
+      resetForm();
+      toast.success('Cleaning scheduled successfully');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to schedule cleaning');
     },
   });
 
-  // Mutation to start cleaning
   const startCleaning = useMutation({
     mutationFn: (id: string) => api.cleaning.schedules.start(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cleaning-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['cleaning-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['cleaning-stats'] });
-      toast.success('Cleaning started!');
+      toast.success('Cleaning started');
     },
-    onError: () => {
-      toast.error('Failed to start cleaning');
-    },
+    onError: () => toast.error('Failed to start cleaning'),
   });
 
-  // Mutation to complete cleaning
   const completeCleaning = useMutation({
     mutationFn: (id: string) => api.cleaning.schedules.complete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cleaning-schedules'] });
-      queryClient.invalidateQueries({ queryKey: ['cleaning-calendar'] });
       queryClient.invalidateQueries({ queryKey: ['cleaning-stats'] });
-      toast.success('Cleaning completed!');
+      toast.success('Cleaning completed');
     },
-    onError: () => {
-      toast.error('Failed to complete cleaning');
-    },
+    onError: () => toast.error('Failed to complete cleaning'),
   });
 
-  // Mutation to toggle task completion
   const toggleTask = useMutation({
     mutationFn: (taskId: string) => api.cleaning.tasks.toggleComplete(taskId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cleaning-schedules'] });
-      toast.success('Task updated!');
+      toast.success('Task updated');
     },
-    onError: () => {
-      toast.error('Failed to update task');
-    },
+    onError: () => toast.error('Failed to update task'),
   });
 
-  // Navigation functions
+  const deleteCleaning = useMutation({
+    mutationFn: (id: string) => api.cleaning.schedules.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cleaning-schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['cleaning-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['cleaning-stats'] });
+      toast.success('Cleaning deleted');
+    },
+    onError: () => toast.error('Failed to delete cleaning'),
+  });
+
+  // ============================================================================
+  // Handlers & Utilities
+  // ============================================================================
+
+  const resetForm = () => {
+    setFormData({
+      scheduled_date: '',
+      scheduled_time: '10:00',
+      priority: 'medium',
+      special_instructions: '',
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createCleaning.mutate({
+      ...formData,
+      status: 'pending',
+    });
+  };
+
   const goToPreviousMonth = () => {
     setSelectedDate(new Date(currentYear, currentMonth - 2, 1));
   };
@@ -218,13 +322,46 @@ export default function CleaningPage() {
     setSelectedDate(new Date());
   };
 
-  // Get cleanings for a specific date
   const getCleaningsForDate = (date: string) => {
     if (!calendarData?.cleanings) return [];
     return calendarData.cleanings[date] || [];
   };
 
-  // Generate calendar days
+  // ============================================================================
+  // Computed Values
+  // ============================================================================
+
+  const filteredCleanings = useMemo(() => {
+    if (!cleanings) return [];
+
+    let filtered = [...cleanings];
+
+    // Filter by status
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter((c) => c.status === filterStatus);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          c.booking?.guest_name?.toLowerCase().includes(query) ||
+          c.booking?.booking_id?.toLowerCase().includes(query) ||
+          c.assigned_to_name?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort by date (upcoming first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(`${a.scheduled_date}T${a.scheduled_time}`);
+      const dateB = new Date(`${b.scheduled_date}T${b.scheduled_time}`);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    return filtered;
+  }, [cleanings, filterStatus, searchQuery]);
+
   const generateCalendarDays = () => {
     const firstDay = new Date(currentYear, currentMonth - 1, 1);
     const lastDay = new Date(currentYear, currentMonth, 0);
@@ -233,12 +370,10 @@ export default function CleaningPage() {
 
     const days = [];
 
-    // Add empty cells for days before the month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
 
-    // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(day);
     }
@@ -249,414 +384,634 @@ export default function CleaningPage() {
   const calendarDays = generateCalendarDays();
   const monthName = selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createCleaning.mutate({
-      ...formData,
-      status: 'pending',
-    });
-  };
+  // ============================================================================
+  // Render
+  // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 p-4 md:p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto space-y-6"
-      >
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#C4A572] to-amber-600 bg-clip-text text-transparent flex items-center gap-2">
-              <Sparkles className="w-8 h-8 text-[#C4A572]" />
-              Cleaning Management
-            </h1>
-            <p className="text-gray-600 mt-1">Manage cleaning schedules and tasks</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-8">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
+        >
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-[#C4A572] to-amber-600 rounded-xl shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
+                  Cleaning Management
+                </h1>
+                <p className="text-gray-600 mt-0.5">Schedule and track property cleaning tasks</p>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
               onClick={() => setShowCalendar(!showCalendar)}
-              className="border-[#C4A572] text-[#C4A572] hover:bg-[#C4A572] hover:text-white"
+              className="border-gray-300 hover:bg-gray-50"
             >
               <CalendarIcon className="w-4 h-4 mr-2" />
-              {showCalendar ? 'Hide' : 'Show'} Calendar
+              {showCalendar ? 'Hide Calendar' : 'Show Calendar'}
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="bg-[#C4A572] hover:bg-[#B39562] text-white"
+              className="bg-gradient-to-r from-[#C4A572] to-amber-600 hover:from-[#B39562] hover:to-amber-700 text-white shadow-md"
             >
               <Plus className="w-4 h-4 mr-2" />
               Schedule Cleaning
             </Button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4" />
-                Today's Cleanings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-gray-900">{stats?.today_cleanings || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-green-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                This Week
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-gray-900">{stats?.week_cleanings || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-yellow-500">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                Upcoming
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-gray-900">{stats?.upcoming_count || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-[#C4A572]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Avg Quality
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-gray-900">
-                {stats?.avg_quality_rating ? `${stats.avg_quality_rating.toFixed(1)}/5` : 'N/A'}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            {
+              title: "Today's Cleanings",
+              value: stats?.today_cleanings || 0,
+              icon: CalendarIcon,
+              color: 'from-blue-500 to-blue-600',
+              bgColor: 'bg-blue-50',
+              textColor: 'text-blue-700',
+            },
+            {
+              title: 'This Week',
+              value: stats?.week_cleanings || 0,
+              icon: TrendingUp,
+              color: 'from-emerald-500 to-emerald-600',
+              bgColor: 'bg-emerald-50',
+              textColor: 'text-emerald-700',
+            },
+            {
+              title: 'Upcoming',
+              value: stats?.upcoming_count || 0,
+              icon: AlertCircle,
+              color: 'from-amber-500 to-amber-600',
+              bgColor: 'bg-amber-50',
+              textColor: 'text-amber-700',
+            },
+            {
+              title: 'Quality Score',
+              value: stats?.avg_quality_rating ? `${stats.avg_quality_rating.toFixed(1)}/5` : 'N/A',
+              icon: Trophy,
+              color: 'from-[#C4A572] to-amber-600',
+              bgColor: 'bg-amber-50',
+              textColor: 'text-amber-700',
+            },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.title}
+              custom={i}
+              initial="hidden"
+              animate="visible"
+              variants={STAT_CARD_VARIANTS}
+            >
+              <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-[0.03]`} />
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                      <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                    </div>
+                    <div className={`p-3 ${stat.bgColor} rounded-xl`}>
+                      <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Compact Calendar */}
-        {showCalendar && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-lg">Calendar View</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={goToToday}>
-                      Today
-                    </Button>
-                    <span className="text-sm font-medium min-w-[140px] text-center">{monthName}</span>
-                    <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {calendarLoading ? (
-                  <div className="flex items-center justify-center h-48">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C4A572]"></div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-7 gap-1.5">
-                    {/* Day headers */}
-                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                      <div
-                        key={i}
-                        className="text-center text-[11px] font-semibold text-gray-600 py-1"
+        {/* Calendar Section */}
+        <AnimatePresence>
+          {showCalendar && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <CardTitle className="text-xl font-bold text-gray-900">Calendar View</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={goToToday}
+                        className="min-w-[80px]"
                       >
-                        {day}
+                        Today
+                      </Button>
+                      <span className="text-sm font-semibold min-w-[150px] text-center text-gray-700">
+                        {monthName}
+                      </span>
+                      <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {calendarLoading ? (
+                    <div className="flex items-center justify-center h-96">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="animate-spin rounded-full h-12 w-12 border-3 border-[#C4A572] border-t-transparent" />
+                        <p className="text-sm text-gray-500">Loading calendar...</p>
                       </div>
-                    ))}
-
-                    {/* Calendar days */}
-                    {calendarDays.map((day, index) => {
-                      if (day === null) {
-                        return <div key={`empty-${index}`} className="h-16" />;
-                      }
-
-                      const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                      const dayCleanings = getCleaningsForDate(dateStr);
-                      const isToday =
-                        new Date().toISOString().split('T')[0] === dateStr;
-
-                      return (
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-7 gap-2">
+                      {/* Day Headers */}
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                         <div
                           key={day}
-                          className={`h-20 border rounded p-1.5 text-[11px] cursor-pointer transition-all flex flex-col gap-1 ${
-                            isToday
-                              ? 'bg-[#C4A572] text-white border-[#C4A572]'
-                              : 'bg-white hover:bg-gray-50 border-gray-200'
-                          }`}
+                          className="text-center text-xs font-bold text-gray-600 uppercase tracking-wide py-3"
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="font-semibold">{day}</div>
-                            {dayCleanings.length > 0 && (
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isToday ? 'bg-white/20 text-white' : 'bg-[#C4A572]/15 text-[#8a6a32]'}`}>
-                                {dayCleanings.length}
-                              </span>
-                            )}
-                          </div>
-                          {dayCleanings.length > 0 && (
-                            <div className="space-y-1">
-                              {dayCleanings.slice(0, 2).map((cleaning: any) => (
-                                <div
-                                  key={cleaning.id}
-                                  className={`rounded px-1 py-0.5 leading-tight truncate ${isToday ? 'bg-white/20 text-white' : 'bg-[#C4A572]/10 text-gray-700'}`}
-                                  title={cleaning.booking?.guest_name || 'Cleaning'}
-                                >
-                                  {cleaning.booking?.booking_id || 'Cleaning'}
+                          {day}
+                        </div>
+                      ))}
+
+                      {/* Calendar Days */}
+                      {calendarDays.map((day, index) => {
+                        if (day === null) {
+                          return <div key={`empty-${index}`} className="aspect-square" />;
+                        }
+
+                        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const dayCleanings = getCleaningsForDate(dateStr);
+                        const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                        const isPast = new Date(dateStr) < new Date(new Date().toISOString().split('T')[0]);
+
+                        return (
+                          <motion.div
+                            key={day}
+                            whileHover={{ scale: 1.02 }}
+                            className={`
+                              aspect-square border-2 rounded-xl p-2 cursor-pointer transition-all
+                              ${isToday
+                                ? 'bg-gradient-to-br from-[#C4A572] to-amber-600 text-white border-amber-700 shadow-lg'
+                                : isPast
+                                ? 'bg-gray-50 border-gray-200 opacity-60'
+                                : 'bg-white border-gray-200 hover:border-[#C4A572] hover:shadow-md'
+                              }
+                            `}
+                          >
+                            <div className="flex flex-col h-full">
+                              <div className="flex items-start justify-between mb-1">
+                                <span className={`text-sm font-bold ${isToday ? 'text-white' : 'text-gray-700'}`}>
+                                  {day}
+                                </span>
+                                {dayCleanings.length > 0 && (
+                                  <span
+                                    className={`
+                                      text-[10px] px-2 py-0.5 rounded-full font-bold
+                                      ${isToday
+                                        ? 'bg-white/30 text-white'
+                                        : 'bg-[#C4A572]/20 text-[#8a6a32]'
+                                      }
+                                    `}
+                                  >
+                                    {dayCleanings.length}
+                                  </span>
+                                )}
+                              </div>
+                              {dayCleanings.length > 0 && (
+                                <div className="flex-1 space-y-1 overflow-hidden">
+                                  {dayCleanings.slice(0, 2).map((cleaning: any) => {
+                                    const status = STATUS_CONFIG[cleaning.status as keyof typeof STATUS_CONFIG];
+                                    const StatusIcon = status.icon;
+                                    return (
+                                      <div
+                                        key={cleaning.id}
+                                        className={`
+                                          text-[10px] px-1.5 py-1 rounded-md flex items-center gap-1 truncate
+                                          ${isToday
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700'
+                                          }
+                                        `}
+                                        title={cleaning.booking?.guest_name || 'General Cleaning'}
+                                      >
+                                        <StatusIcon className="w-2.5 h-2.5 flex-shrink-0" />
+                                        <span className="truncate">
+                                          {cleaning.booking?.booking_id || 'Cleaning'}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  {dayCleanings.length > 2 && (
+                                    <p className={`text-[9px] pl-1 ${isToday ? 'text-white/80' : 'text-gray-500'}`}>
+                                      +{dayCleanings.length - 2} more
+                                    </p>
+                                  )}
                                 </div>
-                              ))}
-                              {dayCleanings.length > 2 && (
-                                <p className="text-[10px] text-gray-500">
-                                  +{dayCleanings.length - 2} more
-                                </p>
                               )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Cleaning List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckSquare className="w-5 h-5 text-[#C4A572]" />
-              Cleaning Schedule
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {cleaningsLoading ? (
-              <div className="flex items-center justify-center h-48">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C4A572]"></div>
+        {/* Cleanings List Section */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-[#C4A572]" />
+                <CardTitle className="text-xl font-bold text-gray-900">Cleaning Schedule</CardTitle>
               </div>
-            ) : cleanings?.length === 0 ? (
-              <div className="text-center py-12">
-                <ListTodo className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">No cleanings scheduled</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Cleanings will be automatically created for check-outs and blocked dates
+
+              {/* Filters */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by guest or booking..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 w-full sm:w-[250px]"
+                  />
+                </div>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Scheduled</SelectItem>
+                    <SelectItem value="assigned">Assigned</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-6">
+            {cleaningsLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-12 w-12 border-3 border-[#C4A572] border-t-transparent" />
+                  <p className="text-sm text-gray-500">Loading cleanings...</p>
+                </div>
+              </div>
+            ) : filteredCleanings.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="inline-flex p-4 bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl mb-4">
+                  <ListTodo className="w-12 h-12 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No cleanings found</h3>
+                <p className="text-gray-500 text-sm max-w-sm mx-auto mb-6">
+                  {searchQuery || filterStatus !== 'all'
+                    ? 'Try adjusting your search or filters'
+                    : 'Cleanings will be automatically created for check-outs and you can manually schedule additional cleanings'}
                 </p>
+                {(searchQuery || filterStatus !== 'all') && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setFilterStatus('all');
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </div>
             ) : (
-              <div className="space-y-3">
-                {cleanings?.map((cleaning) => {
-                  const StatusIcon = statusIcons[cleaning.status];
-                  return (
-                    <motion.div
-                      key={cleaning.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
-                    >
-                      <div className="flex flex-col lg:flex-row justify-between gap-4">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-start gap-3">
-                            <StatusIcon className="w-5 h-5 mt-0.5 text-gray-600" />
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900">
-                                {cleaning.booking?.guest_name || 'General Cleaning'}
-                              </h3>
-                              {cleaning.booking && (
-                                <p className="text-sm text-gray-600">
-                                  Booking: {cleaning.booking.booking_id}
-                                </p>
-                              )}
-                              <div className="flex flex-wrap items-center gap-2 mt-2">
-                                <Badge className={statusColors[cleaning.status]}>
-                                  {statusLabels[cleaning.status]}
-                                </Badge>
-                                <Badge className={priorityColors[cleaning.priority]}>
-                                  {cleaning.priority}
-                                </Badge>
-                                <span className="text-sm text-gray-600">
-                                  {new Date(cleaning.scheduled_date).toLocaleDateString()} at{' '}
-                                  {cleaning.scheduled_time}
-                                </span>
+              <div className="space-y-4">
+                <AnimatePresence mode="popLayout">
+                  {filteredCleanings.map((cleaning, index) => {
+                    const status = STATUS_CONFIG[cleaning.status];
+                    const priority = PRIORITY_CONFIG[cleaning.priority];
+                    const StatusIcon = status.icon;
+                    const completedTasks = cleaning.tasks?.filter((t) => t.is_completed).length || 0;
+                    const totalTasks = cleaning.tasks?.length || 0;
+                    const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+                    return (
+                      <motion.div
+                        key={cleaning.id}
+                        custom={index}
+                        variants={CLEANING_CARD_VARIANTS}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        layout
+                        className="group relative bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-2xl p-6 hover:border-[#C4A572] hover:shadow-xl transition-all duration-300"
+                      >
+                        {/* Priority Indicator */}
+                        <div className={`absolute top-0 right-0 w-32 h-32 ${priority.color.split(' ')[0]}/5 rounded-bl-[100px] -z-10`} />
+
+                        <div className="flex flex-col lg:flex-row gap-6">
+                          {/* Left Section - Main Info */}
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-start gap-4">
+                              <div className={`p-3 ${status.color.split(' ')[0]} rounded-xl`}>
+                                <StatusIcon className={`w-6 h-6 ${status.iconColor}`} />
                               </div>
-                              {cleaning.assigned_to_name && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  Assigned: {cleaning.assigned_to_name}
-                                </p>
-                              )}
-                              {cleaning.task_completion_rate !== undefined && (
-                                <div className="mt-2">
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                      <div
-                                        className="bg-[#C4A572] h-2 rounded-full transition-all"
-                                        style={{ width: `${cleaning.task_completion_rate}%` }}
-                                      />
-                                    </div>
-                                    <span className="text-sm text-gray-600">
-                                      {Math.round(cleaning.task_completion_rate)}%
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-4 mb-2">
+                                  <div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-1">
+                                      {cleaning.booking?.guest_name || 'General Cleaning'}
+                                    </h3>
+                                    {cleaning.booking && (
+                                      <p className="text-sm text-gray-600">
+                                        Booking: <span className="font-mono font-medium">{cleaning.booking.booking_id}</span>
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <MoreVertical className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => setSelectedCleaning(cleaning)}>
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Edit Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          if (confirm('Are you sure you want to delete this cleaning?')) {
+                                            deleteCleaning.mutate(cleaning.id);
+                                          }
+                                        }}
+                                        className="text-red-600"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2 mb-3">
+                                  <Badge className={`${status.color} border font-medium`}>
+                                    {status.label}
+                                  </Badge>
+                                  <Badge className={`${priority.color} border font-medium`}>
+                                    {priority.label}
+                                  </Badge>
+                                  <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                    <Clock className="w-4 h-4" />
+                                    <span>
+                                      {new Date(cleaning.scheduled_date).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                      })}{' '}
+                                      at {cleaning.scheduled_time}
                                     </span>
                                   </div>
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
 
-                        <div className="flex lg:flex-col gap-2">
-                          {(cleaning.status === 'pending' || cleaning.status === 'assigned') && (
-                            <Button
-                              size="sm"
-                              onClick={() => startCleaning.mutate(cleaning.id)}
-                              disabled={startCleaning.isPending}
-                              className="bg-purple-600 hover:bg-purple-700 text-white"
-                            >
-                              <PlayCircle className="w-4 h-4 mr-1" />
-                              Start
-                            </Button>
-                          )}
-                          {cleaning.status === 'in_progress' && (
-                            <Button
-                              size="sm"
-                              onClick={() => completeCleaning.mutate(cleaning.id)}
-                              disabled={completeCleaning.isPending}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              <CheckCircle2 className="w-4 h-4 mr-1" />
-                              Complete
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                                {cleaning.assigned_to_name && (
+                                  <p className="text-sm text-gray-600 flex items-center gap-2">
+                                    <span className="font-medium">Assigned to:</span>
+                                    {cleaning.assigned_to_name}
+                                  </p>
+                                )}
 
-                      {/* Task Checklist Preview */}
-                      {cleaning.tasks && cleaning.tasks.length > 0 && (
-                        <div className="mt-4 pt-4 border-t">
-                          <p className="text-sm font-medium text-gray-700 mb-2">
-                            Tasks ({cleaning.tasks.filter((t) => t.is_completed).length}/
-                            {cleaning.tasks.length})
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {cleaning.tasks.map((task) => (
-                              <div
-                                key={task.id}
-                                className="flex items-center gap-2 text-sm"
-                              >
-                                <button
-                                  onClick={() => toggleTask.mutate(task.id)}
-                                  className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
-                                    task.is_completed
-                                      ? 'bg-[#C4A572] border-[#C4A572]'
-                                      : 'border-gray-300 hover:border-[#C4A572]'
-                                  }`}
-                                >
-                                  {task.is_completed && (
-                                    <CheckCircle2 className="w-3 h-3 text-white" />
-                                  )}
-                                </button>
-                                <span
-                                  className={`flex-1 ${
-                                    task.is_completed
-                                      ? 'line-through text-gray-500'
-                                      : 'text-gray-700'
-                                  }`}
-                                >
-                                  {task.title}
-                                </span>
+                                {cleaning.special_instructions && (
+                                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <p className="text-xs font-semibold text-amber-900 mb-1">Special Instructions:</p>
+                                    <p className="text-sm text-amber-800">{cleaning.special_instructions}</p>
+                                  </div>
+                                )}
+
+                                {/* Progress Bar */}
+                                {totalTasks > 0 && (
+                                  <div className="mt-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-medium text-gray-700">
+                                        Task Progress
+                                      </span>
+                                      <span className="text-sm font-bold text-gray-900">
+                                        {completedTasks}/{totalTasks} completed
+                                      </span>
+                                    </div>
+                                    <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                                      <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${progressPercentage}%` }}
+                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#C4A572] to-amber-600 rounded-full"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            ))}
+                            </div>
+
+                            {/* Task Checklist */}
+                            {cleaning.tasks && cleaning.tasks.length > 0 && (
+                              <div className="pt-4 border-t border-gray-200">
+                                <p className="text-sm font-semibold text-gray-900 mb-3">
+                                  Cleaning Checklist
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                  {cleaning.tasks.map((task) => (
+                                    <motion.button
+                                      key={task.id}
+                                      whileHover={{ scale: 1.02 }}
+                                      whileTap={{ scale: 0.98 }}
+                                      onClick={() => toggleTask.mutate(task.id)}
+                                      className={`
+                                        flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left
+                                        ${task.is_completed
+                                          ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
+                                          : 'bg-white border-gray-200 hover:border-[#C4A572]'
+                                        }
+                                      `}
+                                    >
+                                      <div
+                                        className={`
+                                          flex items-center justify-center w-5 h-5 rounded-lg border-2 flex-shrink-0
+                                          ${task.is_completed
+                                            ? 'bg-emerald-500 border-emerald-500'
+                                            : 'border-gray-300'
+                                          }
+                                        `}
+                                      >
+                                        {task.is_completed && (
+                                          <CheckCircle2 className="w-4 h-4 text-white" />
+                                        )}
+                                      </div>
+                                      <span
+                                        className={`
+                                          text-sm font-medium
+                                          ${task.is_completed
+                                            ? 'line-through text-gray-500'
+                                            : 'text-gray-700'
+                                          }
+                                        `}
+                                      >
+                                        {task.title}
+                                      </span>
+                                    </motion.button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Right Section - Action Buttons */}
+                          <div className="flex lg:flex-col gap-2 lg:min-w-[140px]">
+                            {cleaning.status === 'pending' || cleaning.status === 'assigned' ? (
+                              <Button
+                                onClick={() => startCleaning.mutate(cleaning.id)}
+                                disabled={startCleaning.isPending}
+                                className="flex-1 lg:flex-none bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-md"
+                              >
+                                <PlayCircle className="w-4 h-4 mr-2" />
+                                Start
+                              </Button>
+                            ) : cleaning.status === 'in_progress' ? (
+                              <Button
+                                onClick={() => completeCleaning.mutate(cleaning.id)}
+                                disabled={completeCleaning.isPending}
+                                className="flex-1 lg:flex-none bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-md"
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                Complete
+                              </Button>
+                            ) : cleaning.status === 'completed' && cleaning.quality_rating ? (
+                              <div className="flex-1 lg:flex-none p-3 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl border border-amber-200">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Trophy className="w-4 h-4 text-amber-600" />
+                                  <span className="text-sm font-bold text-amber-900">
+                                    {cleaning.quality_rating.toFixed(1)}/5
+                                  </span>
+                                </div>
+                                <p className="text-xs text-amber-700 text-center mt-1">Quality</p>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             )}
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Create Cleaning Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Schedule Cleaning</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Schedule New Cleaning</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label>Date *</Label>
+              <Label htmlFor="date" className="text-sm font-semibold text-gray-700">
+                Date *
+              </Label>
               <Input
+                id="date"
                 type="date"
                 value={formData.scheduled_date}
                 onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
                 required
                 min={new Date().toISOString().split('T')[0]}
+                className="w-full"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Time *</Label>
+              <Label htmlFor="time" className="text-sm font-semibold text-gray-700">
+                Time *
+              </Label>
               <Input
+                id="time"
                 type="time"
                 value={formData.scheduled_time}
                 onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
                 required
+                className="w-full"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Priority *</Label>
-              <select
-                className="w-full px-3 py-2 border rounded-lg"
+              <Label htmlFor="priority" className="text-sm font-semibold text-gray-700">
+                Priority *
+              </Label>
+              <Select
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                onValueChange={(value) => setFormData({ ...formData, priority: value })}
               >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
+                <SelectTrigger id="priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low Priority</SelectItem>
+                  <SelectItem value="medium">Medium Priority</SelectItem>
+                  <SelectItem value="high">High Priority</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Special Instructions</Label>
-              <textarea
-                className="w-full px-3 py-2 border rounded-lg min-h-20"
+              <Label htmlFor="instructions" className="text-sm font-semibold text-gray-700">
+                Special Instructions
+              </Label>
+              <Textarea
+                id="instructions"
                 value={formData.special_instructions}
                 onChange={(e) => setFormData({ ...formData, special_instructions: e.target.value })}
-                placeholder="Any special requirements..."
+                placeholder="Any special requirements or notes for the cleaning team..."
+                className="min-h-24 resize-none"
               />
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCreateModal(false)}
+                disabled={createCleaning.isPending}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={createCleaning.isPending}
-                className="bg-[#C4A572] hover:bg-[#B39562] text-white"
+                className="bg-gradient-to-r from-[#C4A572] to-amber-600 hover:from-[#B39562] hover:to-amber-700 text-white"
               >
                 {createCleaning.isPending ? 'Scheduling...' : 'Schedule Cleaning'}
               </Button>
