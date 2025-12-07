@@ -514,6 +514,36 @@ export default function BookingSidePanel({
     }
   }, [formData, initialData, mode]);
 
+  // Pre-fill guest form with primary guest data from booking when modal opens
+  useEffect(() => {
+    if (guestRegistrationModalOpen && formData && !editingGuestId) {
+      // Only pre-fill if there are no guests registered yet
+      if (!bookingGuestsData || bookingGuestsData.length === 0) {
+        const names = formData.guest_name?.split(' ') || [];
+        const firstName = names[0] || '';
+        const lastName = names.slice(1).join(' ') || '';
+
+        setGuestFormData({
+          is_primary: true,
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.guest_email || '',
+          date_of_birth: formData.guest_date_of_birth || '',
+          country_of_birth: formData.guest_country || '',
+          birth_province: '',
+          birth_city: '',
+          document_type: 'passport',
+          document_number: '',
+          document_issue_date: '',
+          document_expire_date: '',
+          document_issue_country: '',
+          document_issue_province: '',
+          document_issue_city: '',
+        });
+      }
+    }
+  }, [guestRegistrationModalOpen, formData, bookingGuestsData, editingGuestId]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

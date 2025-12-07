@@ -1046,6 +1046,37 @@ def booking_statistics(request):
     return Response(response_data)
 
 
+class BookingGuestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing booking guests (Italian Alloggiati Web compliance).
+
+    Nested under bookings: /api/bookings/{booking_id}/guests/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        from .serializers import BookingGuestSerializer, BookingGuestListSerializer
+        if self.action == 'list':
+            return BookingGuestListSerializer
+        return BookingGuestSerializer
+
+    def get_queryset(self):
+        from .models import BookingGuest
+        booking_id = self.kwargs.get('booking_pk')
+        return BookingGuest.objects.filter(booking_id=booking_id).order_by('-is_primary', 'created_at')
+
+    def perform_create(self, serializer):
+        booking_id = self.kwargs.get('booking_pk')
+        from .models import Booking
+
+        try:
+            booking = Booking.objects.get(id=booking_id)
+            serializer.save(booking=booking)
+        except Booking.DoesNotExist:
+            from rest_framework.exceptions import NotFound
+            raise NotFound('Booking not found')
+
+
 class BlockedDateViewSet(viewsets.ModelViewSet):
     """ViewSet for blocked dates management."""
     queryset = BlockedDate.objects.all()
