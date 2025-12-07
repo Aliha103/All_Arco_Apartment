@@ -12,14 +12,11 @@ import {
   User,
   Trash2,
   Edit,
-  Save,
-  X,
-  ChevronLeft,
-  ChevronRight,
+  Loader2,
   Search,
   Filter,
-  Loader2,
-  ClipboardCheck,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -52,23 +49,13 @@ interface CleaningSchedule {
   };
   scheduled_date: string;
   scheduled_time: string;
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   priority: 'low' | 'medium' | 'high';
   assigned_to?: string;
   assigned_to_name?: string;
   special_instructions?: string;
-  tasks: CleaningTask[];
   created_at?: string;
   updated_at?: string;
-}
-
-interface CleaningTask {
-  id: string;
-  title: string;
-  description?: string;
-  category: string;
-  is_completed: boolean;
-  order: number;
 }
 
 interface FormData {
@@ -87,8 +74,7 @@ interface FormData {
 
 const STATUS_CONFIG = {
   pending: { label: 'Scheduled', color: 'bg-amber-50 text-amber-700 border-amber-300', icon: Clock },
-  assigned: { label: 'Assigned', color: 'bg-blue-50 text-blue-700 border-blue-300', icon: User },
-  in_progress: { label: 'In Progress', color: 'bg-purple-50 text-purple-700 border-purple-300', icon: ClipboardCheck },
+  in_progress: { label: 'In Progress', color: 'bg-blue-50 text-blue-700 border-blue-300', icon: AlertCircle },
   completed: { label: 'Completed', color: 'bg-emerald-50 text-emerald-700 border-emerald-300', icon: CheckCircle2 },
   cancelled: { label: 'Cancelled', color: 'bg-gray-50 text-gray-700 border-gray-300', icon: AlertCircle },
 };
@@ -278,14 +264,6 @@ export default function CleaningPage() {
     onError: () => toast.error('Failed to update status'),
   });
 
-  const toggleTask = useMutation({
-    mutationFn: (taskId: string) => api.cleaning.tasks.toggleComplete(taskId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cleaning-schedules'] });
-    },
-    onError: () => toast.error('Failed to update task'),
-  });
-
   // ============================================================================
   // Handlers
   // ============================================================================
@@ -422,18 +400,21 @@ export default function CleaningPage() {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Cleaning Management</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Cleaning Management
+            </h1>
             <p className="text-gray-600 mt-1">Schedule and track property cleanings</p>
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => setShowCalendar(!showCalendar)}
+              className="border-gray-300"
             >
               <CalendarIcon className="w-4 h-4 mr-2" />
               {showCalendar ? 'Hide' : 'Show'} Calendar
@@ -443,7 +424,7 @@ export default function CleaningPage() {
                 resetForm();
                 setShowModal(true);
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Cleaning
@@ -453,49 +434,57 @@ export default function CleaningPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card className="border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Today</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.today_cleanings || 0}</p>
+                  <p className="text-sm text-gray-600 font-medium">Today</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats?.today_cleanings || 0}</p>
                 </div>
-                <CalendarIcon className="w-8 h-8 text-blue-600" />
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <CalendarIcon className="w-6 h-6 text-blue-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">This Week</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.week_cleanings || 0}</p>
+                  <p className="text-sm text-gray-600 font-medium">This Week</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats?.week_cleanings || 0}</p>
                 </div>
-                <ClipboardCheck className="w-8 h-8 text-emerald-600" />
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-purple-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Upcoming</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.upcoming_count || 0}</p>
+                  <p className="text-sm text-gray-600 font-medium">Upcoming</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats?.upcoming_count || 0}</p>
                 </div>
-                <Clock className="w-8 h-8 text-amber-600" />
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-amber-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-600 font-medium">Completed</p>
+                  <p className="text-3xl font-bold text-gray-900">
                     {stats?.status_breakdown?.completed || 0}
                   </p>
                 </div>
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -503,10 +492,10 @@ export default function CleaningPage() {
 
         {/* Calendar */}
         {showCalendar && (
-          <Card>
-            <CardHeader className="border-b">
+          <Card className="border-2 border-gray-100 shadow-lg">
+            <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
               <div className="flex justify-between items-center">
-                <CardTitle>Calendar</CardTitle>
+                <CardTitle className="text-gray-900">Calendar</CardTitle>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
                     <ChevronLeft className="w-4 h-4" />
@@ -514,7 +503,7 @@ export default function CleaningPage() {
                   <Button variant="outline" size="sm" onClick={goToToday}>
                     Today
                   </Button>
-                  <span className="text-sm font-medium min-w-[150px] text-center">
+                  <span className="text-sm font-semibold text-gray-900 min-w-[150px] text-center">
                     {monthName}
                   </span>
                   <Button variant="outline" size="sm" onClick={goToNextMonth}>
@@ -526,14 +515,14 @@ export default function CleaningPage() {
             <CardContent className="p-6">
               {loadingCalendar ? (
                 <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 </div>
               ) : (
                 <div className="grid grid-cols-7 gap-2">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                     <div
                       key={day}
-                      className="text-center text-xs font-bold text-gray-600 py-2"
+                      className="text-center text-xs font-bold text-gray-700 py-2"
                     >
                       {day}
                     </div>
@@ -551,14 +540,16 @@ export default function CleaningPage() {
                       <div
                         key={day}
                         className={`
-                          min-h-[80px] border-2 rounded-lg p-2 cursor-pointer transition-all
+                          min-h-[80px] border-2 rounded-lg p-2 transition-all
                           ${isToday
-                            ? 'bg-blue-50 border-blue-500'
-                            : 'bg-white border-gray-200 hover:border-blue-300'
+                            ? 'bg-gradient-to-br from-blue-50 to-purple-50 border-blue-500 shadow-md'
+                            : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
                           }
                         `}
                       >
-                        <div className="font-semibold text-sm text-gray-900">{day}</div>
+                        <div className={`font-bold text-sm ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                          {day}
+                        </div>
                         {dayCleanings.length > 0 && (
                           <div className="mt-1 space-y-1">
                             {dayCleanings.slice(0, 2).map((cleaning: any) => {
@@ -566,7 +557,7 @@ export default function CleaningPage() {
                               return (
                                 <div
                                   key={cleaning.id}
-                                  className={`text-xs px-1.5 py-0.5 rounded ${config.color}`}
+                                  className={`text-xs px-2 py-1 rounded-md border ${config.color} font-medium`}
                                   title={cleaning.booking?.guest_name || 'Cleaning'}
                                 >
                                   {cleaning.scheduled_time}
@@ -574,7 +565,7 @@ export default function CleaningPage() {
                               );
                             })}
                             {dayCleanings.length > 2 && (
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-600 font-medium">
                                 +{dayCleanings.length - 2} more
                               </div>
                             )}
@@ -590,10 +581,10 @@ export default function CleaningPage() {
         )}
 
         {/* Cleanings List */}
-        <Card>
-          <CardHeader className="border-b">
+        <Card className="border-2 border-gray-100 shadow-lg">
+          <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <CardTitle>Cleaning Schedule</CardTitle>
+              <CardTitle className="text-gray-900">Cleaning Schedule</CardTitle>
               <div className="flex gap-2 w-full sm:w-auto">
                 <div className="relative flex-1 sm:flex-initial">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -612,7 +603,6 @@ export default function CleaningPage() {
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="pending">Scheduled</SelectItem>
-                    <SelectItem value="assigned">Assigned</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -624,16 +614,18 @@ export default function CleaningPage() {
           <CardContent className="p-6">
             {loadingCleanings ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
               </div>
             ) : filteredCleanings.length === 0 ? (
               <div className="text-center py-12">
-                <ClipboardCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
+                  <CalendarIcon className="w-8 h-8 text-blue-600" />
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No cleanings found</h3>
                 <p className="text-gray-500 mb-6">
                   {searchQuery || filterStatus !== 'all'
                     ? 'Try adjusting your filters'
-                    : 'Schedule your first cleaning'}
+                    : 'Schedule your first cleaning to get started'}
                 </p>
                 {(searchQuery || filterStatus !== 'all') && (
                   <Button
@@ -653,24 +645,22 @@ export default function CleaningPage() {
                   const statusConfig = STATUS_CONFIG[cleaning.status];
                   const priorityConfig = PRIORITY_CONFIG[cleaning.priority];
                   const StatusIcon = statusConfig.icon;
-                  const completedTasks = cleaning.tasks?.filter((t) => t.is_completed).length || 0;
-                  const totalTasks = cleaning.tasks?.length || 0;
 
                   return (
                     <div
                       key={cleaning.id}
-                      className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                      className="border-2 border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all bg-white"
                     >
                       <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1 space-y-3">
                           <div className="flex items-start justify-between">
                             <div>
-                              <h3 className="text-lg font-bold text-gray-900">
+                              <h3 className="text-xl font-bold text-gray-900">
                                 {cleaning.booking?.guest_name || 'General Cleaning'}
                               </h3>
                               {cleaning.booking && (
-                                <p className="text-sm text-gray-600">
-                                  Booking: {cleaning.booking.booking_id}
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Booking: <span className="font-medium">{cleaning.booking.booking_id}</span>
                                 </p>
                               )}
                             </div>
@@ -679,6 +669,7 @@ export default function CleaningPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEdit(cleaning)}
+                                className="hover:bg-blue-50 hover:text-blue-600"
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -694,31 +685,34 @@ export default function CleaningPage() {
                           </div>
 
                           <div className="flex flex-wrap gap-2">
-                            <Badge className={`${statusConfig.color} border`}>
-                              <StatusIcon className="w-3 h-3 mr-1" />
+                            <Badge className={`${statusConfig.color} border px-3 py-1`}>
+                              <StatusIcon className="w-3 h-3 mr-1.5" />
                               {statusConfig.label}
                             </Badge>
-                            <Badge className={`${priorityConfig.color} border`}>
-                              {priorityConfig.label}
+                            <Badge className={`${priorityConfig.color} border px-3 py-1`}>
+                              {priorityConfig.label} Priority
                             </Badge>
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <div className="flex items-center gap-1.5 text-sm text-gray-700 font-medium bg-gray-100 px-3 py-1 rounded-md">
                               <Clock className="w-4 h-4" />
-                              {new Date(cleaning.scheduled_date).toLocaleDateString()} at{' '}
-                              {cleaning.scheduled_time}
+                              {new Date(cleaning.scheduled_date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })} at {cleaning.scheduled_time}
                             </div>
                           </div>
 
                           {cleaning.assigned_to_name && (
-                            <p className="text-sm text-gray-600 flex items-center gap-2">
-                              <User className="w-4 h-4" />
+                            <div className="flex items-center gap-2 text-sm text-gray-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                              <User className="w-4 h-4 text-blue-600" />
                               <span className="font-medium">Assigned to:</span>
-                              {cleaning.assigned_to_name}
-                            </p>
+                              <span className="font-semibold text-blue-700">{cleaning.assigned_to_name}</span>
+                            </div>
                           )}
 
                           {cleaning.special_instructions && (
-                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                              <p className="text-xs font-semibold text-amber-900 mb-1">
+                            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-3">
+                              <p className="text-xs font-bold text-amber-900 mb-1">
                                 Special Instructions:
                               </p>
                               <p className="text-sm text-amber-800">
@@ -726,78 +720,23 @@ export default function CleaningPage() {
                               </p>
                             </div>
                           )}
-
-                          {totalTasks > 0 && (
-                            <div>
-                              <div className="flex justify-between text-sm mb-2">
-                                <span className="font-medium text-gray-700">Tasks</span>
-                                <span className="font-bold text-gray-900">
-                                  {completedTasks}/{totalTasks}
-                                </span>
-                              </div>
-                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-emerald-500 transition-all"
-                                  style={{
-                                    width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%`,
-                                  }}
-                                />
-                              </div>
-                              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {cleaning.tasks.map((task) => (
-                                  <button
-                                    key={task.id}
-                                    onClick={() => toggleTask.mutate(task.id)}
-                                    className={`
-                                      flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-left
-                                      ${task.is_completed
-                                        ? 'bg-emerald-50 border-emerald-300'
-                                        : 'bg-white border-gray-300 hover:border-blue-300'
-                                      }
-                                    `}
-                                  >
-                                    <div
-                                      className={`
-                                        w-5 h-5 rounded border-2 flex items-center justify-center
-                                        ${task.is_completed
-                                          ? 'bg-emerald-500 border-emerald-500'
-                                          : 'border-gray-400'
-                                        }
-                                      `}
-                                    >
-                                      {task.is_completed && (
-                                        <CheckCircle2 className="w-4 h-4 text-white" />
-                                      )}
-                                    </div>
-                                    <span
-                                      className={`text-sm font-medium ${
-                                        task.is_completed
-                                          ? 'line-through text-gray-500'
-                                          : 'text-gray-700'
-                                      }`}
-                                    >
-                                      {task.title}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
 
                         <div className="flex lg:flex-col gap-2 lg:min-w-[120px]">
-                          {cleaning.status === 'pending' || cleaning.status === 'assigned' ? (
+                          {cleaning.status === 'pending' ? (
                             <Button
                               onClick={() => updateStatus.mutate({ id: cleaning.id, status: 'in_progress' })}
-                              className="flex-1 lg:flex-none bg-purple-600 hover:bg-purple-700 text-white"
+                              className="flex-1 lg:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                             >
+                              <Clock className="w-4 h-4 mr-2" />
                               Start
                             </Button>
                           ) : cleaning.status === 'in_progress' ? (
                             <Button
                               onClick={() => updateStatus.mutate({ id: cleaning.id, status: 'completed' })}
-                              className="flex-1 lg:flex-none bg-emerald-600 hover:bg-emerald-700 text-white"
+                              className="flex-1 lg:flex-none bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
                             >
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
                               Complete
                             </Button>
                           ) : null}
@@ -817,16 +756,18 @@ export default function CleaningPage() {
         setShowModal(open);
         if (!open) resetForm();
       }}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit Cleaning' : 'Schedule New Cleaning'}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {editingId ? 'Edit Cleaning' : 'Schedule New Cleaning'}
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
               {editingId ? 'Update cleaning details' : 'Schedule a new cleaning task'}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label className="text-gray-900 font-medium">Booking (Optional)</Label>
+              <Label className="text-gray-900 font-semibold">Booking (Optional)</Label>
               <Select
                 value={formData.booking || ''}
                 onValueChange={(value) => handleChange('booking', value || undefined)}
@@ -847,7 +788,7 @@ export default function CleaningPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-900 font-medium">Date *</Label>
+                <Label className="text-gray-900 font-semibold">Date *</Label>
                 <Input
                   type="date"
                   className="text-gray-900 bg-white border-gray-300"
@@ -856,11 +797,11 @@ export default function CleaningPage() {
                   min={new Date().toISOString().split('T')[0]}
                 />
                 {formErrors.scheduled_date && (
-                  <p className="text-xs text-red-600">{formErrors.scheduled_date}</p>
+                  <p className="text-xs text-red-600 font-medium">{formErrors.scheduled_date}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-900 font-medium">Time *</Label>
+                <Label className="text-gray-900 font-semibold">Time *</Label>
                 <Input
                   type="time"
                   className="text-gray-900 bg-white border-gray-300"
@@ -868,14 +809,14 @@ export default function CleaningPage() {
                   onChange={(e) => handleChange('scheduled_time', e.target.value)}
                 />
                 {formErrors.scheduled_time && (
-                  <p className="text-xs text-red-600">{formErrors.scheduled_time}</p>
+                  <p className="text-xs text-red-600 font-medium">{formErrors.scheduled_time}</p>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-900 font-medium">Priority</Label>
+                <Label className="text-gray-900 font-semibold">Priority</Label>
                 <Select
                   value={formData.priority}
                   onValueChange={(value) => handleChange('priority', value)}
@@ -892,7 +833,7 @@ export default function CleaningPage() {
               </div>
               {editingId && (
                 <div className="space-y-2">
-                  <Label className="text-gray-900 font-medium">Status</Label>
+                  <Label className="text-gray-900 font-semibold">Status</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(value) => handleChange('status', value)}
@@ -902,7 +843,6 @@ export default function CleaningPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">Scheduled</SelectItem>
-                      <SelectItem value="assigned">Assigned</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -913,7 +853,7 @@ export default function CleaningPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-900 font-medium">Assign to Staff</Label>
+              <Label className="text-gray-900 font-semibold">Assign to Staff</Label>
               <Select
                 value={formData.assigned_to || ''}
                 onValueChange={(value) => handleChange('assigned_to', value || undefined)}
@@ -933,13 +873,13 @@ export default function CleaningPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-900 font-medium">Special Instructions</Label>
+              <Label className="text-gray-900 font-semibold">Special Instructions</Label>
               <Textarea
                 className="text-gray-900 bg-white border-gray-300"
                 value={formData.special_instructions}
                 onChange={(e) => handleChange('special_instructions', e.target.value)}
                 placeholder="Any special requirements or notes..."
-                rows={3}
+                rows={4}
               />
             </div>
 
@@ -958,7 +898,7 @@ export default function CleaningPage() {
               <Button
                 type="submit"
                 disabled={createCleaning.isPending || updateCleaning.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
               >
                 {createCleaning.isPending || updateCleaning.isPending ? (
                   <>
@@ -967,7 +907,6 @@ export default function CleaningPage() {
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 mr-2" />
                     {editingId ? 'Update Cleaning' : 'Schedule Cleaning'}
                   </>
                 )}
