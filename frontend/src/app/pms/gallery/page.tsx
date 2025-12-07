@@ -246,6 +246,13 @@ export default function GalleryPage() {
     return image.url || image.image || image.image_url || '';
   };
 
+  const normalizeImageUrl = (url: string): string => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    // Default to production host for relative media paths
+    return `https://www.allarcoapartment.com${url}`;
+  };
+
   const isExternalUrl = (url: string): boolean => {
     if (!url || url.startsWith('/')) return false;
     return url.startsWith('http') &&
@@ -346,12 +353,13 @@ export default function GalleryPage() {
                     <div className="relative aspect-[4/3] bg-gray-200 overflow-hidden">
                       {getImageUrl(image) ? (
                         <Image
-                          src={getImageUrl(image)}
+                          src={normalizeImageUrl(getImageUrl(image))}
                           alt={image.alt_text}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                          unoptimized={isExternalUrl(getImageUrl(image))}
+                          // Always bypass Next optimizer for media files to prevent _next/image 500s
+                          unoptimized
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-gray-400">
