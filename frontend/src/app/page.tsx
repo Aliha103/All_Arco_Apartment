@@ -243,21 +243,21 @@ export default function Home() {
 
           {/* Images carousel - overlays the gradient when images available */}
           {!isLoadingImages && heroImages.length > 0 && (
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               <motion.div
                 key={currentImageIndex}
-                initial={{ opacity: 0, scale: 1.1 }}
+                initial={{ opacity: 0, scale: 1.02 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.5, ease: smoothEase }}
-                className="absolute inset-0"
+                exit={{ opacity: 0.4, scale: 1.02 }}
+                transition={{ duration: 1.1, ease: smoothEase }}
+                className="absolute inset-0 overflow-hidden will-change-transform"
               >
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 z-10" />
                 <Image
                   src={heroImages[currentImageIndex].src}
                   alt={heroImages[currentImageIndex].alt}
                   fill
-                  className="object-cover"
+                  className="object-cover will-change-transform"
                   priority={currentImageIndex === 0}
                   sizes="100vw"
                   unoptimized
