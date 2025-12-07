@@ -1053,7 +1053,7 @@ export default function BookingSidePanel({
             </Button>
             <Button
               onClick={() => setMode('edit')}
-              disabled={formData.status && ['checked_out', 'cancelled'].includes(formData.status)}
+              disabled={!!formData.status && ['checked_out', 'cancelled'].includes(formData.status)}
               className="flex-1 sm:flex-none"
             >
               <EditIcon className="w-4 h-4 mr-2" />
