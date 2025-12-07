@@ -16,6 +16,9 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
+  MapPin,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,6 +37,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // ============================================================================
 // Types
@@ -75,13 +84,13 @@ const STATUS_CONFIG = {
   pending: { label: 'Scheduled', color: 'bg-amber-50 text-amber-700 border-amber-300', icon: Clock },
   in_progress: { label: 'In Progress', color: 'bg-blue-50 text-blue-700 border-blue-300', icon: AlertCircle },
   completed: { label: 'Completed', color: 'bg-emerald-50 text-emerald-700 border-emerald-300', icon: CheckCircle2 },
-  cancelled: { label: 'Cancelled', color: 'bg-gray-50 text-gray-700 border-gray-300', icon: AlertCircle },
+  cancelled: { label: 'Cancelled', color: 'bg-gray-50 text-gray-700 border-gray-300', icon: X },
 };
 
 const PRIORITY_CONFIG = {
-  low: { label: 'Low', color: 'bg-slate-100 text-slate-700 border-slate-300' },
-  medium: { label: 'Medium', color: 'bg-orange-100 text-orange-700 border-orange-300' },
-  high: { label: 'High', color: 'bg-rose-100 text-rose-700 border-rose-300' },
+  low: { label: 'Low', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+  medium: { label: 'Medium', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+  high: { label: 'High', color: 'bg-rose-100 text-rose-700 border-rose-200' },
 };
 
 // ============================================================================
@@ -94,7 +103,7 @@ export default function CleaningPage() {
   // State
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [showCalendar, setShowCalendar] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -138,6 +147,7 @@ export default function CleaningPage() {
       const response = await api.cleaning.schedules.calendar(currentYear, currentMonth);
       return response.data;
     },
+    enabled: showCalendar,
   });
 
   const { data: staffMembers } = useQuery({
@@ -283,7 +293,7 @@ export default function CleaningPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this cleaning?')) {
+    if (window.confirm('Are you sure you want to delete this cleaning schedule?')) {
       deleteCleaning.mutate(id);
     }
   };
@@ -358,90 +368,101 @@ export default function CleaningPage() {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Cleaning Management
             </h1>
-            <p className="text-gray-600 mt-1">Schedule and track property cleanings</p>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
+              Schedule and track property cleanings
+            </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={() => setShowCalendar(!showCalendar)}
-              className="border-gray-300"
+              className="flex-1 sm:flex-none border-gray-300 text-gray-700"
+              size="sm"
             >
-              <CalendarIcon className="w-4 h-4 mr-2" />
-              {showCalendar ? 'Hide' : 'Show'} Calendar
+              <CalendarIcon className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">{showCalendar ? 'Hide' : 'Show'} Calendar</span>
             </Button>
             <Button
               onClick={() => {
                 resetForm();
                 setShowModal(true);
               }}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white"
+              size="sm"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              New Cleaning
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">New Cleaning</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 font-medium">Today</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats?.today_cleanings || 0}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">Today</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
+                    {stats?.today_cleanings || 0}
+                  </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <CalendarIcon className="w-6 h-6 text-blue-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 ml-2">
+                  <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 font-medium">This Week</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats?.week_cleanings || 0}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">This Week</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
+                    {stats?.week_cleanings || 0}
+                  </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-purple-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 ml-2">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 font-medium">Upcoming</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats?.upcoming_count || 0}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">Upcoming</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
+                    {stats?.upcoming_count || 0}
+                  </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                  <AlertCircle className="w-6 h-6 text-amber-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 ml-2">
+                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-2 border-gray-100 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
+          <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 font-medium">Completed</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">Completed</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
                     {stats?.status_breakdown?.completed || 0}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 ml-2">
+                  <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
                 </div>
               </div>
             </CardContent>
@@ -450,88 +471,92 @@ export default function CleaningPage() {
 
         {/* Calendar */}
         {showCalendar && (
-          <Card className="border-2 border-gray-100 shadow-lg">
-            <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-gray-900">Calendar</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+          <Card className="border border-gray-200 shadow-md">
+            <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-blue-50 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                <CardTitle className="text-lg sm:text-xl text-gray-900">Calendar View</CardTitle>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="flex-shrink-0">
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={goToToday}>
+                  <Button variant="outline" size="sm" onClick={goToToday} className="flex-shrink-0 px-3">
                     Today
                   </Button>
-                  <span className="text-sm font-semibold text-gray-900 min-w-[150px] text-center">
+                  <span className="text-sm font-semibold text-gray-900 flex-1 text-center sm:min-w-[150px]">
                     {monthName}
                   </span>
-                  <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                  <Button variant="outline" size="sm" onClick={goToNextMonth} className="flex-shrink-0">
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               {loadingCalendar ? (
                 <div className="flex justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 </div>
               ) : (
-                <div className="grid grid-cols-7 gap-2">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                    <div
-                      key={day}
-                      className="text-center text-xs font-bold text-gray-700 py-2"
-                    >
-                      {day}
-                    </div>
-                  ))}
-                  {calendarDays.map((day, index) => {
-                    if (day === null) {
-                      return <div key={`empty-${index}`} />;
-                    }
-
-                    const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const dayCleanings = getCleaningsForDate(dateStr);
-                    const isToday = new Date().toISOString().split('T')[0] === dateStr;
-
-                    return (
-                      <div
-                        key={day}
-                        className={`
-                          min-h-[80px] border-2 rounded-lg p-2 transition-all
-                          ${isToday
-                            ? 'bg-gradient-to-br from-blue-50 to-purple-50 border-blue-500 shadow-md'
-                            : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
-                          }
-                        `}
-                      >
-                        <div className={`font-bold text-sm ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                <div className="overflow-x-auto -mx-3 sm:mx-0">
+                  <div className="min-w-[640px] px-3 sm:px-0">
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                        <div
+                          key={day}
+                          className="text-center text-xs font-bold text-gray-700 py-2 bg-gray-50 rounded"
+                        >
                           {day}
                         </div>
-                        {dayCleanings.length > 0 && (
-                          <div className="mt-1 space-y-1">
-                            {dayCleanings.slice(0, 2).map((cleaning: any) => {
-                              const config = STATUS_CONFIG[cleaning.status as keyof typeof STATUS_CONFIG];
-                              return (
-                                <div
-                                  key={cleaning.id}
-                                  className={`text-xs px-2 py-1 rounded-md border ${config.color} font-medium`}
-                                  title={cleaning.booking?.guest_name || 'Cleaning'}
-                                >
-                                  {cleaning.scheduled_time}
-                                </div>
-                              );
-                            })}
-                            {dayCleanings.length > 2 && (
-                              <div className="text-xs text-gray-600 font-medium">
-                                +{dayCleanings.length - 2} more
+                      ))}
+                      {calendarDays.map((day, index) => {
+                        if (day === null) {
+                          return <div key={`empty-${index}`} className="min-h-[60px] sm:min-h-[80px]" />;
+                        }
+
+                        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const dayCleanings = getCleaningsForDate(dateStr);
+                        const isToday = new Date().toISOString().split('T')[0] === dateStr;
+
+                        return (
+                          <div
+                            key={day}
+                            className={`
+                              min-h-[60px] sm:min-h-[80px] border rounded-lg p-1.5 sm:p-2 transition-all
+                              ${isToday
+                                ? 'bg-blue-50 border-blue-400 ring-1 ring-blue-400'
+                                : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                              }
+                            `}
+                          >
+                            <div className={`font-semibold text-xs sm:text-sm ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                              {day}
+                            </div>
+                            {dayCleanings.length > 0 && (
+                              <div className="mt-1 space-y-0.5 sm:space-y-1">
+                                {dayCleanings.slice(0, 2).map((cleaning: any) => {
+                                  const config = STATUS_CONFIG[cleaning.status as keyof typeof STATUS_CONFIG];
+                                  return (
+                                    <div
+                                      key={cleaning.id}
+                                      className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded border ${config.color} font-medium truncate`}
+                                      title={`${cleaning.scheduled_time} - ${cleaning.booking?.guest_name || 'Cleaning'}`}
+                                    >
+                                      {cleaning.scheduled_time}
+                                    </div>
+                                  );
+                                })}
+                                {dayCleanings.length > 2 && (
+                                  <div className="text-[10px] sm:text-xs text-gray-600 font-medium px-1">
+                                    +{dayCleanings.length - 2}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -539,10 +564,10 @@ export default function CleaningPage() {
         )}
 
         {/* Cleanings List */}
-        <Card className="border-2 border-gray-100 shadow-lg">
-          <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <CardTitle className="text-gray-900">Cleaning Schedule</CardTitle>
+        <Card className="border border-gray-200 shadow-md">
+          <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-blue-50 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+              <CardTitle className="text-lg sm:text-xl text-gray-900">Cleaning Schedule</CardTitle>
               <div className="flex gap-2 w-full sm:w-auto">
                 <div className="relative flex-1 sm:flex-initial">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -550,12 +575,12 @@ export default function CleaningPage() {
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-full sm:w-[200px] text-gray-900 bg-white border-gray-300"
+                    className="pl-10 w-full sm:w-[200px] text-gray-900 bg-white border-gray-300 h-9"
                   />
                 </div>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-[140px] text-gray-900 bg-white border-gray-300">
-                    <Filter className="w-4 h-4 mr-2" />
+                  <SelectTrigger className="w-[110px] sm:w-[140px] text-gray-900 bg-white border-gray-300 h-9">
+                    <Filter className="w-4 h-4 mr-1 sm:mr-2" />
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -569,18 +594,18 @@ export default function CleaningPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             {loadingCleanings ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
               </div>
             ) : filteredCleanings.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
-                  <CalendarIcon className="w-8 h-8 text-blue-600" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
+                  <CalendarIcon className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No cleanings found</h3>
-                <p className="text-gray-500 mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No cleanings found</h3>
+                <p className="text-sm text-gray-500 mb-6">
                   {searchQuery || filterStatus !== 'all'
                     ? 'Try adjusting your filters'
                     : 'Schedule your first cleaning to get started'}
@@ -592,13 +617,14 @@ export default function CleaningPage() {
                       setSearchQuery('');
                       setFilterStatus('all');
                     }}
+                    size="sm"
                   >
                     Clear Filters
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {filteredCleanings.map((cleaning) => {
                   const statusConfig = STATUS_CONFIG[cleaning.status];
                   const priorityConfig = PRIORITY_CONFIG[cleaning.priority];
@@ -607,98 +633,134 @@ export default function CleaningPage() {
                   return (
                     <div
                       key={cleaning.id}
-                      className="border-2 border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all bg-white"
+                      className="border border-gray-200 rounded-lg sm:rounded-xl p-4 sm:p-5 hover:border-blue-300 hover:shadow-md transition-all bg-white"
                     >
-                      <div className="flex flex-col lg:flex-row gap-4">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900">
-                                {cleaning.booking?.guest_name || 'General Cleaning'}
-                              </h3>
-                              {cleaning.booking && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  Booking: <span className="font-medium">{cleaning.booking.booking_id}</span>
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(cleaning)}
-                                className="hover:bg-blue-50 hover:text-blue-600"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(cleaning.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
+                      <div className="flex flex-col gap-3 sm:gap-4">
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                              {cleaning.booking?.guest_name || 'General Cleaning'}
+                            </h3>
+                            {cleaning.booking && (
+                              <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                                Booking: <span className="font-medium">{cleaning.booking.booking_id}</span>
+                              </p>
+                            )}
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
-                            <Badge className={`${statusConfig.color} border px-3 py-1`}>
-                              <StatusIcon className="w-3 h-3 mr-1.5" />
-                              {statusConfig.label}
-                            </Badge>
-                            <Badge className={`${priorityConfig.color} border px-3 py-1`}>
-                              {priorityConfig.label} Priority
-                            </Badge>
-                            <div className="flex items-center gap-1.5 text-sm text-gray-700 font-medium bg-gray-100 px-3 py-1 rounded-md">
-                              <Clock className="w-4 h-4" />
+                          {/* Actions - Desktop */}
+                          <div className="hidden sm:flex gap-2 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(cleaning)}
+                              className="hover:bg-blue-50 hover:text-blue-600"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(cleaning.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          {/* Actions - Mobile */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild className="sm:hidden">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(cleaning)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(cleaning.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        {/* Badges */}
+                        <div className="flex flex-wrap gap-2">
+                          <Badge className={`${statusConfig.color} border text-xs`}>
+                            <StatusIcon className="w-3 h-3 mr-1" />
+                            {statusConfig.label}
+                          </Badge>
+                          <Badge className={`${priorityConfig.color} border text-xs`}>
+                            {priorityConfig.label} Priority
+                          </Badge>
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-1 rounded-md">
+                            <Clock className="w-3 h-3" />
+                            <span className="hidden sm:inline">
                               {new Date(cleaning.scheduled_date).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 year: 'numeric',
                               })} at {cleaning.scheduled_time}
-                            </div>
+                            </span>
+                            <span className="sm:hidden">
+                              {new Date(cleaning.scheduled_date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                              })} {cleaning.scheduled_time}
+                            </span>
                           </div>
-
-                          {cleaning.assigned_to_name && (
-                            <div className="flex items-center gap-2 text-sm text-gray-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-                              <User className="w-4 h-4 text-blue-600" />
-                              <span className="font-medium">Assigned to:</span>
-                              <span className="font-semibold text-blue-700">{cleaning.assigned_to_name}</span>
-                            </div>
-                          )}
-
-                          {cleaning.special_instructions && (
-                            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-3">
-                              <p className="text-xs font-bold text-amber-900 mb-1">
-                                Special Instructions:
-                              </p>
-                              <p className="text-sm text-amber-800">
-                                {cleaning.special_instructions}
-                              </p>
-                            </div>
-                          )}
                         </div>
 
-                        <div className="flex lg:flex-col gap-2 lg:min-w-[120px]">
-                          {cleaning.status === 'pending' ? (
-                            <Button
-                              onClick={() => updateStatus.mutate({ id: cleaning.id, status: 'in_progress' })}
-                              className="flex-1 lg:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                            >
-                              <Clock className="w-4 h-4 mr-2" />
-                              Start
-                            </Button>
-                          ) : cleaning.status === 'in_progress' ? (
-                            <Button
-                              onClick={() => updateStatus.mutate({ id: cleaning.id, status: 'completed' })}
-                              className="flex-1 lg:flex-none bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
-                            >
-                              <CheckCircle2 className="w-4 h-4 mr-2" />
-                              Complete
-                            </Button>
-                          ) : null}
-                        </div>
+                        {/* Assigned Staff */}
+                        {cleaning.assigned_to_name && (
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                            <User className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                            <span className="font-medium">Assigned:</span>
+                            <span className="font-semibold text-blue-700 truncate">{cleaning.assigned_to_name}</span>
+                          </div>
+                        )}
+
+                        {/* Special Instructions */}
+                        {cleaning.special_instructions && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <p className="text-xs font-bold text-amber-900 mb-1">
+                              Special Instructions
+                            </p>
+                            <p className="text-xs sm:text-sm text-amber-800">
+                              {cleaning.special_instructions}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        {cleaning.status === 'pending' && (
+                          <Button
+                            onClick={() => updateStatus.mutate({ id: cleaning.id, status: 'in_progress' })}
+                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                            size="sm"
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            Start Cleaning
+                          </Button>
+                        )}
+                        {cleaning.status === 'in_progress' && (
+                          <Button
+                            onClick={() => updateStatus.mutate({ id: cleaning.id, status: 'completed' })}
+                            className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
+                            size="sm"
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Mark Complete
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
@@ -716,16 +778,16 @@ export default function CleaningPage() {
       }}>
         <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900">
               {editingId ? 'Edit Cleaning' : 'Schedule New Cleaning'}
             </DialogTitle>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-sm text-gray-600">
               {editingId ? 'Update cleaning details' : 'Schedule a new cleaning task'}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div className="space-y-2">
-              <Label className="text-gray-900 font-semibold">Booking (Optional)</Label>
+              <Label className="text-gray-900 font-semibold text-sm">Booking (Optional)</Label>
               <Select
                 value={formData.booking || ''}
                 onValueChange={(value) => handleChange('booking', value || undefined)}
@@ -744,9 +806,9 @@ export default function CleaningPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-900 font-semibold">Date *</Label>
+                <Label className="text-gray-900 font-semibold text-sm">Date *</Label>
                 <Input
                   type="date"
                   className="text-gray-900 bg-white border-gray-300"
@@ -759,7 +821,7 @@ export default function CleaningPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-900 font-semibold">Time *</Label>
+                <Label className="text-gray-900 font-semibold text-sm">Time *</Label>
                 <Input
                   type="time"
                   className="text-gray-900 bg-white border-gray-300"
@@ -772,9 +834,9 @@ export default function CleaningPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-900 font-semibold">Priority</Label>
+                <Label className="text-gray-900 font-semibold text-sm">Priority</Label>
                 <Select
                   value={formData.priority}
                   onValueChange={(value) => handleChange('priority', value)}
@@ -791,7 +853,7 @@ export default function CleaningPage() {
               </div>
               {editingId && (
                 <div className="space-y-2">
-                  <Label className="text-gray-900 font-semibold">Status</Label>
+                  <Label className="text-gray-900 font-semibold text-sm">Status</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(value) => handleChange('status', value)}
@@ -811,7 +873,7 @@ export default function CleaningPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-900 font-semibold">Assign to Staff</Label>
+              <Label className="text-gray-900 font-semibold text-sm">Assign to Staff</Label>
               <Select
                 value={formData.assigned_to || ''}
                 onValueChange={(value) => handleChange('assigned_to', value || undefined)}
@@ -831,7 +893,7 @@ export default function CleaningPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-900 font-semibold">Special Instructions</Label>
+              <Label className="text-gray-900 font-semibold text-sm">Special Instructions</Label>
               <Textarea
                 className="text-gray-900 bg-white border-gray-300"
                 value={formData.special_instructions}
@@ -841,7 +903,7 @@ export default function CleaningPage() {
               />
             </div>
 
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
                 variant="outline"
@@ -850,13 +912,14 @@ export default function CleaningPage() {
                   resetForm();
                 }}
                 disabled={createCleaning.isPending || updateCleaning.isPending}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={createCleaning.isPending || updateCleaning.isPending}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {createCleaning.isPending || updateCleaning.isPending ? (
                   <>
