@@ -18,6 +18,7 @@ import {
   Coffee,
   Waves,
   Award,
+  Pencil,
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
@@ -178,6 +179,7 @@ export default function Home() {
   const [hostProfile, setHostProfile] = useState<HostProfile | null>(null);
   const [publicReviews, setPublicReviews] = useState<PublicReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
@@ -249,6 +251,19 @@ export default function Home() {
       }
     };
     loadHostAndReviews();
+  }, []);
+
+  // Check auth to show edit shortcut for super admins
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        const res = await api.auth.me();
+        setIsSuperAdmin(Boolean(res.data?.is_super_admin));
+      } catch (error) {
+        setIsSuperAdmin(false);
+      }
+    };
+    loadMe();
   }, []);
 
   // Auto-scroll hero images every 5 seconds
@@ -440,7 +455,7 @@ export default function Home() {
               </div>
 
               {/* Host Info - live data */}
-              <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
+              <div className="flex items-center gap-4 pt-6 border-t border-gray-100 relative">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold overflow-hidden">
                   {hostProfile?.avatar ? (
                     <Image src={hostProfile.avatar} alt={hostProfile.display_name} fill className="object-cover" unoptimized />
@@ -464,6 +479,15 @@ export default function Home() {
                   <Award className="w-3.5 h-3.5" />
                   Superhost
                 </span>
+                {isSuperAdmin && (
+                  <a
+                    href="/pms"
+                    className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-white shadow border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:shadow-md transition"
+                    title="Edit host profile"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </a>
+                )}
               </div>
             </motion.div>
 
