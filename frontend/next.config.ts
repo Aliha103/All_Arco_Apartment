@@ -49,9 +49,8 @@ const nextConfig: NextConfig = {
         pathname: '/media/**',
       },
     ],
-    // Allow unoptimized images for dynamic external URLs
-    // This is needed when team members paste URLs from various sources
-    unoptimized: false,
+    // Serve images as-is to avoid _next/image fetch failures against protected media endpoints
+    unoptimized: true,
   },
 };
 
