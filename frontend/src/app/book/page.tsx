@@ -402,14 +402,13 @@ function BookingPageContent() {
         <motion.div className="flex flex-col gap-3" variants={itemVariants}>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#C4A572]">
             <Sparkles className="w-4 h-4 animate-pulse" />
-            Quantum Booking Flow
+            Seamless Booking Experience
           </div>
           <h1 className="text-3xl sm:text-4xl font-light text-white leading-tight">
-            Reserve your Venice escape with a frictionless, Discord-inspired flow.
+            Your Venetian escape awaits. Book in moments, not minutes.
           </h1>
           <p className="text-white/70 max-w-2xl">
-            Real-time availability, transparent pricing, and a checkout built for speed. Adjust dates,
-            guests, and glide straight to payment.
+            Transparent pricing, real-time availability, and instant confirmation. Simply select your dates, enter your details, and secure your stay with confidence.
           </p>
           {/* Security Badge */}
           <motion.div
@@ -419,7 +418,7 @@ function BookingPageContent() {
             className="flex items-center gap-2 text-sm text-white/60 mt-2"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>256-bit secure checkout • Instant confirmation</span>
+            <span>Bank-level encryption • Instant confirmation</span>
           </motion.div>
         </motion.div>
 
@@ -435,13 +434,13 @@ function BookingPageContent() {
                       {step === 'guest' && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
                     </CardTitle>
                     <CardDescription className="text-white/60">
-                      {step === 'plan' ? 'Choose dates and guests' : 'Confirm guest details'}
+                      {step === 'plan' ? 'Select your dates and party size' : 'Enter your contact information'}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-200 border-emerald-400/30">
                       <BadgeCheck className="w-4 h-4 mr-1" />
-                      Secure Checkout
+                      Secure Booking
                     </Badge>
                     <Badge variant="outline" className="border-white/20 text-white">
                       {nights > 0 ? `${nights} night${nights === 1 ? '' : 's'}` : 'Dates pending'}
@@ -534,17 +533,17 @@ function BookingPageContent() {
                               {checkingAvailability ? (
                                 <>
                                   <Loader2 className="w-4 h-4 text-blue-300 animate-spin" />
-                                  <span className="text-blue-200">Checking availability…</span>
+                                  <span className="text-blue-200">Verifying availability...</span>
                                 </>
                               ) : availability?.available === false ? (
                                 <>
                                   <AlertCircle className="w-4 h-4 text-amber-300" />
-                                  <span className="text-amber-200">Those dates are taken. Try adjusting.</span>
+                                  <span className="text-amber-200">These dates are unavailable. Please select different dates.</span>
                                 </>
                               ) : availability?.available ? (
                                 <>
                                   <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-                                  <span className="text-emerald-200">Locked in. Proceed to guest details.</span>
+                                  <span className="text-emerald-200">Available! Ready to proceed with your booking.</span>
                                 </>
                               ) : null}
                             </div>
@@ -561,7 +560,7 @@ function BookingPageContent() {
                           disabled={!availability?.available || checkingAvailability}
                           className="w-full bg-[#C4A572] text-black hover:bg-[#D8B77A] font-semibold shadow-lg disabled:opacity-50 transition-all"
                         >
-                          Continue to guest info
+                          Continue to Guest Details
                           <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                       </motion.div>
@@ -667,7 +666,7 @@ function BookingPageContent() {
                             disabled={isProcessing}
                             className="w-full border-white/20 text-white hover:bg-white/10 transition-all"
                           >
-                            Back to dates
+                            Back to Dates
                           </Button>
                         </motion.div>
                         <motion.div
@@ -683,10 +682,10 @@ function BookingPageContent() {
                             {isProcessing ? (
                               <>
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Processing…
+                                Processing...
                               </>
                             ) : (
-                              'Proceed to payment'
+                              'Proceed to Secure Payment'
                             )}
                           </Button>
                         </motion.div>
@@ -769,7 +768,7 @@ function BookingPageContent() {
                       exit={{ opacity: 0 }}
                       className="rounded-lg border border-dashed border-white/15 p-4 text-white/60 text-sm text-center"
                     >
-                      Select your dates and guests to unlock live pricing.
+                      Select your dates and party size to view pricing details.
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -789,7 +788,7 @@ function BookingPageContent() {
                     transition={{ type: 'spring', stiffness: 400 }}
                   >
                     <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>Protected by secure Stripe checkout</span>
+                    <span>Secure payment processing via Stripe</span>
                   </motion.div>
                   <motion.div
                     className="flex items-center gap-2"
@@ -797,7 +796,7 @@ function BookingPageContent() {
                     transition={{ type: 'spring', stiffness: 400 }}
                   >
                     <Sparkles className="w-4 h-4 text-[#C4A572] flex-shrink-0" />
-                    <span>Instant confirmation email with your booking code</span>
+                    <span>Instant confirmation with booking reference</span>
                   </motion.div>
                   <motion.div
                     className="flex items-center gap-2"
@@ -805,7 +804,7 @@ function BookingPageContent() {
                     transition={{ type: 'spring', stiffness: 400 }}
                   >
                     <Clock3 className="w-4 h-4 text-blue-300 flex-shrink-0" />
-                    <span>24/7 check-in flexibility — let us know your arrival window</span>
+                    <span>Flexible check-in times — 24/7 availability</span>
                   </motion.div>
                 </CardContent>
               </Card>
@@ -833,7 +832,7 @@ export default function BookingPage() {
             className="text-center"
           >
             <Loader2 className="w-12 h-12 animate-spin text-[#C4A572] mx-auto mb-4" />
-            <p className="text-white/70">Preparing your quantum booking experience...</p>
+            <p className="text-white/70">Preparing your booking experience...</p>
           </motion.div>
         </div>
       }
