@@ -1855,48 +1855,177 @@ export default function BookingSidePanel({
       }}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Guest Registration</DialogTitle>
-            <DialogDescription>
-              Register all guests for this booking. Total expected: {(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests
-              {bookingGuestsData && ` | Registered: ${bookingGuestsData.length || 0}`}
-            </DialogDescription>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <DialogTitle className="text-2xl font-bold text-gray-900">Guest Registration</DialogTitle>
+                <DialogDescription className="mt-2">
+                  Complete guest information for Italian Alloggiati Web compliance
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {/* Progress Indicator */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-lg">Registration Progress</h3>
+                  <p className="text-sm text-gray-600 mt-0.5">Track guest registration completion</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-bold text-blue-600">
+                    {bookingGuestsData?.length || 0}/{(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)}
+                  </p>
+                  <p className="text-xs text-gray-600">guests registered</p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="relative h-3 bg-white/50 rounded-full overflow-hidden border border-blue-200">
+                <div
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+                  style={{
+                    width: `${Math.min(100, ((bookingGuestsData?.length || 0) / Math.max(1, (formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))) * 100)}%`,
+                  }}
+                />
+              </div>
+
+              {/* Mismatch Warning */}
+              {bookingGuestsData && bookingGuestsData.length !== ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)) && (
+                <div className={`mt-3 flex items-start gap-2 p-3 rounded-lg border-2 ${
+                  bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                    ? 'bg-amber-50 border-amber-300'
+                    : 'bg-orange-50 border-orange-300'
+                }`}>
+                  <AlertTriangle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+                    bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                      ? 'text-amber-600'
+                      : 'text-orange-600'
+                  }`} />
+                  <div className="flex-1">
+                    <p className={`font-semibold text-sm ${
+                      bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                        ? 'text-amber-900'
+                        : 'text-orange-900'
+                    }`}>
+                      {bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                        ? 'More guests registered than expected'
+                        : 'Incomplete registration'}
+                    </p>
+                    <p className={`text-xs mt-1 ${
+                      bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                        ? 'text-amber-700'
+                        : 'text-orange-700'
+                    }`}>
+                      {bookingGuestsData.length > ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0))
+                        ? `You've registered ${bookingGuestsData.length} guests but the booking is for ${(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests. Update the booking or remove extra guests.`
+                        : `${((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)) - bookingGuestsData.length} more guest(s) need to be registered to complete the check-in process.`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {bookingGuestsData && bookingGuestsData.length > 0 && bookingGuestsData.length === ((formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)) && (
+                <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border-2 border-emerald-300">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  <p className="font-semibold text-sm text-emerald-900">
+                    All guests registered! Ready for check-in.
+                  </p>
+                </div>
+              )}
+            </div>
             {/* Registered Guests List */}
             {bookingGuestsData && bookingGuestsData.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-gray-900">Registered Guests</h3>
-                <div className="space-y-2">
-                  {bookingGuestsData.map((guest: any) => (
-                    <div key={guest.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3 border">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">
-                          {guest.first_name} {guest.last_name}
-                          {guest.is_primary && (
-                            <Badge className="ml-2 bg-blue-100 text-blue-800 text-xs">Primary</Badge>
-                          )}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {guest.country_of_birth} • {guest.document_type.replace('_', ' ').toUpperCase()}: {guest.document_number}
-                        </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-lg text-gray-900">Registered Guests</h3>
+                  <Badge className="bg-gray-100 text-gray-700 border border-gray-300">
+                    {bookingGuestsData.length} {bookingGuestsData.length === 1 ? 'Guest' : 'Guests'}
+                  </Badge>
+                </div>
+                <div className="grid gap-3">
+                  {bookingGuestsData.map((guest: any, index: number) => (
+                    <div
+                      key={guest.id}
+                      className="group relative bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                    >
+                      {/* Guest Number Badge */}
+                      <div className="absolute -top-2 -left-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                        {index + 1}
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditGuest(guest)}
-                        >
-                          <EditIcon className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteGuest(guest.id)}
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
+
+                      <div className="flex items-start gap-4">
+                        {/* Guest Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Users className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                            <h4 className="font-bold text-gray-900 text-lg truncate">
+                              {guest.first_name} {guest.last_name}
+                            </h4>
+                            {guest.is_primary && (
+                              <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-0 text-xs font-bold">
+                                PRIMARY
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                              <span className="text-gray-600">Born:</span>
+                              <span className="font-medium text-gray-900">
+                                {new Date(guest.date_of_birth).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                })}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-600">Country:</span>
+                              <span className="font-medium text-gray-900">{guest.country_of_birth}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-600">Document:</span>
+                              <span className="font-mono font-medium text-gray-900">
+                                {guest.document_type.replace('_', ' ').toUpperCase()}: {guest.document_number}
+                              </span>
+                            </div>
+
+                            {guest.email && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <Mail className="w-3.5 h-3.5 text-gray-500" />
+                                <span className="font-medium text-gray-700 truncate">{guest.email}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditGuest(guest)}
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                          >
+                            <EditIcon className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteGuest(guest.id)}
+                            className="border-red-300 text-red-700 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1905,144 +2034,194 @@ export default function BookingSidePanel({
             )}
 
             {/* Guest Form */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm text-gray-900">
-                  {editingGuestId ? 'Edit Guest' : 'Add New Guest'}
-                </h3>
-                {editingGuestId && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetGuestForm}
-                    className="text-gray-600"
-                  >
-                    Cancel Edit
-                  </Button>
-                )}
+            <div className="space-y-5">
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                      <UserPlus className="w-5 h-5 text-indigo-600" />
+                      {editingGuestId ? 'Edit Guest Information' : 'Add New Guest'}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-0.5">
+                      {editingGuestId ? 'Update guest details below' : 'Enter complete guest information for registration'}
+                    </p>
+                  </div>
+                  {editingGuestId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetGuestForm}
+                      className="border-gray-400 text-gray-700 hover:bg-gray-100"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Primary Guest Checkbox */}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="is_primary"
-                  checked={guestFormData.is_primary}
-                  onChange={(e) => handleGuestFormChange('is_primary', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <Label htmlFor="is_primary" className="text-sm font-medium text-gray-900">
-                  Primary Guest
-                </Label>
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-lg p-3">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="is_primary"
+                    checked={guestFormData.is_primary}
+                    onChange={(e) => handleGuestFormChange('is_primary', e.target.checked)}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="is_primary" className="text-sm font-bold text-gray-900 cursor-pointer">
+                      Mark as Primary Guest
+                    </Label>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Primary guest will be the main contact for this booking
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* Basic Information */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-gray-900 font-medium">First Name *</Label>
-                  <Input
-                    className="text-gray-900 bg-white border-gray-300"
-                    value={guestFormData.first_name}
-                    onChange={(e) => handleGuestFormChange('first_name', e.target.value)}
-                    placeholder="John"
-                  />
-                  {guestFormErrors.first_name && (
-                    <p className="text-xs text-red-600">{guestFormErrors.first_name}</p>
-                  )}
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-4 space-y-4">
+                <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+                  <Users className="w-4 h-4 text-indigo-600" />
+                  <h4 className="font-bold text-sm text-gray-900">Personal Information</h4>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-900 font-medium">Last Name *</Label>
-                  <Input
-                    className="text-gray-900 bg-white border-gray-300"
-                    value={guestFormData.last_name}
-                    onChange={(e) => handleGuestFormChange('last_name', e.target.value)}
-                    placeholder="Doe"
-                  />
-                  {guestFormErrors.last_name && (
-                    <p className="text-xs text-red-600">{guestFormErrors.last_name}</p>
-                  )}
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">First Name *</Label>
+                    <Input
+                      className="text-gray-900 bg-white border-gray-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                      value={guestFormData.first_name}
+                      onChange={(e) => handleGuestFormChange('first_name', e.target.value)}
+                      placeholder="John"
+                    />
+                    {guestFormErrors.first_name && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {guestFormErrors.first_name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">Last Name *</Label>
+                    <Input
+                      className="text-gray-900 bg-white border-gray-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                      value={guestFormData.last_name}
+                      onChange={(e) => handleGuestFormChange('last_name', e.target.value)}
+                      placeholder="Doe"
+                    />
+                    {guestFormErrors.last_name && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {guestFormErrors.last_name}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-gray-900 font-medium">
-                    Email {guestFormData.is_primary && '*'}
-                  </Label>
-                  <Input
-                    className="text-gray-900 bg-white border-gray-300"
-                    type="email"
-                    value={guestFormData.email}
-                    onChange={(e) => handleGuestFormChange('email', e.target.value)}
-                    placeholder="john@example.com"
-                  />
-                  {guestFormErrors.email && (
-                    <p className="text-xs text-red-600">{guestFormErrors.email}</p>
-                  )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">
+                      Email {guestFormData.is_primary && '*'}
+                    </Label>
+                    <Input
+                      className="text-gray-900 bg-white border-gray-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                      type="email"
+                      value={guestFormData.email}
+                      onChange={(e) => handleGuestFormChange('email', e.target.value)}
+                      placeholder="john@example.com"
+                    />
+                    {guestFormErrors.email && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {guestFormErrors.email}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">Date of Birth *</Label>
+                    <Input
+                      className="text-gray-900 bg-white border-gray-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                      type="date"
+                      value={guestFormData.date_of_birth}
+                      onChange={(e) => handleGuestFormChange('date_of_birth', e.target.value)}
+                    />
+                    {guestFormErrors.date_of_birth && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {guestFormErrors.date_of_birth}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-900 font-medium">Date of Birth *</Label>
-                  <Input
-                    className="text-gray-900 bg-white border-gray-300"
-                    type="date"
-                    value={guestFormData.date_of_birth}
-                    onChange={(e) => handleGuestFormChange('date_of_birth', e.target.value)}
-                  />
-                  {guestFormErrors.date_of_birth && (
-                    <p className="text-xs text-red-600">{guestFormErrors.date_of_birth}</p>
-                  )}
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label className="text-gray-900 font-medium">Country of Birth *</Label>
-                <Select
-                  value={guestFormData.country_of_birth}
-                  onValueChange={(value) => handleGuestFormChange('country_of_birth', value)}
-                >
-                  <SelectTrigger className="text-gray-900 bg-white border-gray-300">
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {COUNTRIES.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {guestFormErrors.country_of_birth && (
-                  <p className="text-xs text-red-600">{guestFormErrors.country_of_birth}</p>
-                )}
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium">Country of Birth *</Label>
+                  <Select
+                    value={guestFormData.country_of_birth}
+                    onValueChange={(value) => handleGuestFormChange('country_of_birth', value)}
+                  >
+                    <SelectTrigger className="text-gray-900 bg-white border-gray-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200">
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {COUNTRIES.map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {guestFormErrors.country_of_birth && (
+                    <p className="text-xs text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      {guestFormErrors.country_of_birth}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Italian Citizen Fields */}
               {guestFormData.country_of_birth?.toLowerCase().includes('ital') && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
-                  <p className="text-sm font-medium text-blue-900">Italian Citizen Information</p>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">IT</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-blue-900">Italian Citizen Information</p>
+                      <p className="text-xs text-blue-700">Additional details required for Italian citizens</p>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-gray-900 font-medium">Birth Province *</Label>
                       <Input
-                        className="text-gray-900 bg-white border-gray-300"
+                        className="text-gray-900 bg-white border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                         value={guestFormData.birth_province}
                         onChange={(e) => handleGuestFormChange('birth_province', e.target.value)}
                         placeholder="e.g., Roma"
                       />
                       {guestFormErrors.birth_province && (
-                        <p className="text-xs text-red-600">{guestFormErrors.birth_province}</p>
+                        <p className="text-xs text-red-600 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          {guestFormErrors.birth_province}
+                        </p>
                       )}
                     </div>
                     <div className="space-y-2">
                       <Label className="text-gray-900 font-medium">Birth City *</Label>
                       <Input
-                        className="text-gray-900 bg-white border-gray-300"
+                        className="text-gray-900 bg-white border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                         value={guestFormData.birth_city}
                         onChange={(e) => handleGuestFormChange('birth_city', e.target.value)}
                         placeholder="e.g., Roma"
                       />
                       {guestFormErrors.birth_city && (
-                        <p className="text-xs text-red-600">{guestFormErrors.birth_city}</p>
+                        <p className="text-xs text-red-600 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          {guestFormErrors.birth_city}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -2050,8 +2229,11 @@ export default function BookingSidePanel({
               )}
 
               {/* Document Information */}
-              <div className="border-t pt-4 space-y-4">
-                <h4 className="font-semibold text-sm text-gray-900">Document Information</h4>
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-4 space-y-4">
+                <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+                  <Calendar className="w-4 h-4 text-purple-600" />
+                  <h4 className="font-bold text-sm text-gray-900">Document Information</h4>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -2060,7 +2242,7 @@ export default function BookingSidePanel({
                       value={guestFormData.document_type}
                       onValueChange={(value) => handleGuestFormChange('document_type', value)}
                     >
-                      <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                      <SelectTrigger className="text-gray-900 bg-white border-gray-300 focus:border-purple-400 focus:ring-2 focus:ring-purple-200">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -2071,19 +2253,25 @@ export default function BookingSidePanel({
                       </SelectContent>
                     </Select>
                     {guestFormErrors.document_type && (
-                      <p className="text-xs text-red-600">{guestFormErrors.document_type}</p>
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {guestFormErrors.document_type}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-gray-900 font-medium">Document Number *</Label>
                     <Input
-                      className="text-gray-900 bg-white border-gray-300"
+                      className="text-gray-900 bg-white border-gray-300 focus:border-purple-400 focus:ring-2 focus:ring-purple-200"
                       value={guestFormData.document_number}
                       onChange={(e) => handleGuestFormChange('document_number', e.target.value)}
                       placeholder="ABC123456"
                     />
                     {guestFormErrors.document_number && (
-                      <p className="text-xs text-red-600">{guestFormErrors.document_number}</p>
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {guestFormErrors.document_number}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -2092,25 +2280,31 @@ export default function BookingSidePanel({
                   <div className="space-y-2">
                     <Label className="text-gray-900 font-medium">Issue Date *</Label>
                     <Input
-                      className="text-gray-900 bg-white border-gray-300"
+                      className="text-gray-900 bg-white border-gray-300 focus:border-purple-400 focus:ring-2 focus:ring-purple-200"
                       type="date"
                       value={guestFormData.document_issue_date}
                       onChange={(e) => handleGuestFormChange('document_issue_date', e.target.value)}
                     />
                     {guestFormErrors.document_issue_date && (
-                      <p className="text-xs text-red-600">{guestFormErrors.document_issue_date}</p>
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {guestFormErrors.document_issue_date}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-gray-900 font-medium">Expire Date *</Label>
                     <Input
-                      className="text-gray-900 bg-white border-gray-300"
+                      className="text-gray-900 bg-white border-gray-300 focus:border-purple-400 focus:ring-2 focus:ring-purple-200"
                       type="date"
                       value={guestFormData.document_expire_date}
                       onChange={(e) => handleGuestFormChange('document_expire_date', e.target.value)}
                     />
                     {guestFormErrors.document_expire_date && (
-                      <p className="text-xs text-red-600">{guestFormErrors.document_expire_date}</p>
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {guestFormErrors.document_expire_date}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -2121,7 +2315,7 @@ export default function BookingSidePanel({
                     value={guestFormData.document_issue_country}
                     onValueChange={(value) => handleGuestFormChange('document_issue_country', value)}
                   >
-                    <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                    <SelectTrigger className="text-gray-900 bg-white border-gray-300 focus:border-purple-400 focus:ring-2 focus:ring-purple-200">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
@@ -2133,62 +2327,84 @@ export default function BookingSidePanel({
                     </SelectContent>
                   </Select>
                   {guestFormErrors.document_issue_country && (
-                    <p className="text-xs text-red-600">{guestFormErrors.document_issue_country}</p>
+                    <p className="text-xs text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      {guestFormErrors.document_issue_country}
+                    </p>
                   )}
                 </div>
-
-                {/* Italian-issued Document Fields */}
-                {guestFormData.document_issue_country?.toLowerCase().includes('ital') && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
-                    <p className="text-sm font-medium text-blue-900">Italian-Issued Document Information</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-gray-900 font-medium">Issue Province *</Label>
-                        <Input
-                          className="text-gray-900 bg-white border-gray-300"
-                          value={guestFormData.document_issue_province}
-                          onChange={(e) => handleGuestFormChange('document_issue_province', e.target.value)}
-                          placeholder="e.g., Milano"
-                        />
-                        {guestFormErrors.document_issue_province && (
-                          <p className="text-xs text-red-600">{guestFormErrors.document_issue_province}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-gray-900 font-medium">Issue City *</Label>
-                        <Input
-                          className="text-gray-900 bg-white border-gray-300"
-                          value={guestFormData.document_issue_city}
-                          onChange={(e) => handleGuestFormChange('document_issue_city', e.target.value)}
-                          placeholder="e.g., Milano"
-                        />
-                        {guestFormErrors.document_issue_city && (
-                          <p className="text-xs text-red-600">{guestFormErrors.document_issue_city}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
+              {/* Italian-issued Document Fields */}
+              {guestFormData.document_issue_country?.toLowerCase().includes('ital') && (
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-xl p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">IT</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-purple-900">Italian-Issued Document Information</p>
+                      <p className="text-xs text-purple-700">Additional details required for Italian-issued documents</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-900 font-medium">Issue Province *</Label>
+                      <Input
+                        className="text-gray-900 bg-white border-purple-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-200"
+                        value={guestFormData.document_issue_province}
+                        onChange={(e) => handleGuestFormChange('document_issue_province', e.target.value)}
+                        placeholder="e.g., Milano"
+                      />
+                      {guestFormErrors.document_issue_province && (
+                        <p className="text-xs text-red-600 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          {guestFormErrors.document_issue_province}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-900 font-medium">Issue City *</Label>
+                      <Input
+                        className="text-gray-900 bg-white border-purple-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-200"
+                        value={guestFormData.document_issue_city}
+                        onChange={(e) => handleGuestFormChange('document_issue_city', e.target.value)}
+                        placeholder="e.g., Milano"
+                      />
+                      {guestFormErrors.document_issue_city && (
+                        <p className="text-xs text-red-600 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          {guestFormErrors.document_issue_city}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Save Guest Button */}
-              <Button
-                onClick={handleSaveGuest}
-                disabled={createBookingGuest.isPending || updateBookingGuest.isPending}
-                className="w-full"
-              >
-                {(createBookingGuest.isPending || updateBookingGuest.isPending) ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {editingGuestId ? 'Updating...' : 'Saving...'}
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    {editingGuestId ? 'Update Guest' : 'Add Guest'}
-                  </>
-                )}
-              </Button>
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4">
+                <Button
+                  onClick={handleSaveGuest}
+                  disabled={createBookingGuest.isPending || updateBookingGuest.isPending}
+                  className="w-full h-12 text-base font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+                >
+                  {(createBookingGuest.isPending || updateBookingGuest.isPending) ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      {editingGuestId ? 'Updating Guest...' : 'Saving Guest...'}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5 mr-2" />
+                      {editingGuestId ? 'Update Guest Information' : 'Add Guest to Booking'}
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-gray-600 text-center mt-2">
+                  {editingGuestId ? 'Changes will be saved immediately' : 'Guest will be added to the registered guests list'}
+                </p>
+              </div>
             </div>
           </div>
 
