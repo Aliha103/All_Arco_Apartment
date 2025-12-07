@@ -75,9 +75,10 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 # Create necessary directories and set permissions for nginx
-RUN mkdir -p /app/backend/staticfiles /app/backend/media /var/log/supervisor /var/log/nginx /run \
+RUN mkdir -p /app/backend/staticfiles /app/backend/media/gallery/hero /var/log/supervisor /var/log/nginx /run \
+    && chmod -R 777 /app/backend/media \
     && chmod -R 755 /app \
-    && chown -R www-data:www-data /var/log/nginx /run \
+    && chown -R www-data:www-data /var/log/nginx /run /app/backend/media \
     && chmod 755 /var/log/nginx
 
 # Expose port

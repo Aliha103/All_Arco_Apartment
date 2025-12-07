@@ -6,14 +6,30 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models import Max
+from django.conf import settings
 import logging
 import traceback
+import os
 
 from .models import HeroImage
 from .serializers import HeroImageSerializer, HeroImagePublicSerializer
 from apps.users.permissions import HasPermission
 
 logger = logging.getLogger(__name__)
+
+
+def ensure_media_directories():
+    """Ensure media directories exist with proper permissions."""
+    media_root = settings.MEDIA_ROOT
+    gallery_dir = os.path.join(media_root, 'gallery', 'hero')
+
+    try:
+        os.makedirs(gallery_dir, exist_ok=True)
+        logger.info(f"Media directory ensured: {gallery_dir}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to create media directory: {e}")
+        return False
 
 
 class HeroImageViewSet(viewsets.ModelViewSet):
@@ -57,11 +73,24 @@ class HeroImageViewSet(viewsets.ModelViewSet):
         """Create new gallery image with comprehensive error handling."""
         try:
             logger.info(f"Image upload attempt by user: {request.user.id}")
-            logger.info(f"Request data keys: {request.data.keys()}")
-            logger.info(f"Request FILES: {request.FILES.keys()}")
+            logger.info(f"Request data keys: {list(request.data.keys())}")
+            logger.info(f"Request FILES: {list(request.FILES.keys())}")
+
+            # Ensure media directories exist
+            if not ensure_media_directories():
+                logger.error("Failed to create media directories")
+                return Response(
+                    {'error': 'Server storage not available. Please contact support.'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
             # Validate required fields
-            if 'image' not in request.FILES and 'image_url' not in request.data:
+            has_file = 'image' in request.FILES
+            has_url = 'image_url' in request.data and request.data.get('image_url')
+
+            logger.info(f"Has file: {has_file}, Has URL: {has_url}")
+
+            if not has_file and not has_url:
                 return Response(
                     {'error': 'Either image file or image_url is required'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -77,6 +106,18 @@ class HeroImageViewSet(viewsets.ModelViewSet):
             logger.info(f"Image uploaded successfully: {serializer.data.get('id')}")
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+        except PermissionError as e:
+            logger.error(f"Permission error during upload: {str(e)}")
+            return Response(
+                {'error': 'Storage permission denied. Please contact support.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except OSError as e:
+            logger.error(f"OS error during upload: {str(e)}")
+            return Response(
+                {'error': f'Storage error: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         except Exception as e:
             logger.error(f"Image upload error: {str(e)}")
             logger.error(f"Full traceback: {traceback.format_exc()}")
