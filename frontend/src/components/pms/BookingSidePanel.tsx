@@ -319,7 +319,9 @@ export default function BookingSidePanel({
       const response = await api.bookings.guests.list(bookingId!);
       return response.data;
     },
-    enabled: !!bookingId && isOpen && guestRegistrationModalOpen,
+    enabled: !!bookingId && isOpen,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Calculate price (for create/edit mode when dates change)
@@ -414,7 +416,7 @@ export default function BookingSidePanel({
   const createBookingGuest = useMutation({
     mutationFn: (data: any) => api.bookings.guests.create(bookingId!, data),
     onSuccess: () => {
-      refetchGuests();
+      queryClient.invalidateQueries({ queryKey: ['booking-guests', bookingId] });
       resetGuestForm();
       toast.success('Guest registered successfully');
     },
@@ -432,7 +434,7 @@ export default function BookingSidePanel({
     mutationFn: ({ guestId, data }: { guestId: string; data: any }) =>
       api.bookings.guests.update(bookingId!, guestId, data),
     onSuccess: () => {
-      refetchGuests();
+      queryClient.invalidateQueries({ queryKey: ['booking-guests', bookingId] });
       resetGuestForm();
       setEditingGuestId(null);
       toast.success('Guest updated successfully');
@@ -450,7 +452,7 @@ export default function BookingSidePanel({
   const deleteBookingGuest = useMutation({
     mutationFn: (guestId: string) => api.bookings.guests.delete(bookingId!, guestId),
     onSuccess: () => {
-      refetchGuests();
+      queryClient.invalidateQueries({ queryKey: ['booking-guests', bookingId] });
       toast.success('Guest removed successfully');
     },
     onError: () => {
