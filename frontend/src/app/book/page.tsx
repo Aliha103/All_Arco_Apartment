@@ -300,6 +300,24 @@ function BookingPageContent() {
     totalGuests
   );
 
+  // Calculate accommodation_total locally if API returns 0 or null
+  const correctedPricing = useMemo(() => {
+    if (!pricing) return null;
+
+    const nightlyRate = parseFloat(pricing.nightly_rate || '0');
+    const apiAccommodation = parseFloat(pricing.accommodation_total || '0');
+
+    // If API didn't calculate accommodation_total, do it locally
+    const accommodation_total = apiAccommodation > 0
+      ? pricing.accommodation_total
+      : (nightlyRate * nights).toFixed(2);
+
+    return {
+      ...pricing,
+      accommodation_total,
+    };
+  }, [pricing, nights]);
+
   const createBooking = useCreateBooking();
   const createCheckout = useCreateCheckoutSession();
 
@@ -703,7 +721,7 @@ function BookingPageContent() {
                     >
                       <PriceSummarySkeleton />
                     </motion.div>
-                  ) : pricing ? (
+                  ) : correctedPricing ? (
                     <motion.div
                       key="pricing"
                       initial={{ opacity: 0, y: 10 }}
@@ -713,22 +731,22 @@ function BookingPageContent() {
                     >
                       <div className="space-y-3 text-sm text-white/80">
                         <div className="flex justify-between">
-                          <span>{safeFormatCurrency(pricing.nightly_rate)} × {nights || 0} night{nights === 1 ? '' : 's'}</span>
-                          <span className="text-white font-medium">{safeFormatCurrency(pricing.accommodation_total)}</span>
+                          <span>{safeFormatCurrency(correctedPricing.nightly_rate)} × {nights || 0} night{nights === 1 ? '' : 's'}</span>
+                          <span className="text-white font-medium">{safeFormatCurrency(correctedPricing.accommodation_total)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Cleaning fee</span>
-                          <span className="text-white font-medium">{safeFormatCurrency(pricing.cleaning_fee)}</span>
+                          <span className="text-white font-medium">{safeFormatCurrency(correctedPricing.cleaning_fee)}</span>
                         </div>
-                        {parseFloat(pricing.extra_guest_fee || '0') > 0 && (
+                        {parseFloat(correctedPricing.extra_guest_fee || '0') > 0 && (
                           <div className="flex justify-between">
                             <span>Extra guest fee</span>
-                            <span className="text-white font-medium">{safeFormatCurrency(pricing.extra_guest_fee)}</span>
+                            <span className="text-white font-medium">{safeFormatCurrency(correctedPricing.extra_guest_fee)}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
                           <span>Tourist tax</span>
-                          <span className="text-white font-medium">{safeFormatCurrency(pricing.tourist_tax)}</span>
+                          <span className="text-white font-medium">{safeFormatCurrency(correctedPricing.tourist_tax)}</span>
                         </div>
                       </div>
                       <motion.div
@@ -739,7 +757,7 @@ function BookingPageContent() {
                       >
                         <div className="flex justify-between text-lg font-semibold text-white">
                           <span>Total</span>
-                          <span>{safeFormatCurrency(pricing.total)}</span>
+                          <span>{safeFormatCurrency(correctedPricing.total)}</span>
                         </div>
                         <p className="text-xs text-white/50 mt-1">
                           Charged securely when you confirm. Includes all required taxes.
