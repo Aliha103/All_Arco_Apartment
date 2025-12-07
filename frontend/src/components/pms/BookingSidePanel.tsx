@@ -249,6 +249,25 @@ export default function BookingSidePanel({
   const [manualPricingEnabled, setManualPricingEnabled] = useState(false);
   const [checkInLinkCopied, setCheckInLinkCopied] = useState(false);
   const [sendingCheckInEmail, setSendingCheckInEmail] = useState(false);
+  const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
+  const [guestFormData, setGuestFormData] = useState({
+    is_primary: false,
+    first_name: '',
+    last_name: '',
+    email: '',
+    date_of_birth: '',
+    country_of_birth: '',
+    birth_province: '',
+    birth_city: '',
+    document_type: 'passport',
+    document_number: '',
+    document_issue_date: '',
+    document_expire_date: '',
+    document_issue_country: '',
+    document_issue_province: '',
+    document_issue_city: '',
+  });
+  const [guestFormErrors, setGuestFormErrors] = useState<Record<string, string>>({});
 
   // Fetch booking details (for view/edit mode)
   const { data: bookingData, isLoading: loadingBooking, error: bookingError } = useQuery({
@@ -268,6 +287,16 @@ export default function BookingSidePanel({
       return response.data?.results || response.data || [];
     },
     enabled: !!bookingId && isOpen,
+  });
+
+  // Fetch booking guests (for guest registration)
+  const { data: bookingGuestsData, refetch: refetchGuests } = useQuery({
+    queryKey: ['booking-guests', bookingId],
+    queryFn: async () => {
+      const response = await api.bookings.guests.list(bookingId!);
+      return response.data;
+    },
+    enabled: !!bookingId && isOpen && guestRegistrationModalOpen,
   });
 
   // Calculate price (for create/edit mode when dates change)
@@ -355,6 +384,54 @@ export default function BookingSidePanel({
     },
     onError: () => {
       toast.error('Failed to update status');
+    },
+  });
+
+  // Create booking guest mutation
+  const createBookingGuest = useMutation({
+    mutationFn: (data: any) => api.bookings.guests.create(bookingId!, data),
+    onSuccess: () => {
+      refetchGuests();
+      resetGuestForm();
+      toast.success('Guest registered successfully');
+    },
+    onError: (error: any) => {
+      const errorData = error.response?.data;
+      if (errorData && typeof errorData === 'object') {
+        setGuestFormErrors(errorData);
+      }
+      toast.error(errorData?.message || 'Failed to register guest');
+    },
+  });
+
+  // Update booking guest mutation
+  const updateBookingGuest = useMutation({
+    mutationFn: ({ guestId, data }: { guestId: string; data: any }) =>
+      api.bookings.guests.update(bookingId!, guestId, data),
+    onSuccess: () => {
+      refetchGuests();
+      resetGuestForm();
+      setEditingGuestId(null);
+      toast.success('Guest updated successfully');
+    },
+    onError: (error: any) => {
+      const errorData = error.response?.data;
+      if (errorData && typeof errorData === 'object') {
+        setGuestFormErrors(errorData);
+      }
+      toast.error(errorData?.message || 'Failed to update guest');
+    },
+  });
+
+  // Delete booking guest mutation
+  const deleteBookingGuest = useMutation({
+    mutationFn: (guestId: string) => api.bookings.guests.delete(bookingId!, guestId),
+    onSuccess: () => {
+      refetchGuests();
+      toast.success('Guest removed successfully');
+    },
+    onError: () => {
+      toast.error('Failed to remove guest');
     },
   });
 
@@ -599,6 +676,157 @@ export default function BookingSidePanel({
     const newData = { ...formData, [field]: value };
     const total = (newData.adults || 0) + (newData.children || 0) + (newData.infants || 0);
     setFormData({ ...newData, number_of_guests: total });
+  };
+
+  // Guest form handlers
+  const resetGuestForm = () => {
+    setGuestFormData({
+      is_primary: false,
+      first_name: '',
+      last_name: '',
+      email: '',
+      date_of_birth: '',
+      country_of_birth: '',
+      birth_province: '',
+      birth_city: '',
+      document_type: 'passport',
+      document_number: '',
+      document_issue_date: '',
+      document_expire_date: '',
+      document_issue_country: '',
+      document_issue_province: '',
+      document_issue_city: '',
+    });
+    setGuestFormErrors({});
+    setEditingGuestId(null);
+  };
+
+  const handleGuestFormChange = (field: string, value: any) => {
+    setGuestFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (guestFormErrors[field]) {
+      setGuestFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateGuestForm = () => {
+    const errors: Record<string, string> = {};
+
+    // Basic required fields
+    if (!guestFormData.first_name?.trim()) {
+      errors.first_name = 'First name is required';
+    }
+    if (!guestFormData.last_name?.trim()) {
+      errors.last_name = 'Last name is required';
+    }
+    if (!guestFormData.date_of_birth) {
+      errors.date_of_birth = 'Date of birth is required';
+    }
+    if (!guestFormData.country_of_birth?.trim()) {
+      errors.country_of_birth = 'Country of birth is required';
+    }
+
+    // Email required for primary guest
+    if (guestFormData.is_primary && !guestFormData.email?.trim()) {
+      errors.email = 'Email is required for primary guest';
+    }
+
+    // Validate email format if provided
+    if (guestFormData.email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestFormData.email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    // Italian citizen requirements
+    const isItalianCitizen = guestFormData.country_of_birth?.toLowerCase().includes('ital');
+    if (isItalianCitizen) {
+      if (!guestFormData.birth_province?.trim()) {
+        errors.birth_province = 'Birth province is required for Italian citizens';
+      }
+      if (!guestFormData.birth_city?.trim()) {
+        errors.birth_city = 'Birth city is required for Italian citizens';
+      }
+    }
+
+    // Document information required
+    if (!guestFormData.document_type) {
+      errors.document_type = 'Document type is required';
+    }
+    if (!guestFormData.document_number?.trim()) {
+      errors.document_number = 'Document number is required';
+    }
+    if (!guestFormData.document_issue_date) {
+      errors.document_issue_date = 'Document issue date is required';
+    }
+    if (!guestFormData.document_expire_date) {
+      errors.document_expire_date = 'Document expire date is required';
+    }
+    if (!guestFormData.document_issue_country?.trim()) {
+      errors.document_issue_country = 'Document issue country is required';
+    }
+
+    // Italian-issued document requirements
+    const isItalianDocument = guestFormData.document_issue_country?.toLowerCase().includes('ital');
+    if (isItalianDocument) {
+      if (!guestFormData.document_issue_province?.trim()) {
+        errors.document_issue_province = 'Document issue province is required for Italian-issued documents';
+      }
+      if (!guestFormData.document_issue_city?.trim()) {
+        errors.document_issue_city = 'Document issue city is required for Italian-issued documents';
+      }
+    }
+
+    // Date validation
+    if (guestFormData.document_issue_date && guestFormData.document_expire_date) {
+      const issueDate = new Date(guestFormData.document_issue_date);
+      const expireDate = new Date(guestFormData.document_expire_date);
+      if (expireDate <= issueDate) {
+        errors.document_expire_date = 'Expire date must be after issue date';
+      }
+    }
+
+    setGuestFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSaveGuest = () => {
+    if (!validateGuestForm()) return;
+
+    if (editingGuestId) {
+      updateBookingGuest.mutate({ guestId: editingGuestId, data: guestFormData });
+    } else {
+      createBookingGuest.mutate(guestFormData);
+    }
+  };
+
+  const handleEditGuest = (guest: any) => {
+    setGuestFormData({
+      is_primary: guest.is_primary || false,
+      first_name: guest.first_name || '',
+      last_name: guest.last_name || '',
+      email: guest.email || '',
+      date_of_birth: guest.date_of_birth || '',
+      country_of_birth: guest.country_of_birth || '',
+      birth_province: guest.birth_province || '',
+      birth_city: guest.birth_city || '',
+      document_type: guest.document_type || 'passport',
+      document_number: guest.document_number || '',
+      document_issue_date: guest.document_issue_date || '',
+      document_expire_date: guest.document_expire_date || '',
+      document_issue_country: guest.document_issue_country || '',
+      document_issue_province: guest.document_issue_province || '',
+      document_issue_city: guest.document_issue_city || '',
+    });
+    setEditingGuestId(guest.id);
+  };
+
+  const handleDeleteGuest = (guestId: string) => {
+    if (window.confirm('Are you sure you want to remove this guest?')) {
+      deleteBookingGuest.mutate(guestId);
+    }
   };
 
   // Render helpers
@@ -1621,37 +1849,357 @@ export default function BookingSidePanel({
       </Dialog>
 
       {/* Guest Registration Modal */}
-      <Dialog open={guestRegistrationModalOpen} onOpenChange={setGuestRegistrationModalOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+      <Dialog open={guestRegistrationModalOpen} onOpenChange={(open) => {
+        setGuestRegistrationModalOpen(open);
+        if (!open) resetGuestForm();
+      }}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Guest Registration</DialogTitle>
             <DialogDescription>
-              Register all guests for this booking ({(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests total)
+              Register all guests for this booking. Total expected: {(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests
+              {bookingGuestsData && ` | Registered: ${bookingGuestsData.length || 0}`}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-              <p className="font-medium mb-1">Coming Soon</p>
-              <p className="text-blue-700">
-                Full guest registration with individual guest details (name, ID, passport) will be available in the next update.
-                This feature will allow you to register all {(formData.adults || 0) + (formData.children || 0) + (formData.infants || 0)} guests for this booking.
-              </p>
-            </div>
-            {/* Placeholder for future guest registration form */}
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-gray-700">Expected features:</p>
-              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-                <li>Full name for each guest</li>
-                <li>Date of birth</li>
-                <li>Nationality</li>
-                <li>ID/Passport number</li>
-                <li>Document upload (ID, passport scan)</li>
-                <li>Signature capture</li>
-              </ul>
+
+          <div className="space-y-6 py-4">
+            {/* Registered Guests List */}
+            {bookingGuestsData && bookingGuestsData.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm text-gray-900">Registered Guests</h3>
+                <div className="space-y-2">
+                  {bookingGuestsData.map((guest: any) => (
+                    <div key={guest.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3 border">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          {guest.first_name} {guest.last_name}
+                          {guest.is_primary && (
+                            <Badge className="ml-2 bg-blue-100 text-blue-800 text-xs">Primary</Badge>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {guest.country_of_birth} • {guest.document_type.replace('_', ' ').toUpperCase()}: {guest.document_number}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditGuest(guest)}
+                        >
+                          <EditIcon className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteGuest(guest.id)}
+                          className="text-red-600 hover:bg-red-50"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Guest Form */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm text-gray-900">
+                  {editingGuestId ? 'Edit Guest' : 'Add New Guest'}
+                </h3>
+                {editingGuestId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetGuestForm}
+                    className="text-gray-600"
+                  >
+                    Cancel Edit
+                  </Button>
+                )}
+              </div>
+
+              {/* Primary Guest Checkbox */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="is_primary"
+                  checked={guestFormData.is_primary}
+                  onChange={(e) => handleGuestFormChange('is_primary', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <Label htmlFor="is_primary" className="text-sm font-medium text-gray-900">
+                  Primary Guest
+                </Label>
+              </div>
+
+              {/* Basic Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium">First Name *</Label>
+                  <Input
+                    className="text-gray-900 bg-white border-gray-300"
+                    value={guestFormData.first_name}
+                    onChange={(e) => handleGuestFormChange('first_name', e.target.value)}
+                    placeholder="John"
+                  />
+                  {guestFormErrors.first_name && (
+                    <p className="text-xs text-red-600">{guestFormErrors.first_name}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium">Last Name *</Label>
+                  <Input
+                    className="text-gray-900 bg-white border-gray-300"
+                    value={guestFormData.last_name}
+                    onChange={(e) => handleGuestFormChange('last_name', e.target.value)}
+                    placeholder="Doe"
+                  />
+                  {guestFormErrors.last_name && (
+                    <p className="text-xs text-red-600">{guestFormErrors.last_name}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium">
+                    Email {guestFormData.is_primary && '*'}
+                  </Label>
+                  <Input
+                    className="text-gray-900 bg-white border-gray-300"
+                    type="email"
+                    value={guestFormData.email}
+                    onChange={(e) => handleGuestFormChange('email', e.target.value)}
+                    placeholder="john@example.com"
+                  />
+                  {guestFormErrors.email && (
+                    <p className="text-xs text-red-600">{guestFormErrors.email}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium">Date of Birth *</Label>
+                  <Input
+                    className="text-gray-900 bg-white border-gray-300"
+                    type="date"
+                    value={guestFormData.date_of_birth}
+                    onChange={(e) => handleGuestFormChange('date_of_birth', e.target.value)}
+                  />
+                  {guestFormErrors.date_of_birth && (
+                    <p className="text-xs text-red-600">{guestFormErrors.date_of_birth}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-gray-900 font-medium">Country of Birth *</Label>
+                <Select
+                  value={guestFormData.country_of_birth}
+                  onValueChange={(value) => handleGuestFormChange('country_of_birth', value)}
+                >
+                  <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {COUNTRIES.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {guestFormErrors.country_of_birth && (
+                  <p className="text-xs text-red-600">{guestFormErrors.country_of_birth}</p>
+                )}
+              </div>
+
+              {/* Italian Citizen Fields */}
+              {guestFormData.country_of_birth?.toLowerCase().includes('ital') && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                  <p className="text-sm font-medium text-blue-900">Italian Citizen Information</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-900 font-medium">Birth Province *</Label>
+                      <Input
+                        className="text-gray-900 bg-white border-gray-300"
+                        value={guestFormData.birth_province}
+                        onChange={(e) => handleGuestFormChange('birth_province', e.target.value)}
+                        placeholder="e.g., Roma"
+                      />
+                      {guestFormErrors.birth_province && (
+                        <p className="text-xs text-red-600">{guestFormErrors.birth_province}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-gray-900 font-medium">Birth City *</Label>
+                      <Input
+                        className="text-gray-900 bg-white border-gray-300"
+                        value={guestFormData.birth_city}
+                        onChange={(e) => handleGuestFormChange('birth_city', e.target.value)}
+                        placeholder="e.g., Roma"
+                      />
+                      {guestFormErrors.birth_city && (
+                        <p className="text-xs text-red-600">{guestFormErrors.birth_city}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Document Information */}
+              <div className="border-t pt-4 space-y-4">
+                <h4 className="font-semibold text-sm text-gray-900">Document Information</h4>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">Document Type *</Label>
+                    <Select
+                      value={guestFormData.document_type}
+                      onValueChange={(value) => handleGuestFormChange('document_type', value)}
+                    >
+                      <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="passport">Passport</SelectItem>
+                        <SelectItem value="id_card">ID Card</SelectItem>
+                        <SelectItem value="driving_license">Driving License</SelectItem>
+                        <SelectItem value="residence_permit">Residence Permit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {guestFormErrors.document_type && (
+                      <p className="text-xs text-red-600">{guestFormErrors.document_type}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">Document Number *</Label>
+                    <Input
+                      className="text-gray-900 bg-white border-gray-300"
+                      value={guestFormData.document_number}
+                      onChange={(e) => handleGuestFormChange('document_number', e.target.value)}
+                      placeholder="ABC123456"
+                    />
+                    {guestFormErrors.document_number && (
+                      <p className="text-xs text-red-600">{guestFormErrors.document_number}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">Issue Date *</Label>
+                    <Input
+                      className="text-gray-900 bg-white border-gray-300"
+                      type="date"
+                      value={guestFormData.document_issue_date}
+                      onChange={(e) => handleGuestFormChange('document_issue_date', e.target.value)}
+                    />
+                    {guestFormErrors.document_issue_date && (
+                      <p className="text-xs text-red-600">{guestFormErrors.document_issue_date}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-medium">Expire Date *</Label>
+                    <Input
+                      className="text-gray-900 bg-white border-gray-300"
+                      type="date"
+                      value={guestFormData.document_expire_date}
+                      onChange={(e) => handleGuestFormChange('document_expire_date', e.target.value)}
+                    />
+                    {guestFormErrors.document_expire_date && (
+                      <p className="text-xs text-red-600">{guestFormErrors.document_expire_date}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-medium">Document Issue Country *</Label>
+                  <Select
+                    value={guestFormData.document_issue_country}
+                    onValueChange={(value) => handleGuestFormChange('document_issue_country', value)}
+                  >
+                    <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {COUNTRIES.map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {guestFormErrors.document_issue_country && (
+                    <p className="text-xs text-red-600">{guestFormErrors.document_issue_country}</p>
+                  )}
+                </div>
+
+                {/* Italian-issued Document Fields */}
+                {guestFormData.document_issue_country?.toLowerCase().includes('ital') && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                    <p className="text-sm font-medium text-blue-900">Italian-Issued Document Information</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-gray-900 font-medium">Issue Province *</Label>
+                        <Input
+                          className="text-gray-900 bg-white border-gray-300"
+                          value={guestFormData.document_issue_province}
+                          onChange={(e) => handleGuestFormChange('document_issue_province', e.target.value)}
+                          placeholder="e.g., Milano"
+                        />
+                        {guestFormErrors.document_issue_province && (
+                          <p className="text-xs text-red-600">{guestFormErrors.document_issue_province}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-gray-900 font-medium">Issue City *</Label>
+                        <Input
+                          className="text-gray-900 bg-white border-gray-300"
+                          value={guestFormData.document_issue_city}
+                          onChange={(e) => handleGuestFormChange('document_issue_city', e.target.value)}
+                          placeholder="e.g., Milano"
+                        />
+                        {guestFormErrors.document_issue_city && (
+                          <p className="text-xs text-red-600">{guestFormErrors.document_issue_city}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Save Guest Button */}
+              <Button
+                onClick={handleSaveGuest}
+                disabled={createBookingGuest.isPending || updateBookingGuest.isPending}
+                className="w-full"
+              >
+                {(createBookingGuest.isPending || updateBookingGuest.isPending) ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {editingGuestId ? 'Updating...' : 'Saving...'}
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    {editingGuestId ? 'Update Guest' : 'Add Guest'}
+                  </>
+                )}
+              </Button>
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setGuestRegistrationModalOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setGuestRegistrationModalOpen(false);
+                resetGuestForm();
+              }}
+            >
               Close
             </Button>
           </DialogFooter>
