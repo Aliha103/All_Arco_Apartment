@@ -786,7 +786,7 @@ export default function PMSDashboard() {
               <CardContent className="p-4">
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Arrivals */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
                         <div className="p-1 rounded bg-green-100">
@@ -820,7 +820,7 @@ export default function PMSDashboard() {
                   </div>
 
                   {/* Departures */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
                         <div className="p-1 rounded bg-blue-100">
