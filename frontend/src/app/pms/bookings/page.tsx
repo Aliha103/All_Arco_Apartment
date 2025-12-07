@@ -616,7 +616,7 @@ export default function BookingsPage() {
 
         if (blockedDates.length === 0) return;
 
-        const dates = blockedDates.map((d: any) => new Date(d.date)).sort((a, b) => a.getTime() - b.getTime());
+        const dates = blockedDates.map((d: any) => new Date(d.date)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
         const startDate = dates[0];
         const endDate = dates[dates.length - 1];
 
