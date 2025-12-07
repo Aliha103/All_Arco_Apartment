@@ -94,6 +94,7 @@ export const api = {
     delete: (id: string) => apiClient.delete(`/bookings/${id}/`),
     checkAvailability: (checkIn: string, checkOut: string) =>
       apiClient.get('/bookings/availability/', { params: { check_in: checkIn, check_out: checkOut } }),
+    getBlockedDates: () => apiClient.get('/bookings/blocked-dates-public/'),
     sendEmail: (id: string) => apiClient.post(`/bookings/${id}/send_email/`),
     downloadPDF: (id: string) =>
       apiClient.get(`/bookings/${id}/download-pdf/`, { responseType: 'blob' }),
@@ -171,6 +172,23 @@ export const api = {
     createRule: (data: any) => apiClient.post('/pricing/rules/', data),
     updateRule: (id: string, data: any) => apiClient.patch(`/pricing/rules/${id}/`, data),
     deleteRule: (id: string) => apiClient.delete(`/pricing/rules/${id}/`),
+    // Promotions
+    listPromotions: (params?: any) => apiClient.get('/pricing/promotions/', { params }),
+    getPromotion: (id: string) => apiClient.get(`/pricing/promotions/${id}/`),
+    createPromotion: (data: any) => apiClient.post('/pricing/promotions/', data),
+    updatePromotion: (id: string, data: any) => apiClient.patch(`/pricing/promotions/${id}/`, data),
+    deletePromotion: (id: string) => apiClient.delete(`/pricing/promotions/${id}/`),
+    getPromotionUsage: (id: string) => apiClient.get(`/pricing/promotions/${id}/usage/`),
+    // Vouchers
+    listVouchers: (params?: any) => apiClient.get('/pricing/vouchers/', { params }),
+    getVoucher: (id: string) => apiClient.get(`/pricing/vouchers/${id}/`),
+    createVoucher: (data: any) => apiClient.post('/pricing/vouchers/', data),
+    updateVoucher: (id: string, data: any) => apiClient.patch(`/pricing/vouchers/${id}/`, data),
+    deleteVoucher: (id: string) => apiClient.delete(`/pricing/vouchers/${id}/`),
+    getVoucherUsage: (id: string) => apiClient.get(`/pricing/vouchers/${id}/usage/`),
+    // Validation (public endpoint)
+    validatePromoCode: (code: string, bookingAmount?: number) =>
+      apiClient.post('/pricing/validate-promo/', { code, booking_amount: bookingAmount }),
   },
 
   // Users (Team management)

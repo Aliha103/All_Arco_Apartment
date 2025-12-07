@@ -13,6 +13,7 @@ bookings_router.register(r'guests', views.BookingGuestViewSet, basename='booking
 
 urlpatterns = [
     path('availability/', views.check_availability, name='check-availability'),
+    path('blocked-dates-public/', views.get_blocked_dates, name='get-blocked-dates'),
     path('calendar/month/', views.calendar_month, name='calendar-month'),
     path('statistics/', views.booking_statistics, name='booking-statistics'),
     # Public booking lookup endpoints (no auth required)

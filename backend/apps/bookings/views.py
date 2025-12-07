@@ -763,6 +763,69 @@ class BookingViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+def get_blocked_dates(request):
+    """
+    Get all dates that are unavailable for booking (public endpoint).
+
+    Returns array of date ranges that are blocked for check-in.
+    Used by the booking widget calendar to disable unavailable dates.
+
+    Logic:
+    - For bookings (check_in to check_out): dates from check_in to (check_out - 1 day) are blocked
+      - Example: booking 03/12-05/12 blocks [03/12, 04/12], but 05/12 is available
+    - For blocked dates: dates from start_date to (end_date - 1 day) are blocked
+    - Excludes cancelled and checked_out bookings
+    """
+    # Get all active bookings (excluding cancelled/checked_out)
+    active_bookings = Booking.objects.exclude(
+        status__in=['cancelled', 'checked_out']
+    ).values('check_in_date', 'check_out_date', 'status', 'released_from_date')
+
+    # Get all blocked date ranges
+    blocked_dates = BlockedDate.objects.values('start_date', 'end_date')
+
+    blocked_ranges = []
+
+    # Process bookings
+    for booking in active_bookings:
+        blocked_range = None
+
+        # Handle no-show bookings with partial release
+        if booking['status'] == 'no_show' and booking['released_from_date']:
+            if booking['released_from_date'] > booking['check_in_date']:
+                # Only block dates before released_from_date
+                blocked_range = {
+                    'start': booking['check_in_date'].isoformat(),
+                    'end': booking['released_from_date'].isoformat(),
+                    'type': 'booking'
+                }
+        else:
+            # Regular booking: block from check-in to (check-out - 1 day)
+            # This makes check-out date available for new check-ins
+            blocked_range = {
+                'start': booking['check_in_date'].isoformat(),
+                'end': booking['check_out_date'].isoformat(),
+                'type': 'booking'
+            }
+
+        if blocked_range:
+            blocked_ranges.append(blocked_range)
+
+    # Process manually blocked dates
+    for blocked in blocked_dates:
+        blocked_ranges.append({
+            'start': blocked['start_date'].isoformat(),
+            'end': blocked['end_date'].isoformat(),
+            'type': 'blocked'
+        })
+
+    return Response({
+        'blocked_ranges': blocked_ranges
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def check_availability(request):
     """
     Check if dates are available for booking.
