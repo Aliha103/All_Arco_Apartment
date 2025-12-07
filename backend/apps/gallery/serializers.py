@@ -9,7 +9,7 @@ class HeroImageSerializer(serializers.ModelSerializer):
     """Serializer for HeroImage model."""
 
     url = serializers.ReadOnlyField()
-    uploaded_by_name = serializers.CharField(source='uploaded_by.get_full_name', read_only=True)
+    uploaded_by_name = serializers.SerializerMethodField()
     image_type_display = serializers.CharField(source='get_image_type_display', read_only=True)
     # Make image optional since we can use image_url instead
     image = serializers.ImageField(required=False, allow_null=True)
@@ -24,6 +24,12 @@ class HeroImageSerializer(serializers.ModelSerializer):
             'uploaded_by', 'uploaded_by_name', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'uploaded_by', 'created_at', 'updated_at']
+
+    def get_uploaded_by_name(self, obj):
+        """Get the full name of the uploader, handling null values."""
+        if obj.uploaded_by:
+            return obj.uploaded_by.get_full_name() or obj.uploaded_by.email
+        return None
 
     def to_internal_value(self, data):
         """Handle string boolean values from FormData."""
