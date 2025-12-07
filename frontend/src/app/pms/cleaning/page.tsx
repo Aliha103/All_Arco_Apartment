@@ -136,7 +136,7 @@ export default function CleaningPage() {
   // State
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [showCalendar, setShowCalendar] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -180,6 +180,7 @@ export default function CleaningPage() {
       const response = await api.cleaning.schedules.calendar(currentYear, currentMonth);
       return response.data;
     },
+    enabled: showCalendar,
   });
 
   const { data: staffMembers } = useQuery({
