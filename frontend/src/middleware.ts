@@ -127,7 +127,7 @@ function addSecurityHeaders(response: NextResponse, isPMSRoute: boolean) {
     // Add stricter CSP for PMS
     response.headers.set(
       'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https:;"
     );
 
     // Add HSTS (HTTP Strict Transport Security)
