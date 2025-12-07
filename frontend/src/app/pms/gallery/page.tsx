@@ -17,7 +17,7 @@ import { HeroImage } from '@/types';
 import { toast } from 'sonner';
 import {
   ImagePlus,
-  Images,
+  GalleryHorizontal,
   LayoutGrid,
   Star,
   Eye,
@@ -254,7 +254,7 @@ export default function GalleryPage() {
   };
 
   const filterTabs = [
-    { id: 'all', label: 'All Images', icon: Images },
+    { id: 'all', label: 'All Images', icon: GalleryHorizontal },
     { id: 'hero', label: 'Hero', icon: Star },
     { id: 'gallery', label: 'Gallery', icon: LayoutGrid },
     { id: 'both', label: 'Both', icon: ImageIcon },
@@ -454,7 +454,7 @@ export default function GalleryPage() {
           /* Empty State */
           <div className="py-16 px-6 text-center">
             <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-              <Images className="w-10 h-10 text-gray-400" />
+              <GalleryHorizontal className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No images yet</h3>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
