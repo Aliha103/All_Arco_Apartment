@@ -20,6 +20,12 @@ interface GalleryImage {
   alt: string;
 }
 
+const normalizeImageUrl = (url: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `https://www.allarcoapartment.com${url}`;
+};
+
 // Reviews data
 const reviews = [
   {
@@ -110,7 +116,7 @@ export default function RegisterPage() {
         const images = response.data;
         if (images && images.length > 0) {
           setGalleryImages(images.map((img: any) => ({
-            src: img.url || img.image || img.image_url || '',
+            src: normalizeImageUrl(img.url || img.image || img.image_url || ''),
             alt: img.alt_text || img.title || 'Gallery image'
           })));
         }
@@ -285,6 +291,7 @@ export default function RegisterPage() {
                   fill
                   className="object-cover"
                   priority
+                  unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/80" />
               </motion.div>
