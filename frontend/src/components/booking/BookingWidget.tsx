@@ -655,6 +655,75 @@ export default function BookingWidget() {
               </div>
             </div>
 
+            {/* Promo Code Section */}
+            <div className="px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="w-4 h-4 text-[#C4A572]" />
+                <h3 className="text-sm font-semibold text-gray-900">Promo code</h3>
+              </div>
+
+              {appliedPromo ? (
+                /* Applied Promo Display */
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-emerald-100 rounded-lg">
+                        <Percent className="w-3.5 h-3.5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-emerald-900">{appliedPromo.code}</p>
+                        <p className="text-xs text-emerald-700">{appliedPromo.description}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemovePromo}
+                      aria-label="Remove promo code"
+                      className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors
+                                 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Promo Code Input */
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
+                      placeholder="Enter code"
+                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg
+                                 focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:border-transparent
+                                 placeholder:text-gray-400 transition-all"
+                      aria-label="Promo code input"
+                      aria-describedby={promoError ? 'promo-error' : undefined}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyPromo}
+                      disabled={!promoCode.trim()}
+                      className="px-4 py-2 bg-[#C4A572] text-white text-sm font-medium rounded-lg
+                                 hover:bg-[#B39562] transition-colors touch-manipulation
+                                 focus:outline-none focus:ring-2 focus:ring-[#C4A572] focus:ring-offset-2
+                                 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#C4A572]"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {promoError && (
+                    <p id="promo-error" className="text-xs text-red-600 flex items-center gap-1">
+                      <span className="inline-block w-1 h-1 bg-red-600 rounded-full" />
+                      {promoError}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Pricing - Compact */}
             <AnimatePresence>
               {pricing && (

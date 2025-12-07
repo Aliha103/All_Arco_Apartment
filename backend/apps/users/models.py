@@ -27,6 +27,7 @@ class Permission(models.Model):
         ('guests', 'Guests'),
         ('pricing', 'Pricing'),
         ('team', 'Team & Roles'),
+        ('gallery', 'Gallery Management'),
         ('reports', 'Reports & Logs'),
     ]
 

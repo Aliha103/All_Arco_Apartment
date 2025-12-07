@@ -13,7 +13,7 @@ import os
 
 from .models import HeroImage
 from .serializers import HeroImageSerializer, HeroImagePublicSerializer
-from apps.users.permissions import HasPermission
+from apps.users.permissions import HasPermissionForAction
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +43,23 @@ class HeroImageViewSet(viewsets.ModelViewSet):
     queryset = HeroImage.objects.all()
     serializer_class = HeroImageSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    required_permission = 'gallery.manage'
-    
+    permission_classes = [HasPermissionForAction]
+    action_permissions = {
+        'list': 'gallery.view',
+        'retrieve': 'gallery.view',
+        'create': 'gallery.manage',
+        'update': 'gallery.manage',
+        'partial_update': 'gallery.manage',
+        'destroy': 'gallery.manage',
+        'reorder': 'gallery.manage',
+        'toggle_active': 'gallery.manage',
+        'public': None,  # Public endpoint (AllowAny)
+    }
+
     def get_permissions(self):
         if self.action == 'public':
             return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated(), HasPermission()]
+        return [permissions.IsAuthenticated(), HasPermissionForAction()]
     
     def get_queryset(self):
         queryset = super().get_queryset()

@@ -942,7 +942,7 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
     };
 
     // TODO: Implement API call
-    console.log('Submitting OTA booking:', submitData);
+    // When API is implemented: await api.otaBookings.create(submitData);
     toast.success(booking ? 'OTA booking updated' : 'OTA booking created');
     queryClient.invalidateQueries({ queryKey: ['ota-bookings'] });
     onClose();
