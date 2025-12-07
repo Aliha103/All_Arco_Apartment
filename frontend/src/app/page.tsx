@@ -82,13 +82,24 @@ const highlights = [
   { icon: Bath, value: '1', unit: '', label: 'Bathroom' },
 ];
 
-// Host information
-const hostInfo = {
-  name: 'Ali Hassan Cheema',
-  isSuperhost: true,
-  languages: ['English', 'Italian'],
-  totalReviews: 59,
-};
+interface HostProfile {
+  id?: string | number;
+  display_name: string;
+  role_title?: string;
+  bio?: string;
+  languages?: string[];
+  avatar?: string;
+}
+
+interface PublicReview {
+  id: string;
+  guest_name: string;
+  location?: string;
+  rating: number;
+  title?: string;
+  text: string;
+  stay_date?: string;
+}
 
 
 // Animated section with scroll reveal
@@ -164,6 +175,9 @@ export default function Home() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [heroImages, setHeroImages] = useState<{ src: string; alt: string }[]>([]);
   const [galleryImages, setGalleryImages] = useState<{ src: string; alt: string }[]>([]);
+  const [hostProfile, setHostProfile] = useState<HostProfile | null>(null);
+  const [publicReviews, setPublicReviews] = useState<PublicReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
@@ -216,6 +230,25 @@ export default function Home() {
       }
     };
     fetchGalleryImages();
+  }, []);
+
+  // Fetch host profile & public reviews
+  useEffect(() => {
+    const loadHostAndReviews = async () => {
+      try {
+        const [hostRes, reviewsRes] = await Promise.all([
+          api.host.get(),
+          api.reviews.list(),
+        ]);
+        setHostProfile(hostRes.data || null);
+        setPublicReviews(reviewsRes.data || []);
+      } catch (error) {
+        console.error('Failed to load host/reviews', error);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+    loadHostAndReviews();
   }, []);
 
   // Auto-scroll hero images every 5 seconds
@@ -406,21 +439,31 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Host Info - Simple */}
+              {/* Host Info - live data */}
               <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold">
-                  {hostInfo.name.split(' ').map(n => n[0]).join('')}
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold overflow-hidden">
+                  {hostProfile?.avatar ? (
+                    <Image src={hostProfile.avatar} alt={hostProfile.display_name} fill className="object-cover" unoptimized />
+                  ) : (
+                    (hostProfile?.display_name || 'Host')
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                  )}
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Hosted by {hostInfo.name}</p>
-                  <p className="text-sm text-gray-500">{hostInfo.totalReviews} reviews · {hostInfo.languages.slice(0, 2).join(', ')}</p>
+                  <p className="font-medium text-gray-900">
+                    Hosted by {hostProfile?.display_name || 'Your Host'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {publicReviews.length > 0 ? `${publicReviews.length} reviews` : 'Reviews updating'} ·{' '}
+                    {(hostProfile?.languages || ['Languages updating']).slice(0, 3).join(', ')}
+                  </p>
                 </div>
-                {hostInfo.isSuperhost && (
-                  <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
-                    <Award className="w-3.5 h-3.5" />
-                    Superhost
-                  </span>
-                )}
+                <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
+                  <Award className="w-3.5 h-3.5" />
+                  Superhost
+                </span>
               </div>
             </motion.div>
 
@@ -608,7 +651,7 @@ export default function Home() {
       </AnimatedSection>
 
       {/* Reviews Section */}
-      <ReviewsSection />
+      <ReviewsSection initialReviews={publicReviews} loading={reviewsLoading} />
 
       {/* Location Section */}
       <LocationSection />

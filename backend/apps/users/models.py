@@ -1,3 +1,4 @@
+import os
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -711,3 +712,73 @@ class ReferralCredit(models.Model):
         """Mark credit as cancelled if booking is cancelled."""
         self.status = 'cancelled'
         self.save(update_fields=['status', 'updated_at'])
+
+
+# ============================================================================
+# Host Profile & Reviews
+# ============================================================================
+
+
+def host_avatar_upload_path(instance, filename):
+    """Upload path for host profile avatar."""
+    return os.path.join('hosts', 'avatars', filename)
+
+
+class HostProfile(models.Model):
+    """Public host profile shown on marketing pages."""
+
+    display_name = models.CharField(max_length=150)
+    role_title = models.CharField(max_length=150, blank=True, default='')
+    bio = models.TextField(blank=True, default='')
+    languages = models.JSONField(default=list, blank=True)
+    photo = models.ImageField(upload_to=host_avatar_upload_path, null=True, blank=True)
+    photo_url = models.URLField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'users_hostprofile'
+        verbose_name = 'Host Profile'
+        verbose_name_plural = 'Host Profiles'
+
+    @property
+    def avatar(self):
+        """Return either uploaded photo or external URL."""
+        if self.photo and hasattr(self.photo, 'url'):
+            try:
+                return self.photo.url
+            except ValueError:
+                pass
+        return self.photo_url or ''
+
+
+class Review(models.Model):
+    """Public-facing review/testimonial."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    guest_name = models.CharField(max_length=150)
+    location = models.CharField(max_length=150, blank=True, default='')
+    rating = models.DecimalField(max_digits=3, decimal_places=1)  # up to 10.0, allows halves
+    title = models.CharField(max_length=200, blank=True, default='')
+    text = models.TextField()
+    stay_date = models.DateField(null=True, blank=True)
+    is_featured = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'users_review'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_active']),
+            models.Index(fields=['is_featured']),
+        ]
+
+    def clean(self):
+        if self.rating is None:
+            raise ValidationError('Rating is required')
+        if self.rating < 0 or self.rating > 10:
+            raise ValidationError('Rating must be between 0 and 10')

@@ -115,3 +115,12 @@ class HasPermissionForAction(permissions.BasePermission):
             return request.user.is_team_member()
 
         return request.user.has_perm_code(permission_code)
+
+
+class IsSuperAdmin(permissions.BasePermission):
+    """
+    Allows access only to super admin users.
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_super_admin())

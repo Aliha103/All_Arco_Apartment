@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, GuestNote, Role, Permission
+from .models import User, GuestNote, Role, Permission, HostProfile, Review
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -225,3 +225,35 @@ class UserWithRoleSerializer(serializers.ModelSerializer):
         if obj.referred_by:
             return obj.referred_by.get_full_name()
         return None
+
+
+class HostProfileSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HostProfile
+        fields = [
+            'id', 'display_name', 'role_title', 'bio', 'languages',
+            'photo', 'photo_url', 'avatar', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'avatar']
+
+    def get_avatar(self, obj):
+        return obj.avatar
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = [
+            'id', 'guest_name', 'location', 'rating', 'title', 'text',
+            'stay_date', 'is_featured', 'is_active', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_rating(self, value):
+        if value is None:
+            raise serializers.ValidationError('Rating is required')
+        if value < 0 or value > 10:
+            raise serializers.ValidationError('Rating must be between 0 and 10')
+        return value
