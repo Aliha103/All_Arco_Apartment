@@ -785,7 +785,7 @@ export default function PMSDashboard() {
               <CardContent className="p-4">
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Arrivals */}
-                  <div>
+                  <div className="flex flex-col">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
                         <div className="p-1 rounded bg-green-100">
@@ -802,22 +802,24 @@ export default function PMSDashboard() {
                         </Button>
                       </Link>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-1 flex flex-col min-h-[140px]">
                       {todaysOps.arrivals && todaysOps.arrivals.length > 0 ? (
                         todaysOps.arrivals.map((booking: any) => (
                           <BookingItem key={booking.id} booking={booking} type="arrival" hideData={hideSensitiveData} />
                         ))
                       ) : (
-                        <div className="text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50">
-                          <UserCheck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                          <p className="text-sm text-gray-600 font-medium">No arrivals scheduled</p>
+                        <div className="flex items-center justify-center text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex-1">
+                          <div>
+                            <UserCheck className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                            <p className="text-sm text-gray-600 font-medium">No arrivals scheduled</p>
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Departures */}
-                  <div>
+                  <div className="flex flex-col">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
                         <div className="p-1 rounded bg-blue-100">
@@ -834,15 +836,17 @@ export default function PMSDashboard() {
                         </Button>
                       </Link>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-1 flex flex-col min-h-[140px]">
                       {todaysOps.departures && todaysOps.departures.length > 0 ? (
                         todaysOps.departures.map((booking: any) => (
                           <BookingItem key={booking.id} booking={booking} type="departure" hideData={hideSensitiveData} />
                         ))
                       ) : (
-                        <div className="text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50">
-                          <UserX className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                          <p className="text-sm text-gray-600 font-medium">No departures scheduled</p>
+                        <div className="flex items-center justify-center text-center py-8 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex-1">
+                          <div>
+                            <UserX className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                            <p className="text-sm text-gray-600 font-medium">No departures scheduled</p>
+                          </div>
                         </div>
                       )}
                     </div>

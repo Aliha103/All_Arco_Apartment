@@ -27,6 +27,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useAvailability, usePriceCalculation, useCreateBooking, useCreateCheckoutSession } from '@/hooks/useBooking';
 import { calculateNights, formatCurrency } from '@/lib/utils';
+import SiteNav from '../components/SiteNav';
+import SiteFooter from '../components/SiteFooter';
 
 type Step = 'plan' | 'guest';
 
@@ -388,23 +390,8 @@ function BookingPageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0B0C10] via-[#101119] to-[#0B0C10] text-white">
-      {/* Hero / Header */}
-      <motion.header
-        className="border-b border-white/10 bg-black/30 backdrop-blur-xl sticky top-0 z-40"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
-          <Link href="/" className="text-xl font-semibold tracking-tight text-white hover:text-[#C4A572] transition-colors">
-            All&apos;Arco Apartment
-          </Link>
-          <div className="hidden sm:flex items-center gap-2 text-sm text-white/70">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            256-bit checkout • Instant confirmation
-          </div>
-        </div>
-      </motion.header>
+      {/* Navigation */}
+      <SiteNav />
 
       <motion.div
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 space-y-8"
@@ -424,6 +411,16 @@ function BookingPageContent() {
             Real-time availability, transparent pricing, and a checkout built for speed. Adjust dates,
             guests, and glide straight to payment.
           </p>
+          {/* Security Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-center gap-2 text-sm text-white/60 mt-2"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>256-bit secure checkout • Instant confirmation</span>
+          </motion.div>
         </motion.div>
 
         <div className="grid lg:grid-cols-[2fr_1fr] gap-6 lg:gap-8 items-start">
@@ -816,6 +813,9 @@ function BookingPageContent() {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Footer */}
+      <SiteFooter />
     </div>
   );
 }
