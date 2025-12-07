@@ -12,6 +12,7 @@ django-cors-headers==4.6.0
 # API enhancements
 django-filter==24.3
 drf-spectacular==0.28.0
+drf-nested-routers==0.94.1
 
 # Caching & Tasks
 redis==5.2.1
