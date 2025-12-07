@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -142,7 +142,7 @@ const PRIORITY_CONFIG = {
   },
 };
 
-const STAT_CARD_VARIANTS = {
+const STAT_CARD_VARIANTS: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1,
@@ -150,19 +150,19 @@ const STAT_CARD_VARIANTS = {
     transition: {
       delay: i * 0.1,
       duration: 0.5,
-      ease: [0.4, 0, 0.2, 1],
+      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
     },
   }),
 };
 
-const CLEANING_CARD_VARIANTS = {
+const CLEANING_CARD_VARIANTS: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: {
     opacity: 1,
     scale: 1,
     transition: {
       duration: 0.4,
-      ease: [0.4, 0, 0.2, 1],
+      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
     },
   },
   exit: {
