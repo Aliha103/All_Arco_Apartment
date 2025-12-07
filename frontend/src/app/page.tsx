@@ -47,14 +47,36 @@ const staggerContainer = {
   },
 };
 
-interface HeroImage {
+interface GalleryImage {
   id: number;
   title: string;
   alt_text: string;
-  image: string | null;
-  image_url: string | null;
   url: string;
+  image_type: 'hero' | 'gallery' | 'both';
+  order: number;
 }
+
+// Helper to check if URL is external (requires unoptimized for unknown domains)
+const isExternalUrl = (url: string): boolean => {
+  if (!url) return false;
+  // Relative URLs are local
+  if (url.startsWith('/')) return false;
+  // Check if it's from a known/configured domain
+  const knownDomains = [
+    'images.unsplash.com',
+    'allarcoapartment.com',
+    'www.allarcoapartment.com',
+    'res.cloudinary.com',
+    'amazonaws.com',
+    'railway.app',
+  ];
+  try {
+    const urlObj = new URL(url);
+    return !knownDomains.some(domain => urlObj.hostname.includes(domain));
+  } catch {
+    return false;
+  }
+};
 
 // Property data
 const amenities = [
@@ -176,10 +198,10 @@ export default function Home() {
         const response = await api.gallery.public('hero');
         const images = response.data;
         if (images && images.length > 0) {
-          setHeroImages(images.map((img: HeroImage) => ({
-            src: img.url || img.image || img.image_url || '',
-            alt: img.alt_text || img.title
-          })));
+          setHeroImages(images.map((img: GalleryImage) => ({
+            src: img.url || '',
+            alt: img.alt_text || img.title || 'Hero image'
+          })).filter(img => img.src)); // Filter out empty URLs
         }
       } catch (error) {
         console.error('Failed to fetch hero images:', error);
@@ -197,10 +219,10 @@ export default function Home() {
         const response = await api.gallery.public('gallery');
         const images = response.data;
         if (images && images.length > 0) {
-          setGalleryImages(images.map((img: HeroImage) => ({
-            src: img.url || img.image || img.image_url || '',
-            alt: img.alt_text || img.title
-          })));
+          setGalleryImages(images.map((img: GalleryImage) => ({
+            src: img.url || '',
+            alt: img.alt_text || img.title || 'Gallery image'
+          })).filter(img => img.src)); // Filter out empty URLs
         }
       } catch (error) {
         console.error('Failed to fetch gallery images:', error);
@@ -253,7 +275,7 @@ export default function Home() {
                   className="object-cover"
                   priority={currentImageIndex === 0}
                   sizes="100vw"
-                  unoptimized={heroImages[currentImageIndex].src.startsWith('http')}
+                  unoptimized={isExternalUrl(heroImages[currentImageIndex].src)}
                 />
               </motion.div>
             </AnimatePresence>
@@ -429,7 +451,7 @@ export default function Home() {
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, 25vw"
-                        unoptimized={galleryImages[0].src.startsWith('http')}
+                        unoptimized={isExternalUrl(galleryImages[0].src)}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -445,7 +467,7 @@ export default function Home() {
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, 25vw"
-                        unoptimized={galleryImages[1].src.startsWith('http')}
+                        unoptimized={isExternalUrl(galleryImages[1].src)}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -463,7 +485,7 @@ export default function Home() {
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, 25vw"
-                        unoptimized={galleryImages[2].src.startsWith('http')}
+                        unoptimized={isExternalUrl(galleryImages[2].src)}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -479,7 +501,7 @@ export default function Home() {
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, 25vw"
-                        unoptimized={galleryImages[3].src.startsWith('http')}
+                        unoptimized={isExternalUrl(galleryImages[3].src)}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -586,7 +608,7 @@ export default function Home() {
                       fill
                       className="object-cover hover:scale-110 transition-transform duration-500"
                       sizes="(max-width: 768px) 50vw, 25vw"
-                      unoptimized={image.src.startsWith('http')}
+                      unoptimized={isExternalUrl(image.src)}
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">

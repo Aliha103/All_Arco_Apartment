@@ -300,13 +300,24 @@ export default function GalleryPage() {
                   <TableRow key={image.id}>
                     <TableCell>
                       <div className="relative w-20 h-14 rounded overflow-hidden bg-gray-100">
-                        <Image
-                          src={image.url || image.image || image.image_url || '/placeholder.png'}
-                          alt={image.alt_text}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                        />
+                        {(image.url || image.image || image.image_url) ? (
+                          <Image
+                            src={image.url || image.image || image.image_url || ''}
+                            alt={image.alt_text}
+                            fill
+                            className="object-cover"
+                            sizes="80px"
+                            unoptimized={
+                              (image.url || image.image || image.image_url || '').startsWith('http') &&
+                              !(image.url || image.image || image.image_url || '').includes('allarcoapartment.com') &&
+                              !(image.url || image.image || image.image_url || '').includes('unsplash.com')
+                            }
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-xs">
+                            No image
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -560,12 +571,23 @@ export default function GalleryPage() {
               <div className="space-y-2">
                 <Label>Current Image</Label>
                 <div className="relative w-full h-32 rounded overflow-hidden bg-gray-100">
-                  <Image
-                    src={selectedImage.url || selectedImage.image || selectedImage.image_url || '/placeholder.png'}
-                    alt={selectedImage.alt_text}
-                    fill
-                    className="object-cover"
-                  />
+                  {(selectedImage.url || selectedImage.image || selectedImage.image_url) ? (
+                    <Image
+                      src={selectedImage.url || selectedImage.image || selectedImage.image_url || ''}
+                      alt={selectedImage.alt_text}
+                      fill
+                      className="object-cover"
+                      unoptimized={
+                        (selectedImage.url || selectedImage.image || selectedImage.image_url || '').startsWith('http') &&
+                        !(selectedImage.url || selectedImage.image || selectedImage.image_url || '').includes('allarcoapartment.com') &&
+                        !(selectedImage.url || selectedImage.image || selectedImage.image_url || '').includes('unsplash.com')
+                      }
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                      No image available
+                    </div>
+                  )}
                 </div>
               </div>
             )}

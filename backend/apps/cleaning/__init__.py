@@ -1,1 +1,1 @@
-default_app_config = 'apps.cleaning.apps.CleaningConfig'
+# Cleaning app configuration is in apps.py
