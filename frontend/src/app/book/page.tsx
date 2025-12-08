@@ -534,7 +534,7 @@ function BookingPageContent() {
       const bookingAmountDue = parseFloat(String(booking.amount_due ?? 0)) || 0;
       if (bookingAmountDue <= 0.01) {
         toast.success('Booking confirmed using your credits. No payment needed.');
-        router.push(`/booking/${booking.id}/confirmation`);
+        router.push(`/booking/confirmation?booking_id=${booking.id}`);
         return;
       }
 

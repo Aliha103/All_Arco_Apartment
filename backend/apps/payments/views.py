@@ -83,7 +83,7 @@ def create_checkout_session(request):
             ],
             mode='payment',
             success_url=(
-                f"{frontend_host}/booking/{booking.id}/confirmation"
+                f"{frontend_host}/booking/confirmation"
                 f"?session_id={{CHECKOUT_SESSION_ID}}&booking_id={booking.id}"
             ),
             cancel_url=f"{frontend_host}/book",
