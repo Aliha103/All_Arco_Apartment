@@ -53,11 +53,14 @@ export default function ConfirmationPage() {
   if (isMissingId) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 space-y-4 text-center">
-            <p className="text-gray-800 font-semibold">Booking reference missing.</p>
-            <p className="text-sm text-gray-600">Please return to the homepage and start again.</p>
-            <div className="flex justify-center gap-3">
+        <Card className="max-w-md w-full border-amber-200">
+          <CardHeader>
+            <CardTitle className="text-lg text-amber-800">Booking reference missing</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-gray-700">
+            <p>We couldn’t find a booking reference in this link.</p>
+            <p>Please start a new booking or return home.</p>
+            <div className="flex justify-center gap-3 pt-2">
               <Button onClick={() => router.push('/')}>Home</Button>
               <Button variant="outline" onClick={() => router.push('/book')}>Book Again</Button>
             </div>
