@@ -420,6 +420,10 @@ function BookingPageContent() {
       toast.error('Please fill first name, last name, email, phone, and country.');
       return;
     }
+    if (!displayPricing) {
+      toast.error('Please select valid dates and guests to calculate price.');
+      return;
+    }
 
     const guestDetailsSummary = guestDetailsEnabled
       ? guestDetails
@@ -456,6 +460,9 @@ function BookingPageContent() {
           birth_country: g.birth_country,
           note: g.note,
         })) : [],
+        nightly_rate: parseFloat(String(displayPricing.nightly_rate || 0)) || 0,
+        cleaning_fee: parseFloat(String(displayPricing.cleaning_fee || 0)) || 0,
+        tourist_tax: parseFloat(String(displayPricing.tourist_tax || 0)) || 0,
       };
 
       const booking = await createBooking.mutateAsync(bookingData);
