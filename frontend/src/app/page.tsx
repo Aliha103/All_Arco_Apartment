@@ -471,12 +471,23 @@ export default function Home() {
               </div>
 
               {/* Host Info - live data */}
-              <div className="flex items-center gap-4 pt-6 border-t border-gray-100 relative">
+              {(() => {
+                const hostDisplayName = hostProfile?.display_name || 'Ali Hassan Cheema';
+                const hostLanguages =
+                  hostProfile?.languages && hostProfile.languages.length
+                    ? hostProfile.languages
+                    : ['English', 'Italian'];
+                const reviewLabel =
+                  publicReviews.length > 0
+                    ? `${publicReviews.length} reviews`
+                    : 'Reviews coming soon';
+                return (
+                  <div className="flex items-center gap-4 pt-6 border-t border-gray-100 relative">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold overflow-hidden">
                   {hostProfile?.avatar ? (
                     <Image src={hostProfile.avatar || '/allarco-logo.png'} alt={hostProfile.display_name} fill className="object-cover" unoptimized />
                   ) : (
-                    (hostProfile?.display_name || 'Host')
+                    hostDisplayName
                       .split(' ')
                       .map((n) => n[0])
                       .join('')
@@ -484,11 +495,10 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">
-                    Hosted by {hostProfile?.display_name || 'Your Host'}
+                    Hosted by {hostDisplayName}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {publicReviews.length > 0 ? `${publicReviews.length} reviews` : 'Reviews updating'} ·{' '}
-                    {(hostProfile?.languages || ['Languages updating']).slice(0, 3).join(', ')}
+                    {reviewLabel} · {hostLanguages.slice(0, 3).join(', ')}
                   </p>
                 </div>
                 <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
@@ -504,7 +514,9 @@ export default function Home() {
                     <Pencil className="w-4 h-4" />
                   </a>
                 )}
-              </div>
+                  </div>
+                );
+              })()}
             </motion.div>
 
             {/* Right - Images */}
