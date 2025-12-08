@@ -824,7 +824,7 @@ function BookingPageContent() {
                         )}
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex flex-col sm:flex-row gap-3 sm:hidden">
                         <motion.div
                           className="flex-1"
                           whileHover={{ scale: 1.02 }}
@@ -947,6 +947,32 @@ function BookingPageContent() {
                           Charged securely when you confirm. City tax is paid at the property.
                         </p>
                       </motion.div>
+
+                      <div className="hidden sm:flex gap-3 pt-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleBackToPlan}
+                          disabled={isProcessing}
+                          className="w-1/2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-all"
+                        >
+                          Back to Dates
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={isProcessing}
+                          className="w-1/2 bg-[#C4A572] text-black hover:bg-[#D8B77A] font-semibold shadow-lg disabled:opacity-50 transition-all"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            'Proceed to Secure Payment'
+                          )}
+                        </Button>
+                      </div>
                     </motion.div>
                   ) : (
                     <motion.div
