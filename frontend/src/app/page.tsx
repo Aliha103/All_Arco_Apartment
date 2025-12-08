@@ -92,10 +92,13 @@ const highlights = [
 interface HostProfile {
   id?: string | number;
   display_name: string;
-  role_title?: string;
-  bio?: string;
-  languages?: string[];
-  avatar?: string;
+  bio?: string | null;
+  languages?: string[] | string;
+  avatar?: string | null;
+  avatar_url?: string | null;
+  photo_url?: string | null;
+  is_superhost?: boolean;
+  review_count?: number;
 }
 
 interface PublicReview {
@@ -189,31 +192,14 @@ export default function Home() {
   const [hostEditOpen, setHostEditOpen] = useState(false);
   const [hostForm, setHostForm] = useState({
     display_name: '',
-    role_title: '',
     bio: '',
     languages: '',
-    photo_url: '',
-  });
-  const [isLoadingImages, setIsLoadingImages] = useState(true);
-  const [isLoadingGallery, setIsLoadingGallery] = useState(true);
-
-  // Host profile state
-  const [hostProfile, setHostProfile] = useState<HostProfile | null>(null);
-  const [isLoadingHost, setIsLoadingHost] = useState(true);
-  const [isEditingHost, setIsEditingHost] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    display_name: '',
-    languages: '',
-    bio: '',
     avatar_url: '',
     is_superhost: true,
     review_count: 59,
   });
-  const [editError, setEditError] = useState('');
-  const [editSuccess, setEditSuccess] = useState('');
-
-  // Auth state
-  const { user, isTeamMember, isSuperAdmin } = useAuthStore();
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
+  const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -229,25 +215,32 @@ export default function Home() {
   };
 
   const handleSaveHost = async () => {
+    if (!hostProfile) return;
+
     try {
-      const languagesArray = hostForm.languages
-        .split(',')
-        .map((l) => l.trim())
-        .filter(Boolean);
-
       const payload = {
-        display_name: hostForm.display_name,
-        role_title: hostForm.role_title,
-        bio: hostForm.bio,
-        languages: languagesArray,
-      } as any;
+        display_name: hostForm.display_name.trim(),
+        bio: hostForm.bio.trim(),
+        languages: hostForm.languages.trim(),
+        avatar_url: hostForm.avatar_url.trim(),
+        is_superhost: hostForm.is_superhost,
+        review_count: hostForm.review_count,
+      };
 
-      if (hostForm.photo_url) {
-        payload.photo_url = hostForm.photo_url;
-      }
-
-      const res = await api.host.update(hostProfile?.id || 1, payload);
-      setHostProfile(res.data);
+      const res = await api.hostProfile.update(hostProfile.id as string, payload);
+      const updated = res.data;
+      const normalizedLanguages = Array.isArray(updated.languages)
+        ? updated.languages
+        : typeof updated.languages === 'string'
+          ? updated.languages.split(',').map((l: string) => l.trim()).filter(Boolean)
+          : [];
+      setHostProfile({
+        ...updated,
+        languages: normalizedLanguages,
+        photo_url: updated.photo_url || updated.avatar_url || updated.avatar || '',
+        is_superhost: updated.is_superhost ?? true,
+        review_count: updated.review_count ?? 59,
+      });
       toast.success('Host profile updated');
       setHostEditOpen(false);
     } catch (error: any) {
@@ -313,14 +306,21 @@ export default function Home() {
           : Array.isArray(reviewsData)
             ? reviewsData
             : [];
-        setHostProfile(
-          hostData
-            ? {
-                ...hostData,
-                languages: Array.isArray(hostData.languages) ? hostData.languages : [],
-              }
-            : null
-        );
+        const normalizedLanguages = Array.isArray(hostData?.languages)
+          ? hostData.languages
+          : typeof hostData?.languages === 'string'
+            ? hostData.languages.split(',').map((l: string) => l.trim()).filter(Boolean)
+            : [];
+        const normalizedHost = hostData
+          ? {
+              ...hostData,
+              languages: normalizedLanguages,
+              photo_url: hostData.photo_url || hostData.avatar_url || hostData.avatar || '',
+              is_superhost: hostData.is_superhost ?? true,
+              review_count: hostData.review_count ?? 59,
+            }
+          : null;
+        setHostProfile(normalizedHost);
         setPublicReviews(normalizedReviews);
       } catch (error) {
         console.error('Failed to load host/reviews', error);
@@ -336,10 +336,13 @@ export default function Home() {
     if (hostProfile) {
       setHostForm({
         display_name: hostProfile.display_name || '',
-        role_title: hostProfile.role_title || '',
         bio: hostProfile.bio || '',
-        languages: Array.isArray(hostProfile.languages) ? hostProfile.languages.join(', ') : '',
-        photo_url: '',
+        languages: Array.isArray(hostProfile.languages)
+          ? hostProfile.languages.join(', ')
+          : (hostProfile.languages as string) || '',
+        avatar_url: hostProfile.photo_url || hostProfile.avatar_url || '',
+        is_superhost: hostProfile.is_superhost ?? true,
+        review_count: hostProfile.review_count ?? 59,
       });
     }
   }, [hostProfile]);
@@ -366,82 +369,19 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
-  // Save handler for host profile edits
-  const handleSaveHost = async () => {
-    setEditError('');
-    setEditSuccess('');
-
-    // Validation
-    if (!editFormData.display_name || editFormData.display_name.trim().length < 2) {
-      setEditError('Display name must be at least 2 characters');
-      return;
-    }
-    if (editFormData.display_name.length > 200) {
-      setEditError('Display name must be 200 characters or less');
-      return;
-    }
-    if (editFormData.languages.length > 500) {
-      setEditError('Languages must be 500 characters or less');
-      return;
-    }
-    if (editFormData.review_count < 0) {
-      setEditError('Review count must be a positive number');
-      return;
-    }
-
-    if (!hostProfile) return;
-
-    try {
-      const updateData = {
-        display_name: editFormData.display_name.trim(),
-        languages: editFormData.languages.trim(),
-        bio: editFormData.bio.trim(),
-        avatar_url: editFormData.avatar_url.trim(),
-        is_superhost: editFormData.is_superhost,
-        review_count: editFormData.review_count,
-      };
-
-      const response = await api.hostProfile.update(hostProfile.id, updateData);
-      setHostProfile(response.data);
-      setIsEditingHost(false);
-      setEditSuccess('Host profile updated successfully');
-      setTimeout(() => setEditSuccess(''), 3000);
-    } catch (error: any) {
-      console.error('Failed to save host profile:', error);
-      setEditError(error.response?.data?.error || 'Failed to save changes');
-    }
-  };
-
-  // Handle edit button click
-  const handleEditClick = () => {
-    setIsEditingHost(true);
-    setEditError('');
-    setEditSuccess('');
-  };
-
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setIsEditingHost(false);
-    setEditError('');
-    setEditSuccess('');
-    // Reset form data to current profile
-    if (hostProfile) {
-      setEditFormData({
-        display_name: hostProfile.display_name,
-        languages: hostProfile.languages,
-        bio: hostProfile.bio || '',
-        avatar_url: hostProfile.photo_url || '',
-        is_superhost: hostProfile.is_superhost,
-        review_count: hostProfile.review_count,
-      });
-    }
-  };
-
   // Create computed display host object
+  const displayLanguages = hostProfile
+    ? Array.isArray(hostProfile.languages)
+      ? hostProfile.languages
+      : (hostProfile.languages || '')
+          .split(',')
+          .map((l: string) => l.trim())
+          .filter(Boolean)
+    : ['English', 'Italian'];
   const displayHost = hostProfile ? {
     name: hostProfile.display_name,
     isSuperhost: hostProfile.is_superhost,
-    languages: hostProfile.languages ? hostProfile.languages.split(',').map(l => l.trim()) : [],
+    languages: displayLanguages,
     totalReviews: hostProfile.review_count,
     photoUrl: hostProfile.photo_url,
   } : {
@@ -638,19 +578,20 @@ export default function Home() {
                   rawName && rawName.toLowerCase() !== 'host'
                     ? rawName
                     : 'Ali Hassan Cheema';
+                const hostAvatar = hostProfile?.photo_url || hostProfile?.avatar || '';
                 const hostLanguages =
                   Array.isArray(hostProfile?.languages) && hostProfile.languages.length
                     ? hostProfile.languages
                     : ['English', 'Italian'];
-                const reviewLabel =
-                  publicReviews.length > 0
-                    ? `${publicReviews.length} reviews`
-                    : 'Reviews coming soon';
+                const reviewCount = hostProfile?.review_count ?? publicReviews.length;
+                const reviewLabel = reviewCount
+                  ? `${reviewCount} reviews`
+                  : 'Reviews coming soon';
                 return (
                   <div className="flex items-center gap-4 pt-6 border-t border-gray-100 relative">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold overflow-hidden">
-                  {hostProfile?.avatar ? (
-                    <Image src={hostProfile.avatar || '/allarco-logo.png'} alt={hostProfile.display_name} fill className="object-cover" unoptimized />
+                  {hostAvatar ? (
+                    <Image src={hostAvatar || '/allarco-logo.png'} alt={hostDisplayName} fill className="object-cover" unoptimized />
                   ) : (
                     hostDisplayName
                       .split(' ')
@@ -668,7 +609,7 @@ export default function Home() {
                 </div>
                 <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
                   <Award className="w-3.5 h-3.5" />
-                  Superhost
+                  {hostProfile?.is_superhost ? 'Superhost' : 'Host'}
                 </span>
                 {isSuperAdmin && (
                   <button
@@ -885,15 +826,6 @@ export default function Home() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="host-role">Role / title</Label>
-              <Input
-                id="host-role"
-                value={hostForm.role_title}
-                onChange={(e) => setHostForm((f) => ({ ...f, role_title: e.target.value }))}
-                placeholder="Superhost"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="host-bio">Bio</Label>
               <Textarea
                 id="host-bio"
@@ -913,11 +845,34 @@ export default function Home() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="host-photo">Photo URL (optional)</Label>
+              <div className="flex items-center justify-between gap-4">
+                <Label htmlFor="host-superhost" className="mb-0">Show superhost badge</Label>
+                <input
+                  id="host-superhost"
+                  type="checkbox"
+                  checked={hostForm.is_superhost}
+                  onChange={(e) => setHostForm((f) => ({ ...f, is_superhost: e.target.checked }))}
+                  className="h-4 w-4 accent-[#C4A572]"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-reviews">Review count</Label>
+              <Input
+                id="host-reviews"
+                type="number"
+                min={0}
+                value={hostForm.review_count}
+                onChange={(e) => setHostForm((f) => ({ ...f, review_count: Number(e.target.value) || 0 }))}
+                placeholder="59"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-photo">Avatar URL (optional)</Label>
               <Input
                 id="host-photo"
-                value={hostForm.photo_url}
-                onChange={(e) => setHostForm((f) => ({ ...f, photo_url: e.target.value }))}
+                value={hostForm.avatar_url}
+                onChange={(e) => setHostForm((f) => ({ ...f, avatar_url: e.target.value }))}
                 placeholder="https://..."
               />
             </div>
