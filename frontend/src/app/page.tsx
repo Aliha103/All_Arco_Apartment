@@ -197,6 +197,24 @@ export default function Home() {
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
+  // Host profile state
+  const [hostProfile, setHostProfile] = useState<HostProfile | null>(null);
+  const [isLoadingHost, setIsLoadingHost] = useState(true);
+  const [isEditingHost, setIsEditingHost] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    display_name: '',
+    languages: '',
+    bio: '',
+    avatar_url: '',
+    is_superhost: true,
+    review_count: 59,
+  });
+  const [editError, setEditError] = useState('');
+  const [editSuccess, setEditSuccess] = useState('');
+
+  // Auth state
+  const { user, isTeamMember, isSuperAdmin } = useAuthStore();
+
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
@@ -347,6 +365,92 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(interval);
   }, [heroImages.length]);
+
+  // Save handler for host profile edits
+  const handleSaveHost = async () => {
+    setEditError('');
+    setEditSuccess('');
+
+    // Validation
+    if (!editFormData.display_name || editFormData.display_name.trim().length < 2) {
+      setEditError('Display name must be at least 2 characters');
+      return;
+    }
+    if (editFormData.display_name.length > 200) {
+      setEditError('Display name must be 200 characters or less');
+      return;
+    }
+    if (editFormData.languages.length > 500) {
+      setEditError('Languages must be 500 characters or less');
+      return;
+    }
+    if (editFormData.review_count < 0) {
+      setEditError('Review count must be a positive number');
+      return;
+    }
+
+    if (!hostProfile) return;
+
+    try {
+      const updateData = {
+        display_name: editFormData.display_name.trim(),
+        languages: editFormData.languages.trim(),
+        bio: editFormData.bio.trim(),
+        avatar_url: editFormData.avatar_url.trim(),
+        is_superhost: editFormData.is_superhost,
+        review_count: editFormData.review_count,
+      };
+
+      const response = await api.hostProfile.update(hostProfile.id, updateData);
+      setHostProfile(response.data);
+      setIsEditingHost(false);
+      setEditSuccess('Host profile updated successfully');
+      setTimeout(() => setEditSuccess(''), 3000);
+    } catch (error: any) {
+      console.error('Failed to save host profile:', error);
+      setEditError(error.response?.data?.error || 'Failed to save changes');
+    }
+  };
+
+  // Handle edit button click
+  const handleEditClick = () => {
+    setIsEditingHost(true);
+    setEditError('');
+    setEditSuccess('');
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setIsEditingHost(false);
+    setEditError('');
+    setEditSuccess('');
+    // Reset form data to current profile
+    if (hostProfile) {
+      setEditFormData({
+        display_name: hostProfile.display_name,
+        languages: hostProfile.languages,
+        bio: hostProfile.bio || '',
+        avatar_url: hostProfile.photo_url || '',
+        is_superhost: hostProfile.is_superhost,
+        review_count: hostProfile.review_count,
+      });
+    }
+  };
+
+  // Create computed display host object
+  const displayHost = hostProfile ? {
+    name: hostProfile.display_name,
+    isSuperhost: hostProfile.is_superhost,
+    languages: hostProfile.languages ? hostProfile.languages.split(',').map(l => l.trim()) : [],
+    totalReviews: hostProfile.review_count,
+    photoUrl: hostProfile.photo_url,
+  } : {
+    name: 'Ali Hassan Cheema',
+    isSuperhost: true,
+    languages: ['English', 'Italian'],
+    totalReviews: 59,
+    photoUrl: '',
+  };
 
   return (
     <div className="min-h-screen bg-white antialiased">

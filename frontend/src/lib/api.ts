@@ -252,6 +252,17 @@ export const api = {
     public: (type?: 'hero' | 'gallery') => apiClient.get('/gallery/images/public/', { params: { type } }),
   },
 
+  // Host Profile
+  hostProfile: {
+    get: () => apiClient.get('/host-profile/'),
+    getById: (id: string) => apiClient.get(`/host-profile/${id}/`),
+    update: (id: string, data: any) => apiClient.patch(`/host-profile/${id}/`, data),
+    updateWithFile: (id: string, formData: FormData) =>
+      apiClient.patch(`/host-profile/${id}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }),
+  },
+
   // OTA Bookings
   otaBookings: {
     list: (params?: any) => apiClient.get('/ota/bookings/', { params }),

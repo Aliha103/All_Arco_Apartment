@@ -486,6 +486,77 @@ class User(AbstractUser):
         ).aggregate(models.Sum('amount'))['amount__sum'] or 0
 
 
+# ============================================================================
+# Host Profile Model
+# ============================================================================
+
+class HostProfile(models.Model):
+    """
+    Store host profile information displayed on the homepage.
+    This is a singleton model - only one host profile should exist.
+
+    Supports both file upload and external URL for avatar images,
+    with uploaded files taking priority.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    display_name = models.CharField(
+        max_length=200,
+        help_text="Name shown as 'Hosted by [name]'"
+    )
+    bio = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Host bio/description - not shown on homepage"
+    )
+    languages = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Comma-separated languages (e.g., 'English, Italian')"
+    )
+    avatar = models.ImageField(
+        upload_to='host/avatar/',
+        blank=True,
+        null=True,
+        help_text="Upload avatar image"
+    )
+    avatar_url = models.URLField(
+        blank=True,
+        null=True,
+        max_length=2000,
+        help_text="External avatar URL (alternative to upload)"
+    )
+    is_superhost = models.BooleanField(
+        default=True,
+        help_text="Show Superhost badge"
+    )
+    review_count = models.PositiveIntegerField(
+        default=59,
+        help_text="Total review count (editable for manual updates)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'users_hostprofile'
+        verbose_name = 'Host Profile'
+        verbose_name_plural = 'Host Profiles'
+
+    def __str__(self):
+        return f"Host Profile: {self.display_name}"
+
+    @property
+    def photo_url(self):
+        """Return the avatar URL - either uploaded file or external URL."""
+        # Prefer uploaded file over external URL
+        if self.avatar and hasattr(self.avatar, 'url'):
+            try:
+                return self.avatar.url
+            except ValueError:
+                # Handle case where file reference exists but file doesn't
+                pass
+        return self.avatar_url or ''
+
+
 class GuestNote(models.Model):
     """
     Internal notes about guests (only visible to team members).
