@@ -35,11 +35,24 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
+        extra_kwargs = {'guest_name': {'required': False}}
         fields = [
             'user', 'guest_email', 'guest_name', 'guest_phone', 'guest_country', 'guest_address',
             'check_in_date', 'check_out_date', 'number_of_guests',
-            'nightly_rate', 'cleaning_fee', 'tourist_tax', 'special_requests'
+            'nightly_rate', 'cleaning_fee', 'tourist_tax', 'special_requests',
+            'cancellation_policy',
+            # write-only helpers
+            'first_name', 'last_name', 'guest_details',
         ]
+
+    first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    guest_details = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True,
+        required=False,
+        default=list
+    )
     
     def validate(self, data):
         # Validate dates
@@ -66,6 +79,47 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Dates are blocked')
         
         return data
+
+    def create(self, validated_data):
+        first_name = validated_data.pop('first_name', '').strip()
+        last_name = validated_data.pop('last_name', '').strip()
+        guest_details = validated_data.pop('guest_details', [])
+
+        if not validated_data.get('guest_name') and (first_name or last_name):
+            validated_data['guest_name'] = f"{first_name} {last_name}".strip()
+
+        booking = super().create(validated_data)
+
+        # Store cancellation flag for quick filtering
+        booking.is_non_refundable = booking.cancellation_policy == 'non_refundable'
+        booking.save(update_fields=['is_non_refundable'])
+
+        # Create primary guest record
+        BookingGuest.objects.create(
+            booking=booking,
+            is_primary=True,
+            first_name=first_name or booking.guest_name.split(' ')[0] if booking.guest_name else '',
+            last_name=last_name or ' '.join(booking.guest_name.split(' ')[1:]) if booking.guest_name else '',
+            email=booking.guest_email,
+            country_of_birth=booking.guest_country,
+        )
+
+        # Additional guest records (lite)
+        for guest in guest_details:
+            fn = str(guest.get('first_name', '')).strip()
+            ln = str(guest.get('last_name', '')).strip()
+            if not fn and not ln:
+                continue
+            BookingGuest.objects.create(
+                booking=booking,
+                is_primary=False,
+                first_name=fn,
+                last_name=ln or '',
+                country_of_birth=str(guest.get('birth_country', '')).strip() or None,
+                note=str(guest.get('note', '')).strip() or None,
+            )
+
+        return booking
 
 
 class BlockedDateSerializer(serializers.ModelSerializer):

@@ -437,9 +437,18 @@ function BookingPageContent() {
         check_in_date: dates.checkIn,
         check_out_date: dates.checkOut,
         guests: totalGuests,
-        ...guestInfo,
+        guest_name: `${guestInfo.first_name} ${guestInfo.last_name}`.trim(),
+        guest_email: guestInfo.guest_email,
+        guest_phone: guestInfo.guest_phone,
+        guest_country: guestInfo.country,
         special_requests: specialRequestsCombined,
         cancellation_policy: cancellationOption === 'nonref' ? 'non_refundable' : 'flex_24h',
+        guest_details: guestDetailsEnabled ? guestDetails.map((g) => ({
+          first_name: g.first_name,
+          last_name: g.last_name,
+          birth_country: g.birth_country,
+          note: g.note,
+        })) : [],
       };
 
       const booking = await createBooking.mutateAsync(bookingData);

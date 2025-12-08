@@ -62,6 +62,17 @@ class Booking(models.Model):
     cleaning_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tourist_tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    CANCELLATION_POLICY_CHOICES = [
+        ('flex_24h', 'Flexible - free until 24h'),
+        ('non_refundable', 'Non-refundable - discounted'),
+    ]
+    cancellation_policy = models.CharField(
+        max_length=20,
+        choices=CANCELLATION_POLICY_CHOICES,
+        default='flex_24h',
+        help_text='Cancellation policy selected by guest'
+    )
+    is_non_refundable = models.BooleanField(default=False)
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_status = models.CharField(
@@ -251,23 +262,24 @@ class BookingGuest(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(blank=True, null=True)  # Required for primary, optional for others
-    date_of_birth = models.DateField()
-    country_of_birth = models.CharField(max_length=100)
+    date_of_birth = models.DateField(blank=True, null=True)
+    country_of_birth = models.CharField(max_length=100, blank=True, null=True)
 
     # Italian citizen fields (required if country_of_birth is Italy)
     birth_province = models.CharField(max_length=100, blank=True, null=True)
     birth_city = models.CharField(max_length=100, blank=True, null=True)
 
     # Document information
-    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES)
-    document_number = models.CharField(max_length=50)
-    document_issue_date = models.DateField()
-    document_expire_date = models.DateField()
-    document_issue_country = models.CharField(max_length=100)
+    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES, blank=True, null=True)
+    document_number = models.CharField(max_length=50, blank=True, null=True)
+    document_issue_date = models.DateField(blank=True, null=True)
+    document_expire_date = models.DateField(blank=True, null=True)
+    document_issue_country = models.CharField(max_length=100, blank=True, null=True)
 
     # Italian-issued document fields (required if document_issue_country is Italy)
     document_issue_province = models.CharField(max_length=100, blank=True, null=True)
     document_issue_city = models.CharField(max_length=100, blank=True, null=True)
+    note = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
