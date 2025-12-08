@@ -45,7 +45,10 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             'cancellation_policy',
             # write-only helpers
             'first_name', 'last_name', 'guest_details', 'applied_credit',
+            # read-only outputs
+            'booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable',
         ]
+        read_only_fields = ['booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable']
 
     first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
