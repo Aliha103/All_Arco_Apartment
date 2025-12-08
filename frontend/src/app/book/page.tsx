@@ -115,14 +115,14 @@ function PriceSummarySkeleton() {
     <div className="space-y-3 animate-pulse">
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="flex justify-between">
-          <div className="h-4 bg-white/10 rounded w-1/2"></div>
-          <div className="h-4 bg-white/10 rounded w-1/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
         </div>
       ))}
-      <div className="border-t border-white/10 pt-4">
+      <div className="border-t border-gray-200 pt-4">
         <div className="flex justify-between">
-          <div className="h-6 bg-white/10 rounded w-1/3"></div>
-          <div className="h-6 bg-white/10 rounded w-1/3"></div>
+          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
         </div>
       </div>
     </div>
@@ -160,16 +160,16 @@ const GuestCounter = memo(({
 
   return (
     <motion.div
-      className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200"
+      className="p-4 rounded-xl border border-gray-200 bg-white hover:shadow-sm transition-all duration-200"
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-white/80">
+        <div className="flex items-center gap-2 text-gray-800">
           <UserRound className="w-4 h-4" />
           <span className="capitalize font-medium">{label}</span>
         </div>
-        <Badge variant="outline" className="border-white/15 text-white/70 font-mono">
+        <Badge variant="outline" className="border-gray-200 text-gray-700 font-mono">
           {value}
         </Badge>
       </div>
@@ -178,7 +178,7 @@ const GuestCounter = memo(({
           type="button"
           variant="outline"
           size="icon"
-          className="border-white/20 text-white hover:bg-white/10 hover:border-white/30 transition-all"
+          className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
           onClick={handleDecrement}
           disabled={value <= min}
         >
@@ -190,13 +190,13 @@ const GuestCounter = memo(({
           max={max}
           value={value}
           onChange={handleInputChange}
-          className="text-center bg-white/5 border-white/10 text-white font-mono"
+          className="text-center bg-white border-gray-200 text-gray-900 font-mono focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
         />
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="border-white/20 text-white hover:bg-white/10 hover:border-white/30 transition-all"
+          className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
           onClick={handleIncrement}
           disabled={value >= max}
         >
@@ -204,7 +204,7 @@ const GuestCounter = memo(({
         </Button>
       </div>
       {hint && (
-        <p className="text-xs text-white/50 mt-2 italic">{hint}</p>
+        <p className="text-xs text-gray-500 mt-2 italic">{hint}</p>
       )}
     </motion.div>
   );
@@ -336,12 +336,20 @@ function BookingPageContent() {
       toast.error('Please select check-in and check-out dates');
       return;
     }
-    if (!availability?.available) {
+    if (checkingAvailability) {
+      toast.message('Checking availability, please wait a moment');
+      return;
+    }
+    if (!availability) {
+      toast.error('Unable to verify availability. Please retry.');
+      return;
+    }
+    if (availability.available === false) {
       toast.error('Selected dates are not available');
       return;
     }
     setStepState(['guest', 1]);
-  }, [dates.checkIn, dates.checkOut, availability]);
+  }, [dates.checkIn, dates.checkOut, availability, checkingAvailability]);
 
   const handleBackToPlan = useCallback(() => {
     setStepState(['plan', -1]);
@@ -557,7 +565,7 @@ function BookingPageContent() {
                       >
                         <Button
                           onClick={handleContinueToGuest}
-                          disabled={!availability?.available || checkingAvailability}
+                          disabled={!dates.checkIn || !dates.checkOut || availability?.available === false || checkingAvailability}
                           className="w-full bg-[#C4A572] text-black hover:bg-[#D8B77A] font-semibold shadow-lg disabled:opacity-50 transition-all"
                         >
                           Continue to Guest Details
@@ -584,7 +592,7 @@ function BookingPageContent() {
                           className="space-y-2"
                           whileHover={{ scale: 1.01 }}
                         >
-                          <Label htmlFor="guest_name" className="text-white/80 font-medium">Full Name</Label>
+                          <Label htmlFor="guest_name" className="text-gray-800 font-medium">Full Name</Label>
                           <Input
                             id="guest_name"
                             placeholder="Ada Lovelace"
@@ -592,14 +600,14 @@ function BookingPageContent() {
                             onChange={(e) => setGuestInfo({ ...guestInfo, guest_name: e.target.value })}
                             required
                             disabled={isProcessing}
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                            className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                           />
                         </motion.div>
                         <motion.div
                           className="space-y-2"
                           whileHover={{ scale: 1.01 }}
                         >
-                          <Label htmlFor="guest_email" className="text-white/80 font-medium">Email</Label>
+                          <Label htmlFor="guest_email" className="text-gray-800 font-medium">Email</Label>
                           <Input
                             id="guest_email"
                             type="email"
@@ -608,7 +616,7 @@ function BookingPageContent() {
                             onChange={(e) => !isProcessing && setGuestInfo({ ...guestInfo, guest_email: e.target.value })}
                             required
                             disabled={isProcessing}
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                            className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                           />
                         </motion.div>
                       </div>
@@ -618,7 +626,7 @@ function BookingPageContent() {
                           className="space-y-2"
                           whileHover={{ scale: 1.01 }}
                         >
-                          <Label htmlFor="guest_phone" className="text-white/80 font-medium">Phone</Label>
+                          <Label htmlFor="guest_phone" className="text-gray-800 font-medium">Phone</Label>
                           <Input
                             id="guest_phone"
                             type="tel"
@@ -627,12 +635,12 @@ function BookingPageContent() {
                             onChange={(e) => !isProcessing && setGuestInfo({ ...guestInfo, guest_phone: e.target.value })}
                             required
                             disabled={isProcessing}
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                            className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                           />
                         </motion.div>
                         <div className="space-y-2">
-                          <Label className="text-white/80 font-medium">Guests</Label>
-                          <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white/80 font-medium">
+                          <Label className="text-gray-800 font-medium">Guests</Label>
+                          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-800 font-medium">
                             {guestCounts.adults} adults, {guestCounts.children} children, {guestCounts.infants} infants
                           </div>
                         </div>
@@ -642,14 +650,14 @@ function BookingPageContent() {
                         className="space-y-2"
                         whileHover={{ scale: 1.01 }}
                       >
-                        <Label htmlFor="special_requests" className="text-white/80 font-medium">Special Requests (optional)</Label>
+                        <Label htmlFor="special_requests" className="text-gray-800 font-medium">Special Requests (optional)</Label>
                         <Textarea
                           id="special_requests"
                           placeholder="Late check-in, allergies, anniversary notes…"
                           value={guestInfo.special_requests}
                           onChange={(e) => !isProcessing && setGuestInfo({ ...guestInfo, special_requests: e.target.value })}
                           disabled={isProcessing}
-                          className="bg-white/5 border-white/10 text-white placeholder:text-white/40 min-h-[120px] focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                          className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 min-h-[120px] focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                         />
                       </motion.div>
 
@@ -664,7 +672,7 @@ function BookingPageContent() {
                             variant="outline"
                             onClick={handleBackToPlan}
                             disabled={isProcessing}
-                            className="w-full border-white/20 text-white hover:bg-white/10 transition-all"
+                            className="w-full border-gray-200 text-gray-800 hover:bg-gray-50 transition-all"
                           >
                             Back to Dates
                           </Button>
@@ -699,9 +707,9 @@ function BookingPageContent() {
 
           {/* Pricing / Ops card */}
           <motion.div className="space-y-4" variants={itemVariants}>
-            <Card className="bg-white/5 border-white/10 backdrop-blur-xl shadow-xl sticky top-24">
-              <CardHeader className="border-b border-white/5">
-                <CardTitle className="text-white flex items-center gap-2">
+            <Card className="bg-white border border-gray-200 shadow-xl sticky top-24">
+              <CardHeader className="border-b border-gray-100">
+                <CardTitle className="text-gray-900 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#C4A572]" />
                   Price summary
                 </CardTitle>
@@ -725,37 +733,37 @@ function BookingPageContent() {
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <div className="space-y-3 text-sm text-white/80">
+                      <div className="space-y-3 text-sm text-gray-800">
                         <div className="flex justify-between">
                           <span>{safeFormatCurrency(correctedPricing.nightly_rate)} × {nights || 0} night{nights === 1 ? '' : 's'}</span>
-                          <span className="text-white font-medium">{safeFormatCurrency(correctedPricing.accommodation_total)}</span>
+                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(correctedPricing.accommodation_total)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Cleaning fee</span>
-                          <span className="text-white font-medium">{safeFormatCurrency(correctedPricing.cleaning_fee)}</span>
+                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(correctedPricing.cleaning_fee)}</span>
                         </div>
                         {parseFloat(correctedPricing.extra_guest_fee || '0') > 0 && (
                           <div className="flex justify-between">
                             <span>Extra guest fee</span>
-                            <span className="text-white font-medium">{safeFormatCurrency(correctedPricing.extra_guest_fee)}</span>
+                            <span className="text-gray-900 font-semibold">{safeFormatCurrency(correctedPricing.extra_guest_fee)}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
                           <span>Tourist tax</span>
-                          <span className="text-white font-medium">{safeFormatCurrency(correctedPricing.tourist_tax)}</span>
+                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(correctedPricing.tourist_tax)}</span>
                         </div>
                       </div>
                       <motion.div
-                        className="border-t border-white/10 pt-4 mt-4"
+                        className="border-t border-gray-200 pt-4 mt-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
                       >
-                        <div className="flex justify-between text-lg font-semibold text-white">
+                        <div className="flex justify-between text-lg font-semibold text-gray-900">
                           <span>Total</span>
                           <span>{safeFormatCurrency(correctedPricing.total)}</span>
                         </div>
-                        <p className="text-xs text-white/50 mt-1">
+                        <p className="text-xs text-gray-600 mt-1">
                           Charged securely when you confirm. Includes all required taxes.
                         </p>
                       </motion.div>
@@ -766,7 +774,7 @@ function BookingPageContent() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="rounded-lg border border-dashed border-white/15 p-4 text-white/60 text-sm text-center"
+                      className="rounded-lg border border-dashed border-gray-200 p-4 text-gray-600 text-sm text-center"
                     >
                       Select your dates and party size to view pricing details.
                     </motion.div>
@@ -780,14 +788,14 @@ function BookingPageContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Card className="bg-[#11131A]/80 border-white/5 backdrop-blur">
-                <CardContent className="p-4 space-y-3 text-sm text-white/80">
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-4 space-y-3 text-sm text-gray-800">
                   <motion.div
                     className="flex items-center gap-2"
                     whileHover={{ x: 5 }}
                     transition={{ type: 'spring', stiffness: 400 }}
                   >
-                    <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                     <span>Secure payment processing via Stripe</span>
                   </motion.div>
                   <motion.div
@@ -803,8 +811,8 @@ function BookingPageContent() {
                     whileHover={{ x: 5 }}
                     transition={{ type: 'spring', stiffness: 400 }}
                   >
-                    <Clock3 className="w-4 h-4 text-blue-300 flex-shrink-0" />
-                    <span>Flexible check-in times — 24/7 availability</span>
+                    <Clock3 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <span>Responsive host team for pre-arrival questions</span>
                   </motion.div>
                 </CardContent>
               </Card>
