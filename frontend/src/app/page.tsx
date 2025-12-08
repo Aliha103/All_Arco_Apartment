@@ -26,6 +26,12 @@ import BookingWidget from '@/components/booking/BookingWidget';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
 import LocationSection from '@/components/location/LocationSection';
 import { api } from '@/lib/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button as UIButton } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 // Smooth easing for all animations
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
@@ -180,6 +186,14 @@ export default function Home() {
   const [publicReviews, setPublicReviews] = useState<PublicReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [hostEditOpen, setHostEditOpen] = useState(false);
+  const [hostForm, setHostForm] = useState({
+    display_name: '',
+    role_title: '',
+    bio: '',
+    languages: '',
+    photo_url: '',
+  });
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
@@ -191,6 +205,38 @@ export default function Home() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.05]);
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 50]);
+
+  const handleOpenHostEdit = () => {
+    setHostEditOpen(true);
+  };
+
+  const handleSaveHost = async () => {
+    try {
+      const languagesArray = hostForm.languages
+        .split(',')
+        .map((l) => l.trim())
+        .filter(Boolean);
+
+      const payload = {
+        display_name: hostForm.display_name,
+        role_title: hostForm.role_title,
+        bio: hostForm.bio,
+        languages: languagesArray,
+      } as any;
+
+      if (hostForm.photo_url) {
+        payload.photo_url = hostForm.photo_url;
+      }
+
+      const res = await api.host.update(hostProfile?.id || 1, payload);
+      setHostProfile(res.data);
+      toast.success('Host profile updated');
+      setHostEditOpen(false);
+    } catch (error: any) {
+      console.error('Failed to update host', error);
+      toast.error(error?.response?.data?.error || 'Failed to update host profile');
+    }
+  };
 
   // Fetch hero images from database
   useEffect(() => {
@@ -266,6 +312,19 @@ export default function Home() {
     };
     loadHostAndReviews();
   }, []);
+
+  // Sync host form with loaded profile
+  useEffect(() => {
+    if (hostProfile) {
+      setHostForm({
+        display_name: hostProfile.display_name || '',
+        role_title: hostProfile.role_title || '',
+        bio: hostProfile.bio || '',
+        languages: Array.isArray(hostProfile.languages) ? hostProfile.languages.join(', ') : '',
+        photo_url: '',
+      });
+    }
+  }, [hostProfile]);
 
   // Check auth to show edit shortcut for super admins (tolerate 401/403)
   useEffect(() => {
@@ -508,13 +567,14 @@ export default function Home() {
                   Superhost
                 </span>
                 {isSuperAdmin && (
-                  <a
-                    href="/pms"
+                  <button
+                    type="button"
+                    onClick={handleOpenHostEdit}
                     className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-white shadow border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:shadow-md transition"
                     title="Edit host profile"
                   >
                     <Pencil className="w-4 h-4" />
-                  </a>
+                  </button>
                 )}
                   </div>
                 );
@@ -703,6 +763,69 @@ export default function Home() {
           </motion.div>
         </div>
       </AnimatedSection>
+
+      {/* Host edit dialog (super admin only) */}
+      <Dialog open={hostEditOpen && isSuperAdmin} onOpenChange={setHostEditOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit host profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="host-name">Display name</Label>
+              <Input
+                id="host-name"
+                value={hostForm.display_name}
+                onChange={(e) => setHostForm((f) => ({ ...f, display_name: e.target.value }))}
+                placeholder="Ali Hassan Cheema"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-role">Role / title</Label>
+              <Input
+                id="host-role"
+                value={hostForm.role_title}
+                onChange={(e) => setHostForm((f) => ({ ...f, role_title: e.target.value }))}
+                placeholder="Superhost"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-bio">Bio</Label>
+              <Textarea
+                id="host-bio"
+                value={hostForm.bio}
+                onChange={(e) => setHostForm((f) => ({ ...f, bio: e.target.value }))}
+                placeholder="Share a short host introduction"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-languages">Languages (comma separated)</Label>
+              <Input
+                id="host-languages"
+                value={hostForm.languages}
+                onChange={(e) => setHostForm((f) => ({ ...f, languages: e.target.value }))}
+                placeholder="English, Italian"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-photo">Photo URL (optional)</Label>
+              <Input
+                id="host-photo"
+                value={hostForm.photo_url}
+                onChange={(e) => setHostForm((f) => ({ ...f, photo_url: e.target.value }))}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <UIButton variant="outline" onClick={() => setHostEditOpen(false)}>
+              Cancel
+            </UIButton>
+            <UIButton onClick={handleSaveHost}>Save changes</UIButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reviews Section */}
       <ReviewsSection initialReviews={publicReviews} loading={reviewsLoading} />
