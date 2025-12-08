@@ -405,24 +405,32 @@ function BookingPageContent() {
         <motion.div className="flex flex-col gap-3" variants={itemVariants}>
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#C4A572]">
             <Sparkles className="w-4 h-4 animate-pulse" />
-            Seamless Booking Experience
+            2-Step Booking
           </div>
           <h1 className="text-3xl sm:text-4xl font-light text-gray-900 leading-tight">
-            Book your Venetian stay with confidence.
+            Book All’Arco in minutes.
           </h1>
           <p className="text-gray-700 max-w-2xl">
-            Real-time availability, clear pricing, and a secure checkout in two steps. Choose your dates, confirm your guests, and we’ll lock in your reservation.
+            Pick dates and guests, confirm details, and you’re done. Clear prices, instant confirmation.
           </p>
-          {/* Security Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-center gap-2 text-sm text-gray-600 mt-2"
-          >
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Secure checkout • Instant confirmation</span>
-          </motion.div>
+          <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-gray-700">
+            <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 font-medium">
+              <BadgeCheck className="w-4 h-4 text-[#C4A572]" /> Step 1: Dates & Guests
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 font-medium">
+              <BadgeCheck className="w-4 h-4 text-[#C4A572]" /> Step 2: Details & Pay
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              Secure checkout • Instant confirmation
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-500" />
+              City tax applies to adults only; max 5 guests (adults + children), infants welcome.
+            </span>
+          </div>
         </motion.div>
 
         <div className="grid lg:grid-cols-[2fr_1fr] gap-6 lg:gap-8 items-start">
