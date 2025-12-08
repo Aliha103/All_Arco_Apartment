@@ -440,34 +440,49 @@ export default function BookingWidget() {
   const maxChildren = Math.max(0, CONFIG.guests.maxTotal - guests.adults);
 
   // Build a quick lookup set for blocked dates (start..end-1)
-  const blockedDateSet = useMemo(() => {
-    const set = new Set<string>();
-    if (!Array.isArray(blockedRanges)) return set;
-
-    blockedRanges.forEach((range) => {
-      if (!range || !range.start || !range.end) return;
-
-      try {
+  const blockedIntervals = useMemo(() => {
+    if (!Array.isArray(blockedRanges)) return [];
+    return blockedRanges
+      .map((range) => {
+        if (!range || !range.start || !range.end) return null;
         const startDate = parseISO(range.start);
         const endDate = parseISO(range.end);
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return;
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return null;
+        return { start: startOfDay(startDate), end: startOfDay(endDate) };
+      })
+      .filter(Boolean) as { start: Date; end: Date }[];
+  }, [blockedRanges]);
 
-        // Block nights from start to end-1 (checkout day is free for availability checks)
-        const lastBlockedDate = new Date(endDate);
-        lastBlockedDate.setDate(lastBlockedDate.getDate() - 1);
+  const blockedDateSet = useMemo(() => {
+    const set = new Set<string>();
+    blockedIntervals.forEach(({ start, end }) => {
+      // Block nights from start to end-1 (checkout day is free for availability checks)
+      const lastBlockedDate = new Date(end);
+      lastBlockedDate.setDate(lastBlockedDate.getDate() - 1);
 
-        let current = new Date(startDate);
-        while (current <= lastBlockedDate) {
-          set.add(format(startOfDay(current), 'yyyy-MM-dd'));
-          current.setDate(current.getDate() + 1);
-        }
-      } catch {
-        return;
+      let current = new Date(start);
+      while (current <= lastBlockedDate) {
+        set.add(format(startOfDay(current), 'yyyy-MM-dd'));
+        current.setDate(current.getDate() + 1);
       }
     });
 
     return set;
-  }, [blockedRanges]);
+  }, [blockedIntervals]);
+
+  const earliestBlockedAfterStart = useMemo(() => {
+    if (!dateRange?.from || !blockedIntervals.length) return null;
+    const startDay = startOfDay(dateRange.from);
+    let earliest: Date | null = null;
+    blockedIntervals.forEach(({ start }) => {
+      if (start >= startDay) {
+        if (!earliest || start < earliest) {
+          earliest = start;
+        }
+      }
+    });
+    return earliest;
+  }, [dateRange?.from, blockedIntervals]);
 
   // Disable past dates and blocked nights (checkout day stays available)
   const disabledMatcher = useCallback((date: Date) => {
@@ -475,8 +490,21 @@ export default function BookingWidget() {
 
     if (date < today) return true;
 
-    return blockedDateSet.has(dayKey);
-  }, [blockedDateSet, today]);
+    // If a start date is chosen, prevent selecting beyond the next blocked check-in
+    if (earliestBlockedAfterStart && !dateRange?.to && date > earliestBlockedAfterStart) {
+      return true;
+    }
+
+    if (blockedDateSet.has(dayKey)) {
+      // Allow selecting exactly the first blocked day as checkout
+      if (earliestBlockedAfterStart && !dateRange?.to && date.getTime() === earliestBlockedAfterStart.getTime()) {
+        return false;
+      }
+      return true;
+    }
+
+    return false;
+  }, [blockedDateSet, dateRange?.to, earliestBlockedAfterStart, today]);
 
   const rangeHasBlockedNights = useCallback((range: DateRange | undefined) => {
     if (!range?.from || !range?.to) return false;
