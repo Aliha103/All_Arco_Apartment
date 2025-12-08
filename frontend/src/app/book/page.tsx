@@ -414,6 +414,12 @@ function BookingPageContent() {
   const handleSubmitBooking = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Basic required fields guard (client-side)
+    if (!guestInfo.first_name.trim() || !guestInfo.last_name.trim() || !guestInfo.guest_email.trim() || !guestInfo.guest_phone.trim() || !guestInfo.country.trim()) {
+      toast.error('Please fill first name, last name, email, phone, and country.');
+      return;
+    }
+
     const guestDetailsSummary = guestDetailsEnabled
       ? guestDetails
           .map(({ first_name, last_name, birth_country, note }) => {
@@ -947,14 +953,14 @@ function BookingPageContent() {
                           variant="outline"
                           onClick={handleBackToPlan}
                           disabled={isProcessing}
-                          className="w-1/2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-all"
+                          className="w-1/2 border-gray-200 text-gray-800 hover:bg-gray-50 transition-all justify-center"
                         >
                           Back to Dates
                         </Button>
                         <Button
                           type="button"
                           disabled={isProcessing}
-                          className="w-1/2 bg-[#C4A572] text-black hover:bg-[#D8B77A] font-semibold shadow-lg disabled:opacity-50 transition-all"
+                          className="w-1/2 bg-[#C4A572] text-black hover:bg-[#D8B77A] font-semibold shadow-lg disabled:opacity-50 transition-all justify-center text-center whitespace-normal"
                           onClick={submitBooking}
                         >
                           {isProcessing ? (
