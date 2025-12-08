@@ -470,9 +470,13 @@ export default function Home() {
 
               {/* Host Info - live data */}
               {(() => {
-                const hostDisplayName = hostProfile?.display_name || 'Ali Hassan Cheema';
+                const rawName = (hostProfile?.display_name || '').trim();
+                const hostDisplayName =
+                  rawName && rawName.toLowerCase() !== 'host'
+                    ? rawName
+                    : 'Ali Hassan Cheema';
                 const hostLanguages =
-                  hostProfile?.languages && hostProfile.languages.length
+                  Array.isArray(hostProfile?.languages) && hostProfile.languages.length
                     ? hostProfile.languages
                     : ['English', 'Italian'];
                 const reviewLabel =
