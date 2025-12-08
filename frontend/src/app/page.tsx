@@ -267,10 +267,8 @@ export default function Home() {
     loadHostAndReviews();
   }, []);
 
-  // Check auth to show edit shortcut for super admins (skip if no session cookie)
+  // Check auth to show edit shortcut for super admins (tolerate 401/403)
   useEffect(() => {
-    const hasSession = typeof document !== 'undefined' && document.cookie.includes('sessionid=');
-    if (!hasSession) return;
     const loadMe = async () => {
       try {
         const res = await api.auth.me();
