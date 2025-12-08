@@ -39,7 +39,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         model = Booking
         extra_kwargs = {'guest_name': {'required': False}}
         fields = [
-            'user', 'guest_email', 'guest_name', 'guest_phone', 'guest_country', 'guest_address',
+            'id', 'user', 'guest_email', 'guest_name', 'guest_phone', 'guest_country', 'guest_address',
             'check_in_date', 'check_out_date', 'number_of_guests',
             'nightly_rate', 'cleaning_fee', 'tourist_tax', 'special_requests',
             'cancellation_policy',
@@ -48,7 +48,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             # read-only outputs
             'booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable',
         ]
-        read_only_fields = ['booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable']
+        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable']
 
     first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
