@@ -2,8 +2,7 @@
 
 'use client';
 
-export const dynamic = 'force-dynamic';
-
+import { Suspense } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -15,7 +14,9 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
-export default function ConfirmationPage() {
+export const dynamic = 'force-dynamic';
+
+function ConfirmationContent() {
   const params = useParams();
   const search = useSearchParams();
   const router = useRouter();
@@ -289,5 +290,13 @@ export default function ConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading booking...</div>}>
+      <ConfirmationContent />
+    </Suspense>
   );
 }
