@@ -160,25 +160,25 @@ const GuestCounter = memo(({
 
   return (
     <motion.div
-      className="p-4 rounded-xl border border-gray-200 bg-white hover:shadow-sm transition-all duration-200"
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      className="p-4 rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all duration-200"
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-gray-800">
+        <div className="flex items-center gap-2 text-gray-900">
           <UserRound className="w-4 h-4" />
-          <span className="capitalize font-medium">{label}</span>
+          <span className="capitalize font-semibold tracking-wide text-sm">{label}</span>
         </div>
-        <Badge variant="outline" className="border-gray-200 text-gray-700 font-mono">
-          {value}
+        <Badge variant="outline" className="border-gray-200 text-gray-800 bg-gray-50 font-semibold">
+          {value} total
         </Badge>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+          className="border border-gray-200 text-gray-900 hover:bg-gray-50 hover:border-gray-300 rounded-full"
           onClick={handleDecrement}
           disabled={value <= min}
         >
@@ -190,13 +190,13 @@ const GuestCounter = memo(({
           max={max}
           value={value}
           onChange={handleInputChange}
-          className="text-center bg-white border-gray-200 text-gray-900 font-mono focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
+          className="w-16 text-center bg-white border-gray-200 text-gray-900 font-semibold focus:ring-2 focus:ring-[#C4A572] focus:border-transparent rounded-full"
         />
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+          className="border border-gray-200 text-gray-900 hover:bg-gray-50 hover:border-gray-300 rounded-full"
           onClick={handleIncrement}
           disabled={value >= max}
         >
@@ -399,10 +399,10 @@ function BookingPageContent() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#F8F7F4] to-white text-gray-900">
       {/* Navigation */}
-      <SiteNav />
+      <SiteNav solid />
 
       <motion.div
-        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 space-y-8"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 lg:py-14 space-y-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"

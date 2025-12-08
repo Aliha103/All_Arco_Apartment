@@ -37,7 +37,11 @@ const navLinks = [
   { href: '/#location', label: 'Venice', icon: MapPin },
 ];
 
-const SiteNav = () => {
+type SiteNavProps = {
+  solid?: boolean;
+};
+
+const SiteNav = ({ solid = false }: SiteNavProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -124,8 +128,9 @@ const SiteNav = () => {
     setDropdownOpen(false);
   };
 
-  const textClasses = isScrolled ? 'text-gray-800' : 'text-white';
-  const textHoverClasses = isScrolled ? 'hover:text-[#C4A572]' : 'hover:text-[#C4A572]';
+  const isSolid = solid || isScrolled;
+  const textClasses = isSolid ? 'text-gray-800' : 'text-white';
+  const textHoverClasses = isSolid ? 'hover:text-[#C4A572]' : 'hover:text-[#C4A572]';
 
   return (
     <>
@@ -136,8 +141,8 @@ const SiteNav = () => {
         className={`
           fixed top-0 left-0 right-0 z-50
           transition-all duration-500 ease-out
-          ${isScrolled
-            ? 'bg-white/98 backdrop-blur-xl shadow-lg shadow-black/5'
+          ${isSolid
+            ? 'bg-white shadow-md shadow-black/5 border-b border-gray-100'
             : 'bg-gradient-to-b from-black/30 to-transparent'
           }
           ${isVisible ? 'translate-y-0' : '-translate-y-full'}
@@ -198,7 +203,7 @@ const SiteNav = () => {
                   className={`
                     flex items-center gap-2 px-2.5 py-1.5 rounded-full
                     transition-all duration-200
-                    ${isScrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}
+                    ${isSolid ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}
                     focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]
                   `}
                   aria-label="Account menu"
@@ -328,7 +333,7 @@ const SiteNav = () => {
                 className={`
                   md:hidden p-2 rounded-xl touch-manipulation
                   transition-colors duration-300
-                  ${isScrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}
+                  ${isSolid ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4A572]
                 `}
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
