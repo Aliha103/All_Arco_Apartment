@@ -594,6 +594,7 @@ export default function BookingWidget() {
   // Build booking URL
   const bookingUrl = useMemo(() => {
     if (!dateRange?.from || !dateRange?.to) return '#';
+    if (rangeHasBlockedNights(dateRange)) return '#';
     const params = new URLSearchParams({
       checkIn: format(dateRange.from, 'yyyy-MM-dd'),
       checkOut: format(dateRange.to, 'yyyy-MM-dd'),
@@ -608,7 +609,7 @@ export default function BookingWidget() {
       params.set('promo', appliedPromo.code);
     }
     return `/book?${params.toString()}`;
-  }, [dateRange, guests, hasPet, appliedPromo]);
+  }, [dateRange, guests, hasPet, appliedPromo, rangeHasBlockedNights]);
 
   return (
     <>
