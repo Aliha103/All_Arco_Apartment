@@ -531,6 +531,11 @@ function BookingPageContent() {
 
       const booking = await createBooking.mutateAsync(bookingData);
 
+      if (!booking?.id) {
+        toast.error('Booking was created without an ID. Please try again.');
+        return;
+      }
+
       const bookingAmountDue = parseFloat(String(booking.amount_due ?? 0)) || 0;
       if (bookingAmountDue <= 0.01) {
         toast.success('Booking created. No payment due.');
@@ -549,7 +554,9 @@ function BookingPageContent() {
         throw new Error('Checkout session could not be created');
       } catch (checkoutError) {
         try {
-          await api.bookings.delete(booking.id);
+          if (booking?.id) {
+            await api.bookings.delete(booking.id);
+          }
           toast.error('Payment failed to start. Booking was not completed—please try again.');
           return;
         } catch (cleanupError) {
