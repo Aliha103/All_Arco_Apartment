@@ -469,23 +469,14 @@ export default function BookingWidget() {
     return set;
   }, [blockedRanges]);
 
-  // Disable past dates and blocked nights, but allow picking a blocked date as the range end
+  // Disable past dates and blocked nights (checkout day stays available)
   const disabledMatcher = useCallback((date: Date) => {
     const dayKey = format(startOfDay(date), 'yyyy-MM-dd');
 
     if (date < today) return true;
 
-    const isBlocked = blockedDateSet.has(dayKey);
-    if (!isBlocked) return false;
-
-    // If selecting an end date and it falls on a blocked day, allow it;
-    // availability check will still catch overlaps.
-    if (dateRange?.from && !dateRange?.to && date > dateRange.from) {
-      return false;
-    }
-
-    return true;
-  }, [blockedDateSet, dateRange, today]);
+    return blockedDateSet.has(dayKey);
+  }, [blockedDateSet, today]);
 
   const rangeHasBlockedNights = useCallback((range: DateRange | undefined) => {
     if (!range?.from || !range?.to) return false;
