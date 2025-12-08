@@ -439,11 +439,11 @@ export default function BookingWidget() {
   const maxChildren = CONFIG.guests.maxTotal - guests.adults;
 
   // Calculate disabled dates from blocked ranges
-  const disabledDates = useMemo(() => {
-    const disabled: Date[] = [];
+  const disabledMatcher = useMemo(() => {
+    const disabledDates: Date[] = [];
 
     if (!Array.isArray(blockedRanges)) {
-      return disabled;
+      return [{ before: today }];
     }
 
     blockedRanges.forEach((range) => {
@@ -463,7 +463,7 @@ export default function BookingWidget() {
         lastBlockedDate.setDate(lastBlockedDate.getDate() - 1);
 
         while (current <= lastBlockedDate) {
-          disabled.push(new Date(current));
+          disabledDates.push(new Date(current));
           current.setDate(current.getDate() + 1);
         }
       } catch (error) {
@@ -472,8 +472,9 @@ export default function BookingWidget() {
       }
     });
 
-    return disabled;
-  }, [blockedRanges]);
+    // Combine past dates and blocked dates into single array
+    return [{ before: today }, ...disabledDates];
+  }, [blockedRanges, today]);
 
   // Pricing calculation
   const pricing = useMemo((): PricingBreakdown | null => {
@@ -617,7 +618,7 @@ export default function BookingWidget() {
               numberOfMonths={2}
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
-              disabled={[{ before: today }, ...(Array.isArray(disabledDates) ? disabledDates : [])]}
+              disabled={disabledMatcher}
               showOutsideDays={false}
               className="!font-sans [&_button]:!text-gray-900 [&_.rdp-day]:!text-gray-900"
               classNames={{
