@@ -186,21 +186,21 @@ def stripe_webhook(request):
         if booking_id:
             try:
                 booking = Booking.objects.get(id=booking_id)
+
+                # Create payment record
+                payment = Payment.objects.create(
+                    booking=booking,
+                    stripe_payment_intent_id=session['payment_intent'],
+                    amount=booking.amount_due or booking.total_price,
+                    currency='eur',
+                    status='succeeded',
+                    payment_method=session.get('payment_method_types', ['card'])[0]
+                )
                 
-        # Create payment record
-        payment = Payment.objects.create(
-            booking=booking,
-            stripe_payment_intent_id=session['payment_intent'],
-            amount=booking.amount_due or booking.total_price,
-            currency='eur',
-            status='succeeded',
-            payment_method=session.get('payment_method_types', ['card'])[0]
-        )
-        
-        # Update booking status
-        booking.status = 'confirmed'
-        booking.payment_status = 'paid'
-        booking.save(update_fields=['status', 'payment_status'])
+                # Update booking status
+                booking.status = 'confirmed'
+                booking.payment_status = 'paid'
+                booking.save(update_fields=['status', 'payment_status'])
                 
                 # TODO: Send confirmation email
                 
