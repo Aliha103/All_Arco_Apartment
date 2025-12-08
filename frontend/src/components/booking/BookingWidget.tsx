@@ -470,7 +470,7 @@ export default function BookingWidget() {
     return set;
   }, [blockedIntervals]);
 
-  const earliestBlockedAfterStart = useMemo(() => {
+  const earliestBlockedAfterStart: Date | null = useMemo((): Date | null => {
     if (!dateRange?.from || !blockedIntervals.length) return null;
     const startDay = startOfDay(dateRange.from);
     let earliest: Date | null = null;
