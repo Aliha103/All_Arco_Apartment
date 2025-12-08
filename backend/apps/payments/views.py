@@ -45,6 +45,12 @@ def create_checkout_session(request):
             status=status.HTTP_404_NOT_FOUND
         )
 
+    if booking.payment_status in ['paid', 'partial', 'partially_refunded', 'refunded']:
+        return Response(
+            {'error': 'Booking is already paid or settled'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     amount_to_charge = float(booking.amount_due or booking.total_price or 0)
     # Resolve frontend host for redirects (fallback to production domain)
     frontend_host = getattr(settings, 'FRONTEND_URL', None) or (
@@ -53,11 +59,10 @@ def create_checkout_session(request):
     frontend_host = frontend_host.rstrip('/')
 
     if amount_to_charge <= 0:
-        # Fully covered by credits - mark as confirmed/paid without Stripe
-        booking.status = 'pending'
-        booking.payment_status = 'unpaid'
-        booking.save(update_fields=['status', 'payment_status'])
-        return Response({'session_url': None, 'session_id': None, 'message': 'Booking covered by credits'})
+        return Response(
+            {'error': 'No payment due for this booking'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
     
     # Create Stripe Checkout Session
     try:

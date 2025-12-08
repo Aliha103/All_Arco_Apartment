@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Booking } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function ConfirmationPage() {
   const params = useParams();
@@ -29,6 +30,24 @@ export default function ConfirmationPage() {
     },
     enabled: !!bookingId,
     retry: 1,
+  });
+
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.payments.createCheckoutSession(bookingId as string);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      if (data?.session_url) {
+        window.location.href = data.session_url;
+      } else {
+        toast.error('Unable to start payment. Please try again.');
+      }
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.error || 'Unable to start payment.';
+      toast.error(msg);
+    },
   });
 
   if (isMissingId) {
@@ -101,20 +120,24 @@ export default function ConfirmationPage() {
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Booking Confirmed!
+              {booking.payment_status === 'paid' ? 'Booking Confirmed!' : 'Booking Pending Payment'}
             </h1>
             <p className="text-lg text-gray-600">
-              Thank you for booking with All'Arco Apartment
+              {booking.payment_status === 'paid'
+                ? "Thank you for booking with All'Arco Apartment"
+                : "Please complete your payment to confirm your stay."}
             </p>
           </div>
 
           {/* Booking Details Card */}
           <Card className="mb-6">
             <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Booking Details</CardTitle>
-            <Badge variant="success">{booking.status}</Badge>
-          </div>
+              <div className="flex items-center justify-between">
+                <CardTitle>Booking Details</CardTitle>
+                <Badge variant={booking.payment_status === 'paid' ? 'success' : 'secondary'}>
+                  {booking.payment_status}
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -140,17 +163,20 @@ export default function ConfirmationPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Guests</p>
-                  <p className="font-semibold">{booking.guests}</p>
+                  <p className="font-semibold">{booking.number_of_guests || (booking as any).guests}</p>
                 </div>
               </div>
 
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Total Paid</span>
+                  <span className="text-lg font-semibold">Total</span>
                   <span className="text-2xl font-bold text-green-600">
                     {formatCurrency(booking.total_price)}
                   </span>
                 </div>
+                {booking.payment_status !== 'paid' && (
+                  <p className="text-sm text-red-600 mt-1">Payment pending</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -227,12 +253,29 @@ export default function ConfirmationPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/dashboard" className="flex-1">
-              <Button className="w-full">View My Bookings</Button>
-            </Link>
-            <Link href="/" className="flex-1">
-              <Button variant="outline" className="w-full">Return to Home</Button>
-            </Link>
+            {booking.payment_status !== 'paid' ? (
+              <>
+                <Button
+                  className="flex-1"
+                  onClick={() => payMutation.mutate()}
+                  disabled={payMutation.isPending}
+                >
+                  {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
+                </Button>
+                <Link href="/" className="flex-1">
+                  <Button variant="outline" className="w-full">Return to Home</Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/dashboard" className="flex-1">
+                  <Button className="w-full">View My Bookings</Button>
+                </Link>
+                <Link href="/" className="flex-1">
+                  <Button variant="outline" className="w-full">Return to Home</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
