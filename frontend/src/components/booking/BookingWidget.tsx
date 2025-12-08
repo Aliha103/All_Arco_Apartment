@@ -440,17 +440,17 @@ export default function BookingWidget() {
   const maxChildren = Math.max(0, CONFIG.guests.maxTotal - guests.adults);
 
   // Build a quick lookup set for blocked dates (start..end-1)
-  const blockedIntervals = useMemo(() => {
+  const blockedIntervals: { start: Date; end: Date }[] = useMemo(() => {
     if (!Array.isArray(blockedRanges)) return [];
-    return blockedRanges
-      .map((range) => {
-        if (!range || !range.start || !range.end) return null;
-        const startDate = parseISO(range.start);
-        const endDate = parseISO(range.end);
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return null;
-        return { start: startOfDay(startDate), end: startOfDay(endDate) };
-      })
-      .filter(Boolean) as { start: Date; end: Date }[];
+    const intervals: { start: Date; end: Date }[] = [];
+    blockedRanges.forEach((range) => {
+      if (!range || !range.start || !range.end) return;
+      const startDate = parseISO(range.start);
+      const endDate = parseISO(range.end);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return;
+      intervals.push({ start: startOfDay(startDate), end: startOfDay(endDate) });
+    });
+    return intervals;
   }, [blockedRanges]);
 
   const blockedDateSet = useMemo(() => {
@@ -491,7 +491,7 @@ export default function BookingWidget() {
     if (date < today) return true;
 
     // If a start date is chosen, prevent selecting beyond the next blocked check-in
-    if (earliestBlockedAfterStart && !dateRange?.to && date > earliestBlockedAfterStart) {
+    if (earliestBlockedAfterStart && !dateRange?.to && date.getTime() > earliestBlockedAfterStart.getTime()) {
       return true;
     }
 
