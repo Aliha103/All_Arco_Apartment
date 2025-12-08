@@ -11,6 +11,7 @@ from .models import Payment, Refund
 from .serializers import PaymentSerializer, RefundSerializer
 from apps.bookings.models import Booking, BookingAttempt
 from apps.bookings.serializers import BookingSerializer
+from apps.emails.services import send_booking_confirmation, send_payment_receipt
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -193,6 +194,16 @@ def confirm_checkout_session(request):
         booking.amount_due = 0
         booking.save(update_fields=['status', 'payment_status', 'amount_due'])
 
+        # Send confirmation + receipt emails
+        try:
+            send_booking_confirmation(booking)
+        except Exception:
+            pass
+        try:
+            send_payment_receipt(payment)
+        except Exception:
+            pass
+
         return Response(BookingSerializer(booking).data)
 
     # If the session was cancelled/expired and booking is still unpaid, delete it
@@ -332,7 +343,15 @@ def stripe_webhook(request):
                     failure_reason=''
                 )
                 
-                # TODO: Send confirmation email
+                # Send emails (best-effort)
+                try:
+                    send_booking_confirmation(booking)
+                except Exception:
+                    pass
+                try:
+                    send_payment_receipt(payment)
+                except Exception:
+                    pass
                 
             except Booking.DoesNotExist:
                 pass
@@ -357,6 +376,11 @@ def stripe_webhook(request):
         obj = event['data']['object']
         metadata = obj.get('metadata') or {}
         booking_id = metadata.get('booking_id')
+        error_info = obj.get('last_payment_error')
+        if isinstance(error_info, dict):
+            error_message = error_info.get('message') or str(error_info)
+        else:
+            error_message = str(error_info) if error_info else 'Payment failed'
         if booking_id:
             try:
                 booking = Booking.objects.get(id=booking_id)
@@ -364,7 +388,7 @@ def stripe_webhook(request):
                     booking.delete()
                 BookingAttempt.objects.filter(stripe_session_id=obj.get('checkout_session_id')).update(
                     status='failed',
-                    failure_reason=obj.get('last_payment_error', {}) if isinstance(obj.get('last_payment_error'), str) else str(obj.get('last_payment_error'))
+                    failure_reason=error_message
                 )
             except Booking.DoesNotExist:
                 pass
