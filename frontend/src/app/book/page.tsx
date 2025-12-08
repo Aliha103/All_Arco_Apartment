@@ -442,7 +442,7 @@ function BookingPageContent() {
       const bookingData = {
         check_in_date: dates.checkIn,
         check_out_date: dates.checkOut,
-        guests: totalGuests,
+        number_of_guests: totalGuests,
         guest_name: `${guestInfo.first_name} ${guestInfo.last_name}`.trim(),
         guest_email: guestInfo.guest_email,
         guest_phone: guestInfo.guest_phone,

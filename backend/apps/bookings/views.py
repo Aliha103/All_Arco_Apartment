@@ -89,6 +89,11 @@ class BookingViewSet(viewsets.ModelViewSet):
         'mark_no_show': 'bookings.mark_no_show',
     }
 
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AllowAny()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.action == 'list':
             return BookingListSerializer
