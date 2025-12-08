@@ -198,6 +198,8 @@ export default function Home() {
     is_superhost: true,
     review_count: 59,
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
@@ -218,6 +220,11 @@ export default function Home() {
     if (!hostProfile) return;
 
     try {
+      if (!hostForm.display_name.trim()) {
+        toast.error('Display name is required');
+        return;
+      }
+
       const payload = {
         display_name: hostForm.display_name.trim(),
         bio: hostForm.bio.trim(),
@@ -227,7 +234,25 @@ export default function Home() {
         review_count: hostForm.review_count,
       };
 
-      const res = await api.hostProfile.update(hostProfile.id as string, payload);
+      const useFormData = Boolean(avatarFile);
+      const res = useFormData
+        ? await (async () => {
+            const formData = new FormData();
+            formData.append('display_name', payload.display_name);
+            formData.append('bio', payload.bio);
+            formData.append('languages', payload.languages);
+            formData.append('is_superhost', String(payload.is_superhost));
+            formData.append('review_count', String(payload.review_count));
+            if (payload.avatar_url) {
+              formData.append('avatar_url', payload.avatar_url);
+            }
+            if (avatarFile) {
+              formData.append('avatar', avatarFile);
+            }
+            return api.hostProfile.updateWithFile(hostProfile.id as string, formData);
+          })()
+        : await api.hostProfile.update(hostProfile.id as string, payload);
+
       const updated = res.data;
       const normalizedLanguages = Array.isArray(updated.languages)
         ? updated.languages
@@ -241,6 +266,8 @@ export default function Home() {
         is_superhost: updated.is_superhost ?? true,
         review_count: updated.review_count ?? 59,
       });
+      setAvatarFile(null);
+      setAvatarPreview(updated.photo_url || updated.avatar || null);
       toast.success('Host profile updated');
       setHostEditOpen(false);
     } catch (error: any) {
@@ -321,6 +348,7 @@ export default function Home() {
             }
           : null;
         setHostProfile(normalizedHost);
+        setAvatarPreview(normalizedHost?.photo_url || null);
         setPublicReviews(normalizedReviews);
       } catch (error) {
         console.error('Failed to load host/reviews', error);
@@ -344,6 +372,7 @@ export default function Home() {
         is_superhost: hostProfile.is_superhost ?? true,
         review_count: hostProfile.review_count ?? 59,
       });
+      setAvatarPreview(hostProfile.photo_url || hostProfile.avatar || null);
     }
   }, [hostProfile]);
 
@@ -875,6 +904,24 @@ export default function Home() {
                 onChange={(e) => setHostForm((f) => ({ ...f, avatar_url: e.target.value }))}
                 placeholder="https://..."
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-avatar-file">Upload avatar (overrides URL)</Label>
+              <Input
+                id="host-avatar-file"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setAvatarFile(file);
+                  setAvatarPreview(file ? URL.createObjectURL(file) : (hostProfile?.photo_url || hostProfile?.avatar || null));
+                }}
+              />
+              {(avatarPreview || hostProfile?.photo_url) && (
+                <div className="text-sm text-gray-500">
+                  Preview: {avatarPreview || hostProfile?.photo_url}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter className="gap-2">
