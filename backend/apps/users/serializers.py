@@ -228,18 +228,27 @@ class UserWithRoleSerializer(serializers.ModelSerializer):
 
 
 class HostProfileSerializer(serializers.ModelSerializer):
-    avatar = serializers.SerializerMethodField()
+    photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = HostProfile
         fields = [
-            'id', 'display_name', 'role_title', 'bio', 'languages',
-            'photo', 'photo_url', 'avatar', 'created_at', 'updated_at'
+            'id',
+            'display_name',
+            'bio',
+            'languages',
+            'avatar',
+            'avatar_url',
+            'photo_url',
+            'is_superhost',
+            'review_count',
+            'created_at',
+            'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'avatar']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'photo_url']
 
-    def get_avatar(self, obj):
-        return obj.avatar
+    def get_photo_url(self, obj):
+        return obj.photo_url
 
 
 class ReviewSerializer(serializers.ModelSerializer):

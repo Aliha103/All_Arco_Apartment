@@ -791,37 +791,8 @@ class ReferralCredit(models.Model):
 
 
 def host_avatar_upload_path(instance, filename):
-    """Upload path for host profile avatar."""
+    """Legacy upload path for host profile avatar (kept for older migrations)."""
     return os.path.join('hosts', 'avatars', filename)
-
-
-class HostProfile(models.Model):
-    """Public host profile shown on marketing pages."""
-
-    display_name = models.CharField(max_length=150)
-    role_title = models.CharField(max_length=150, blank=True, default='')
-    bio = models.TextField(blank=True, default='')
-    languages = models.JSONField(default=list, blank=True)
-    photo = models.ImageField(upload_to=host_avatar_upload_path, null=True, blank=True)
-    photo_url = models.URLField(null=True, blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'users_hostprofile'
-        verbose_name = 'Host Profile'
-        verbose_name_plural = 'Host Profiles'
-
-    @property
-    def avatar(self):
-        """Return either uploaded photo or external URL."""
-        if self.photo and hasattr(self.photo, 'url'):
-            try:
-                return self.photo.url
-            except ValueError:
-                pass
-        return self.photo_url or ''
 
 
 class Review(models.Model):

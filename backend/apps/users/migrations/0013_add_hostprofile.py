@@ -7,10 +7,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0012_add_gallery_permissions'),
+        ('users', '0013_merge_0012'),
     ]
 
     operations = [
+        migrations.DeleteModel(
+            name='HostProfile',
+        ),
         migrations.CreateModel(
             name='HostProfile',
             fields=[
