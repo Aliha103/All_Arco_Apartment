@@ -33,12 +33,24 @@ import SiteFooter from '../components/SiteFooter';
 type Step = 'plan' | 'guest';
 
 const COUNTRIES = [
-  'Italy', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 'Spain',
-  'Netherlands', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Switzerland', 'Austria', 'Belgium',
-  'Ireland', 'Portugal', 'Greece', 'Turkey', 'Poland', 'Czech Republic', 'Hungary', 'Romania',
-  'Bulgaria', 'Croatia', 'Serbia', 'Slovakia', 'Slovenia', 'Iceland', 'Japan', 'China', 'India',
-  'Brazil', 'Argentina', 'Mexico', 'South Africa', 'New Zealand', 'Singapore', 'United Arab Emirates',
-  'Saudi Arabia', 'Qatar', 'Egypt', 'Morocco'
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia', 'Australia', 'Austria',
+  'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia',
+  'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia',
+  'Cameroon', 'Canada', 'Cape Verde', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
+  'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador',
+  'Estonia', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece',
+  'Guatemala', 'Guinea', 'Guyana', 'Haiti', 'Honduras', 'Hong Kong', 'Hungary', 'Iceland', 'India', 'Indonesia',
+  'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kuwait',
+  'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania',
+  'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Mauritania', 'Mauritius', 'Mexico',
+  'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nepal',
+  'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Macedonia', 'Norway', 'Oman', 'Pakistan',
+  'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania',
+  'Russia', 'Rwanda', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia',
+  'Slovenia', 'Somalia', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Sudan', 'Sweden', 'Switzerland',
+  'Syria', 'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Togo', 'Trinidad and Tobago', 'Tunisia', 'Turkey',
+  'Turkmenistan', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay',
+  'Uzbekistan', 'Venezuela', 'Vietnam', 'Zambia', 'Zimbabwe'
 ];
 
 const today = format(new Date(), 'yyyy-MM-dd');
@@ -235,6 +247,7 @@ function BookingPageContent() {
   });
   const [guestDetailsEnabled, setGuestDetailsEnabled] = useState(false);
   const [guestDetails, setGuestDetails] = useState([{ first_name: '', last_name: '', birth_country: '', note: '' }]);
+  const [cancellationOption, setCancellationOption] = useState<'flex' | 'nonref'>('flex');
 
   // Sync URL params
   const updateURL = useCallback((params: Record<string, string>) => {
@@ -336,6 +349,14 @@ function BookingPageContent() {
     };
   }, [pricing, nights]);
 
+  const displayPricing = useMemo(() => {
+    if (!correctedPricing) return null;
+    const baseTotal = parseFloat(String(correctedPricing.total || 0)) || 0;
+    const discount = cancellationOption === 'nonref' ? baseTotal * 0.1 : 0;
+    const total_after_policy = baseTotal - discount;
+    return { ...correctedPricing, discount, total_after_policy };
+  }, [correctedPricing, cancellationOption]);
+
   const createBooking = useCreateBooking();
   const createCheckout = useCreateCheckoutSession();
 
@@ -418,6 +439,7 @@ function BookingPageContent() {
         guests: totalGuests,
         ...guestInfo,
         special_requests: specialRequestsCombined,
+        cancellation_policy: cancellationOption === 'nonref' ? 'non_refundable' : 'flex_24h',
       };
 
       const booking = await createBooking.mutateAsync(bookingData);
@@ -469,9 +491,6 @@ function BookingPageContent() {
           <h1 className="text-3xl sm:text-4xl font-light text-gray-900 leading-tight">
             Book All’Arco in minutes.
           </h1>
-          <p className="text-gray-700 max-w-2xl">
-            Pick dates and guests, confirm details, and you’re done. Clear prices, instant confirmation.
-          </p>
         </motion.div>
 
         <div className="grid lg:grid-cols-[2fr_1fr] gap-6 lg:gap-8 items-start">
@@ -675,26 +694,52 @@ function BookingPageContent() {
                         </div>
                       </div>
 
-                      <motion.div
-                        className="space-y-2"
-                        whileHover={{ scale: 1.01 }}
-                      >
-                        <Label htmlFor="special_requests" className="text-gray-800 font-medium">Special Requests (optional)</Label>
-                        <Textarea
-                          id="special_requests"
-                          placeholder="Late check-in, allergies, anniversary notes…"
-                          value={guestInfo.special_requests}
-                          onChange={(e) => !isProcessing && setGuestInfo({ ...guestInfo, special_requests: e.target.value })}
-                          disabled={isProcessing}
-                          className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 min-h-[120px] focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
-                        />
-                      </motion.div>
+              <motion.div
+                className="space-y-2"
+                whileHover={{ scale: 1.01 }}
+              >
+                <Label htmlFor="special_requests" className="text-gray-800 font-medium">Special Requests (optional)</Label>
+                <Textarea
+                  id="special_requests"
+                  placeholder="Late check-in, allergies, anniversary notes…"
+                  value={guestInfo.special_requests}
+                  onChange={(e) => !isProcessing && setGuestInfo({ ...guestInfo, special_requests: e.target.value })}
+                  disabled={isProcessing}
+                  className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 min-h-[120px] focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                />
+              </motion.div>
 
-                      <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-gray-900 font-medium">Guest details (optional)</p>
-                            <p className="text-sm text-gray-600">Add names/notes for each guest.</p>
+              <div className="space-y-4">
+                <Label className="text-gray-800 font-medium">Cancellation preference</Label>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCancellationOption('flex')}
+                    className={`text-left p-4 rounded-xl border ${
+                      cancellationOption === 'flex' ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200 bg-white'
+                    } transition`}
+                  >
+                    <div className="font-semibold text-gray-900">Flexible</div>
+                    <p className="text-sm text-gray-700">Free cancel until 24h before check-in; after that, full stay is charged.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCancellationOption('nonref')}
+                    className={`text-left p-4 rounded-xl border ${
+                      cancellationOption === 'nonref' ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white'
+                    } transition`}
+                  >
+                    <div className="font-semibold text-gray-900">Non-refundable (save 10%)</div>
+                    <p className="text-sm text-gray-700">Pay now, no cancellations. 10% discount applied.</p>
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-900 font-medium">Guest details (optional)</p>
+                    <p className="text-sm text-gray-600">Add names/notes for each guest.</p>
                           </div>
                           <button
                             type="button"
@@ -824,6 +869,17 @@ function BookingPageContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 p-6">
+                <div className="rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">Flexible</span>
+                    <span className="text-xs text-gray-600">Free until 24h</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">Non-refundable</span>
+                    <span className="text-xs text-gray-600">10% discount applied</span>
+                  </div>
+                  <div className="text-xs text-amber-700">City tax is paid at the property.</div>
+                </div>
                 <AnimatePresence mode="wait">
                   {calculatingPrice ? (
                     <motion.div
@@ -834,7 +890,7 @@ function BookingPageContent() {
                     >
                       <PriceSummarySkeleton />
                     </motion.div>
-                  ) : correctedPricing ? (
+                  ) : displayPricing ? (
                     <motion.div
                       key="pricing"
                       initial={{ opacity: 0, y: 10 }}
@@ -844,23 +900,29 @@ function BookingPageContent() {
                     >
                       <div className="space-y-3 text-sm text-gray-800">
                         <div className="flex justify-between">
-                          <span>{safeFormatCurrency(correctedPricing.nightly_rate)} × {nights || 0} night{nights === 1 ? '' : 's'}</span>
-                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(correctedPricing.accommodation_total)}</span>
+                          <span>{safeFormatCurrency(displayPricing.nightly_rate)} × {nights || 0} night{nights === 1 ? '' : 's'}</span>
+                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(displayPricing.accommodation_total)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Cleaning fee</span>
-                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(correctedPricing.cleaning_fee)}</span>
+                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(displayPricing.cleaning_fee)}</span>
                         </div>
-                        {parseFloat(correctedPricing.extra_guest_fee || '0') > 0 && (
+                        {parseFloat(displayPricing.extra_guest_fee || '0') > 0 && (
                           <div className="flex justify-between">
                             <span>Extra guest fee</span>
-                            <span className="text-gray-900 font-semibold">{safeFormatCurrency(correctedPricing.extra_guest_fee)}</span>
+                            <span className="text-gray-900 font-semibold">{safeFormatCurrency(displayPricing.extra_guest_fee)}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
-                          <span>Tourist tax</span>
-                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(correctedPricing.tourist_tax)}</span>
+                          <span>Tourist tax (pay at property)</span>
+                          <span className="text-gray-900 font-semibold">{safeFormatCurrency(displayPricing.tourist_tax)}</span>
                         </div>
+                        {displayPricing.discount > 0 && (
+                          <div className="flex justify-between text-emerald-700">
+                            <span>Non-refundable discount</span>
+                            <span>-{safeFormatCurrency(displayPricing.discount)}</span>
+                          </div>
+                        )}
                       </div>
                       <motion.div
                         className="border-t border-gray-200 pt-4 mt-4"
@@ -870,10 +932,10 @@ function BookingPageContent() {
                       >
                         <div className="flex justify-between text-lg font-semibold text-gray-900">
                           <span>Total</span>
-                          <span>{safeFormatCurrency(correctedPricing.total)}</span>
+                          <span>{safeFormatCurrency(displayPricing.total_after_policy)}</span>
                         </div>
                         <p className="text-xs text-gray-600 mt-1">
-                          Charged securely when you confirm. Includes all required taxes.
+                          Charged securely when you confirm. City tax is paid at the property.
                         </p>
                       </motion.div>
                     </motion.div>
