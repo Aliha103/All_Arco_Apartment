@@ -385,7 +385,7 @@ export default function BookingWidget() {
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<Promotion | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
-  const [baseRate, setBaseRate] = useState(CONFIG.pricing.baseRate);
+  const [baseRate, setBaseRate] = useState<number>(CONFIG.pricing.baseRate);
   const [blockedRanges, setBlockedRanges] = useState<BlockedRange[]>([]);
   const [isLoadingPricing, setIsLoadingPricing] = useState(true);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(true);
