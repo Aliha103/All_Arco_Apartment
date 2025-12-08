@@ -43,7 +43,7 @@ class BlockedDateAdmin(admin.ModelAdmin):
 
 @admin.register(BookingGuest)
 class BookingGuestAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'booking', 'is_primary', 'country_of_birth', 'created_at']
+    list_display = ['first_name', 'last_name', 'booking', 'is_primary', 'relationship', 'parent_guest', 'country_of_birth', 'created_at']
     list_filter = ['is_primary', 'country_of_birth', 'created_at']
-    search_fields = ['first_name', 'last_name', 'booking__booking_id', 'email']
+    search_fields = ['first_name', 'last_name', 'booking__booking_id', 'email', 'relationship']
     readonly_fields = ['created_at', 'updated_at']

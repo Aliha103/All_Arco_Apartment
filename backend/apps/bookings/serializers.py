@@ -95,7 +95,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         booking.save(update_fields=['is_non_refundable'])
 
         # Create primary guest record
-        BookingGuest.objects.create(
+        primary_guest = BookingGuest.objects.create(
             booking=booking,
             is_primary=True,
             first_name=first_name or booking.guest_name.split(' ')[0] if booking.guest_name else '',
@@ -117,6 +117,8 @@ class BookingCreateSerializer(serializers.ModelSerializer):
                 last_name=ln or '',
                 country_of_birth=str(guest.get('birth_country', '')).strip() or None,
                 note=str(guest.get('note', '')).strip() or None,
+                parent_guest=primary_guest,
+                relationship=str(guest.get('relationship', '')).strip() or None,
             )
 
         return booking

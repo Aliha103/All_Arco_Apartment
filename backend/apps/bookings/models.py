@@ -264,6 +264,15 @@ class BookingGuest(models.Model):
     email = models.EmailField(blank=True, null=True)  # Required for primary, optional for others
     date_of_birth = models.DateField(blank=True, null=True)
     country_of_birth = models.CharField(max_length=100, blank=True, null=True)
+    relationship = models.CharField(max_length=50, blank=True, null=True, help_text='Relationship to primary guest')
+    parent_guest = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='family_members',
+        help_text='Parent/primary guest for tree view'
+    )
 
     # Italian citizen fields (required if country_of_birth is Italy)
     birth_province = models.CharField(max_length=100, blank=True, null=True)
@@ -290,6 +299,7 @@ class BookingGuest(models.Model):
         indexes = [
             models.Index(fields=['booking'], name='bookings_bo_booking_idx'),
             models.Index(fields=['is_primary'], name='bookings_bo_is_prim_idx'),
+            models.Index(fields=['parent_guest'], name='bookings_bo_parent_idx'),
         ]
 
     def __str__(self):
