@@ -46,10 +46,16 @@ def create_checkout_session(request):
         )
 
     amount_to_charge = float(booking.amount_due or booking.total_price or 0)
+    # Resolve frontend host for redirects (fallback to production domain)
+    frontend_host = getattr(settings, 'FRONTEND_URL', None) or (
+        settings.CORS_ALLOWED_ORIGINS[0] if settings.CORS_ALLOWED_ORIGINS else None
+    ) or 'https://www.allarcoapartment.com'
+    frontend_host = frontend_host.rstrip('/')
+
     if amount_to_charge <= 0:
         # Fully covered by credits - mark as confirmed/paid without Stripe
-        booking.status = 'confirmed'
-        booking.payment_status = 'paid'
+        booking.status = 'pending'
+        booking.payment_status = 'unpaid'
         booking.save(update_fields=['status', 'payment_status'])
         return Response({'session_url': None, 'session_id': None, 'message': 'Booking covered by credits'})
     
@@ -71,8 +77,8 @@ def create_checkout_session(request):
                 },
             ],
             mode='payment',
-            success_url=f"{settings.CORS_ALLOWED_ORIGINS[0]}/booking/{booking.id}/confirmation?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{settings.CORS_ALLOWED_ORIGINS[0]}/book",
+            success_url=f"{frontend_host}/booking/{booking.id}/confirmation?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{frontend_host}/book",
             customer_email=booking.guest_email,
             metadata={
                 'booking_id': str(booking.id),
@@ -181,20 +187,20 @@ def stripe_webhook(request):
             try:
                 booking = Booking.objects.get(id=booking_id)
                 
-                # Create payment record
-                payment = Payment.objects.create(
-                    booking=booking,
-                    stripe_payment_intent_id=session['payment_intent'],
-                    amount=booking.amount_due or booking.total_price,
-                    currency='eur',
-                    status='succeeded',
-                    payment_method=session.get('payment_method_types', ['card'])[0]
-                )
-                
-                # Update booking status
-                booking.status = 'confirmed'
-                booking.payment_status = 'paid'
-                booking.save()
+        # Create payment record
+        payment = Payment.objects.create(
+            booking=booking,
+            stripe_payment_intent_id=session['payment_intent'],
+            amount=booking.amount_due or booking.total_price,
+            currency='eur',
+            status='succeeded',
+            payment_method=session.get('payment_method_types', ['card'])[0]
+        )
+        
+        # Update booking status
+        booking.status = 'confirmed'
+        booking.payment_status = 'paid'
+        booking.save(update_fields=['status', 'payment_status'])
                 
                 # TODO: Send confirmation email
                 
