@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, GuestNote, Role, Permission
+from .models import User, GuestNote, Role, Permission, HostProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -225,3 +225,20 @@ class UserWithRoleSerializer(serializers.ModelSerializer):
         if obj.referred_by:
             return obj.referred_by.get_full_name()
         return None
+
+
+# ============================================================================
+# Host Profile Serializer
+# ============================================================================
+
+class HostProfileSerializer(serializers.ModelSerializer):
+    """Serializer for HostProfile model."""
+    photo_url = serializers.CharField(source='photo_url', read_only=True)
+
+    class Meta:
+        model = HostProfile
+        fields = [
+            'id', 'display_name', 'bio', 'languages',
+            'photo_url', 'is_superhost', 'review_count', 'updated_at'
+        ]
+        read_only_fields = ['id', 'photo_url', 'updated_at']

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, GuestNote, Role, Permission
+from .models import User, GuestNote, Role, Permission, HostProfile
 
 
 @admin.register(User)
@@ -52,3 +52,26 @@ class GuestNoteAdmin(admin.ModelAdmin):
     list_filter = ['created_at']
     search_fields = ['guest__email', 'guest__first_name', 'guest__last_name', 'note']
     readonly_fields = ['created_at']
+
+
+@admin.register(HostProfile)
+class HostProfileAdmin(admin.ModelAdmin):
+    list_display = ['display_name', 'is_superhost', 'review_count', 'updated_at']
+    list_filter = ['is_superhost', 'created_at']
+    search_fields = ['display_name', 'bio']
+    readonly_fields = ['created_at', 'updated_at', 'photo_url']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('display_name', 'bio', 'languages')
+        }),
+        ('Avatar', {
+            'fields': ('avatar', 'avatar_url', 'photo_url')
+        }),
+        ('Display Settings', {
+            'fields': ('is_superhost', 'review_count')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )

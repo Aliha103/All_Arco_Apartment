@@ -2,17 +2,18 @@ from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.contrib.auth import login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
-from .models import User, GuestNote, Role, Permission, PasswordResetToken
+from .models import User, GuestNote, Role, Permission, PasswordResetToken, HostProfile
 from apps.bookings.models import Booking
 from .serializers import (
     UserSerializer, UserCreateSerializer, LoginSerializer, GuestNoteSerializer,
-    UserWithRoleSerializer, RoleSerializer, PermissionSerializer
+    UserWithRoleSerializer, RoleSerializer, PermissionSerializer, HostProfileSerializer
 )
-from .permissions import HasPermission
+from .permissions import HasPermission, IsTeamMember
 
 
 @api_view(['POST'])
@@ -770,3 +771,57 @@ def seed_rbac_data(request):
         'total_permissions': Permission.objects.count(),
         'total_roles': Role.objects.count(),
     })
+
+
+# ============================================================================
+# Host Profile Management
+# ============================================================================
+
+class HostProfileViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing host profile.
+
+    Public endpoints (AllowAny):
+    - GET /api/host-profile/ - List profiles (returns single profile or empty array)
+    - GET /api/host-profile/{id}/ - Retrieve single profile
+
+    Protected endpoints (IsAuthenticated + IsTeamMember):
+    - PUT /api/host-profile/{id}/ - Update profile
+    - PATCH /api/host-profile/{id}/ - Partial update
+
+    Supports both file upload and external URL for avatar images.
+    """
+    queryset = HostProfile.objects.all()
+    serializer_class = HostProfileSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_permissions(self):
+        """Set permissions based on action."""
+        if self.action in ['list', 'retrieve']:
+            # Public read access
+            return [AllowAny()]
+        else:
+            # Protected write access (team members and admins only)
+            return [IsAuthenticated(), IsTeamMember()]
+
+    def update(self, request, *args, **kwargs):
+        """Update host profile with file upload support."""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        # Handle file upload
+        if 'avatar' in request.FILES:
+            request.data['avatar'] = request.FILES['avatar']
+
+        # Handle URL input
+        if 'avatar_url' in request.data:
+            # Keep the URL as is
+            pass
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -18,6 +18,9 @@ import {
   Coffee,
   Waves,
   Award,
+  Pencil,
+  X,
+  Check,
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
@@ -25,6 +28,8 @@ import BookingWidget from '@/components/booking/BookingWidget';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
 import LocationSection from '@/components/location/LocationSection';
 import { api } from '@/lib/api';
+import { HostProfile } from '@/types';
+import { useAuthStore } from '@/stores/authStore';
 
 // Smooth easing for all animations
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
@@ -167,6 +172,24 @@ export default function Home() {
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
+  // Host profile state
+  const [hostProfile, setHostProfile] = useState<HostProfile | null>(null);
+  const [isLoadingHost, setIsLoadingHost] = useState(true);
+  const [isEditingHost, setIsEditingHost] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    display_name: '',
+    languages: '',
+    bio: '',
+    avatar_url: '',
+    is_superhost: true,
+    review_count: 59,
+  });
+  const [editError, setEditError] = useState('');
+  const [editSuccess, setEditSuccess] = useState('');
+
+  // Auth state
+  const { user, isTeamMember, isSuperAdmin } = useAuthStore();
+
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
@@ -218,6 +241,32 @@ export default function Home() {
     fetchGalleryImages();
   }, []);
 
+  // Fetch host profile from database
+  useEffect(() => {
+    const fetchHostProfile = async () => {
+      try {
+        const response = await api.hostProfile.get();
+        if (response.data && response.data.length > 0) {
+          const profile = response.data[0];
+          setHostProfile(profile);
+          setEditFormData({
+            display_name: profile.display_name,
+            languages: profile.languages,
+            bio: profile.bio || '',
+            avatar_url: profile.photo_url || '',
+            is_superhost: profile.is_superhost,
+            review_count: profile.review_count,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch host profile:', error);
+      } finally {
+        setIsLoadingHost(false);
+      }
+    };
+    fetchHostProfile();
+  }, []);
+
   // Auto-scroll hero images every 5 seconds
   useEffect(() => {
     if (heroImages.length <= 1) return;
@@ -226,6 +275,92 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(interval);
   }, [heroImages.length]);
+
+  // Save handler for host profile edits
+  const handleSaveHost = async () => {
+    setEditError('');
+    setEditSuccess('');
+
+    // Validation
+    if (!editFormData.display_name || editFormData.display_name.trim().length < 2) {
+      setEditError('Display name must be at least 2 characters');
+      return;
+    }
+    if (editFormData.display_name.length > 200) {
+      setEditError('Display name must be 200 characters or less');
+      return;
+    }
+    if (editFormData.languages.length > 500) {
+      setEditError('Languages must be 500 characters or less');
+      return;
+    }
+    if (editFormData.review_count < 0) {
+      setEditError('Review count must be a positive number');
+      return;
+    }
+
+    if (!hostProfile) return;
+
+    try {
+      const updateData = {
+        display_name: editFormData.display_name.trim(),
+        languages: editFormData.languages.trim(),
+        bio: editFormData.bio.trim(),
+        avatar_url: editFormData.avatar_url.trim(),
+        is_superhost: editFormData.is_superhost,
+        review_count: editFormData.review_count,
+      };
+
+      const response = await api.hostProfile.update(hostProfile.id, updateData);
+      setHostProfile(response.data);
+      setIsEditingHost(false);
+      setEditSuccess('Host profile updated successfully');
+      setTimeout(() => setEditSuccess(''), 3000);
+    } catch (error: any) {
+      console.error('Failed to save host profile:', error);
+      setEditError(error.response?.data?.error || 'Failed to save changes');
+    }
+  };
+
+  // Handle edit button click
+  const handleEditClick = () => {
+    setIsEditingHost(true);
+    setEditError('');
+    setEditSuccess('');
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setIsEditingHost(false);
+    setEditError('');
+    setEditSuccess('');
+    // Reset form data to current profile
+    if (hostProfile) {
+      setEditFormData({
+        display_name: hostProfile.display_name,
+        languages: hostProfile.languages,
+        bio: hostProfile.bio || '',
+        avatar_url: hostProfile.photo_url || '',
+        is_superhost: hostProfile.is_superhost,
+        review_count: hostProfile.review_count,
+      });
+    }
+  };
+
+  // Create computed display host object
+  const displayHost = hostProfile ? {
+    name: hostProfile.display_name,
+    isSuperhost: hostProfile.is_superhost,
+    languages: hostProfile.languages ? hostProfile.languages.split(',').map(l => l.trim()) : [],
+    totalReviews: hostProfile.review_count,
+    photoUrl: hostProfile.photo_url,
+  } : {
+    name: 'Ali Hassan Cheema',
+    isSuperhost: true,
+    languages: ['English', 'Italian'],
+    totalReviews: 59,
+    photoUrl: '',
+  };
 
   return (
     <div className="min-h-screen bg-white antialiased">
@@ -406,20 +541,139 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Host Info - Simple */}
-              <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold">
-                  {hostInfo.name.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Hosted by {hostInfo.name}</p>
-                  <p className="text-sm text-gray-500">{hostInfo.totalReviews} reviews · {hostInfo.languages.slice(0, 2).join(', ')}</p>
-                </div>
-                {hostInfo.isSuperhost && (
-                  <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
-                    <Award className="w-3.5 h-3.5" />
-                    Superhost
-                  </span>
+              {/* Host Info - With Inline Editing */}
+              <div className="relative pt-6 border-t border-gray-100">
+                {/* Edit Button (Admin/Team Only) */}
+                {user && (isTeamMember() || isSuperAdmin()) && !isEditingHost && (
+                  <button
+                    onClick={handleEditClick}
+                    className="absolute top-4 right-0 p-2 text-gray-400 hover:text-[#C4A572] hover:bg-gray-50 rounded-lg transition-colors"
+                    aria-label="Edit host profile"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Success/Error Messages */}
+                {editSuccess && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg">
+                    {editSuccess}
+                  </div>
+                )}
+                {editError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 text-sm rounded-lg">
+                    {editError}
+                  </div>
+                )}
+
+                {!isEditingHost ? (
+                  /* Display Mode */
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold">
+                      {displayHost.photoUrl ? (
+                        <Image src={normalizeImageUrl(displayHost.photoUrl)} alt={displayHost.name} fill className="object-cover rounded-full" unoptimized />
+                      ) : (
+                        displayHost.name.split(' ').map(n => n[0]).join('')
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Hosted by {displayHost.name}</p>
+                      <p className="text-sm text-gray-500">{displayHost.totalReviews} reviews · {displayHost.languages.slice(0, 2).join(', ')}</p>
+                    </div>
+                    {displayHost.isSuperhost && (
+                      <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
+                        <Award className="w-3.5 h-3.5" />
+                        Superhost
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  /* Edit Mode */
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Display Name *</label>
+                      <input
+                        type="text"
+                        value={editFormData.display_name}
+                        onChange={(e) => setEditFormData({...editFormData, display_name: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
+                        placeholder="Your name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Languages</label>
+                      <input
+                        type="text"
+                        value={editFormData.languages}
+                        onChange={(e) => setEditFormData({...editFormData, languages: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
+                        placeholder="English, Italian"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Bio (not displayed on homepage)</label>
+                      <textarea
+                        value={editFormData.bio}
+                        onChange={(e) => setEditFormData({...editFormData, bio: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
+                        rows={3}
+                        placeholder="Tell guests about yourself..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL</label>
+                      <input
+                        type="text"
+                        value={editFormData.avatar_url}
+                        onChange={(e) => setEditFormData({...editFormData, avatar_url: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
+                        placeholder="https://..."
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.is_superhost}
+                          onChange={(e) => setEditFormData({...editFormData, is_superhost: e.target.checked})}
+                          className="w-4 h-4 text-[#C4A572] border-gray-300 rounded focus:ring-[#C4A572]"
+                        />
+                        <span className="text-sm text-gray-700">Superhost</span>
+                      </label>
+
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-700">Review Count:</label>
+                        <input
+                          type="number"
+                          value={editFormData.review_count}
+                          onChange={(e) => setEditFormData({...editFormData, review_count: parseInt(e.target.value) || 0})}
+                          className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={handleSaveHost}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#C4A572] text-white rounded-lg hover:bg-[#B39562] transition-colors"
+                      >
+                        <Check className="w-4 h-4" />
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </motion.div>

@@ -296,3 +296,15 @@ export interface HeroImagePublic {
   image_type: 'hero' | 'gallery' | 'both';
   order: number;
 }
+
+// Host Profile types
+export interface HostProfile {
+  id: string;
+  display_name: string;
+  bio: string;
+  languages: string;
+  photo_url: string;
+  is_superhost: boolean;
+  review_count: number;
+  updated_at: string;
+}
