@@ -32,6 +32,15 @@ import SiteFooter from '../components/SiteFooter';
 
 type Step = 'plan' | 'guest';
 
+const COUNTRIES = [
+  'Italy', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 'Spain',
+  'Netherlands', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Switzerland', 'Austria', 'Belgium',
+  'Ireland', 'Portugal', 'Greece', 'Turkey', 'Poland', 'Czech Republic', 'Hungary', 'Romania',
+  'Bulgaria', 'Croatia', 'Serbia', 'Slovakia', 'Slovenia', 'Iceland', 'Japan', 'China', 'India',
+  'Brazil', 'Argentina', 'Mexico', 'South Africa', 'New Zealand', 'Singapore', 'United Arab Emirates',
+  'Saudi Arabia', 'Qatar', 'Egypt', 'Morocco'
+];
+
 const today = format(new Date(), 'yyyy-MM-dd');
 
 // Utility functions
@@ -217,13 +226,15 @@ function BookingPageContent() {
   const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
   const [guestCounts, setGuestCounts] = useState({ adults: 2, children: 0, infants: 0 });
   const [guestInfo, setGuestInfo] = useState({
-    guest_name: '',
+    first_name: '',
+    last_name: '',
     guest_email: '',
     guest_phone: '',
+    country: '',
     special_requests: '',
   });
   const [guestDetailsEnabled, setGuestDetailsEnabled] = useState(false);
-  const [guestDetails, setGuestDetails] = useState([{ name: '', note: '' }]);
+  const [guestDetails, setGuestDetails] = useState([{ first_name: '', last_name: '', birth_country: '', note: '' }]);
 
   // Sync URL params
   const updateURL = useCallback((params: Record<string, string>) => {
@@ -384,11 +395,13 @@ function BookingPageContent() {
 
     const guestDetailsSummary = guestDetailsEnabled
       ? guestDetails
-          .map(({ name, note }) => {
-            const trimmed = name.trim();
-            if (!trimmed) return '';
-            const notePart = note.trim() ? ` (${note.trim()})` : '';
-            return `${trimmed}${notePart}`;
+          .map(({ first_name, last_name, birth_country, note }) => {
+            const first = first_name.trim();
+            const last = last_name.trim();
+            if (!first && !last) return '';
+            const countryPart = birth_country ? `, ${birth_country}` : '';
+            const notePart = note.trim() ? ` - ${note.trim()}` : '';
+            return `${first} ${last}${countryPart}${notePart}`.trim();
           })
           .filter(Boolean)
           .join('; ')
@@ -582,25 +595,50 @@ function BookingPageContent() {
                       aria-busy={isProcessing}
                     >
                       <div className="grid sm:grid-cols-2 gap-4">
-                        <motion.div
-                          className="space-y-2"
-                          whileHover={{ scale: 1.01 }}
-                        >
-                          <Label htmlFor="guest_name" className="text-gray-800 font-medium">Full Name</Label>
+                        <motion.div className="space-y-2" whileHover={{ scale: 1.01 }}>
+                          <Label htmlFor="guest_first" className="text-gray-800 font-medium">First name</Label>
                           <Input
-                            id="guest_name"
-                            placeholder="Ada Lovelace"
-                            value={guestInfo.guest_name}
-                            onChange={(e) => setGuestInfo({ ...guestInfo, guest_name: e.target.value })}
+                            id="guest_first"
+                            placeholder="Ada"
+                            value={guestInfo.first_name}
+                            onChange={(e) => setGuestInfo({ ...guestInfo, first_name: e.target.value })}
                             required
                             disabled={isProcessing}
                             className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                           />
                         </motion.div>
-                        <motion.div
-                          className="space-y-2"
-                          whileHover={{ scale: 1.01 }}
-                        >
+                        <motion.div className="space-y-2" whileHover={{ scale: 1.01 }}>
+                          <Label htmlFor="guest_last" className="text-gray-800 font-medium">Last name</Label>
+                          <Input
+                            id="guest_last"
+                            placeholder="Lovelace"
+                            value={guestInfo.last_name}
+                            onChange={(e) => setGuestInfo({ ...guestInfo, last_name: e.target.value })}
+                            required
+                            disabled={isProcessing}
+                            className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                          />
+                        </motion.div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <motion.div className="space-y-2" whileHover={{ scale: 1.01 }}>
+                          <Label htmlFor="guest_country" className="text-gray-800 font-medium">Country</Label>
+                          <select
+                            id="guest_country"
+                            value={guestInfo.country}
+                            onChange={(e) => setGuestInfo({ ...guestInfo, country: e.target.value })}
+                            required
+                            disabled={isProcessing}
+                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
+                          >
+                            <option value="">Select country</option>
+                            {COUNTRIES.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </motion.div>
+                        <motion.div className="space-y-2" whileHover={{ scale: 1.01 }}>
                           <Label htmlFor="guest_email" className="text-gray-800 font-medium">Email</Label>
                           <Input
                             id="guest_email"
@@ -616,10 +654,7 @@ function BookingPageContent() {
                       </div>
 
                       <div className="grid sm:grid-cols-2 gap-4">
-                        <motion.div
-                          className="space-y-2"
-                          whileHover={{ scale: 1.01 }}
-                        >
+                        <motion.div className="space-y-2" whileHover={{ scale: 1.01 }}>
                           <Label htmlFor="guest_phone" className="text-gray-800 font-medium">Phone</Label>
                           <Input
                             id="guest_phone"
@@ -674,16 +709,42 @@ function BookingPageContent() {
                             {guestDetails.map((g, idx) => (
                               <div key={idx} className="grid sm:grid-cols-2 gap-3">
                                 <Input
-                                  placeholder="Guest name"
-                                  value={g.name}
+                                  placeholder="First name"
+                                  value={g.first_name}
                                   onChange={(e) => {
                                     const next = [...guestDetails];
-                                    next[idx].name = e.target.value;
+                                    next[idx].first_name = e.target.value;
                                     setGuestDetails(next);
                                   }}
                                   className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                                   disabled={isProcessing}
                                 />
+                                <Input
+                                  placeholder="Last name"
+                                  value={g.last_name}
+                                  onChange={(e) => {
+                                    const next = [...guestDetails];
+                                    next[idx].last_name = e.target.value;
+                                    setGuestDetails(next);
+                                  }}
+                                  className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                                  disabled={isProcessing}
+                                />
+                                <select
+                                  value={g.birth_country}
+                                  onChange={(e) => {
+                                    const next = [...guestDetails];
+                                    next[idx].birth_country = e.target.value;
+                                    setGuestDetails(next);
+                                  }}
+                                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
+                                  disabled={isProcessing}
+                                >
+                                  <option value="">Birth country</option>
+                                  {COUNTRIES.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
                                 <Input
                                   placeholder="Notes (diet, access needs)"
                                   value={g.note}
@@ -699,7 +760,7 @@ function BookingPageContent() {
                             ))}
                             <button
                               type="button"
-                              onClick={() => setGuestDetails([...guestDetails, { name: '', note: '' }])}
+                              onClick={() => setGuestDetails([...guestDetails, { first_name: '', last_name: '', birth_country: '', note: '' }])}
                               className="text-sm font-semibold text-[#C4A572] hover:text-[#B39562] focus:outline-none"
                               disabled={isProcessing}
                             >
