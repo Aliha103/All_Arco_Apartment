@@ -432,28 +432,6 @@ function BookingPageContent() {
           <p className="text-gray-700 max-w-2xl">
             Pick dates and guests, confirm details, and you’re done. Clear prices, instant confirmation.
           </p>
-          <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-gray-700">
-            <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 font-medium">
-              <BadgeCheck className="w-4 h-4 text-[#C4A572]" /> Step 1: Dates & Guests
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 font-medium">
-              <BadgeCheck className="w-4 h-4 text-[#C4A572]" /> Step 2: Details & Pay
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              Secure checkout • Instant confirmation
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700">
-            <span className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1">
-              <AlertCircle className="w-4 h-4 text-amber-500" />
-              Max 5 guests (adults + children) · Infants don’t count
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1">
-              <AlertCircle className="w-4 h-4 text-amber-500" />
-              City tax applies to adults only
-            </span>
-          </div>
         </motion.div>
 
         <div className="grid lg:grid-cols-[2fr_1fr] gap-6 lg:gap-8 items-start">
@@ -547,43 +525,6 @@ function BookingPageContent() {
                           hint="Infants don't count toward max guests"
                         />
                       </div>
-
-                      <AnimatePresence mode="wait">
-                        {dates.checkIn && dates.checkOut && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="rounded-xl border border-gray-200 bg-white p-4 space-y-2"
-                          >
-                            <div className="flex items-center gap-2 text-gray-800">
-                              <CalendarCheck2 className="w-4 h-4 text-emerald-500" />
-                              <span className="font-medium">
-                                {nights || 0} night{nights === 1 ? '' : 's'} • {dates.checkIn} → {dates.checkOut}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              {checkingAvailability ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                                  <span className="text-blue-600">Verifying availability...</span>
-                                </>
-                              ) : availability?.available === false ? (
-                                <>
-                                  <AlertCircle className="w-4 h-4 text-amber-500" />
-                                  <span className="text-amber-600">These dates are unavailable. Please select different dates.</span>
-                                </>
-                              ) : availability?.available ? (
-                                <>
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                  <span className="text-emerald-600">Available! Ready to proceed with your booking.</span>
-                                </>
-                              ) : null}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
 
                       <motion.div
                         whileHover={{ scale: 1.02 }}
