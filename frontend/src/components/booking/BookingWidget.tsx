@@ -439,43 +439,53 @@ export default function BookingWidget() {
   const maxAdults = Math.max(1, CONFIG.guests.maxTotal - guests.children);
   const maxChildren = Math.max(0, CONFIG.guests.maxTotal - guests.adults);
 
-  // Calculate disabled dates from blocked ranges
-  const disabledMatcher = useMemo(() => {
-    const disabledDates: Date[] = [];
-
-    if (!Array.isArray(blockedRanges)) {
-      return [{ before: today }];
-    }
+  // Build a quick lookup set for blocked dates (start..end-1)
+  const blockedDateSet = useMemo(() => {
+    const set = new Set<string>();
+    if (!Array.isArray(blockedRanges)) return set;
 
     blockedRanges.forEach((range) => {
-      try {
-        if (!range || !range.start || !range.end) return;
+      if (!range || !range.start || !range.end) return;
 
+      try {
         const startDate = parseISO(range.start);
         const endDate = parseISO(range.end);
-
-        // Validate dates
         if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return;
 
-        // For bookings: block all dates from start to (end - 1 day)
-        // This makes the checkout date (end) available for new check-ins
-        let current = new Date(startDate);
+        // Block nights from start to end-1 (checkout day is free for availability checks)
         const lastBlockedDate = new Date(endDate);
         lastBlockedDate.setDate(lastBlockedDate.getDate() - 1);
 
+        let current = new Date(startDate);
         while (current <= lastBlockedDate) {
-          disabledDates.push(new Date(current));
+          set.add(format(startOfDay(current), 'yyyy-MM-dd'));
           current.setDate(current.getDate() + 1);
         }
-      } catch (error) {
-        // Skip invalid date ranges
+      } catch {
         return;
       }
     });
 
-    // Combine past dates and blocked dates into single array
-    return [{ before: today }, ...disabledDates];
-  }, [blockedRanges, today]);
+    return set;
+  }, [blockedRanges]);
+
+  // Disable past dates and blocked nights, but allow picking a blocked date as the range end
+  const disabledMatcher = useCallback((date: Date) => {
+    const dayKey = format(startOfDay(date), 'yyyy-MM-dd');
+
+    if (date < today) return true;
+
+    const isBlocked = blockedDateSet.has(dayKey);
+    if (!isBlocked) return false;
+
+    // If selecting an end date and it falls on a blocked day, allow it;
+    // availability check will still catch overlaps.
+    if (dateRange?.from && !dateRange?.to && date > dateRange.from) {
+      return false;
+    }
+
+    return true;
+  }, [blockedDateSet, dateRange, today]);
 
   // Pricing calculation
   const pricing = useMemo((): PricingBreakdown | null => {
