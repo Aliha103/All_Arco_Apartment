@@ -203,11 +203,13 @@ export default function ReviewsSection({ initialReviews = [], loading = false }:
   }, [initialReviews.length]);
 
   const totalReviews = reviews.length;
+  const safeReviews = useMemo<Review[]>(() => (Array.isArray(reviews) ? reviews : []), [reviews]);
+
   const overallRating = useMemo(() => {
-    if (!totalReviews) return 0;
-    const sum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+    if (!safeReviews.length) return 0;
+    const sum = safeReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
     return Number((sum / totalReviews).toFixed(1));
-  }, [reviews, totalReviews]);
+  }, [safeReviews, totalReviews]);
 
   const ratingLabel = useMemo(() => {
     if (overallRating >= 9.5) return 'Exceptional';
@@ -218,22 +220,22 @@ export default function ReviewsSection({ initialReviews = [], loading = false }:
   }, [overallRating]);
 
   const visibleReviews = useMemo(
-    () => reviews.slice(0, visibleCount),
-    [reviews, visibleCount]
+    () => safeReviews.slice(0, visibleCount),
+    [safeReviews, visibleCount]
   );
 
-  const hasMore = visibleCount < reviews.length;
-  const remainingCount = reviews.length - visibleCount;
+  const hasMore = visibleCount < safeReviews.length;
+  const remainingCount = safeReviews.length - visibleCount;
 
   const handleLoadMore = useCallback(() => {
     setIsLoading(true);
     requestAnimationFrame(() => {
       setTimeout(() => {
-        setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, reviews.length));
+        setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, safeReviews.length));
         setIsLoading(false);
       }, 150);
     });
-  }, [reviews.length]);
+  }, [safeReviews.length]);
 
   return (
     <section className="py-16 sm:py-20 lg:py-28" id="reviews">
