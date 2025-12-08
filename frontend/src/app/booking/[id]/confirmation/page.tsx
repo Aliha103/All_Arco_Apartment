@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Booking } from '@/types';
@@ -12,15 +12,41 @@ import Link from 'next/link';
 
 export default function ConfirmationPage() {
   const params = useParams();
-  const bookingId = params.id as string;
+  const search = useSearchParams();
+  const router = useRouter();
+
+  const pathId = params.id as string | undefined;
+  const queryId = search?.get('booking_id') || undefined;
+  const bookingId = (pathId && pathId !== 'undefined') ? pathId : (queryId || '');
+  const isMissingId = !bookingId;
 
   const { data: booking, isLoading } = useQuery<Booking>({
     queryKey: ['booking', bookingId],
     queryFn: async () => {
+      if (!bookingId) throw new Error('Missing booking id');
       const response = await api.bookings.get(bookingId);
       return response.data;
     },
+    enabled: !!bookingId,
+    retry: 1,
   });
+
+  if (isMissingId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 space-y-4 text-center">
+            <p className="text-gray-800 font-semibold">Booking reference missing.</p>
+            <p className="text-sm text-gray-600">Please return to the homepage and start again.</p>
+            <div className="flex justify-center gap-3">
+              <Button onClick={() => router.push('/')}>Home</Button>
+              <Button variant="outline" onClick={() => router.push('/book')}>Book Again</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -85,10 +111,10 @@ export default function ConfirmationPage() {
           {/* Booking Details Card */}
           <Card className="mb-6">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Booking Details</CardTitle>
-                <Badge variant="success">{booking.status}</Badge>
-              </div>
+          <div className="flex items-center justify-between">
+            <CardTitle>Booking Details</CardTitle>
+            <Badge variant="success">{booking.status}</Badge>
+          </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
