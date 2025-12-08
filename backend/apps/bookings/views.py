@@ -90,7 +90,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     }
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'retrieve']:
             return [AllowAny()]
         return super().get_permissions()
 
@@ -104,6 +104,12 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = Booking.objects.select_related('user').all()
+
+        # Unauthenticated users: allow retrieval only when looking up a specific booking
+        if not getattr(user, 'is_authenticated', False):
+            if self.action == 'retrieve':
+                return queryset
+            return queryset.none()
 
         # Guests see only their bookings
         if not user.is_team_member():

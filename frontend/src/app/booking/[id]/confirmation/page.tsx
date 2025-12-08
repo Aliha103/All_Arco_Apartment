@@ -191,6 +191,19 @@ function ConfirmationContent() {
             </CardContent>
           </Card>
 
+          {booking.payment_status === 'paid' && (
+            <div className="flex items-center justify-end mb-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank');
+                }}
+              >
+                Download PDF
+              </Button>
+            </div>
+          )}
+
           {/* Next Steps */}
           <Card className="mb-6">
             <CardHeader>
