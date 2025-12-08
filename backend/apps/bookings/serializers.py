@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 from .models import Booking, BlockedDate, BookingGuest
 from apps.users.serializers import UserSerializer
@@ -10,7 +11,7 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = '__all__'
-        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'created_at', 'updated_at', 'cancelled_at']
+        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'amount_due', 'created_at', 'updated_at', 'cancelled_at']
 
 
 class BookingListSerializer(serializers.ModelSerializer):
@@ -21,6 +22,7 @@ class BookingListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'booking_id', 'guest_name', 'guest_email', 'check_in_date',
             'check_out_date', 'nights', 'status', 'payment_status', 'total_price',
+            'amount_due', 'applied_credit',
             'booking_source', 'number_of_guests', 'guest_tax_code', 'created_at'
         ]
         read_only_fields = fields
@@ -42,7 +44,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             'nightly_rate', 'cleaning_fee', 'tourist_tax', 'special_requests',
             'cancellation_policy',
             # write-only helpers
-            'first_name', 'last_name', 'guest_details',
+            'first_name', 'last_name', 'guest_details', 'applied_credit',
         ]
 
     first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -53,11 +55,23 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         required=False,
         default=list
     )
+    applied_credit = serializers.DecimalField(
+        write_only=True,
+        required=False,
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
     
     def validate(self, data):
         # Validate dates
         if data['check_out_date'] <= data['check_in_date']:
             raise serializers.ValidationError('Check-out must be after check-in')
+
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            # Ensure booking is linked to the authenticated user for credits/history
+            data.setdefault('user', request.user)
         
         # Check availability
         overlapping = Booking.objects.filter(
@@ -77,18 +91,69 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         
         if blocked:
             raise serializers.ValidationError('Dates are blocked')
-        
+
+        applied_credit = data.get('applied_credit') or Decimal('0')
+        if applied_credit:
+            if not request or not request.user or not request.user.is_authenticated:
+                raise serializers.ValidationError({
+                    'applied_credit': 'Login required to use credits.'
+                })
+
+            # Compute gross total to ensure credits do not exceed
+            nights = (data['check_out_date'] - data['check_in_date']).days
+            nightly_rate = Decimal(str(data.get('nightly_rate') or 0))
+            cleaning_fee = Decimal(str(data.get('cleaning_fee') or 0))
+            tourist_tax = Decimal(str(data.get('tourist_tax') or 0))
+            base_total = (nightly_rate * nights) + cleaning_fee + tourist_tax
+            discount_amount = Decimal('0')
+            if data.get('cancellation_policy') == 'non_refundable':
+                discount_amount = (base_total * Decimal('0.10')).quantize(Decimal('0.01'))
+            gross_total = base_total - discount_amount
+
+            available = Decimal(str(request.user.get_available_credits()))
+            if applied_credit > available:
+                raise serializers.ValidationError({
+                    'applied_credit': f'Max credits available: {available}'
+                })
+
+            if applied_credit > gross_total:
+                # Cap to the booking total; avoid over-application
+                applied_credit = gross_total
+
+            data['applied_credit'] = applied_credit
+        else:
+            data['applied_credit'] = Decimal('0')
+
         return data
 
     def create(self, validated_data):
+        request = self.context.get('request')
         first_name = validated_data.pop('first_name', '').strip()
         last_name = validated_data.pop('last_name', '').strip()
         guest_details = validated_data.pop('guest_details', [])
+        applied_credit = validated_data.pop('applied_credit', Decimal('0'))
 
         if not validated_data.get('guest_name') and (first_name or last_name):
             validated_data['guest_name'] = f"{first_name} {last_name}".strip()
 
         booking = super().create(validated_data)
+
+        if applied_credit and applied_credit > 0:
+            booking.applied_credit = applied_credit
+            booking.save(update_fields=['applied_credit', 'total_price', 'amount_due'])
+
+            # Record credit usage for history/ledger
+            from apps.users.models import ReferralCreditUsage
+            ledger_user = booking.user or (request.user if request else None)
+
+            if not ledger_user:
+                raise serializers.ValidationError('Authenticated user required for credit usage.')
+
+            ReferralCreditUsage.objects.create(
+                user=ledger_user,
+                booking=booking,
+                amount=applied_credit
+            )
 
         # Store cancellation flag for quick filtering
         booking.is_non_refundable = booking.cancellation_policy == 'non_refundable'
@@ -233,4 +298,4 @@ class BookingWithGuestsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = '__all__'
-        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'amount_due', 'created_at', 'updated_at']

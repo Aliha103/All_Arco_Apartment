@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
@@ -32,7 +32,7 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def create_checkout_session(request):
     """Create Stripe Checkout Session for booking payment."""
     booking_id = request.data.get('booking_id')
@@ -44,6 +44,14 @@ def create_checkout_session(request):
             {'error': 'Booking not found'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+    amount_to_charge = float(booking.amount_due or booking.total_price or 0)
+    if amount_to_charge <= 0:
+        # Fully covered by credits - mark as confirmed/paid without Stripe
+        booking.status = 'confirmed'
+        booking.payment_status = 'paid'
+        booking.save(update_fields=['status', 'payment_status'])
+        return Response({'session_url': None, 'session_id': None, 'message': 'Booking covered by credits'})
     
     # Create Stripe Checkout Session
     try:
@@ -57,7 +65,7 @@ def create_checkout_session(request):
                             'name': f"All'Arco Apartment - {booking.nights} nights",
                             'description': f"{booking.check_in_date} to {booking.check_out_date}",
                         },
-                        'unit_amount': int(booking.total_price * 100),  # Convert to cents
+                        'unit_amount': int(amount_to_charge * 100),  # Convert to cents
                     },
                     'quantity': 1,
                 },
@@ -177,7 +185,7 @@ def stripe_webhook(request):
                 payment = Payment.objects.create(
                     booking=booking,
                     stripe_payment_intent_id=session['payment_intent'],
-                    amount=booking.total_price,
+                    amount=booking.amount_due or booking.total_price,
                     currency='eur',
                     status='succeeded',
                     payment_method=session.get('payment_method_types', ['card'])[0]

@@ -485,6 +485,17 @@ class User(AbstractUser):
             status='earned'
         ).aggregate(models.Sum('amount'))['amount__sum'] or 0
 
+    def get_referral_credits_spent(self):
+        """Total credits spent by this user."""
+        return self.credit_usages.aggregate(models.Sum('amount'))['amount__sum'] or 0
+
+    def get_available_credits(self):
+        """Earned credits minus spent credits (never below zero)."""
+        earned = self.get_referral_credits_earned() or 0
+        spent = self.get_referral_credits_spent() or 0
+        remaining = earned - spent
+        return remaining if remaining > 0 else 0
+
 
 # ============================================================================
 # Host Profile Model
@@ -783,6 +794,37 @@ class ReferralCredit(models.Model):
         """Mark credit as cancelled if booking is cancelled."""
         self.status = 'cancelled'
         self.save(update_fields=['status', 'updated_at'])
+
+
+class ReferralCreditUsage(models.Model):
+    """
+    Ledger of credits redeemed against bookings.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='credit_usages'
+    )
+    booking = models.ForeignKey(
+        'bookings.Booking',
+        on_delete=models.CASCADE,
+        related_name='credit_usages'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    note = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'users_referralcreditusage'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at'], name='refcreditusage_user_idx'),
+            models.Index(fields=['booking'], name='refcreditusage_booking_idx'),
+        ]
+
+    def __str__(self):
+        return f"€{self.amount} used by {self.user.email} on {self.booking.booking_id}"
 
 
 # ============================================================================

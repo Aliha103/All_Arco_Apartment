@@ -2,6 +2,7 @@ import uuid
 import random
 import string
 from datetime import datetime
+from decimal import Decimal
 from django.db import models
 from django.core.exceptions import ValidationError
 from apps.users.models import User
@@ -62,6 +63,19 @@ class Booking(models.Model):
     cleaning_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tourist_tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    applied_credit = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='Referral/loyalty credit applied to this booking'
+    )
+    amount_due = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        editable=False,
+        help_text='Total after credits (amount to charge)'
+    )
     CANCELLATION_POLICY_CHOICES = [
         ('flex_24h', 'Flexible - free until 24h'),
         ('non_refundable', 'Non-refundable - discounted'),
@@ -132,6 +146,14 @@ class Booking(models.Model):
                 check=models.Q(total_price__gte=0),
                 name='total_price_non_negative'
             ),
+            models.CheckConstraint(
+                check=models.Q(applied_credit__gte=0),
+                name='applied_credit_non_negative'
+            ),
+            models.CheckConstraint(
+                check=models.Q(amount_due__gte=0),
+                name='amount_due_non_negative'
+            ),
         ]
     
     def __str__(self):
@@ -159,23 +181,47 @@ class Booking(models.Model):
             self.nights = (self.check_out_date - self.check_in_date).days
         
         # Calculate total price
-        self.total_price = (
+        base_total = (
             (self.nightly_rate * self.nights) +
             self.cleaning_fee +
             self.tourist_tax
         )
+
+        discount_amount = Decimal('0')
+        if self.cancellation_policy == 'non_refundable':
+            discount_amount = (base_total * Decimal('0.10')).quantize(Decimal('0.01'))
+
+        self.total_price = base_total - discount_amount
+
+        credit_to_apply = self.applied_credit or Decimal('0')
+        self.amount_due = self.total_price - credit_to_apply
+        # Amount due can never be negative
+        if self.amount_due < 0:
+            self.amount_due = Decimal('0')
         
         super().save(*args, **kwargs)
     
     def get_pricing_breakdown(self):
         """Returns a dictionary with pricing components."""
+        base_total = (
+            (self.nightly_rate * self.nights) +
+            self.cleaning_fee +
+            self.tourist_tax
+        )
+        discount_amount = Decimal('0')
+        if self.cancellation_policy == 'non_refundable':
+            discount_amount = (base_total * Decimal('0.10')).quantize(Decimal('0.01'))
+
         return {
             'nightly_rate': float(self.nightly_rate),
             'nights': self.nights,
             'accommodation': float(self.nightly_rate * self.nights),
             'cleaning_fee': float(self.cleaning_fee),
             'tourist_tax': float(self.tourist_tax),
+            'discount': float(discount_amount),
             'total': float(self.total_price),
+            'applied_credit': float(self.applied_credit),
+            'amount_due': float(self.amount_due),
         }
     
     def is_overlapping(self, check_in, check_out):

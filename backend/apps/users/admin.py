@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, GuestNote, Role, Permission, HostProfile
+from .models import User, GuestNote, Role, Permission, HostProfile, ReferralCreditUsage
 
 
 @admin.register(User)
@@ -75,3 +75,11 @@ class HostProfileAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at')
         }),
     )
+
+
+@admin.register(ReferralCreditUsage)
+class ReferralCreditUsageAdmin(admin.ModelAdmin):
+    list_display = ['user', 'booking', 'amount', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__email', 'booking__booking_id']
+    readonly_fields = ['created_at']

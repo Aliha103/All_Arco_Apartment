@@ -47,6 +47,7 @@ class ReferralStatsViewSet(viewsets.ViewSet):
                 'name': user.referred_by.get_full_name(),
                 'email': user.referred_by.email
             } if user.referred_by else None,
+            'available_credits': float(user.get_available_credits()),
         })
 
     @action(detail=False, methods=['get'])
@@ -121,6 +122,8 @@ class ReferralStatsViewSet(viewsets.ViewSet):
             'total_pending': sum(
                 float(c.amount) for c in credits if c.status == 'pending'
             ),
+            'total_spent': float(user.get_referral_credits_spent()),
+            'available_balance': float(user.get_available_credits()),
         })
 
 

@@ -165,7 +165,8 @@ class BookingViewSet(viewsets.ModelViewSet):
                 raise ValidationError({'dates': reason})
 
             # Dates are available and locked - safe to create booking
-            booking = serializer.save(created_by=self.request.user)
+            created_by = self.request.user if self.request.user.is_authenticated else None
+            booking = serializer.save(created_by=created_by)
 
             # Create referral credit if user was referred
             if booking.user and booking.user.referred_by:

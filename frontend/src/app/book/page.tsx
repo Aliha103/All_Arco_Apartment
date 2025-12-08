@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useMemo, useState, useCallback, useTransition, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { format, isAfter, isValid, parseISO } from 'date-fns';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
@@ -16,6 +17,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Coins,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -29,6 +31,7 @@ import { useAvailability, usePriceCalculation, useCreateBooking, useCreateChecko
 import { calculateNights, formatCurrency } from '@/lib/utils';
 import SiteNav from '../components/SiteNav';
 import SiteFooter from '../components/SiteFooter';
+import { useAuthStore } from '@/stores/authStore';
 
 type Step = 'plan' | 'guest';
 
@@ -248,6 +251,9 @@ function BookingPageContent() {
   const [guestDetailsEnabled, setGuestDetailsEnabled] = useState(false);
   const [guestDetails, setGuestDetails] = useState([{ first_name: '', last_name: '', birth_country: '', note: '' }]);
   const [cancellationOption, setCancellationOption] = useState<'flex' | 'nonref'>('flex');
+  const [applyCredits, setApplyCredits] = useState(false);
+  const [creditToUse, setCreditToUse] = useState(0);
+  const { isAuthenticated } = useAuthStore();
 
   // Sync URL params
   const updateURL = useCallback((params: Record<string, string>) => {
@@ -331,6 +337,16 @@ function BookingPageContent() {
     totalGuests
   );
 
+  const { data: creditData } = useQuery({
+    queryKey: ['referrals', 'credits'],
+    queryFn: async () => {
+      const response = await api.referrals.getReferralCredits();
+      return response.data;
+    },
+    enabled: isAuthenticated,
+    staleTime: 60 * 1000,
+  });
+
   // Calculate accommodation_total locally if API returns 0 or null
   const correctedPricing = useMemo(() => {
     if (!pricing) return null;
@@ -356,6 +372,53 @@ function BookingPageContent() {
     const total_after_policy = baseTotal - discount;
     return { ...correctedPricing, discount, total_after_policy };
   }, [correctedPricing, cancellationOption]);
+
+  const availableCredits = useMemo(() => {
+    if (!creditData) return 0;
+    const balance = creditData.available_balance ?? creditData.available_credits ?? 0;
+    const parsed = typeof balance === 'number' ? balance : parseFloat(String(balance));
+    return isNaN(parsed) ? 0 : parsed;
+  }, [creditData]);
+
+  const grossTotalAfterPolicy = useMemo(() => {
+    if (!displayPricing) return 0;
+    const val = parseFloat(String(displayPricing.total_after_policy || 0));
+    return isNaN(val) ? 0 : val;
+  }, [displayPricing]);
+
+  const maxCreditUsable = useMemo(() => {
+    if (!displayPricing) return 0;
+    return Math.min(availableCredits, grossTotalAfterPolicy);
+  }, [availableCredits, displayPricing, grossTotalAfterPolicy]);
+
+  useEffect(() => {
+    if (applyCredits) {
+      setCreditToUse((prev) => {
+        const safePrev = Number.isFinite(prev) ? prev : 0;
+        const clamped = Math.min(maxCreditUsable, Math.max(0, safePrev));
+        return isNaN(clamped) ? 0 : clamped;
+      });
+    }
+  }, [applyCredits, maxCreditUsable]);
+
+  useEffect(() => {
+    if (!applyCredits && creditToUse !== 0) {
+      setCreditToUse(0);
+    }
+  }, [applyCredits, creditToUse]);
+
+  const appliedCredit = useMemo(() => {
+    if (!applyCredits) return 0;
+    const requested = Number.isFinite(creditToUse) ? creditToUse : 0;
+    return Math.min(maxCreditUsable, Math.max(0, requested));
+  }, [applyCredits, creditToUse, maxCreditUsable]);
+
+  const totalAfterCredit = useMemo(() => {
+    if (!displayPricing) return 0;
+    return Math.max(grossTotalAfterPolicy - appliedCredit, 0);
+  }, [displayPricing, grossTotalAfterPolicy, appliedCredit]);
+
+  const creditEnabled = isAuthenticated && availableCredits > 0;
 
   const createBooking = useCreateBooking();
   const createCheckout = useCreateCheckoutSession();
@@ -463,9 +526,17 @@ function BookingPageContent() {
         nightly_rate: parseFloat(String(displayPricing.nightly_rate || 0)) || 0,
         cleaning_fee: parseFloat(String(displayPricing.cleaning_fee || 0)) || 0,
         tourist_tax: parseFloat(String(displayPricing.tourist_tax || 0)) || 0,
+        applied_credit: appliedCredit > 0 ? Number(appliedCredit.toFixed(2)) : 0,
       };
 
       const booking = await createBooking.mutateAsync(bookingData);
+
+      const bookingAmountDue = parseFloat(String(booking.amount_due ?? 0)) || 0;
+      if (bookingAmountDue <= 0.01) {
+        toast.success('Booking confirmed using your credits. No payment needed.');
+        router.push(`/booking/${booking.id}/confirmation`);
+        return;
+      }
 
       try {
         const checkout = await createCheckout.mutateAsync(booking.id);
@@ -491,7 +562,7 @@ function BookingPageContent() {
       console.error('Booking failed:', error);
       toast.error('Failed to create booking. Please try again.');
     }
-  }, [dates, totalGuests, guestInfo, createBooking, createCheckout]);
+  }, [dates, totalGuests, guestInfo, guestDetails, guestDetailsEnabled, displayPricing, appliedCredit, cancellationOption, router, createBooking, createCheckout]);
 
   const isProcessing = createBooking.isPending || createCheckout.isPending;
 
@@ -939,7 +1010,86 @@ function BookingPageContent() {
                             <span>-{safeFormatCurrency(displayPricing.discount)}</span>
                           </div>
                         )}
+                        {appliedCredit > 0 && (
+                          <div className="flex justify-between text-emerald-700">
+                            <span>Credits applied</span>
+                            <span>-{safeFormatCurrency(appliedCredit)}</span>
+                          </div>
+                        )}
                       </div>
+
+                      {isAuthenticated ? (
+                        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <Coins className="w-4 h-4 text-amber-700" />
+                              <div>
+                                <p className="text-sm font-semibold text-amber-900">Credits available</p>
+                                <p className="text-xs text-amber-800">{safeFormatCurrency(availableCredits)}</p>
+                              </div>
+                            </div>
+                            <label className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 accent-[#C4A572]"
+                                checked={applyCredits && creditEnabled}
+                                disabled={!creditEnabled || isProcessing}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setApplyCredits(checked && creditEnabled);
+                                  if (checked && creditEnabled) {
+                                    setCreditToUse(maxCreditUsable);
+                                  }
+                                }}
+                              />
+                              Apply
+                            </label>
+                          </div>
+                          {creditEnabled ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min={0}
+                                max={maxCreditUsable}
+                                step="1"
+                                value={creditToUse}
+                                disabled={!applyCredits || isProcessing}
+                                onChange={(e) => {
+                                  const raw = parseFloat(e.target.value);
+                                  const safeValue = isNaN(raw) ? 0 : raw;
+                                  const clamped = Math.min(maxCreditUsable, Math.max(0, safeValue));
+                                  setCreditToUse(clamped);
+                                  if (clamped > 0 && !applyCredits) {
+                                    setApplyCredits(true);
+                                  }
+                                }}
+                                className="bg-white border-gray-200 text-gray-900"
+                              />
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                disabled={!applyCredits || isProcessing || maxCreditUsable <= 0}
+                                onClick={() => {
+                                  setApplyCredits(true);
+                                  setCreditToUse(maxCreditUsable);
+                                }}
+                                className="text-sm font-semibold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100"
+                              >
+                                Use max
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-amber-800">No credits available yet.</p>
+                          )}
+                          <p className="text-xs text-amber-700">Credits reduce what you pay today. Any remaining balance goes to Stripe checkout.</p>
+                        </div>
+                      ) : (
+                        <div className="mt-4 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 flex items-center gap-2">
+                          <Coins className="w-4 h-4 text-gray-600" />
+                          <span>Log in to apply your credits at checkout.</span>
+                        </div>
+                      )}
                       <motion.div
                         className="border-t border-gray-200 pt-4 mt-4"
                         initial={{ opacity: 0 }}
@@ -948,7 +1098,7 @@ function BookingPageContent() {
                       >
                         <div className="flex justify-between text-lg font-semibold text-gray-900">
                           <span>Total</span>
-                          <span>{safeFormatCurrency(displayPricing.total_after_policy)}</span>
+                          <span>{safeFormatCurrency(totalAfterCredit)}</span>
                         </div>
                         <p className="text-xs text-gray-600 mt-1">
                           Charged securely when you confirm. City tax is paid at the property.

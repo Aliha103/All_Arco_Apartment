@@ -5,10 +5,10 @@ from .models import Booking, BlockedDate, BookingGuest
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display = ['booking_id', 'guest_name', 'check_in_date', 'check_out_date', 
-                    'nights', 'status', 'payment_status', 'cancellation_policy', 'total_price']
+                    'nights', 'status', 'payment_status', 'cancellation_policy', 'total_price', 'applied_credit', 'amount_due']
     list_filter = ['status', 'payment_status', 'check_in_date', 'created_at']
     search_fields = ['booking_id', 'guest_name', 'guest_email', 'guest_phone']
-    readonly_fields = ['booking_id', 'nights', 'total_price', 'created_at', 'updated_at']
+    readonly_fields = ['booking_id', 'nights', 'total_price', 'amount_due', 'created_at', 'updated_at']
     ordering = ['-check_in_date']
     
     fieldsets = (
@@ -22,7 +22,7 @@ class BookingAdmin(admin.ModelAdmin):
             'fields': ('check_in_date', 'check_out_date', 'nights', 'number_of_guests')
         }),
         ('Pricing', {
-            'fields': ('nightly_rate', 'cleaning_fee', 'tourist_tax', 'total_price', 'cancellation_policy', 'is_non_refundable')
+            'fields': ('nightly_rate', 'cleaning_fee', 'tourist_tax', 'applied_credit', 'total_price', 'amount_due', 'cancellation_policy', 'is_non_refundable')
         }),
         ('Notes', {
             'fields': ('special_requests', 'internal_notes')

@@ -79,6 +79,8 @@ export interface Booking {
   nights: number;
   guests: number;
   total_price: string;
+  amount_due?: string;
+  applied_credit?: string;
   status: 'pending' | 'confirmed' | 'paid' | 'checked_in' | 'checked_out' | 'cancelled';
   payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded';
   special_requests?: string;
