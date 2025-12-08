@@ -184,14 +184,9 @@ const GuestCounter = memo(({
         >
           -
         </Button>
-        <Input
-          type="number"
-          min={min}
-          max={max}
-          value={value}
-          onChange={handleInputChange}
-          className="w-16 text-center bg-white border-gray-200 text-gray-900 font-semibold focus:ring-2 focus:ring-[#C4A572] focus:border-transparent rounded-full"
-        />
+        <div className="w-16 text-center bg-gray-50 border border-gray-200 text-gray-900 font-semibold rounded-full py-2">
+          {value}
+        </div>
         <Button
           type="button"
           variant="ghost"
@@ -402,7 +397,7 @@ function BookingPageContent() {
       <SiteNav solid />
 
       <motion.div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 lg:py-14 space-y-8"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 pt-28 sm:pt-32 pb-12 lg:pb-16 space-y-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -413,10 +408,10 @@ function BookingPageContent() {
             Seamless Booking Experience
           </div>
           <h1 className="text-3xl sm:text-4xl font-light text-gray-900 leading-tight">
-            Your Venetian escape awaits. Book in moments, not minutes.
+            Book your Venetian stay with confidence.
           </h1>
           <p className="text-gray-700 max-w-2xl">
-            Transparent pricing, real-time availability, and instant confirmation. Simply select your dates, enter your details, and secure your stay with confidence.
+            Real-time availability, clear pricing, and a secure checkout in two steps. Choose your dates, confirm your guests, and we’ll lock in your reservation.
           </p>
           {/* Security Badge */}
           <motion.div
@@ -426,7 +421,7 @@ function BookingPageContent() {
             className="flex items-center gap-2 text-sm text-gray-600 mt-2"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Bank-level encryption • Instant confirmation</span>
+            <span>Secure checkout • Instant confirmation</span>
           </motion.div>
         </motion.div>
 
@@ -707,7 +702,7 @@ function BookingPageContent() {
 
           {/* Pricing / Ops card */}
           <motion.div className="space-y-4" variants={itemVariants}>
-            <Card className="bg-white border border-gray-200 shadow-xl sticky top-24">
+            <Card className="bg-white border border-gray-200 shadow-xl">
               <CardHeader className="border-b border-gray-100">
                 <CardTitle className="text-gray-900 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#C4A572]" />
@@ -790,30 +785,18 @@ function BookingPageContent() {
             >
               <Card className="bg-white border border-gray-200">
                 <CardContent className="p-4 space-y-3 text-sm text-gray-800">
-                  <motion.div
-                    className="flex items-center gap-2"
-                    whileHover={{ x: 5 }}
-                    transition={{ type: 'spring', stiffness: 400 }}
-                  >
+                  <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                     <span>Secure payment processing via Stripe</span>
-                  </motion.div>
-                  <motion.div
-                    className="flex items-center gap-2"
-                    whileHover={{ x: 5 }}
-                    transition={{ type: 'spring', stiffness: 400 }}
-                  >
+                  </div>
+                  <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#C4A572] flex-shrink-0" />
                     <span>Instant confirmation with booking reference</span>
-                  </motion.div>
-                  <motion.div
-                    className="flex items-center gap-2"
-                    whileHover={{ x: 5 }}
-                    transition={{ type: 'spring', stiffness: 400 }}
-                  >
+                  </div>
+                  <div className="flex items-center gap-2">
                     <Clock3 className="w-4 h-4 text-blue-500 flex-shrink-0" />
                     <span>Responsive host team for pre-arrival questions</span>
-                  </motion.div>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
