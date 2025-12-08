@@ -222,6 +222,8 @@ function BookingPageContent() {
     guest_phone: '',
     special_requests: '',
   });
+  const [guestDetailsEnabled, setGuestDetailsEnabled] = useState(false);
+  const [guestDetails, setGuestDetails] = useState([{ name: '', note: '' }]);
 
   // Sync URL params
   const updateURL = useCallback((params: Record<string, string>) => {
@@ -258,6 +260,14 @@ function BookingPageContent() {
         children: Math.max(0, children || 0),
         infants: Math.max(0, infants || 0),
       });
+    }
+  }, [searchParams]);
+
+  // Allow deep link to guest step (from homepage reserve)
+  useEffect(() => {
+    const stepParam = searchParams.get('step');
+    if (stepParam === 'guest') {
+      setStepState(['guest', 1]);
     }
   }, [searchParams]);
 
@@ -372,12 +382,29 @@ function BookingPageContent() {
   const handleSubmitBooking = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const guestDetailsSummary = guestDetailsEnabled
+      ? guestDetails
+          .map(({ name, note }) => {
+            const trimmed = name.trim();
+            if (!trimmed) return '';
+            const notePart = note.trim() ? ` (${note.trim()})` : '';
+            return `${trimmed}${notePart}`;
+          })
+          .filter(Boolean)
+          .join('; ')
+      : '';
+
+    const specialRequestsCombined = [guestInfo.special_requests.trim(), guestDetailsSummary ? `Guest details: ${guestDetailsSummary}` : '']
+      .filter(Boolean)
+      .join('\n');
+
     try {
       const bookingData = {
         check_in_date: dates.checkIn,
         check_out_date: dates.checkOut,
         guests: totalGuests,
         ...guestInfo,
+        special_requests: specialRequestsCombined,
       };
 
       const booking = await createBooking.mutateAsync(bookingData);
@@ -627,6 +654,60 @@ function BookingPageContent() {
                           className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 min-h-[120px] focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                         />
                       </motion.div>
+
+                      <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-gray-900 font-medium">Guest details (optional)</p>
+                            <p className="text-sm text-gray-600">Add names/notes for each guest.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setGuestDetailsEnabled(!guestDetailsEnabled)}
+                            className="text-sm font-semibold text-[#C4A572] hover:text-[#B39562] focus:outline-none"
+                          >
+                            {guestDetailsEnabled ? 'Hide' : 'Add'}
+                          </button>
+                        </div>
+                        {guestDetailsEnabled && (
+                          <div className="space-y-3">
+                            {guestDetails.map((g, idx) => (
+                              <div key={idx} className="grid sm:grid-cols-2 gap-3">
+                                <Input
+                                  placeholder="Guest name"
+                                  value={g.name}
+                                  onChange={(e) => {
+                                    const next = [...guestDetails];
+                                    next[idx].name = e.target.value;
+                                    setGuestDetails(next);
+                                  }}
+                                  className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                                  disabled={isProcessing}
+                                />
+                                <Input
+                                  placeholder="Notes (diet, access needs)"
+                                  value={g.note}
+                                  onChange={(e) => {
+                                    const next = [...guestDetails];
+                                    next[idx].note = e.target.value;
+                                    setGuestDetails(next);
+                                  }}
+                                  className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                                  disabled={isProcessing}
+                                />
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => setGuestDetails([...guestDetails, { name: '', note: '' }])}
+                              className="text-sm font-semibold text-[#C4A572] hover:text-[#B39562] focus:outline-none"
+                              disabled={isProcessing}
+                            >
+                              + Add another guest
+                            </button>
+                          </div>
+                        )}
+                      </div>
 
                       <div className="flex flex-col sm:flex-row gap-3">
                         <motion.div

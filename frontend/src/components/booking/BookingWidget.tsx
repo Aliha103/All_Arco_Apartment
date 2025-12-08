@@ -24,6 +24,7 @@ import {
 import 'react-day-picker/dist/style.css';
 import api from '@/lib/api';
 import { parseISO, isWithinInterval } from 'date-fns';
+import { toast } from 'sonner';
 
 // ============================================================================
 // CONFIGURATION
@@ -435,8 +436,8 @@ export default function BookingWidget() {
 
   const isValidBooking = nights > 0;
 
-  const maxAdults = CONFIG.guests.maxTotal - guests.children;
-  const maxChildren = CONFIG.guests.maxTotal - guests.adults;
+  const maxAdults = Math.max(1, CONFIG.guests.maxTotal - guests.children);
+  const maxChildren = Math.max(0, CONFIG.guests.maxTotal - guests.adults);
 
   // Calculate disabled dates from blocked ranges
   const disabledMatcher = useMemo(() => {
@@ -499,14 +500,25 @@ export default function BookingWidget() {
   // Handlers
   const handleGuestChange = useCallback((type: keyof GuestState, value: number) => {
     setGuests(prev => {
-      const next = { ...prev, [type]: value };
-      // Enforce max total guests
-      if (type === 'adults' && next.adults + next.children > CONFIG.guests.maxTotal) {
-        next.children = CONFIG.guests.maxTotal - next.adults;
+      const next = { ...prev };
+
+      if (type === 'infants') {
+        next.infants = Math.max(0, Math.min(CONFIG.guests.maxInfants, value));
+        return next;
       }
-      if (type === 'children' && next.adults + next.children > CONFIG.guests.maxTotal) {
-        next.adults = CONFIG.guests.maxTotal - next.children;
+
+      // Clamp adults/children
+      const minVal = type === 'adults' ? 1 : 0;
+      next[type] = Math.max(minVal, Math.min(CONFIG.guests.maxTotal, value));
+
+      const combined = next.adults + next.children;
+      if (combined > CONFIG.guests.maxTotal) {
+        // Reduce the changed type back within limit
+        const allowable = CONFIG.guests.maxTotal - (type === 'adults' ? next.children : next.adults);
+        next[type] = Math.max(minVal, allowable);
+        toast.error('Maximum 5 guests total (adults + children).');
       }
+
       return next;
     });
   }, []);
@@ -566,6 +578,7 @@ export default function BookingWidget() {
       children: String(guests.children),
       infants: String(guests.infants),
       pet: String(hasPet),
+      step: 'guest',
     });
     // Include promo code if applied
     if (appliedPromo) {
