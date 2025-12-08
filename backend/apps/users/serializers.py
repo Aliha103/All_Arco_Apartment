@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, GuestNote, Role, Permission, HostProfile
+from .models import User, GuestNote, Role, Permission, HostProfile, Review
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -227,18 +227,33 @@ class UserWithRoleSerializer(serializers.ModelSerializer):
         return None
 
 
-# ============================================================================
-# Host Profile Serializer
-# ============================================================================
-
 class HostProfileSerializer(serializers.ModelSerializer):
-    """Serializer for HostProfile model."""
-    photo_url = serializers.CharField(source='photo_url', read_only=True)
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = HostProfile
         fields = [
-            'id', 'display_name', 'bio', 'languages',
-            'photo_url', 'is_superhost', 'review_count', 'updated_at'
+            'id', 'display_name', 'role_title', 'bio', 'languages',
+            'photo', 'photo_url', 'avatar', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'photo_url', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'avatar']
+
+    def get_avatar(self, obj):
+        return obj.avatar
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = [
+            'id', 'guest_name', 'location', 'rating', 'title', 'text',
+            'stay_date', 'is_featured', 'is_active', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_rating(self, value):
+        if value is None:
+            raise serializers.ValidationError('Rating is required')
+        if value < 0 or value > 10:
+            raise serializers.ValidationError('Rating must be between 0 and 10')
+        return value

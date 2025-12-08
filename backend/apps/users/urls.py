@@ -10,6 +10,7 @@ router.register(r'permissions', views.PermissionViewSet, basename='permission')
 router.register(r'roles', views.RoleViewSet, basename='role')
 router.register(r'referrals', referral_views.ReferralStatsViewSet, basename='referral')
 router.register(r'host-profile', views.HostProfileViewSet, basename='host-profile')
+router.register(r'reviews', views.ReviewViewSet, basename='review')
 
 urlpatterns = [
     # Authentication

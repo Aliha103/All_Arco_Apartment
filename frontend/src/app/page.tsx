@@ -19,8 +19,6 @@ import {
   Waves,
   Award,
   Pencil,
-  X,
-  Check,
 } from 'lucide-react';
 import SiteNav from './components/SiteNav';
 import SiteFooter from './components/SiteFooter';
@@ -28,8 +26,12 @@ import BookingWidget from '@/components/booking/BookingWidget';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
 import LocationSection from '@/components/location/LocationSection';
 import { api } from '@/lib/api';
-import { HostProfile } from '@/types';
-import { useAuthStore } from '@/stores/authStore';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button as UIButton } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 // Smooth easing for all animations
 const smoothEase = [0.25, 0.1, 0.25, 1] as const;
@@ -87,13 +89,24 @@ const highlights = [
   { icon: Bath, value: '1', unit: '', label: 'Bathroom' },
 ];
 
-// Host information
-const hostInfo = {
-  name: 'Ali Hassan Cheema',
-  isSuperhost: true,
-  languages: ['English', 'Italian'],
-  totalReviews: 59,
-};
+interface HostProfile {
+  id?: string | number;
+  display_name: string;
+  role_title?: string;
+  bio?: string;
+  languages?: string[];
+  avatar?: string;
+}
+
+interface PublicReview {
+  id: string;
+  guest_name: string;
+  location?: string;
+  rating: number;
+  title?: string;
+  text: string;
+  stay_date?: string;
+}
 
 
 // Animated section with scroll reveal
@@ -169,6 +182,18 @@ export default function Home() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [heroImages, setHeroImages] = useState<{ src: string; alt: string }[]>([]);
   const [galleryImages, setGalleryImages] = useState<{ src: string; alt: string }[]>([]);
+  const [hostProfile, setHostProfile] = useState<HostProfile | null>(null);
+  const [publicReviews, setPublicReviews] = useState<PublicReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [hostEditOpen, setHostEditOpen] = useState(false);
+  const [hostForm, setHostForm] = useState({
+    display_name: '',
+    role_title: '',
+    bio: '',
+    languages: '',
+    photo_url: '',
+  });
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
 
@@ -198,6 +223,38 @@ export default function Home() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.05]);
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 50]);
+
+  const handleOpenHostEdit = () => {
+    setHostEditOpen(true);
+  };
+
+  const handleSaveHost = async () => {
+    try {
+      const languagesArray = hostForm.languages
+        .split(',')
+        .map((l) => l.trim())
+        .filter(Boolean);
+
+      const payload = {
+        display_name: hostForm.display_name,
+        role_title: hostForm.role_title,
+        bio: hostForm.bio,
+        languages: languagesArray,
+      } as any;
+
+      if (hostForm.photo_url) {
+        payload.photo_url = hostForm.photo_url;
+      }
+
+      const res = await api.host.update(hostProfile?.id || 1, payload);
+      setHostProfile(res.data);
+      toast.success('Host profile updated');
+      setHostEditOpen(false);
+    } catch (error: any) {
+      console.error('Failed to update host', error);
+      toast.error(error?.response?.data?.error || 'Failed to update host profile');
+    }
+  };
 
   // Fetch hero images from database
   useEffect(() => {
@@ -241,30 +298,63 @@ export default function Home() {
     fetchGalleryImages();
   }, []);
 
-  // Fetch host profile from database
+  // Fetch host profile & public reviews
   useEffect(() => {
-    const fetchHostProfile = async () => {
+    const loadHostAndReviews = async () => {
       try {
-        const response = await api.hostProfile.get();
-        if (response.data && response.data.length > 0) {
-          const profile = response.data[0];
-          setHostProfile(profile);
-          setEditFormData({
-            display_name: profile.display_name,
-            languages: profile.languages,
-            bio: profile.bio || '',
-            avatar_url: profile.photo_url || '',
-            is_superhost: profile.is_superhost,
-            review_count: profile.review_count,
-          });
-        }
+        const [hostRes, reviewsRes] = await Promise.all([
+          api.host.get(),
+          api.reviews.list(),
+        ]);
+        const hostData = hostRes.data || null;
+        const reviewsData = reviewsRes.data;
+        const normalizedReviews = Array.isArray(reviewsData?.results)
+          ? reviewsData.results
+          : Array.isArray(reviewsData)
+            ? reviewsData
+            : [];
+        setHostProfile(
+          hostData
+            ? {
+                ...hostData,
+                languages: Array.isArray(hostData.languages) ? hostData.languages : [],
+              }
+            : null
+        );
+        setPublicReviews(normalizedReviews);
       } catch (error) {
-        console.error('Failed to fetch host profile:', error);
+        console.error('Failed to load host/reviews', error);
       } finally {
-        setIsLoadingHost(false);
+        setReviewsLoading(false);
       }
     };
-    fetchHostProfile();
+    loadHostAndReviews();
+  }, []);
+
+  // Sync host form with loaded profile
+  useEffect(() => {
+    if (hostProfile) {
+      setHostForm({
+        display_name: hostProfile.display_name || '',
+        role_title: hostProfile.role_title || '',
+        bio: hostProfile.bio || '',
+        languages: Array.isArray(hostProfile.languages) ? hostProfile.languages.join(', ') : '',
+        photo_url: '',
+      });
+    }
+  }, [hostProfile]);
+
+  // Check auth to show edit shortcut for super admins (tolerate 401/403)
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        const res = await api.auth.me();
+        setIsSuperAdmin(Boolean(res.data?.is_super_admin));
+      } catch (error) {
+        setIsSuperAdmin(false);
+      }
+    };
+    loadMe();
   }, []);
 
   // Auto-scroll hero images every 5 seconds
@@ -541,141 +631,58 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Host Info - With Inline Editing */}
-              <div className="relative pt-6 border-t border-gray-100">
-                {/* Edit Button (Admin/Team Only) */}
-                {user && (isTeamMember() || isSuperAdmin()) && !isEditingHost && (
+              {/* Host Info - live data */}
+              {(() => {
+                const rawName = (hostProfile?.display_name || '').trim();
+                const hostDisplayName =
+                  rawName && rawName.toLowerCase() !== 'host'
+                    ? rawName
+                    : 'Ali Hassan Cheema';
+                const hostLanguages =
+                  Array.isArray(hostProfile?.languages) && hostProfile.languages.length
+                    ? hostProfile.languages
+                    : ['English', 'Italian'];
+                const reviewLabel =
+                  publicReviews.length > 0
+                    ? `${publicReviews.length} reviews`
+                    : 'Reviews coming soon';
+                return (
+                  <div className="flex items-center gap-4 pt-6 border-t border-gray-100 relative">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold overflow-hidden">
+                  {hostProfile?.avatar ? (
+                    <Image src={hostProfile.avatar || '/allarco-logo.png'} alt={hostProfile.display_name} fill className="object-cover" unoptimized />
+                  ) : (
+                    hostDisplayName
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    Hosted by {hostDisplayName}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {reviewLabel} · {hostLanguages.slice(0, 3).join(', ')}
+                  </p>
+                </div>
+                <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
+                  <Award className="w-3.5 h-3.5" />
+                  Superhost
+                </span>
+                {isSuperAdmin && (
                   <button
-                    onClick={handleEditClick}
-                    className="absolute top-4 right-0 p-2 text-gray-400 hover:text-[#C4A572] hover:bg-gray-50 rounded-lg transition-colors"
-                    aria-label="Edit host profile"
+                    type="button"
+                    onClick={handleOpenHostEdit}
+                    className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-white shadow border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:shadow-md transition"
+                    title="Edit host profile"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                 )}
-
-                {/* Success/Error Messages */}
-                {editSuccess && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg">
-                    {editSuccess}
                   </div>
-                )}
-                {editError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 text-sm rounded-lg">
-                    {editError}
-                  </div>
-                )}
-
-                {!isEditingHost ? (
-                  /* Display Mode */
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C4A572] to-[#8B7355] flex items-center justify-center text-white font-semibold">
-                      {displayHost.photoUrl ? (
-                        <Image src={normalizeImageUrl(displayHost.photoUrl)} alt={displayHost.name} fill className="object-cover rounded-full" unoptimized />
-                      ) : (
-                        displayHost.name.split(' ').map(n => n[0]).join('')
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">Hosted by {displayHost.name}</p>
-                      <p className="text-sm text-gray-500">{displayHost.totalReviews} reviews · {displayHost.languages.slice(0, 2).join(', ')}</p>
-                    </div>
-                    {displayHost.isSuperhost && (
-                      <span className="ml-auto inline-flex items-center gap-1 px-3 py-1 bg-[#C4A572]/10 text-[#C4A572] text-xs font-medium rounded-full">
-                        <Award className="w-3.5 h-3.5" />
-                        Superhost
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  /* Edit Mode */
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Display Name *</label>
-                      <input
-                        type="text"
-                        value={editFormData.display_name}
-                        onChange={(e) => setEditFormData({...editFormData, display_name: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
-                        placeholder="Your name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Languages</label>
-                      <input
-                        type="text"
-                        value={editFormData.languages}
-                        onChange={(e) => setEditFormData({...editFormData, languages: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
-                        placeholder="English, Italian"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Bio (not displayed on homepage)</label>
-                      <textarea
-                        value={editFormData.bio}
-                        onChange={(e) => setEditFormData({...editFormData, bio: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
-                        rows={3}
-                        placeholder="Tell guests about yourself..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL</label>
-                      <input
-                        type="text"
-                        value={editFormData.avatar_url}
-                        onChange={(e) => setEditFormData({...editFormData, avatar_url: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
-                        placeholder="https://..."
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={editFormData.is_superhost}
-                          onChange={(e) => setEditFormData({...editFormData, is_superhost: e.target.checked})}
-                          className="w-4 h-4 text-[#C4A572] border-gray-300 rounded focus:ring-[#C4A572]"
-                        />
-                        <span className="text-sm text-gray-700">Superhost</span>
-                      </label>
-
-                      <div className="flex items-center gap-2">
-                        <label className="text-sm text-gray-700">Review Count:</label>
-                        <input
-                          type="number"
-                          value={editFormData.review_count}
-                          onChange={(e) => setEditFormData({...editFormData, review_count: parseInt(e.target.value) || 0})}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#C4A572] focus:border-transparent"
-                          min="0"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 pt-2">
-                      <button
-                        onClick={handleSaveHost}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#C4A572] text-white rounded-lg hover:bg-[#B39562] transition-colors"
-                      >
-                        <Check className="w-4 h-4" />
-                        Save
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                );
+              })()}
             </motion.div>
 
             {/* Right - Images */}
@@ -861,8 +868,71 @@ export default function Home() {
         </div>
       </AnimatedSection>
 
+      {/* Host edit dialog (super admin only) */}
+      <Dialog open={hostEditOpen && isSuperAdmin} onOpenChange={setHostEditOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit host profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="host-name">Display name</Label>
+              <Input
+                id="host-name"
+                value={hostForm.display_name}
+                onChange={(e) => setHostForm((f) => ({ ...f, display_name: e.target.value }))}
+                placeholder="Ali Hassan Cheema"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-role">Role / title</Label>
+              <Input
+                id="host-role"
+                value={hostForm.role_title}
+                onChange={(e) => setHostForm((f) => ({ ...f, role_title: e.target.value }))}
+                placeholder="Superhost"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-bio">Bio</Label>
+              <Textarea
+                id="host-bio"
+                value={hostForm.bio}
+                onChange={(e) => setHostForm((f) => ({ ...f, bio: e.target.value }))}
+                placeholder="Share a short host introduction"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-languages">Languages (comma separated)</Label>
+              <Input
+                id="host-languages"
+                value={hostForm.languages}
+                onChange={(e) => setHostForm((f) => ({ ...f, languages: e.target.value }))}
+                placeholder="English, Italian"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="host-photo">Photo URL (optional)</Label>
+              <Input
+                id="host-photo"
+                value={hostForm.photo_url}
+                onChange={(e) => setHostForm((f) => ({ ...f, photo_url: e.target.value }))}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <UIButton variant="outline" onClick={() => setHostEditOpen(false)}>
+              Cancel
+            </UIButton>
+            <UIButton onClick={handleSaveHost}>Save changes</UIButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Reviews Section */}
-      <ReviewsSection />
+      <ReviewsSection initialReviews={publicReviews} loading={reviewsLoading} />
 
       {/* Location Section */}
       <LocationSection />

@@ -1,26 +1,22 @@
 'use client';
 
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Quote, ChevronDown, CheckCircle, MapPin, MessageCircle, Sparkles, Key, Heart } from 'lucide-react';
+import { api } from '@/lib/api';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 interface Review {
   id: string;
-  name: string;
-  location: string;
-  avatar?: string;
+  guest_name: string;
+  location?: string;
   rating: number;
+  title?: string;
   text: string;
-  date: string;
-  categories?: {
-    cleanliness?: number;
-    communication?: number;
-    location?: number;
-    value?: number;
-  };
+  stay_date?: string;
+  created_at?: string;
 }
 
 interface RatingCategory {
@@ -30,123 +26,6 @@ interface RatingCategory {
   icon: React.ElementType;
 }
 
-// ============================================================================
-// DATA - High rated reviews (in production, fetch from API)
-// ============================================================================
-const ALL_REVIEWS: Review[] = [
-  {
-    id: '1',
-    name: 'Sarah & Michael',
-    location: 'New York, USA',
-    rating: 10,
-    text: 'An absolutely magical stay in Venice! The apartment exceeded all expectations. The location is perfect - quiet yet close to everything. The hosts were incredibly responsive and helpful.',
-    date: 'October 2024',
-    categories: { cleanliness: 10, communication: 10, location: 10, value: 9 },
-  },
-  {
-    id: '2',
-    name: 'Emma Laurent',
-    location: 'Paris, France',
-    rating: 10,
-    text: 'Bellissimo! The attention to detail is remarkable. Waking up to canal views with my morning espresso was unforgettable. Everything was spotlessly clean and the kitchen had everything we needed.',
-    date: 'September 2024',
-    categories: { cleanliness: 10, communication: 10, location: 10, value: 10 },
-  },
-  {
-    id: '3',
-    name: 'Hans & Greta',
-    location: 'Munich, Germany',
-    rating: 10,
-    text: 'Perfect for our honeymoon. The hosts were incredibly helpful and the apartment is beautifully designed. We felt like true Venetians living in this wonderful space.',
-    date: 'August 2024',
-    categories: { cleanliness: 10, communication: 10, location: 9, value: 10 },
-  },
-  {
-    id: '4',
-    name: 'James & Sophie',
-    location: 'London, UK',
-    rating: 9,
-    text: 'What a gem! The apartment is even better than the photos. Perfectly located in a quiet area but still close to all the main attractions. Would definitely come back.',
-    date: 'July 2024',
-    categories: { cleanliness: 10, communication: 9, location: 10, value: 9 },
-  },
-  {
-    id: '5',
-    name: 'Maria Garcia',
-    location: 'Barcelona, Spain',
-    rating: 10,
-    text: 'Una experiencia increible! The apartment has everything you need and more. The canal view is breathtaking, especially at sunset. Ali was a wonderful host.',
-    date: 'June 2024',
-    categories: { cleanliness: 10, communication: 10, location: 10, value: 10 },
-  },
-  {
-    id: '6',
-    name: 'Takeshi & Yuki',
-    location: 'Tokyo, Japan',
-    rating: 10,
-    text: 'Exceeded all our expectations. The apartment was immaculately clean and the location was perfect for exploring Venice. The host provided excellent recommendations.',
-    date: 'May 2024',
-    categories: { cleanliness: 10, communication: 10, location: 10, value: 10 },
-  },
-  {
-    id: '7',
-    name: 'Pierre Dubois',
-    location: 'Lyon, France',
-    rating: 9,
-    text: 'Fantastic apartment with authentic Venetian charm. Modern amenities combined with traditional architecture. Very peaceful neighborhood.',
-    date: 'April 2024',
-    categories: { cleanliness: 9, communication: 10, location: 9, value: 9 },
-  },
-  {
-    id: '8',
-    name: 'Anna Kowalski',
-    location: 'Warsaw, Poland',
-    rating: 10,
-    text: 'The best Airbnb experience we have ever had! Everything was perfect from check-in to check-out. The apartment is stunning and the host is amazing.',
-    date: 'March 2024',
-    categories: { cleanliness: 10, communication: 10, location: 10, value: 10 },
-  },
-  {
-    id: '9',
-    name: 'Robert & Lisa',
-    location: 'Sydney, Australia',
-    rating: 10,
-    text: 'Worth every penny! After a long flight, arriving at this beautiful apartment made our trip. The beds were so comfortable and the views are incredible.',
-    date: 'February 2024',
-    categories: { cleanliness: 10, communication: 10, location: 10, value: 9 },
-  },
-  {
-    id: '10',
-    name: 'Carlos Santos',
-    location: 'Sao Paulo, Brazil',
-    rating: 9,
-    text: 'Apartamento maravilhoso! Great location, beautiful interior, and very helpful host. We had an amazing time exploring Venice from this perfect base.',
-    date: 'January 2024',
-    categories: { cleanliness: 9, communication: 10, location: 10, value: 9 },
-  },
-  {
-    id: '11',
-    name: 'Nina & Erik',
-    location: 'Stockholm, Sweden',
-    rating: 10,
-    text: 'Absolutely perfect in every way. The apartment is beautifully decorated and has everything you could need. Location is ideal - quiet but central.',
-    date: 'December 2023',
-    categories: { cleanliness: 10, communication: 10, location: 10, value: 10 },
-  },
-  {
-    id: '12',
-    name: 'Ahmed Hassan',
-    location: 'Dubai, UAE',
-    rating: 10,
-    text: 'Luxury meets authenticity. This apartment offers the best of both worlds. The attention to detail is impressive and the host goes above and beyond.',
-    date: 'November 2023',
-    categories: { cleanliness: 10, communication: 10, location: 10, value: 10 },
-  },
-];
-
-// Overall ratings data
-const OVERALL_RATING = 9.8;
-const TOTAL_REVIEWS = 59;
 const RATING_CATEGORIES: RatingCategory[] = [
   { key: 'cleanliness', label: 'Cleanliness', score: 9.9, icon: Sparkles },
   { key: 'communication', label: 'Communication', score: 10, icon: MessageCircle },
@@ -210,8 +89,8 @@ const ReviewCard = memo(function ReviewCard({
 }) {
   // Generate initials for avatar
   const initials = useMemo(() =>
-    review.name.split(' ').map(n => n[0]).join('').slice(0, 2),
-    [review.name]
+    review.guest_name.split(' ').map(n => n[0]).join('').slice(0, 2),
+    [review.guest_name]
   );
 
   // Generate avatar color based on name
@@ -224,9 +103,9 @@ const ReviewCard = memo(function ReviewCard({
       'from-amber-400 to-amber-600',
       'from-cyan-400 to-cyan-600',
     ];
-    const hash = review.name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const hash = review.guest_name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
     return colors[hash % colors.length];
-  }, [review.name]);
+  }, [review.guest_name]);
 
   return (
     <motion.article
@@ -253,7 +132,7 @@ const ReviewCard = memo(function ReviewCard({
             {initials}
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{review.name}</h4>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{review.guest_name}</h4>
             <p className="text-xs sm:text-sm text-gray-500">{review.location}</p>
           </div>
         </div>
@@ -284,7 +163,7 @@ const ReviewCard = memo(function ReviewCard({
             />
           ))}
         </div>
-        <time className="text-xs text-gray-400">{review.date}</time>
+        <time className="text-xs text-gray-400">{review.stay_date || review.created_at || ''}</time>
       </div>
     </motion.article>
   );
@@ -293,40 +172,70 @@ const ReviewCard = memo(function ReviewCard({
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-export default function ReviewsSection() {
+export default function ReviewsSection({ initialReviews = [], loading = false }: { initialReviews?: Review[]; loading?: boolean }) {
+  const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [visibleCount, setVisibleCount] = useState(INITIAL_REVIEWS);
   const [isLoading, setIsLoading] = useState(false);
+  const [fetching, setFetching] = useState(loading || initialReviews.length === 0);
 
-  // Memoized visible reviews
+  useEffect(() => {
+    if (initialReviews.length) {
+      setReviews(initialReviews);
+      setFetching(false);
+    }
+  }, [initialReviews]);
+
+  useEffect(() => {
+    if (initialReviews.length) return;
+    const load = async () => {
+      setFetching(true);
+      try {
+        const res = await api.reviews.list();
+        setReviews(res.data || []);
+      } catch (error) {
+        console.error('Failed to load reviews', error);
+        setReviews([]);
+      } finally {
+        setFetching(false);
+      }
+    };
+    load();
+  }, [initialReviews.length]);
+
+  const totalReviews = reviews.length;
+  const safeReviews = useMemo<Review[]>(() => (Array.isArray(reviews) ? reviews : []), [reviews]);
+
+  const overallRating = useMemo(() => {
+    if (!safeReviews.length) return 0;
+    const sum = safeReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+    return Number((sum / totalReviews).toFixed(1));
+  }, [safeReviews, totalReviews]);
+
+  const ratingLabel = useMemo(() => {
+    if (overallRating >= 9.5) return 'Exceptional';
+    if (overallRating >= 9.0) return 'Wonderful';
+    if (overallRating >= 8.5) return 'Excellent';
+    if (overallRating >= 8.0) return 'Very Good';
+    return 'Good';
+  }, [overallRating]);
+
   const visibleReviews = useMemo(
-    () => ALL_REVIEWS.slice(0, visibleCount),
-    [visibleCount]
+    () => safeReviews.slice(0, visibleCount),
+    [safeReviews, visibleCount]
   );
 
-  // Check if more reviews available
-  const hasMore = visibleCount < ALL_REVIEWS.length;
-  const remainingCount = ALL_REVIEWS.length - visibleCount;
+  const hasMore = visibleCount < safeReviews.length;
+  const remainingCount = safeReviews.length - visibleCount;
 
-  // Load more handler with simulated loading
   const handleLoadMore = useCallback(() => {
     setIsLoading(true);
-    // Simulate network delay for smooth UX
     requestAnimationFrame(() => {
       setTimeout(() => {
-        setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, ALL_REVIEWS.length));
+        setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, safeReviews.length));
         setIsLoading(false);
       }, 150);
     });
-  }, []);
-
-  // Rating label based on score
-  const ratingLabel = useMemo(() => {
-    if (OVERALL_RATING >= 9.5) return 'Exceptional';
-    if (OVERALL_RATING >= 9.0) return 'Wonderful';
-    if (OVERALL_RATING >= 8.5) return 'Excellent';
-    if (OVERALL_RATING >= 8.0) return 'Very Good';
-    return 'Good';
-  }, []);
+  }, [safeReviews.length]);
 
   return (
     <section className="py-16 sm:py-20 lg:py-28" id="reviews">
@@ -349,11 +258,13 @@ export default function ReviewsSection() {
           {/* Overall Rating - Booking.com style */}
           <div className="inline-flex items-center gap-4 bg-gray-50 rounded-2xl p-4 sm:p-6">
             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#C4A572] rounded-xl flex items-center justify-center">
-              <span className="text-2xl sm:text-3xl font-bold text-white">{OVERALL_RATING}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-white">{overallRating || '—'}</span>
             </div>
             <div className="text-left">
               <p className="text-lg sm:text-xl font-semibold text-gray-900">{ratingLabel}</p>
-              <p className="text-sm text-gray-500">{TOTAL_REVIEWS} verified reviews</p>
+              <p className="text-sm text-gray-500">
+                {totalReviews ? `${totalReviews} verified reviews` : fetching ? 'Loading reviews...' : 'No reviews yet'}
+              </p>
               <div className="flex items-center gap-0.5 mt-1">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-[#C4A572] text-[#C4A572]" />
@@ -428,7 +339,7 @@ export default function ReviewsSection() {
             animate={{ opacity: 1 }}
             className="text-center mt-8 text-gray-500 text-sm"
           >
-            You&apos;ve seen all {ALL_REVIEWS.length} reviews
+            You&apos;ve seen all {reviews.length} reviews
           </motion.p>
         )}
       </div>

@@ -20,6 +20,38 @@ interface GalleryImage {
   alt: string;
 }
 
+interface PublicReview {
+  id: string;
+  guest_name: string;
+  location?: string;
+  rating: number;
+  text: string;
+}
+
+const fallbackReviews: PublicReview[] = [
+  {
+    id: '1',
+    guest_name: 'Sarah & Michael',
+    location: 'New York, USA',
+    rating: 10,
+    text: 'An absolutely magical stay in Venice! The apartment exceeded all expectations.',
+  },
+  {
+    id: '2',
+    guest_name: 'Emma Laurent',
+    location: 'Paris, France',
+    rating: 10,
+    text: 'Bellissimo! The attention to detail is remarkable. Unforgettable experience.',
+  },
+  {
+    id: '3',
+    guest_name: 'Hans & Greta',
+    location: 'Munich, Germany',
+    rating: 10,
+    text: 'Perfect for our honeymoon. The hosts were incredibly helpful.',
+  },
+];
+
 const normalizeImageUrl = (url: string): string => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
@@ -59,6 +91,8 @@ export default function ForgotPasswordPage() {
   const [currentReview, setCurrentReview] = useState(0);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [imagesLoading, setImagesLoading] = useState(true);
+  const [reviews, setReviews] = useState<PublicReview[]>(fallbackReviews);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const emailRef = useRef<HTMLInputElement>(null);
 
   // Fetch gallery images from database
@@ -82,6 +116,24 @@ export default function ForgotPasswordPage() {
     fetchGalleryImages();
   }, []);
 
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const res = await api.reviews.list();
+        const incoming = res.data?.results || res.data;
+        if (Array.isArray(incoming) && incoming.length) {
+          setReviews(incoming);
+        }
+      } catch (error) {
+        console.error('Failed to load reviews', error);
+        setReviews(fallbackReviews);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+    loadReviews();
+  }, []);
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
@@ -100,11 +152,12 @@ export default function ForgotPasswordPage() {
 
   // Auto-rotate reviews
   useEffect(() => {
+    if (reviews.length === 0) return;
     const timer = setInterval(() => {
       setCurrentReview((prev) => (prev + 1) % reviews.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [reviews.length]);
 
   // Focus email on mount
   useEffect(() => {
@@ -223,15 +276,15 @@ export default function ForgotPasswordPage() {
                 >
                   <Quote className="w-6 h-6 text-[#C4A572]/50 mb-3" />
                   <p className="text-white/90 leading-relaxed mb-4">
-                    &ldquo;{reviews[currentReview].text}&rdquo;
+                    &ldquo;{reviews[currentReview]?.text || 'Loading real guest feedback...'}&rdquo;
                   </p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-white font-medium">{reviews[currentReview].name}</p>
-                      <p className="text-white/50 text-sm">{reviews[currentReview].location}</p>
+                      <p className="text-white font-medium">{reviews[currentReview]?.guest_name || 'Guest'}</p>
+                      <p className="text-white/50 text-sm">{reviews[currentReview]?.location || 'Venice, Italy'}</p>
                     </div>
                     <div className="flex gap-0.5">
-                      {[...Array(reviews[currentReview].rating)].map((_, i) => (
+                      {[...Array(Math.max(1, Math.round((reviews[currentReview]?.rating || 0) / 2)))].map((_, i) => (
                         <Star key={i} className="w-3 h-3 fill-[#C4A572] text-[#C4A572]" />
                       ))}
                     </div>

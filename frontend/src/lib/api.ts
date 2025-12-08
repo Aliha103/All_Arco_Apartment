@@ -77,6 +77,20 @@ export const api = {
       apiClient.post('/auth/password-reset/confirm/', data),
   },
 
+  // Host profile
+  host: {
+    get: () => apiClient.get('/host-profile/'),
+    update: (id: string | number, data: any) => apiClient.patch(`/host-profile/${id}/`, data),
+  },
+
+  // Public reviews
+  reviews: {
+    list: (params?: any) => apiClient.get('/reviews/', { params }),
+    create: (data: any) => apiClient.post('/reviews/', data),
+    update: (id: string, data: any) => apiClient.patch(`/reviews/${id}/`, data),
+    delete: (id: string) => apiClient.delete(`/reviews/${id}/`),
+  },
+
   // Referral/Invitations
   referrals: {
     getMyStats: () => apiClient.get('/referrals/me/'),

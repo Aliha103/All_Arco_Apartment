@@ -1,19 +1,20 @@
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, SAFE_METHODS
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.contrib.auth import login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
-from .models import User, GuestNote, Role, Permission, PasswordResetToken, HostProfile
+from .models import User, GuestNote, Role, Permission, PasswordResetToken, HostProfile, Review
 from apps.bookings.models import Booking
 from .serializers import (
     UserSerializer, UserCreateSerializer, LoginSerializer, GuestNoteSerializer,
-    UserWithRoleSerializer, RoleSerializer, PermissionSerializer, HostProfileSerializer
+    UserWithRoleSerializer, RoleSerializer, PermissionSerializer,
+    HostProfileSerializer, ReviewSerializer
 )
-from .permissions import HasPermission, IsTeamMember
+from .permissions import HasPermission, IsSuperAdmin
 
 
 @api_view(['POST'])
@@ -400,6 +401,56 @@ class TeamViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============================================================================
+# Host Profile & Reviews (Public + Admin)
+# ============================================================================
+
+
+class HostProfileViewSet(viewsets.ModelViewSet):
+    """Singleton host profile; public read, super admin manage."""
+    serializer_class = HostProfileSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [AllowAny()]
+        return [IsSuperAdmin()]
+
+    def get_queryset(self):
+        return HostProfile.objects.all()
+
+    def get_object(self):
+        obj = HostProfile.objects.first()
+        if not obj:
+            obj = HostProfile.objects.create(
+                display_name='Host',
+                role_title='Superhost',
+                languages=[],
+            )
+        return obj
+
+    def list(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object())
+        return Response(serializer.data)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """Public reviews; only super admin can create/update/delete."""
+    serializer_class = ReviewSerializer
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [AllowAny()]
+        return [IsSuperAdmin()]
+
+    def get_queryset(self):
+        queryset = Review.objects.all()
+        if self.request.method in SAFE_METHODS:
+            queryset = queryset.filter(is_active=True)
+        # Public consumers typically want newest first, featured prioritized
+        return queryset.order_by('-is_featured', '-created_at')
 
 
 # ============================================================================

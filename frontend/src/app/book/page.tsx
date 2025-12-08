@@ -389,7 +389,7 @@ function BookingPageContent() {
   const isProcessing = createBooking.isPending || createCheckout.isPending;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0B0C10] via-[#101119] to-[#0B0C10] text-white">
+    <div className="min-h-screen bg-gradient-to-b from-white via-[#F8F7F4] to-white text-gray-900">
       {/* Navigation */}
       <SiteNav />
 
@@ -404,10 +404,10 @@ function BookingPageContent() {
             <Sparkles className="w-4 h-4 animate-pulse" />
             Seamless Booking Experience
           </div>
-          <h1 className="text-3xl sm:text-4xl font-light text-white leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-light text-gray-900 leading-tight">
             Your Venetian escape awaits. Book in moments, not minutes.
           </h1>
-          <p className="text-white/70 max-w-2xl">
+          <p className="text-gray-700 max-w-2xl">
             Transparent pricing, real-time availability, and instant confirmation. Simply select your dates, enter your details, and secure your stay with confidence.
           </p>
           {/* Security Badge */}
@@ -415,7 +415,7 @@ function BookingPageContent() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center gap-2 text-sm text-white/60 mt-2"
+            className="flex items-center gap-2 text-sm text-gray-600 mt-2"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>Bank-level encryption • Instant confirmation</span>
@@ -425,24 +425,24 @@ function BookingPageContent() {
         <div className="grid lg:grid-cols-[2fr_1fr] gap-6 lg:gap-8 items-start">
           {/* Booking Flow Card */}
           <motion.div variants={itemVariants}>
-            <Card className="bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
-              <CardHeader className="border-b border-white/5 bg-gradient-to-r from-white/5 to-transparent">
+            <Card className="bg-white border border-gray-200 shadow-xl overflow-hidden">
+              <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-white to-[#fdf8ec]">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="text-white text-xl flex items-center gap-2">
+                    <CardTitle className="text-gray-900 text-xl flex items-center gap-2">
                       Step {step === 'plan' ? '01' : '02'}
                       {step === 'guest' && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
                     </CardTitle>
-                    <CardDescription className="text-white/60">
+                    <CardDescription className="text-gray-600">
                       {step === 'plan' ? 'Select your dates and party size' : 'Enter your contact information'}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-200 border-emerald-400/30">
+                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                       <BadgeCheck className="w-4 h-4 mr-1" />
                       Secure Booking
                     </Badge>
-                    <Badge variant="outline" className="border-white/20 text-white">
+                    <Badge variant="outline" className="border-gray-200 text-gray-700">
                       {nights > 0 ? `${nights} night${nights === 1 ? '' : 's'}` : 'Dates pending'}
                     </Badge>
                   </div>
@@ -467,14 +467,14 @@ function BookingPageContent() {
                           whileHover={{ scale: 1.01 }}
                           transition={{ type: 'spring', stiffness: 400 }}
                         >
-                          <Label htmlFor="checkIn" className="text-white/80 font-medium">Check-in</Label>
+                          <Label htmlFor="checkIn" className="text-gray-800 font-medium">Check-in</Label>
                           <Input
                             id="checkIn"
                             type="date"
                             min={today}
                             value={dates.checkIn}
                             onChange={(e) => setDateField('checkIn', e.target.value)}
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                            className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                           />
                         </motion.div>
                         <motion.div
@@ -482,14 +482,14 @@ function BookingPageContent() {
                           whileHover={{ scale: 1.01 }}
                           transition={{ type: 'spring', stiffness: 400 }}
                         >
-                          <Label htmlFor="checkOut" className="text-white/80 font-medium">Check-out</Label>
+                          <Label htmlFor="checkOut" className="text-gray-800 font-medium">Check-out</Label>
                           <Input
                             id="checkOut"
                             type="date"
                             min={dates.checkIn || today}
                             value={dates.checkOut}
                             onChange={(e) => setDateField('checkOut', e.target.value)}
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
+                            className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent transition-all"
                           />
                         </motion.div>
                       </div>
@@ -521,10 +521,10 @@ function BookingPageContent() {
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/10 p-4 space-y-2 backdrop-blur-sm"
+                            className="rounded-xl border border-gray-200 bg-white p-4 space-y-2"
                           >
-                            <div className="flex items-center gap-2 text-white/80">
-                              <CalendarCheck2 className="w-4 h-4 text-emerald-400" />
+                            <div className="flex items-center gap-2 text-gray-800">
+                              <CalendarCheck2 className="w-4 h-4 text-emerald-500" />
                               <span className="font-medium">
                                 {nights || 0} night{nights === 1 ? '' : 's'} • {dates.checkIn} → {dates.checkOut}
                               </span>
@@ -532,18 +532,18 @@ function BookingPageContent() {
                             <div className="flex items-center gap-2 text-sm">
                               {checkingAvailability ? (
                                 <>
-                                  <Loader2 className="w-4 h-4 text-blue-300 animate-spin" />
-                                  <span className="text-blue-200">Verifying availability...</span>
+                                  <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                                  <span className="text-blue-600">Verifying availability...</span>
                                 </>
                               ) : availability?.available === false ? (
                                 <>
-                                  <AlertCircle className="w-4 h-4 text-amber-300" />
-                                  <span className="text-amber-200">These dates are unavailable. Please select different dates.</span>
+                                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                                  <span className="text-amber-600">These dates are unavailable. Please select different dates.</span>
                                 </>
                               ) : availability?.available ? (
                                 <>
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-                                  <span className="text-emerald-200">Available! Ready to proceed with your booking.</span>
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                  <span className="text-emerald-600">Available! Ready to proceed with your booking.</span>
                                 </>
                               ) : null}
                             </div>
