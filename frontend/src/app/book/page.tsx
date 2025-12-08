@@ -408,7 +408,8 @@ function BookingPageContent() {
   }, [dates.checkIn, dates.checkOut, availability, checkingAvailability]);
 
   const handleBackToPlan = useCallback(() => {
-    setStepState(['plan', -1]);
+    // send back to homepage calendar
+    window.location.href = '/';
   }, []);
 
   const handleSubmitBooking = useCallback(async (e: React.FormEvent) => {
