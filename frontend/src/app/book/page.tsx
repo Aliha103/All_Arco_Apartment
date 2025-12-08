@@ -170,7 +170,7 @@ const GuestCounter = memo(({
           <span className="capitalize font-semibold tracking-wide text-sm">{label}</span>
         </div>
         <Badge variant="outline" className="border-gray-200 text-gray-800 bg-gray-50 font-semibold">
-          {value} total
+          {value}
         </Badge>
       </div>
       <div className="flex items-center gap-3">
@@ -323,7 +323,26 @@ function BookingPageContent() {
   }, []);
 
   const setGuestCount = useCallback((key: keyof typeof guestCounts, value: number) => {
-    setGuestCounts((prev) => ({ ...prev, [key]: value }));
+    setGuestCounts((prev) => {
+      // Infants are unrestricted (cap reasonably)
+      if (key === 'infants') {
+        return { ...prev, infants: Math.max(0, Math.min(10, value)) };
+      }
+
+      const clamped = key === 'adults'
+        ? Math.max(1, Math.min(5, value))
+        : Math.max(0, Math.min(5, value));
+
+      const next = { ...prev, [key]: clamped };
+      const combined = next.adults + next.children;
+
+      if (combined > 5) {
+        toast.error('Maximum 5 guests total (adults + children).');
+        return prev;
+      }
+
+      return next;
+    });
   }, []);
 
   const handleContinueToGuest = useCallback(() => {
@@ -420,15 +439,19 @@ function BookingPageContent() {
             <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 font-medium">
               <BadgeCheck className="w-4 h-4 text-[#C4A572]" /> Step 2: Details & Pay
             </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
               Secure checkout • Instant confirmation
             </span>
-            <span className="inline-flex items-center gap-2">
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700">
+            <span className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1">
               <AlertCircle className="w-4 h-4 text-amber-500" />
-              City tax applies to adults only; max 5 guests (adults + children), infants welcome.
+              Max 5 guests (adults + children) · Infants don’t count
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1">
+              <AlertCircle className="w-4 h-4 text-amber-500" />
+              City tax applies to adults only
             </span>
           </div>
         </motion.div>
