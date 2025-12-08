@@ -487,6 +487,19 @@ export default function BookingWidget() {
     return true;
   }, [blockedDateSet, dateRange, today]);
 
+  const rangeHasBlockedNights = useCallback((range: DateRange | undefined) => {
+    if (!range?.from || !range?.to) return false;
+    let cursor = startOfDay(range.from);
+    const end = startOfDay(range.to);
+    while (cursor < end) {
+      if (blockedDateSet.has(format(cursor, 'yyyy-MM-dd'))) {
+        return true;
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return false;
+  }, [blockedDateSet]);
+
   // Pricing calculation
   const pricing = useMemo((): PricingBreakdown | null => {
     if (!isValidBooking) return null;
@@ -632,17 +645,23 @@ export default function BookingWidget() {
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row">
           {/* Calendar Section */}
-          <div className="flex-1 p-4 sm:p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-gray-100 overflow-hidden">
-            {/* Calendar */}
-            <DayPicker
-              mode="range"
-              selected={dateRange}
-              onSelect={setDateRange}
-              numberOfMonths={2}
-              month={calendarMonth}
-              onMonthChange={setCalendarMonth}
-              disabled={disabledMatcher}
-              showOutsideDays={false}
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-gray-100 overflow-hidden">
+          {/* Calendar */}
+          <DayPicker
+            mode="range"
+            selected={dateRange}
+            onSelect={(range) => {
+              if (rangeHasBlockedNights(range)) {
+                toast.error('Those dates include an unavailable night. Please pick different dates.');
+                return;
+              }
+              setDateRange(range);
+            }}
+            numberOfMonths={2}
+            month={calendarMonth}
+            onMonthChange={setCalendarMonth}
+            disabled={disabledMatcher}
+            showOutsideDays={false}
               className="!font-sans [&_button]:!text-gray-900 [&_.rdp-day]:!text-gray-900"
               classNames={{
                 months: 'grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full',
