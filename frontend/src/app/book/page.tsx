@@ -481,6 +481,10 @@ function BookingPageContent() {
 
   const isProcessing = createBooking.isPending || createCheckout.isPending;
 
+  const submitBooking = useCallback(() => {
+    handleSubmitBooking({ preventDefault() {} } as any);
+  }, [handleSubmitBooking]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#F8F7F4] to-white text-gray-900">
       {/* Navigation */}
@@ -878,17 +882,6 @@ function BookingPageContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 p-6">
-                <div className="rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">Flexible</span>
-                    <span className="text-xs text-gray-600">Free until 24h</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">Non-refundable</span>
-                    <span className="text-xs text-gray-600">10% discount applied</span>
-                  </div>
-                  <div className="text-xs text-amber-700">City tax is paid at the property.</div>
-                </div>
                 <AnimatePresence mode="wait">
                   {calculatingPrice ? (
                     <motion.div
@@ -959,9 +952,10 @@ function BookingPageContent() {
                           Back to Dates
                         </Button>
                         <Button
-                          type="submit"
+                          type="button"
                           disabled={isProcessing}
                           className="w-1/2 bg-[#C4A572] text-black hover:bg-[#D8B77A] font-semibold shadow-lg disabled:opacity-50 transition-all"
+                          onClick={submitBooking}
                         >
                           {isProcessing ? (
                             <>
