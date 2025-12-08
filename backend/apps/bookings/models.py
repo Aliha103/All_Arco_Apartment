@@ -276,6 +276,50 @@ class Booking(models.Model):
         return (self.check_in_date, self.check_out_date)
 
 
+class BookingAttempt(models.Model):
+    """
+    Tracks checkout attempts so admins can see abandoned or failed payments.
+    """
+    STATUS_CHOICES = [
+        ('initiated', 'Initiated'),
+        ('paid', 'Paid'),
+        ('failed', 'Failed'),
+        ('expired', 'Expired'),
+        ('canceled', 'Canceled'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='attempts'
+    )
+    stripe_session_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='initiated')
+    failure_reason = models.TextField(blank=True, null=True)
+    amount_due = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    guest_email = models.EmailField(blank=True, null=True)
+    guest_name = models.CharField(max_length=150, blank=True, null=True)
+    check_in_date = models.DateField(blank=True, null=True)
+    check_out_date = models.DateField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'bookings_attempt'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['stripe_session_id']),
+            models.Index(fields=['status']),
+            models.Index(fields=['guest_email']),
+        ]
+
+    def __str__(self):
+        return f"Attempt {self.id} - {self.get_status_display()}"
+
+
 class BookingGuest(models.Model):
     """
     Guest information for check-in (Italian Alloggiati Web compliance).

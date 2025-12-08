@@ -7,6 +7,7 @@ router.register(r'', views.PaymentViewSet, basename='payment')
 
 urlpatterns = [
     path('create-checkout-session/', views.create_checkout_session, name='create-checkout-session'),
+    path('confirm-session/', views.confirm_checkout_session, name='confirm-session'),
     path('<uuid:pk>/refund/', views.refund_payment, name='refund-payment'),
     path('webhook/', views.stripe_webhook, name='stripe-webhook'),
     path('', include(router.urls)),

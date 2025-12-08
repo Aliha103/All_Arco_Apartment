@@ -1,8 +1,6 @@
 'use client';
 
-'use client';
-
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -23,10 +21,11 @@ function ConfirmationContent() {
 
   const pathId = params.id as string | undefined;
   const queryId = search?.get('booking_id') || undefined;
+  const sessionId = search?.get('session_id') || undefined;
   const bookingId = (pathId && pathId !== 'undefined') ? pathId : (queryId || '');
   const isMissingId = !bookingId;
 
-  const { data: booking, isLoading } = useQuery<Booking>({
+  const { data: booking, isLoading, refetch } = useQuery<Booking>({
     queryKey: ['booking', bookingId],
     queryFn: async () => {
       if (!bookingId) throw new Error('Missing booking id');
@@ -54,6 +53,30 @@ function ConfirmationContent() {
       toast.error(msg);
     },
   });
+
+  // Fallback in case the Stripe webhook is delayed: confirm the session on the API
+  const attemptedConfirm = useRef(false);
+  const confirmMutation = useMutation({
+    mutationFn: async () => {
+      if (!sessionId || !bookingId) throw new Error('Missing booking/session id');
+      const response = await api.payments.confirmCheckoutSession(sessionId, bookingId);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.error || 'Unable to verify payment status.';
+      toast.error(msg);
+    },
+  });
+
+  useEffect(() => {
+    if (sessionId && bookingId && !attemptedConfirm.current) {
+      attemptedConfirm.current = true;
+      confirmMutation.mutate();
+    }
+  }, [sessionId, bookingId, confirmMutation]);
 
   if (isMissingId) {
     return (
@@ -98,208 +121,132 @@ function ConfirmationContent() {
     );
   }
 
+  const isPaid = booking.payment_status === 'paid';
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="text-2xl font-bold text-blue-600">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="text-xl font-semibold text-gray-900">
             All'Arco Apartment
           </Link>
+          <Badge variant={isPaid ? 'success' : 'secondary'}>
+            {isPaid ? 'Paid' : 'Payment pending'}
+          </Badge>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-2xl mx-auto">
-          {/* Success Message */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {booking.payment_status === 'paid' ? 'Booking Confirmed!' : 'Booking Pending Payment'}
-            </h1>
-            <p className="text-lg text-gray-600">
-              {booking.payment_status === 'paid'
-                ? "Thank you for booking with All'Arco Apartment"
-                : "Please complete your payment to confirm your stay."}
-            </p>
-          </div>
-
-          {/* Booking Details Card */}
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Booking Details</CardTitle>
-                <Badge variant={booking.payment_status === 'paid' ? 'success' : 'secondary'}>
-                  {booking.payment_status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+      <div className="container mx-auto px-4 py-10">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Hero */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Booking ID</p>
-                  <p className="font-semibold">{booking.booking_id}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Guest Name</p>
-                  <p className="font-semibold">{booking.guest_name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Check-in</p>
-                  <p className="font-semibold">{formatDate(booking.check_in_date)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Check-out</p>
-                  <p className="font-semibold">{formatDate(booking.check_out_date)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Nights</p>
-                  <p className="font-semibold">{booking.nights}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Guests</p>
-                  <p className="font-semibold">
-                    {(booking as any).number_of_guests ?? (booking as any).guests}
+                  <p className="text-sm text-gray-500 uppercase tracking-wide">Booking reference</p>
+                  <p className="text-2xl font-bold text-gray-900">{booking.booking_id}</p>
+                  <p className="mt-2 text-gray-700">
+                    {isPaid
+                      ? "You're all set—see you in Venice!"
+                      : 'Complete payment to confirm your stay.'}
                   </p>
                 </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Total</span>
-                  <span className="text-2xl font-bold text-green-600">
-                    {formatCurrency(booking.total_price)}
-                  </span>
-                </div>
-                {booking.payment_status !== 'paid' && (
-                  <p className="text-sm text-red-600 mt-1">Payment pending</p>
+                {isPaid && (
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank')}
+                  >
+                    Download PDF
+                  </Button>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {booking.payment_status === 'paid' && (
-            <div className="flex items-center justify-end mb-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank');
-                }}
-              >
-                Download PDF
-              </Button>
-            </div>
-          )}
-
-          {/* Next Steps */}
-          <Card className="mb-6">
+          {/* Details */}
+          <Card className="border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle>What's Next?</CardTitle>
+              <CardTitle className="text-lg text-gray-900">Stay details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-sm font-semibold text-blue-600">
-                  1
-                </div>
-                <div>
-                  <p className="font-medium">Confirmation Email</p>
-                  <p className="text-sm text-gray-600">
-                    We've sent a confirmation email to {booking.guest_email}
-                  </p>
-                </div>
+            <CardContent className="grid sm:grid-cols-2 gap-4 text-sm text-gray-800">
+              <div>
+                <p className="text-gray-500">Guest</p>
+                <p className="font-semibold">{booking.guest_name}</p>
               </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-sm font-semibold text-blue-600">
-                  2
-                </div>
-                <div>
-                  <p className="font-medium">Pre-Arrival Reminder</p>
-                  <p className="text-sm text-gray-600">
-                    You'll receive a reminder 7 days before your check-in
-                  </p>
-                </div>
+              <div>
+                <p className="text-gray-500">Guests</p>
+                <p className="font-semibold">{(booking as any).number_of_guests ?? (booking as any).guests}</p>
               </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-sm font-semibold text-blue-600">
-                  3
-                </div>
-                <div>
-                  <p className="font-medium">Check-in Instructions</p>
-                  <p className="text-sm text-gray-600">
-                    Detailed instructions will be sent 48 hours before arrival
-                  </p>
-                </div>
+              <div>
+                <p className="text-gray-500">Check-in</p>
+                <p className="font-semibold">{formatDate(booking.check_in_date)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Check-out</p>
+                <p className="font-semibold">{formatDate(booking.check_out_date)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Nights</p>
+                <p className="font-semibold">{booking.nights}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Email</p>
+                <p className="font-semibold">{booking.guest_email}</p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Contact Information */}
-          <Card className="mb-6">
+          {/* Payment */}
+          <Card className="border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle>Need Help?</CardTitle>
+              <CardTitle className="text-lg text-gray-900">Payment</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                If you have any questions or need to make changes to your booking, please contact us:
-              </p>
-              <div className="space-y-2 text-sm">
-                <p>
-                  <span className="font-medium">Email:</span>{' '}
-                  <a href="mailto:support@allarcoapartment.com" className="text-blue-600 hover:underline">
-                    support@allarcoapartment.com
-                  </a>
-                </p>
-                <p>
-                  <span className="font-medium">Check-in Questions:</span>{' '}
-                  <a href="mailto:check-in@allarcoapartment.com" className="text-blue-600 hover:underline">
-                    check-in@allarcoapartment.com
-                  </a>
-                </p>
+            <CardContent className="space-y-2 text-sm text-gray-800">
+              <div className="flex items-center justify-between">
+                <span>Total</span>
+                <span className="text-lg font-semibold">{formatCurrency(booking.total_price)}</span>
               </div>
+              {!isPaid && (
+                <p className="text-sm text-amber-700">
+                  Your payment is still pending. Please complete checkout to secure your booking.
+                </p>
+              )}
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            {booking.payment_status !== 'paid' ? (
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {!isPaid ? (
               <>
-                <Button
-                  className="flex-1"
-                  onClick={() => payMutation.mutate()}
-                  disabled={payMutation.isPending}
-                >
+                <Button className="flex-1" onClick={() => payMutation.mutate()} disabled={payMutation.isPending}>
                   {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
                 </Button>
                 <Link href="/" className="flex-1">
-                  <Button variant="outline" className="w-full">Return to Home</Button>
+                  <Button variant="outline" className="w-full">Return home</Button>
                 </Link>
               </>
             ) : (
               <>
                 <Link href="/dashboard" className="flex-1">
-                  <Button className="w-full">View My Bookings</Button>
+                  <Button className="w-full">View my bookings</Button>
                 </Link>
                 <Link href="/" className="flex-1">
-                  <Button variant="outline" className="w-full">Return to Home</Button>
+                  <Button variant="outline" className="w-full">Back to home</Button>
                 </Link>
               </>
             )}
           </div>
+
+          {/* Help */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg text-gray-900">Need help?</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-gray-700 space-y-1">
+              <p>Email: <a href="mailto:support@allarcoapartment.com" className="text-blue-600 hover:underline">support@allarcoapartment.com</a></p>
+              <p>Check-in questions: <a href="mailto:check-in@allarcoapartment.com" className="text-blue-600 hover:underline">check-in@allarcoapartment.com</a></p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
