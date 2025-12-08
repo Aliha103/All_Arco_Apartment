@@ -163,7 +163,9 @@ export default function ConfirmationPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Guests</p>
-                  <p className="font-semibold">{booking.number_of_guests || (booking as any).guests}</p>
+                  <p className="font-semibold">
+                    {(booking as any).number_of_guests ?? (booking as any).guests}
+                  </p>
                 </div>
               </div>
 
