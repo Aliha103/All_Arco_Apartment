@@ -166,12 +166,12 @@ function ConfirmationContent() {
                     We’ve locked in your dates. Save your PDF confirmation and complete online check-in at your convenience.
                   </p>
                 </div>
-                  <div className="flex flex-wrap gap-3">
-                    {isPaid && (
-                      <Button
-                        variant="outline"
-                        onClick={() => window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank')}
-                        className="border-gray-300"
+                <div className="flex flex-wrap gap-3">
+                  {isPaid && (
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank')}
+                      className="border-gray-300"
                     >
                       Download PDF
                     </Button>
@@ -269,12 +269,7 @@ function ConfirmationContent() {
                     <span>Total stay</span>
                     <span className="font-semibold">{formatCurrency(booking.total_price)}</span>
                   </div>
-                  {isPaid ? (
-                    <div className="flex items-center gap-2 text-emerald-700 text-sm">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Payment confirmed. A receipt was emailed from reservations@allarcoapartment.com.</span>
-                    </div>
-                  ) : (
+                  {isPaid ? null : (
                     <div className="flex items-center gap-2 text-amber-700 text-sm">
                       <AlertCircle className="w-4 h-4" />
                       <span>Payment is pending. Complete checkout to confirm your stay.</span>
@@ -305,6 +300,13 @@ function ConfirmationContent() {
                       <p className="text-gray-600">Arrival instructions will be sent 48 hours before check-in.</p>
                     </div>
                   </div>
+                  <div className="flex gap-3">
+                    <Clock className="w-5 h-5 text-gray-500 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">House rules</p>
+                      <p className="text-gray-600">Check-in from 15:00 · Check-out by 10:00 · City tax paid at property · Non-smoking.</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -313,18 +315,6 @@ function ConfirmationContent() {
                   <CardTitle className="text-lg">Need help?</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-gray-700">
-                  <p>
-                    <span className="font-semibold text-gray-900">Reservations: </span>
-                    <a href="mailto:reservations@allarcoapartment.com" className="text-blue-600 hover:underline">
-                      reservations@allarcoapartment.com
-                    </a>
-                  </p>
-                  <p>
-                    <span className="font-semibold text-gray-900">Check-in questions: </span>
-                    <a href="mailto:check-in@allarcoapartment.com" className="text-blue-600 hover:underline">
-                      check-in@allarcoapartment.com
-                    </a>
-                  </p>
                   <p>
                     <span className="font-semibold text-gray-900">Support: </span>
                     <a href="mailto:support@allarcoapartment.com" className="text-blue-600 hover:underline">

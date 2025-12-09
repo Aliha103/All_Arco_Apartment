@@ -540,7 +540,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             rules_html = """
                 <b><font size=10 color=#A68B5B>HOUSE RULES & CHECK-IN</font></b><br/>
                 <font size=9>
-                    Check-in: 15:00 · Check-out: 11:00<br/>
+                    Check-in: 15:00 · Check-out: 10:00<br/>
                     City tax is paid at the property (not charged online).<br/>
                     Please respect quiet hours and non-smoking policy.<br/>
                     Cancellation: """ + ("Non-refundable (10% discount applied)" if booking.cancellation_policy == "non_refundable" else "Flexible — free until 24h before check-in") + """.
