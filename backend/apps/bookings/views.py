@@ -11,6 +11,7 @@ from .serializers import (
     BookingSerializer, BookingListSerializer, BookingCreateSerializer,
     BlockedDateSerializer
 )
+from apps.emails.services import send_online_checkin_prompt, send_booking_confirmation
 
 
 def check_dates_available(check_in_date, check_out_date, exclude_booking_id=None):
@@ -193,6 +194,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             # TODO: Send booking confirmation email asynchronously
             # Trigger audit log entry
             # (Will be implemented when audit log integration is added)
+
+            # If nothing to charge (credits or zero amount), still send confirmation + check-in prompt
+            if booking.amount_due == 0:
+                try:
+                    send_booking_confirmation(booking)
+                except Exception:
+                    pass
+                try:
+                    send_online_checkin_prompt(booking)
+                except Exception:
+                    pass
 
         return booking
 
