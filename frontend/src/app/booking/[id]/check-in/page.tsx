@@ -379,11 +379,20 @@ export default function BookingCheckInPage() {
     }
   }, [booking, etaCheckin, etaCheckout, cityTaxAck]);
 
-    const heading = useMemo(() => {
+  const heading = useMemo(() => {
     if (step === 1) return 'Billing details';
     if (step === 2) return 'Guest details';
     return 'City tax';
   }, [step]);
+
+  // Prefill ETA and resume step if draft exists
+  useEffect(() => {
+    if (!booking) return;
+    if (booking.eta_checkin_time) setEtaCheckin(booking.eta_checkin_time);
+    if (booking.eta_checkout_time) setEtaCheckout(booking.eta_checkout_time);
+    if (booking.city_tax_payment_status === 'paid') setCityTaxAck(true);
+    if (booking.checkin_draft) setStep(3);
+  }, [booking]);
 
   if (loading) {
     return (
