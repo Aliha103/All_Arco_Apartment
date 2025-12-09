@@ -411,11 +411,19 @@ export default function BookingCheckInPage() {
                               />
                             </div>
                             <div className="flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">VAT / Tax ID</Label>
+                              <Label className="text-xs text-gray-600">VAT Code (optional)</Label>
                               <Input
                                 placeholder="IT123456789"
                                 value={billing.tax_id}
                                 onChange={(e) => setBilling({ ...billing, tax_id: e.target.value })}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <Label className="text-xs text-gray-600">Tax Code (optional)</Label>
+                              <Input
+                                placeholder="Codice fiscale"
+                                value={billing.tax_code}
+                                onChange={(e) => setBilling({ ...billing, tax_code: e.target.value })}
                               />
                             </div>
                             <div className="sm:col-span-2 flex flex-col gap-1">
