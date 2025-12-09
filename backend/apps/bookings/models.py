@@ -120,6 +120,30 @@ class Booking(models.Model):
         help_text='Whether to issue refund when cancelling this booking'
     )
 
+    # Online city tax payment tracking
+    CITY_TAX_STATUS_CHOICES = [
+        ('unpaid', 'Unpaid'),
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('refunded', 'Refunded'),
+    ]
+    city_tax_payment_status = models.CharField(
+        max_length=20,
+        choices=CITY_TAX_STATUS_CHOICES,
+        default='unpaid'
+    )
+    city_tax_payment_intent = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text='Stripe payment intent/session for city tax'
+    )
+    city_tax_paid_at = models.DateTimeField(null=True, blank=True)
+
+    # ETA from online check-in
+    eta_checkin_time = models.TimeField(null=True, blank=True)
+    eta_checkout_time = models.TimeField(null=True, blank=True)
+
     # No-show handling: marks the date from which nights are released
     # For full no-show: equals check_in_date (all nights released)
     # For partial no-show: equals the date guest disappeared (remaining nights released)

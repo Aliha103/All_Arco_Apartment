@@ -150,6 +150,10 @@ export const api = {
       apiClient.post('/payments/create-checkout-session/', { booking_id: bookingId }),
     confirmCheckoutSession: (sessionId: string, bookingId?: string) =>
       apiClient.post('/payments/confirm-session/', { session_id: sessionId, booking_id: bookingId }),
+    createCityTaxSession: (bookingId: string) =>
+      apiClient.post('/payments/create-city-tax-session/', { booking_id: bookingId }),
+    confirmCityTaxSession: (sessionId: string, bookingId?: string) =>
+      apiClient.post('/payments/confirm-city-tax-session/', { session_id: sessionId, booking_id: bookingId }),
     createPaymentIntent: (data: any) =>
       apiClient.post('/payments/create-payment-intent/', data),
     refund: (paymentId: string, data: any) =>

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { CheckCircle, AlertCircle, Mail, CreditCard, Shield, CalendarClock, Clock, Info, Download, Users, Home, FileText, ChevronRight } from 'lucide-react';
+import { CheckCircle, AlertCircle, Mail, CreditCard, Shield, CalendarClock, Clock, Info, Download, Users, Home, FileText } from 'lucide-react';
 import SiteNav from '@/app/components/SiteNav';
 import SiteFooter from '@/app/components/SiteFooter';
 import { motion } from 'framer-motion';
@@ -26,6 +26,7 @@ function ConfirmationContent() {
   const pathId = params.id as string | undefined;
   const queryId = search?.get('booking_id') || undefined;
   const sessionId = search?.get('session_id') || undefined;
+  const isCityTax = search?.get('city_tax') === '1';
   const bookingId = (pathId && pathId !== 'undefined') ? pathId : (queryId || '');
   const isMissingId = !bookingId;
 
@@ -63,7 +64,9 @@ function ConfirmationContent() {
   const confirmMutation = useMutation({
     mutationFn: async () => {
       if (!sessionId || !bookingId) throw new Error('Missing booking/session id');
-      const response = await api.payments.confirmCheckoutSession(sessionId, bookingId);
+      const response = isCityTax
+        ? await api.payments.confirmCityTaxSession(sessionId, bookingId)
+        : await api.payments.confirmCheckoutSession(sessionId, bookingId);
       return response.data;
     },
     onSuccess: () => {
@@ -342,7 +345,9 @@ function ConfirmationContent() {
                   {/* Additional costs */}
                   <div className="space-y-2 pt-2 border-t border-gray-200">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">City tax (pay at property)</span>
+                      <span className="text-gray-600">
+                        City tax ({booking.city_tax_payment_status === 'paid' ? 'paid online' : 'pay at property'})
+                      </span>
                       <span className="font-semibold text-gray-900">{formatCurrency(touristTax)}</span>
                     </div>
                     <div className="flex items-center justify-between text-base font-semibold">

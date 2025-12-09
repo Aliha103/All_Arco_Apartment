@@ -120,6 +120,11 @@ class BookingViewSet(viewsets.ModelViewSet):
         eta_checkout = request.data.get('eta_checkout')
         city_tax_ack = request.data.get('city_tax_acknowledged')
 
+        if eta_checkin:
+            booking.eta_checkin_time = eta_checkin
+        if eta_checkout:
+            booking.eta_checkout_time = eta_checkout
+
         note_parts = []
         if eta_checkin:
           note_parts.append(f"ETA check-in: {eta_checkin}")
@@ -132,7 +137,8 @@ class BookingViewSet(viewsets.ModelViewSet):
             existing = booking.internal_notes or ''
             new_notes = (existing + '\n' if existing else '') + ' | '.join(note_parts)
             booking.internal_notes = new_notes
-            booking.save(update_fields=['internal_notes'])
+
+        booking.save(update_fields=['internal_notes', 'eta_checkin_time', 'eta_checkout_time'])
 
         try:
             from apps.emails.services import send_online_checkin_completed

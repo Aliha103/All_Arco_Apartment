@@ -312,6 +312,8 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
                 'total_spent': 0.0,
                 'total_guests_count': 0,
                 'online_bookings': 0,
+                'eta_checkin_time': booking.eta_checkin_time,
+                'eta_checkout_time': booking.eta_checkout_time,
             })
 
             # Split guest_name into first/last if missing

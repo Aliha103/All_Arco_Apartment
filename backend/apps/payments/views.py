@@ -266,6 +266,144 @@ def confirm_checkout_session(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+def create_city_tax_session(request):
+    """Create Stripe Checkout Session for city tax only."""
+    booking_id = request.data.get('booking_id')
+    try:
+        booking = Booking.objects.get(id=booking_id)
+    except Booking.DoesNotExist:
+        return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    tax_amount = float(booking.tourist_tax or 0)
+    if tax_amount <= 0:
+        return Response({'error': 'No city tax due for this booking'}, status=status.HTTP_400_BAD_REQUEST)
+
+    frontend_host = getattr(settings, 'FRONTEND_URL', None) or (
+        settings.CORS_ALLOWED_ORIGINS[0] if settings.CORS_ALLOWED_ORIGINS else None
+    ) or 'https://www.allarcoapartment.com'
+    frontend_host = frontend_host.rstrip('/')
+
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[
+                {
+                    'price_data': {
+                        'currency': 'eur',
+                        'product_data': {
+                            'name': "City tax · All'Arco Apartment",
+                            'description': f"{booking.number_of_guests} guest(s) · {booking.check_in_date} → {booking.check_out_date}",
+                        },
+                        'unit_amount': int(tax_amount * 100),
+                    },
+                    'quantity': 1,
+                },
+            ],
+            mode='payment',
+            billing_address_collection='required',
+            phone_number_collection={'enabled': True},
+            success_url=(
+                f"{frontend_host}/booking/confirmation"
+                f"?session_id={{CHECKOUT_SESSION_ID}}&booking_id={booking.id}&city_tax=1"
+            ),
+            cancel_url=f"{frontend_host}/book",
+            customer_email=booking.guest_email,
+            metadata={'booking_id': str(booking.id), 'city_tax': '1'},
+            payment_intent_data={'metadata': {'booking_id': str(booking.id), 'city_tax': '1'}},
+        )
+
+        booking.city_tax_payment_status = 'pending'
+        booking.city_tax_payment_intent = session.id
+        booking.save(update_fields=['city_tax_payment_status', 'city_tax_payment_intent'])
+
+        BookingAttempt.objects.create(
+            booking=booking,
+            stripe_session_id=session.id,
+            status='initiated',
+            amount_due=tax_amount,
+            guest_email=booking.guest_email,
+            guest_name=booking.guest_name,
+            check_in_date=booking.check_in_date,
+            check_out_date=booking.check_out_date,
+        )
+
+        return Response({'session_url': session.url, 'session_id': session.id})
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def confirm_city_tax_session(request):
+    """Confirm Stripe session for city tax and mark booking as city-tax paid."""
+    session_id = request.data.get('session_id')
+    booking_id = request.data.get('booking_id')
+    if not session_id:
+        return Response({'error': 'Missing session_id'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        return Response({'error': 'Invalid or expired session'}, status=status.HTTP_400_BAD_REQUEST)
+
+    resolved_booking_id = booking_id or (session.get('metadata') or {}).get('booking_id')
+    try:
+        booking = Booking.objects.get(id=resolved_booking_id)
+    except Booking.DoesNotExist:
+        return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if booking.city_tax_payment_status == 'paid':
+        return Response(BookingSerializer(booking).data)
+
+    session_status = session.get('status')
+    payment_status = session.get('payment_status')
+    payment_intent = session.get('payment_intent')
+
+    if session_status == 'complete' or payment_status == 'paid':
+        if not payment_intent:
+            return Response({'status': 'pending'}, status=status.HTTP_202_ACCEPTED)
+
+        amount_total = (session.get('amount_total') or 0) / 100
+        currency = (session.get('currency') or 'eur').upper()
+        payment_method_types = session.get('payment_method_types') or ['card']
+
+        BookingAttempt.objects.filter(stripe_session_id=session_id).update(
+            status='paid',
+            failure_reason=''
+        )
+
+        payment, created = Payment.objects.get_or_create(
+            stripe_payment_intent_id=payment_intent,
+            defaults={
+                'booking': booking,
+                'amount': amount_total or (booking.tourist_tax or 0),
+                'currency': currency,
+                'status': 'succeeded',
+                'payment_method': payment_method_types[0],
+                'paid_at': timezone.now(),
+                'kind': 'city_tax',
+            },
+        )
+        if not created:
+            payment.status = 'succeeded'
+            payment.kind = 'city_tax'
+            if amount_total:
+                payment.amount = amount_total
+            if not payment.paid_at:
+                payment.paid_at = timezone.now()
+            payment.save(update_fields=['status', 'amount', 'paid_at', 'kind'])
+
+        booking.city_tax_payment_status = 'paid'
+        booking.city_tax_payment_intent = payment_intent
+        booking.city_tax_paid_at = timezone.now()
+        booking.save(update_fields=['city_tax_payment_status', 'city_tax_payment_intent', 'city_tax_paid_at'])
+
+        return Response(BookingSerializer(booking).data)
+
+    return Response({'status': 'pending'}, status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def refund_payment(request, pk):
     """Process refund for a payment."""
@@ -352,48 +490,68 @@ def stripe_webhook(request):
     # Handle checkout.session.completed
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        booking_id = session['metadata'].get('booking_id')
+        metadata = session.get('metadata') or {}
+        booking_id = metadata.get('booking_id')
+        is_city_tax = metadata.get('city_tax') == '1'
         
         if booking_id:
             try:
                 booking = Booking.objects.get(id=booking_id)
 
-                # Create payment record
-                payment = Payment.objects.create(
-                    booking=booking,
-                    stripe_payment_intent_id=session['payment_intent'],
-                    amount=max((booking.amount_due or booking.total_price) - (booking.tourist_tax or 0), 0),
-                    currency='eur',
-                    status='succeeded',
-                    payment_method=session.get('payment_method_types', ['card'])[0],
-                    paid_at=timezone.now(),
-                )
-                
-                # Update booking status
-                booking.status = 'confirmed'
-                booking.payment_status = 'paid'
-                booking.amount_due = Decimal(booking.tourist_tax or 0)
-                booking.save(update_fields=['status', 'payment_status', 'amount_due'])
+                if is_city_tax:
+                    Payment.objects.update_or_create(
+                        stripe_payment_intent_id=session['payment_intent'],
+                        defaults={
+                            'booking': booking,
+                            'amount': float(booking.tourist_tax or 0),
+                            'currency': 'eur',
+                            'status': 'succeeded',
+                            'payment_method': session.get('payment_method_types', ['card'])[0],
+                            'paid_at': timezone.now(),
+                            'kind': 'city_tax',
+                        }
+                    )
+                    booking.city_tax_payment_status = 'paid'
+                    booking.city_tax_payment_intent = session['payment_intent']
+                    booking.city_tax_paid_at = timezone.now()
+                    booking.save(update_fields=['city_tax_payment_status', 'city_tax_payment_intent', 'city_tax_paid_at'])
+                else:
+                    # Create payment record
+                    payment = Payment.objects.create(
+                        booking=booking,
+                        stripe_payment_intent_id=session['payment_intent'],
+                        amount=max((booking.amount_due or booking.total_price) - (booking.tourist_tax or 0), 0),
+                        currency='eur',
+                        status='succeeded',
+                        payment_method=session.get('payment_method_types', ['card'])[0],
+                        paid_at=timezone.now(),
+                        kind='booking',
+                    )
+                    
+                    # Update booking status
+                    booking.status = 'confirmed'
+                    booking.payment_status = 'paid'
+                    booking.amount_due = Decimal(booking.tourist_tax or 0)
+                    booking.save(update_fields=['status', 'payment_status', 'amount_due'])
 
-                BookingAttempt.objects.filter(stripe_session_id=session.get('id')).update(
-                    status='paid',
-                    failure_reason=''
-                )
-                
-                # Send emails (best-effort)
-                try:
-                    send_booking_confirmation(booking)
-                except Exception:
-                    pass
-                try:
-                    send_payment_receipt(payment)
-                except Exception:
-                    pass
-                try:
-                    send_online_checkin_prompt(booking)
-                except Exception:
-                    pass
-                
+                    BookingAttempt.objects.filter(stripe_session_id=session.get('id')).update(
+                        status='paid',
+                        failure_reason=''
+                    )
+                    
+                    # Send emails (best-effort)
+                    try:
+                        send_booking_confirmation(booking)
+                    except Exception:
+                        pass
+                    try:
+                        send_payment_receipt(payment)
+                    except Exception:
+                        pass
+                    try:
+                        send_online_checkin_prompt(booking)
+                    except Exception:
+                        pass
             except Booking.DoesNotExist:
                 pass
 

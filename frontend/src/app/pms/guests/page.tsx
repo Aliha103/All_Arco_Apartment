@@ -160,6 +160,8 @@ function StatCard({
 function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
   const initials = `${(guest.first_name || '?')[0]}${(guest.last_name || '?')[0]}`.toUpperCase();
   const bookingCode = guest.latest_booking_code || '—';
+  const etaCheckin = (guest as any).eta_checkin_time;
+  const etaCheckout = (guest as any).eta_checkout_time;
 
   return (
     <motion.div
@@ -205,6 +207,14 @@ function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
               <div className="flex items-center text-gray-700">
                 <Phone className="w-4 h-4 mr-2 text-gray-500" />
                 <span className="truncate">{guest.phone}</span>
+              </div>
+            )}
+            {(etaCheckin || etaCheckout) && (
+              <div className="col-span-2 flex items-center text-gray-700">
+                <Clock className="w-4 h-4 mr-2 text-gray-500" />
+                <span>
+                  ETA {etaCheckin || '—'} / ETD {etaCheckout || '—'}
+                </span>
               </div>
             )}
             <div className="flex items-center text-gray-700">

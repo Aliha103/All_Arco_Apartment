@@ -53,6 +53,10 @@ type Booking = {
   payment_status: string;
   tourist_tax: number;
   cancellation_policy?: string;
+  city_tax_payment_status?: string;
+  city_tax_paid_at?: string;
+  eta_checkin_time?: string;
+  eta_checkout_time?: string;
 };
 
 type GuestForm = {
@@ -309,10 +313,29 @@ export default function BookingCheckInPage() {
   const [etaCheckin, setEtaCheckin] = useState('');
   const [etaCheckout, setEtaCheckout] = useState('');
   const [cityTaxAck, setCityTaxAck] = useState(false);
+  const [cityTaxPaying, setCityTaxPaying] = useState(false);
+
+  const onPayCityTax = useCallback(async () => {
+    if (!booking) return;
+    setCityTaxPaying(true);
+    try {
+      const resp = await api.payments.createCityTaxSession(booking.id);
+      const url = resp.data?.session_url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        toast.error('Unable to start city tax payment.');
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to start city tax payment.');
+    } finally {
+      setCityTaxPaying(false);
+    }
+  }, [booking]);
 
   const onFinish = useCallback(async () => {
     if (!booking) return;
-    if (!cityTaxAck) {
+    if (!cityTaxAck && booking.city_tax_payment_status !== 'paid') {
       toast.error('Please confirm city tax will be paid at the property.');
       return;
     }
@@ -1242,11 +1265,15 @@ export default function BookingCheckInPage() {
                             <Shield className="w-6 h-6 text-amber-600" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-gray-900 mb-2">City tax payable at property</h4>
-                            <p className="text-gray-700 mb-3">
-                              <span className="text-2xl font-bold text-[#C4A572]">€{booking.tourist_tax}</span> per person will be collected upon arrival.
+                            <h4 className="text-lg font-semibold text-gray-900 mb-1">City tax</h4>
+                            <p className="text-gray-700">
+                              <span className="text-2xl font-bold text-[#C4A572]">€{booking.tourist_tax}</span> total for your party.
                             </p>
-                            <p className="text-sm text-gray-600">No online payment needed. Cash or card accepted at the property.</p>
+                            <p className="text-sm text-gray-600">
+                              {booking.city_tax_payment_status === 'paid'
+                                ? 'Paid online.'
+                                : 'You can pay online now or on arrival.'}
+                            </p>
                           </div>
                         </div>
                         <div className="rounded-lg border border-white/50 bg-white/70 p-4 space-y-3">
@@ -1268,15 +1295,32 @@ export default function BookingCheckInPage() {
                               />
                             </div>
                           </div>
-                          <label className="inline-flex items-center gap-2 text-sm text-gray-800">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4"
-                              checked={cityTaxAck}
-                              onChange={(e) => setCityTaxAck(e.target.checked)}
-                            />
-                            <span>I’ll pay city tax at the property.</span>
-                          </label>
+                          {booking.city_tax_payment_status !== 'paid' && (
+                            <>
+                              <Button
+                                onClick={onPayCityTax}
+                                disabled={cityTaxPaying}
+                                className="w-full sm:w-auto bg-[#C4A572] hover:bg-[#B39562] text-white shadow"
+                              >
+                                {cityTaxPaying ? 'Opening Stripe…' : 'Pay city tax online'}
+                              </Button>
+                              <label className="inline-flex items-center gap-2 text-sm text-gray-800">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4"
+                                  checked={cityTaxAck}
+                                  onChange={(e) => setCityTaxAck(e.target.checked)}
+                                />
+                                <span>I’ll pay city tax at the property.</span>
+                              </label>
+                            </>
+                          )}
+                          {booking.city_tax_payment_status === 'paid' && (
+                            <div className="inline-flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-lg">
+                              <CheckCircle2 className="w-4 h-4" />
+                              City tax paid online.
+                            </div>
+                          )}
                         </div>
                       </div>
 
