@@ -17,8 +17,37 @@ from apps.emails.services import (
     send_payment_receipt,
     send_online_checkin_prompt,
 )
+from datetime import date
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+def _compute_city_tax_amount(booking: Booking) -> float:
+    """
+    City tax: €4 per adult per night, max 5 nights.
+    Adults inferred from booking guests with DOB; fallback to number_of_guests.
+    """
+    guests = booking.guests.all()
+    today = date.today()
+
+    def _age(dob):
+        if not dob:
+            return None
+        return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+    adult_count = 0
+    have_dobs = False
+    for g in guests:
+        age = _age(g.date_of_birth)
+        if age is not None:
+            have_dobs = True
+            if age >= 18:
+                adult_count += 1
+    if not have_dobs:
+        adult_count = booking.number_of_guests or 1
+
+    nights = min(booking.nights or 1, 5)
+    return float(adult_count * nights * 4)
 
 
 class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -276,6 +305,9 @@ def create_city_tax_session(request):
         return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
 
     tax_amount = float(booking.tourist_tax or 0)
+    computed_tax = _compute_city_tax_amount(booking)
+    if computed_tax > 0:
+        tax_amount = computed_tax
     if tax_amount <= 0:
         return Response({'error': 'No city tax due for this booking'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -376,7 +408,7 @@ def confirm_city_tax_session(request):
             stripe_payment_intent_id=payment_intent,
             defaults={
                 'booking': booking,
-                'amount': amount_total or (booking.tourist_tax or 0),
+                'amount': amount_total or computed_tax,
                 'currency': currency,
                 'status': 'succeeded',
                 'payment_method': payment_method_types[0],
@@ -499,11 +531,12 @@ def stripe_webhook(request):
                 booking = Booking.objects.get(id=booking_id)
 
                 if is_city_tax:
+                    tax_amount = _compute_city_tax_amount(booking)
                     Payment.objects.update_or_create(
                         stripe_payment_intent_id=session['payment_intent'],
                         defaults={
                             'booking': booking,
-                            'amount': float(booking.tourist_tax or 0),
+                            'amount': tax_amount,
                             'currency': 'eur',
                             'status': 'succeeded',
                             'payment_method': session.get('payment_method_types', ['card'])[0],

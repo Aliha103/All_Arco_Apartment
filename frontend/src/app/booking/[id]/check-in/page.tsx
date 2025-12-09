@@ -205,6 +205,18 @@ export default function BookingCheckInPage() {
     }
   }, [billing, billingType, booking]);
 
+  const computeAge = useCallback((dob?: string) => {
+    if (!dob) return null;
+    const birth = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  }, []);
+
   const onGuestsSubmit = useCallback(async () => {
     if (!booking) return;
 
@@ -944,6 +956,7 @@ export default function BookingCheckInPage() {
                           const isPrimary = idx === 0;
                           const isItalian = guest.country_of_birth === 'Italy';
                           const isItalianDoc = guest.document_issue_country === 'Italy';
+                          const age = computeAge(guest.date_of_birth);
 
                           return (
                             <Card key={idx} className="border-2 border-gray-200 hover:border-[#C4A572]/50 transition-all">
@@ -971,6 +984,14 @@ export default function BookingCheckInPage() {
                                       <CardTitle className="text-base font-semibold text-gray-900 group-hover:text-[#C4A572] transition-colors">
                                         Guest {idx + 1} {isPrimary && '(Primary)'}
                                       </CardTitle>
+                                      {!isExpanded && (
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          {guest.first_name && guest.last_name && (
+                                            <span>{guest.first_name} {guest.last_name}</span>
+                                          )}
+                                          {age !== null && <Badge variant="outline" className="text-xs">{age} yrs</Badge>}
+                                        </div>
+                                      )}
                                       {!isExpanded && guest.first_name && guest.last_name && (
                                         <p className="text-sm text-gray-600 mt-0.5">{guest.first_name} {guest.last_name}</p>
                                       )}
