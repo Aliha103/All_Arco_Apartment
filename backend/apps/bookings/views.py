@@ -136,6 +136,16 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
         
         return queryset.order_by('-check_in_date')
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
     
     def perform_create(self, serializer):
         """
