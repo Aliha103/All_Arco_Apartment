@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { CheckCircle, AlertCircle, Mail, CreditCard, Shield, CalendarClock } from 'lucide-react';
+import { CheckCircle, AlertCircle, Mail, CreditCard, Shield, CalendarClock, Clock, Info } from 'lucide-react';
 import SiteNav from '@/app/components/SiteNav';
 import SiteFooter from '@/app/components/SiteFooter';
 
@@ -131,6 +131,9 @@ function ConfirmationContent() {
   const touristTax = Number((booking as any).tourist_tax ?? 0) || 0;
   const appliedCredit = Number((booking as any).applied_credit ?? 0) || 0;
   const stayAmount = nightlyRate * (booking.nights || 0);
+  const chargedNow = Math.max((booking.total_price || 0) - touristTax, 0);
+  const today = new Date().toISOString().slice(0, 10);
+  const isSameDay = booking.check_in_date === today;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#fdf8ec] to-white text-gray-900">
@@ -162,12 +165,12 @@ function ConfirmationContent() {
                     We’ve locked in your dates. Save your PDF confirmation and complete online check-in at your convenience.
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {isPaid && (
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank')}
-                      className="border-gray-300"
+                  <div className="flex flex-wrap gap-3">
+                    {isPaid && (
+                      <Button
+                        variant="outline"
+                        onClick={() => window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank')}
+                        className="border-gray-300"
                     >
                       Download PDF
                     </Button>
@@ -254,8 +257,16 @@ function ConfirmationContent() {
                     </div>
                   )}
                   <div className="border-t border-dashed border-gray-200 pt-3 flex items-center justify-between">
-                    <span className="font-semibold text-gray-900">Total</span>
-                    <span className="text-lg font-bold text-gray-900">{formatCurrency(booking.total_price)}</span>
+                    <span className="font-semibold text-gray-900">Charged now</span>
+                    <span className="text-lg font-bold text-gray-900">{formatCurrency(chargedNow)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-700">
+                    <span>City tax (pay at property)</span>
+                    <span className="font-semibold">{formatCurrency(touristTax)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-700">
+                    <span>Total stay</span>
+                    <span className="font-semibold">{formatCurrency(booking.total_price)}</span>
                   </div>
                   {isPaid ? (
                     <div className="flex items-center gap-2 text-emerald-700 text-sm">
@@ -323,6 +334,15 @@ function ConfirmationContent() {
               </Card>
 
               <div className="flex flex-col gap-3">
+                {isSameDay && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 flex gap-3 items-start">
+                    <Clock className="w-4 h-4 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold">Same-day arrival</p>
+                      <p>Please complete online check-in now to receive access instructions.</p>
+                    </div>
+                  </div>
+                )}
                 <Link href="/bookings/find" className="w-full">
                   <Button className="w-full bg-[#C4A572] text-white hover:bg-[#B39562]">
                     Complete online check-in

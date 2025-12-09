@@ -108,6 +108,8 @@ def send_booking_confirmation(booking):
         'check_out': booking.check_out_date,
         'nights': booking.nights,
         'total': booking.total_price,
+        'cancellation_policy': booking.cancellation_policy,
+        'tourist_tax': booking.tourist_tax,
     }
 
     html_body = f"""
@@ -124,7 +126,9 @@ def send_booking_confirmation(booking):
                     <p><strong>Check-in:</strong> {booking.check_in_date}</p>
                     <p><strong>Check-out:</strong> {booking.check_out_date}</p>
                     <p><strong>Nights:</strong> {booking.nights}</p>
-                    <p><strong>Total Paid:</strong> €{booking.total_price}</p>
+                    <p><strong>Total Paid (online):</strong> €{float(booking.total_price) - float(booking.tourist_tax or 0):.2f}</p>
+                    <p><strong>City tax:</strong> €{booking.tourist_tax} (pay at property)</p>
+                    <p><strong>Cancellation:</strong> {"Non-refundable (10% discount applied)" if booking.cancellation_policy == "non_refundable" else "Flexible — free until 24h before check-in"}</p>
                 </div>
 
                 <p>Check-in instructions will be sent 48 hours before your arrival.</p>
@@ -143,6 +147,39 @@ def send_booking_confirmation(booking):
         subject=f"Booking Confirmed - All'Arco Apartment {booking.booking_id}",
         html_body=html_body,
         booking=booking
+    )
+
+
+def send_online_checkin_prompt(booking):
+    """Send online check-in prompt from check-in@."""
+    html_body = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #C4A572;">Complete your online check-in</h1>
+                <p>Hi {booking.guest_name},</p>
+                <p>Your stay from <strong>{booking.check_in_date}</strong> to <strong>{booking.check_out_date}</strong> is confirmed. Please complete online check-in so we can share arrival instructions.</p>
+                <p style="margin: 16px 0;"><a href="{settings.FRONTEND_URL or 'https://www.allarcoapartment.com'}/bookings/find" style="background:#C4A572;color:white;padding:12px 18px;text-decoration:none;border-radius:6px;">Start online check-in</a></p>
+                <ul>
+                    <li>City tax (€{booking.tourist_tax}) is paid at the property.</li>
+                    <li>Cancellation: {"Non-refundable (10% discount applied)" if booking.cancellation_policy == "non_refundable" else "Flexible — free until 24h before check-in"}.</li>
+                    <li>Check-in: 3pm · Check-out: 11am</li>
+                </ul>
+                <p>Questions? Reply to this email.</p>
+                <p style="margin-top: 30px;">All'Arco Apartment Team</p>
+            </div>
+        </body>
+    </html>
+    """
+
+    return ZeptomailService.send_email(
+        to_email=booking.guest_email,
+        from_email='check-in@allarcoapartment.com',
+        from_name="All'Arco Apartment",
+        subject=f"Complete online check-in - {booking.booking_id}",
+        html_body=html_body,
+        booking=booking,
+        sender_type='checkin'
     )
 
 

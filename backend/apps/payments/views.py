@@ -6,12 +6,17 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.utils import timezone
+from decimal import Decimal
 import stripe
 from .models import Payment, Refund
 from .serializers import PaymentSerializer, RefundSerializer
 from apps.bookings.models import Booking, BookingAttempt
 from apps.bookings.serializers import BookingSerializer
-from apps.emails.services import send_booking_confirmation, send_payment_receipt
+from apps.emails.services import (
+    send_booking_confirmation,
+    send_payment_receipt,
+    send_online_checkin_prompt,
+)
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -54,7 +59,10 @@ def create_checkout_session(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    amount_to_charge = float(booking.amount_due or booking.total_price or 0)
+    # Do not charge city tax online; it is paid at property
+    base_amount = float(booking.amount_due or booking.total_price or 0)
+    tourist_tax = float(booking.tourist_tax or 0)
+    amount_to_charge = max(base_amount - tourist_tax, 0)
     # Resolve frontend host for redirects (fallback to production domain)
     frontend_host = getattr(settings, 'FRONTEND_URL', None) or (
         settings.CORS_ALLOWED_ORIGINS[0] if settings.CORS_ALLOWED_ORIGINS else None
@@ -211,7 +219,7 @@ def confirm_checkout_session(request):
             # Update booking
             booking.status = 'confirmed'
             booking.payment_status = 'paid'
-            booking.amount_due = 0
+            booking.amount_due = Decimal(booking.tourist_tax or 0)  # City tax remains due at property
             booking.save(update_fields=['status', 'payment_status', 'amount_due'])
 
             # Send confirmation + receipt emails
@@ -221,6 +229,10 @@ def confirm_checkout_session(request):
                 pass
             try:
                 send_payment_receipt(payment)
+            except Exception:
+                pass
+            try:
+                send_online_checkin_prompt(booking)
             except Exception:
                 pass
 
@@ -348,7 +360,7 @@ def stripe_webhook(request):
                 payment = Payment.objects.create(
                     booking=booking,
                     stripe_payment_intent_id=session['payment_intent'],
-                    amount=booking.amount_due or booking.total_price,
+                    amount=max((booking.amount_due or booking.total_price) - (booking.tourist_tax or 0), 0),
                     currency='eur',
                     status='succeeded',
                     payment_method=session.get('payment_method_types', ['card'])[0],
@@ -358,7 +370,8 @@ def stripe_webhook(request):
                 # Update booking status
                 booking.status = 'confirmed'
                 booking.payment_status = 'paid'
-                booking.save(update_fields=['status', 'payment_status'])
+                booking.amount_due = Decimal(booking.tourist_tax or 0)
+                booking.save(update_fields=['status', 'payment_status', 'amount_due'])
 
                 BookingAttempt.objects.filter(stripe_session_id=session.get('id')).update(
                     status='paid',
@@ -372,6 +385,10 @@ def stripe_webhook(request):
                     pass
                 try:
                     send_payment_receipt(payment)
+                except Exception:
+                    pass
+                try:
+                    send_online_checkin_prompt(booking)
                 except Exception:
                     pass
                 

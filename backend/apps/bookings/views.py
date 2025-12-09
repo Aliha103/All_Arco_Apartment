@@ -464,8 +464,14 @@ class BookingViewSet(viewsets.ModelViewSet):
                     f'EUR {booking.tourist_tax:.2f}'
                 ])
 
-            # Total row
-            table_data.append(['', '', 'TOTAL', f'EUR {booking.total_price:.2f}'])
+            # Total rows
+            total_stay = float(booking.total_price or 0)
+            city_tax_val = float(booking.tourist_tax or 0)
+            due_now_val = max(total_stay - city_tax_val, 0)
+
+            table_data.append(['', '', 'Total stay', f'EUR {total_stay:.2f}'])
+            table_data.append(['', '', 'Charged now', f'EUR {due_now_val:.2f}'])
+            table_data.append(['', '', 'City tax (pay at property)', f'EUR {city_tax_val:.2f}'])
 
             col_widths = [8*cm, 2*cm, 3*cm, 3*cm]
             pricing_table = Table(table_data, colWidths=col_widths)
@@ -516,6 +522,29 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             pricing_table.setStyle(TableStyle(table_style))
             elements.append(pricing_table)
+            elements.append(Spacer(1, 10))
+
+            # House rules / policies
+            rules_html = """
+                <b><font size=10 color=#A68B5B>HOUSE RULES & CHECK-IN</font></b><br/>
+                <font size=9>
+                    Check-in: 15:00 · Check-out: 11:00<br/>
+                    City tax is paid at the property (not charged online).<br/>
+                    Please respect quiet hours and non-smoking policy.<br/>
+                    Cancellation: """ + ("Non-refundable (10% discount applied)" if booking.cancellation_policy == "non_refundable" else "Flexible — free until 24h before check-in") + """.
+                </font>
+            """
+            rules_para = Paragraph(rules_html, styles['Normal'])
+            rules_box = Table([[rules_para]], colWidths=[16*cm])
+            rules_box.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), soft_cream),
+                ('LEFTPADDING', (0, 0), (-1, -1), 12),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+                ('TOPPADDING', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+                ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#E8E3D5')),
+            ]))
+            elements.append(rules_box)
             elements.append(Spacer(1, 10))
 
             # Special requests section
