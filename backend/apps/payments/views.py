@@ -41,7 +41,7 @@ def _compute_city_tax_amount(booking: Booking) -> float:
         age = _age(g.date_of_birth)
         if age is not None:
             have_dobs = True
-            if age >= 18:
+            if age >= 13:
                 adult_count += 1
     if not have_dobs:
         adult_count = booking.number_of_guests or 1
