@@ -11,9 +11,10 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { CheckCircle, AlertCircle, Mail, CreditCard, Shield, CalendarClock, Clock, Info } from 'lucide-react';
+import { CheckCircle, AlertCircle, Mail, CreditCard, Shield, CalendarClock, Clock, Info, Download, Users, Home, FileText, ChevronRight } from 'lucide-react';
 import SiteNav from '@/app/components/SiteNav';
 import SiteFooter from '@/app/components/SiteFooter';
+import { motion } from 'framer-motion';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,90 +138,153 @@ function ConfirmationContent() {
   const isSameDay = booking.check_in_date === today;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-[#fdf8ec] to-white text-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-white via-[#F8F7F4] to-white text-gray-900">
       <SiteNav solid />
 
       <main className="pt-28 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 space-y-8">
-          {/* Hero */}
-          <Card className="border border-amber-100 shadow-xl bg-white/90 backdrop-blur">
-            <CardContent className="p-6 sm:p-8">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Badge
-                      variant={isPaid ? 'success' : 'secondary'}
-                      className={isPaid ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'}
-                    >
-                      {isPaid ? 'Paid' : 'Payment pending'}
-                    </Badge>
-                    <Badge variant="outline" className="border-gray-200 text-gray-700">
-                      Booking reference · {booking.booking_id}
-                    </Badge>
+          {/* Enhanced Hero Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className={`border-2 shadow-2xl overflow-hidden ${
+              isPaid ? 'border-emerald-200 bg-gradient-to-br from-emerald-50/50 via-white to-white' : 'border-amber-200 bg-gradient-to-br from-amber-50/50 via-white to-white'
+            }`}>
+              <CardContent className="p-6 sm:p-10">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
+                  <div className="flex-1 space-y-5">
+                    {/* Status Badge */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Badge
+                          className={`px-4 py-1.5 text-sm font-semibold ${
+                            isPaid
+                              ? 'bg-emerald-500 text-white border-0 shadow-lg'
+                              : 'bg-amber-500 text-white border-0 shadow-lg'
+                          }`}
+                        >
+                          {isPaid ? (
+                            <><CheckCircle className="w-4 h-4 mr-1.5 inline" /> Paid</>
+                          ) : (
+                            <><Clock className="w-4 h-4 mr-1.5 inline" /> Payment pending</>
+                          )}
+                        </Badge>
+                      </motion.div>
+                      <Badge variant="outline" className="border-2 border-gray-300 text-gray-700 px-3 py-1 text-sm font-medium">
+                        <FileText className="w-3.5 h-3.5 mr-1.5 inline" />
+                        {booking.booking_id}
+                      </Badge>
+                    </div>
+
+                    {/* Main Heading */}
+                    <div className="space-y-2">
+                      <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center gap-3">
+                        <Shield className="w-8 h-8 text-[#C4A572] flex-shrink-0" />
+                        <span>You're all set—see you in Venice!</span>
+                      </h1>
+                      <p className="text-lg text-gray-600 leading-relaxed">
+                        We've locked in your dates. Save your PDF confirmation and complete online check-in at your convenience.
+                      </p>
+                    </div>
+
+                    {/* Booking Reference Display */}
+                    <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur border-2 border-gray-200 rounded-xl px-5 py-3 shadow-sm">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Booking Reference</span>
+                        <span className="text-xl font-bold text-gray-900 font-mono tracking-wide">{booking.booking_id}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-                    <Shield className="w-5 h-5 text-[#C4A572]" />
-                    <span>You're all set—see you in Venice!</span>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-3 lg:min-w-[220px]">
+                    {isPaid && (
+                      <Button
+                        onClick={() => window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank')}
+                        className="h-12 bg-[#C4A572] hover:bg-[#B39562] text-white font-semibold shadow-lg transition-all"
+                      >
+                        <Download className="w-5 h-5 mr-2" />
+                        Download PDF
+                      </Button>
+                    )}
+                    {!isPaid && (
+                      <Button
+                        onClick={() => payMutation.mutate()}
+                        disabled={payMutation.isPending}
+                        className="h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg transition-all"
+                      >
+                        {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
+                      </Button>
+                    )}
                   </div>
-                  <p className="text-gray-700">
-                    We’ve locked in your dates. Save your PDF confirmation and complete online check-in at your convenience.
-                  </p>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {isPaid && (
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(`/api/bookings/${booking.id}/download-pdf/`, '_blank')}
-                      className="border-gray-300"
-                    >
-                      Download PDF
-                    </Button>
-                  )}
-                  {!isPaid && (
-                    <Button onClick={() => payMutation.mutate()} disabled={payMutation.isPending}>
-                      {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
             {/* Left column */}
-            <div className="space-y-6">
-              <Card className="shadow-lg border border-amber-50">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-lg">Stay details</CardTitle>
-                  <Badge variant="outline" className="border-gray-200 text-gray-700">
-                    {booking.nights} night{booking.nights === 1 ? '' : 's'}
-                  </Badge>
+            <motion.div
+              className="space-y-6"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              {/* Stay Details Card */}
+              <Card className="shadow-xl border-2 border-blue-100 bg-gradient-to-br from-blue-50/30 via-white to-white overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-blue-50/50 to-white border-b border-blue-100 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <Home className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <CardTitle className="text-xl font-bold text-gray-900">Stay details</CardTitle>
+                    </div>
+                    <Badge className="bg-blue-500 text-white border-0 px-3 py-1 text-sm font-semibold shadow-md">
+                      {booking.nights} night{booking.nights === 1 ? '' : 's'}
+                    </Badge>
+                  </div>
                 </CardHeader>
-                <CardContent className="grid sm:grid-cols-2 gap-4 text-sm text-gray-800">
-                  <div>
-                    <p className="text-gray-500">Guest</p>
-                    <p className="font-semibold">{booking.guest_name}</p>
+                <CardContent className="p-6 space-y-5">
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Guest Name</p>
+                      <p className="text-base font-semibold text-gray-900">{booking.guest_name}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Number of Guests</p>
+                      <p className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-600" />
+                        {guestCount}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-in</p>
+                      <p className="text-base font-semibold text-gray-900">{formatDate(booking.check_in_date)}</p>
+                      <p className="text-xs text-gray-500">From 15:00</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-out</p>
+                      <p className="text-base font-semibold text-gray-900">{formatDate(booking.check_out_date)}</p>
+                      <p className="text-xs text-gray-500">By 10:00</p>
+                    </div>
+                    <div className="sm:col-span-2 space-y-1">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</p>
+                      <p className="text-base font-semibold text-gray-900 break-all">{booking.guest_email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Guests</p>
-                    <p className="font-semibold">{guestCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Check-in</p>
-                    <p className="font-semibold">{formatDate(booking.check_in_date)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Check-out</p>
-                    <p className="font-semibold">{formatDate(booking.check_out_date)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Email</p>
-                    <p className="font-semibold">{booking.guest_email}</p>
-                  </div>
-                  <div className="sm:col-span-2 rounded-lg bg-gray-50 p-3 flex items-start gap-3">
-                    <CalendarClock className="w-4 h-4 text-[#C4A572] mt-0.5" />
-                    <div>
-                      <p className="text-gray-500 text-xs uppercase tracking-wide">Cancellation policy</p>
+
+                  {/* Cancellation Policy */}
+                  <div className="rounded-xl bg-gradient-to-r from-amber-50 to-amber-50/50 border border-amber-200 p-4 flex items-start gap-3">
+                    <CalendarClock className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Cancellation policy</p>
                       <p className="font-semibold text-gray-900">
                         {((booking as any).cancellation_policy || (booking as any).policy) === 'non_refundable'
                           ? 'Non-refundable · 10% discount applied'
@@ -231,124 +295,209 @@ function ConfirmationContent() {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-lg border border-amber-50">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-lg">Payment summary</CardTitle>
-                  <Badge variant="secondary" className="bg-gray-50 text-gray-700 border-gray-200">
-                    <CreditCard className="w-4 h-4 mr-1" /> Stripe
-                  </Badge>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm text-gray-800">
+              {/* Payment Summary Card */}
+              <Card className="shadow-xl border-2 border-emerald-100 bg-gradient-to-br from-emerald-50/30 via-white to-white overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-emerald-50/50 to-white border-b border-emerald-100 pb-4">
                   <div className="flex items-center justify-between">
-                    <span>Stay ({booking.nights} night{booking.nights === 1 ? '' : 's'})</span>
-                    <span className="font-semibold">{formatCurrency(stayAmount)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Cleaning</span>
-                    <span className="font-semibold">{formatCurrency(cleaningFee)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Tourist tax</span>
-                    <span className="font-semibold">{formatCurrency(touristTax)}</span>
-                  </div>
-                  {appliedCredit > 0 && (
-                    <div className="flex items-center justify-between text-emerald-700">
-                      <span>Credit applied</span>
-                      <span className="font-semibold">- {formatCurrency(appliedCredit)}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <CardTitle className="text-xl font-bold text-gray-900">Payment summary</CardTitle>
                     </div>
-                  )}
-                  <div className="border-t border-dashed border-gray-200 pt-3 flex items-center justify-between">
-                    <span className="font-semibold text-gray-900">Charged now</span>
-                    <span className="text-lg font-bold text-gray-900">{formatCurrency(chargedNow)}</span>
+                    <Badge className="bg-white border-2 border-gray-200 text-gray-700 px-3 py-1 text-xs font-semibold">
+                      <CreditCard className="w-3.5 h-3.5 mr-1.5 inline" /> Stripe
+                    </Badge>
                   </div>
-                  <div className="flex items-center justify-between text-sm text-gray-700">
-                    <span>City tax (pay at property)</span>
-                    <span className="font-semibold">{formatCurrency(touristTax)}</span>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  {/* Line items */}
+                  <div className="space-y-3 text-base">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Stay ({booking.nights} night{booking.nights === 1 ? '' : 's'})</span>
+                      <span className="font-semibold text-gray-900">{formatCurrency(stayAmount)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Cleaning</span>
+                      <span className="font-semibold text-gray-900">{formatCurrency(cleaningFee)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Tourist tax</span>
+                      <span className="font-semibold text-gray-900">{formatCurrency(touristTax)}</span>
+                    </div>
+                    {appliedCredit > 0 && (
+                      <div className="flex items-center justify-between text-emerald-700 bg-emerald-50 -mx-2 px-2 py-2 rounded-lg">
+                        <span className="font-medium">Credit applied</span>
+                        <span className="font-bold">- {formatCurrency(appliedCredit)}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between text-sm text-gray-700">
-                    <span>Total stay</span>
-                    <span className="font-semibold">{formatCurrency(booking.total_price)}</span>
+
+                  {/* Charged Now */}
+                  <div className="border-t-2 border-dashed border-gray-300 pt-4 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white -mx-6 px-6 py-4">
+                    <span className="font-bold text-gray-900 text-lg">Charged now</span>
+                    <span className="text-2xl font-bold text-emerald-600">{formatCurrency(chargedNow)}</span>
                   </div>
-                  {isPaid ? null : (
-                    <div className="flex items-center gap-2 text-amber-700 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      <span>Payment is pending. Complete checkout to confirm your stay.</span>
+
+                  {/* Additional costs */}
+                  <div className="space-y-2 pt-2 border-t border-gray-200">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">City tax (pay at property)</span>
+                      <span className="font-semibold text-gray-900">{formatCurrency(touristTax)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-base font-semibold">
+                      <span className="text-gray-900">Total stay</span>
+                      <span className="text-gray-900">{formatCurrency(booking.total_price)}</span>
+                    </div>
+                  </div>
+
+                  {!isPaid && (
+                    <div className="flex items-start gap-3 text-amber-800 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <span className="font-medium">Payment is pending. Complete checkout to confirm your stay.</span>
                     </div>
                   )}
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
 
             {/* Right column */}
-            <div className="space-y-4">
-              <Card className="shadow-lg border border-amber-50">
-                <CardHeader>
-                  <CardTitle className="text-lg">Next steps</CardTitle>
+            <motion.div
+              className="space-y-5"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              {/* Next Steps Card */}
+              <Card className="shadow-xl border-2 border-[#C4A572]/20 bg-gradient-to-br from-amber-50/30 via-white to-white overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-amber-50/50 to-white border-b border-amber-100 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#C4A572]/10 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-[#C4A572]" />
+                    </div>
+                    <CardTitle className="text-xl font-bold text-gray-900">Next steps</CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm text-gray-700">
-                  <div className="flex gap-3">
-                    <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Confirmation email sent</p>
-                      <p className="text-gray-600">We emailed your receipt and booking summary to {booking.guest_email}.</p>
+                <CardContent className="p-5 space-y-5">
+                  {/* Step 1 */}
+                  <div className="flex gap-4 group">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <CheckCircle className="w-6 h-6 text-emerald-600" />
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="font-bold text-gray-900 text-base">Confirmation email sent</p>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        We emailed your receipt and booking summary to <span className="font-semibold">{booking.guest_email}</span>.
+                      </p>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <Mail className="w-5 h-5 text-[#C4A572] mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Check-in details</p>
-                      <p className="text-gray-600">Arrival instructions will be sent 48 hours before check-in.</p>
+
+                  {/* Step 2 */}
+                  <div className="flex gap-4 group">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Mail className="w-6 h-6 text-blue-600" />
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="font-bold text-gray-900 text-base">Check-in details</p>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        Arrival instructions will be sent <span className="font-semibold">48 hours before check-in</span>.
+                      </p>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <Clock className="w-5 h-5 text-gray-500 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-gray-900">House rules</p>
-                      <p className="text-gray-600">Check-in from 15:00 · Check-out by 10:00 · City tax paid at property · Non-smoking.</p>
+
+                  {/* Step 3 */}
+                  <div className="flex gap-4 group">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                        <Clock className="w-6 h-6 text-amber-600" />
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="font-bold text-gray-900 text-base">House rules</p>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        Check-in from <span className="font-semibold">15:00</span> · Check-out by <span className="font-semibold">10:00</span> · City tax paid at property · Non-smoking.
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="shadow-lg border border-amber-50">
-                <CardHeader>
-                  <CardTitle className="text-lg">Need help?</CardTitle>
+              {/* Need Help Card */}
+              <Card className="shadow-xl border-2 border-gray-200 bg-white overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Info className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <CardTitle className="text-xl font-bold text-gray-900">Need help?</CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm text-gray-700">
-                  <p>
-                    <span className="font-semibold text-gray-900">Support: </span>
-                    <a href="mailto:support@allarcoapartment.com" className="text-blue-600 hover:underline">
-                      support@allarcoapartment.com
+                <CardContent className="p-5">
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600">
+                      Have questions or need assistance? Our support team is here to help.
+                    </p>
+                    <a
+                      href="mailto:support@allarcoapartment.com"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors group"
+                    >
+                      <Mail className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Email Support</p>
+                        <p className="text-sm font-bold text-blue-600 group-hover:text-blue-700">support@allarcoapartment.com</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-blue-400 group-hover:translate-x-1 transition-transform" />
                     </a>
-                  </p>
+                  </div>
                 </CardContent>
               </Card>
 
-              <div className="flex flex-col gap-3">
+              {/* Action Buttons */}
+              <div className="space-y-3">
                 {isSameDay && (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 flex gap-3 items-start">
-                    <Clock className="w-4 h-4 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-semibold">Same-day arrival</p>
-                      <p>Please complete online check-in now to receive access instructions.</p>
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-100 to-amber-50 text-amber-900 px-5 py-4 flex gap-3 items-start shadow-lg"
+                  >
+                    <Clock className="w-6 h-6 flex-shrink-0 mt-0.5 text-amber-600" />
+                    <div>
+                      <p className="font-bold text-base mb-1">Same-day arrival</p>
+                      <p className="text-sm leading-relaxed">Please complete online check-in now to receive access instructions.</p>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
-                <Link href={`/booking/${booking.id}/check-in`} className="w-full">
-                  <Button className="w-full bg-[#C4A572] text-white hover:bg-[#B39562]">
+
+                <Link href={`/booking/${booking.id}/check-in`} className="block">
+                  <Button className="w-full h-14 bg-[#C4A572] text-white hover:bg-[#B39562] text-base font-bold shadow-xl transition-all hover:shadow-2xl hover:scale-[1.02]">
+                    <Shield className="w-5 h-5 mr-2" />
                     Complete online check-in
                   </Button>
                 </Link>
+
                 {!isPaid && (
-                  <Button className="w-full" onClick={() => payMutation.mutate()} disabled={payMutation.isPending}>
+                  <Button
+                    className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg"
+                    onClick={() => payMutation.mutate()}
+                    disabled={payMutation.isPending}
+                  >
+                    <CreditCard className="w-5 h-5 mr-2" />
                     {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
                   </Button>
                 )}
-                <Link href="/" className="w-full">
-                  <Button variant="outline" className="w-full">Back to home</Button>
+
+                <Link href="/" className="block">
+                  <Button variant="outline" className="w-full h-12 border-2 border-gray-300 hover:bg-gray-50 font-semibold">
+                    <Home className="w-5 h-5 mr-2" />
+                    Back to home
+                  </Button>
                 </Link>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </main>

@@ -160,7 +160,7 @@ def send_online_checkin_prompt(booking):
                 <h1 style="color: #C4A572;">Complete your online check-in</h1>
                 <p>Hi {booking.guest_name},</p>
                 <p>Your stay from <strong>{booking.check_in_date}</strong> to <strong>{booking.check_out_date}</strong> is confirmed. Please complete online check-in so we can share arrival instructions.</p>
-                <p style="margin: 16px 0;"><a href="{frontend_host}/bookings/find" style="background:#C4A572;color:white;padding:12px 18px;text-decoration:none;border-radius:6px;">Start online check-in</a></p>
+                <p style="margin: 16px 0;"><a href="{frontend_host}/booking/{booking.booking_id}/check-in" style="background:#C4A572;color:white;padding:12px 18px;text-decoration:none;border-radius:6px;">Start online check-in</a></p>
                 <ul>
                     <li>City tax (€{booking.tourist_tax}) is paid at the property.</li>
                     <li>Cancellation: {"Non-refundable (10% discount applied)" if booking.cancellation_policy == "non_refundable" else "Flexible — free until 24h before check-in"}.</li>
