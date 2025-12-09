@@ -91,7 +91,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     }
 
     def get_permissions(self):
-        if self.action in ['create', 'retrieve', 'download_pdf', 'complete_checkin']:
+        if self.action in ['create', 'retrieve', 'download_pdf', 'complete_checkin', 'resume_checkin']:
             return [AllowAny()]
         return super().get_permissions()
 
@@ -150,6 +150,32 @@ class BookingViewSet(viewsets.ModelViewSet):
                 pass
 
         return Response({'message': 'Check-in saved as draft.' if draft else 'Check-in completion recorded.'})
+
+    @action(detail=True, methods=['post'])
+    def resume_checkin(self, request, pk=None):
+        """Public endpoint to fetch saved check-in data for a booking when email matches."""
+        try:
+            booking = self.get_object()
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        email = (request.data.get('email') or '').lower()
+        if email != (booking.guest_email or '').lower():
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_403_FORBIDDEN)
+
+        from .serializers import BookingGuestPublicSerializer
+        guests = booking.guests.all().order_by('-is_primary', 'created_at')
+        guest_data = BookingGuestPublicSerializer(guests, many=True).data
+
+        return Response({
+            'booking': {
+                'eta_checkin_time': booking.eta_checkin_time,
+                'eta_checkout_time': booking.eta_checkout_time,
+                'city_tax_payment_status': booking.city_tax_payment_status,
+                'checkin_draft': booking.checkin_draft,
+            },
+            'guests': guest_data,
+        })
     
     def get_queryset(self):
         user = self.request.user
@@ -157,7 +183,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         # Unauthenticated users: allow retrieval only when looking up a specific booking
         if not getattr(user, 'is_authenticated', False):
-            if self.action in ['retrieve', 'download_pdf', 'complete_checkin']:
+            if self.action in ['retrieve', 'download_pdf', 'complete_checkin', 'resume_checkin']:
                 return queryset
             return queryset.none()
 

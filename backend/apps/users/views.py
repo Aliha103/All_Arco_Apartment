@@ -373,6 +373,7 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
                 'total_guests_count': 0,
                 'online_bookings': 0,
                 'online_checkin': True,
+                'checkin_draft': getattr(bg.booking, 'checkin_draft', False),
             }
 
             if bg.booking:

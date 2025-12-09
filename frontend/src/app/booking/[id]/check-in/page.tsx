@@ -395,6 +395,43 @@ export default function BookingCheckInPage() {
     if (booking.checkin_draft) setStep(3);
   }, [booking]);
 
+  // Load saved guest details for draft resume
+  useEffect(() => {
+    const fetchSavedGuests = async () => {
+      if (!booking) return;
+      try {
+        const resp = await api.bookings.resumeCheckin(booking.id, booking.guest_email);
+        const savedGuests = resp.data?.guests;
+        if (Array.isArray(savedGuests) && savedGuests.length > 0) {
+          const mapped = savedGuests.map((g: any) => ({
+            first_name: g.first_name || '',
+            last_name: g.last_name || '',
+            email: g.email || '',
+            relationship: g.relationship || (g.is_primary ? 'primary' : ''),
+            country_of_birth: g.country_of_birth || '',
+            date_of_birth: g.date_of_birth || '',
+            birth_province: g.birth_province || '',
+            birth_city: g.birth_city || '',
+            document_type: g.document_type || '',
+            document_number: g.document_number || '',
+            document_issue_country: g.document_issue_country || '',
+            document_issue_date: g.document_issue_date || '',
+            document_expire_date: g.document_expire_date || '',
+            document_issue_province: g.document_issue_province || '',
+            document_issue_city: g.document_issue_city || '',
+            document_selfie: null,
+            document_image: null,
+          }));
+          setGuests(mapped);
+          if (booking.checkin_draft) setStep(3);
+        }
+      } catch (err) {
+        // Ignore errors; fallback to defaults
+      }
+    };
+    fetchSavedGuests();
+  }, [booking]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

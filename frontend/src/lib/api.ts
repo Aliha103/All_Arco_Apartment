@@ -124,6 +124,8 @@ export const api = {
       apiClient.post('/bookings/lookup/checkin/', { confirmation, email, guests }),
     completeCheckin: (id: string, data: any) =>
       apiClient.post(`/bookings/${id}/complete_checkin/`, data),
+    resumeCheckin: (id: string, email: string) =>
+      apiClient.post(`/bookings/${id}/resume_checkin/`, { email }),
     // Booking Guests management
     guests: {
       list: (bookingId: string) => apiClient.get(`/bookings/${bookingId}/guests/`),

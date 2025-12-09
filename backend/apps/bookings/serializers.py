@@ -50,6 +50,18 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable']
 
+
+class BookingGuestPublicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BookingGuest
+        fields = [
+            'id', 'first_name', 'last_name', 'email', 'country_of_birth', 'date_of_birth',
+            'birth_province', 'birth_city', 'document_type', 'document_number',
+            'document_issue_country', 'document_issue_date', 'document_expire_date',
+            'document_issue_province', 'document_issue_city', 'relationship', 'is_primary',
+        ]
+        read_only_fields = fields
+
     first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     guest_details = serializers.ListField(
