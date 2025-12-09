@@ -334,7 +334,7 @@ function ConfirmationContent() {
                     </div>
                   </div>
                 )}
-                <Link href="/bookings/find" className="w-full">
+                <Link href={`/booking/${booking.id}/check-in`} className="w-full">
                   <Button className="w-full bg-[#C4A572] text-white hover:bg-[#B39562]">
                     Complete online check-in
                   </Button>

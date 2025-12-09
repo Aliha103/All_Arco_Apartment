@@ -1332,7 +1332,7 @@ def public_booking_update(request):
         )
 
     # Allowed fields for guest self-service update
-    allowed_fields = ['guest_name', 'guest_phone', 'special_requests']
+    allowed_fields = ['guest_name', 'guest_phone', 'special_requests', 'guest_address', 'guest_tax_code']
     updated_fields = []
 
     for field in allowed_fields:
@@ -1458,6 +1458,12 @@ def public_booking_checkin(request):
             'error': 'Some guests could not be added',
             'details': errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        from apps.emails.services import send_online_checkin_completed
+        send_online_checkin_completed(booking)
+    except Exception:
+        pass
 
     return Response({
         'message': 'Check-in information submitted successfully',
