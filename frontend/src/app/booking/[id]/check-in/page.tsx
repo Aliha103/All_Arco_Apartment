@@ -275,15 +275,15 @@ export default function BookingCheckInPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {step === 1 && (
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700 flex items-start gap-2">
                         <Shield className="w-4 h-4 text-[#C4A572] mt-0.5" />
                         <div>
                           <p className="font-semibold text-gray-900">Billing preference</p>
-                          <p>Receipts use the guest name; invoices use company details. You’ll get a copy by email.</p>
+                          <p>Choose receipt (guest name) or invoice (company details). A copy will be emailed.</p>
                         </div>
                       </div>
-                      <div className="flex gap-3">
+                      <div className="flex flex-wrap gap-3">
                         <Button variant={billingType === 'receipt' ? 'default' : 'outline'} onClick={() => setBillingType('receipt')}>
                           Receipt
                         </Button>
@@ -291,13 +291,14 @@ export default function BookingCheckInPage() {
                           Invoice
                         </Button>
                       </div>
-                      <div className="grid sm:grid-cols-2 gap-3">
+
+                      <div className="grid sm:grid-cols-2 gap-4">
                         {billingType === 'receipt' ? (
                           <>
                             <div className="sm:col-span-2 flex flex-col gap-1">
                               <Label className="text-xs text-gray-600">Full name</Label>
                               <Input
-                                placeholder="Full name"
+                                placeholder="Full name on receipt"
                                 value={billing.full_name}
                                 onChange={(e) => setBilling({ ...billing, full_name: e.target.value })}
                               />
@@ -316,7 +317,7 @@ export default function BookingCheckInPage() {
                             <div className="sm:col-span-2 flex flex-col gap-1">
                               <Label className="text-xs text-gray-600">Company name</Label>
                               <Input
-                                placeholder="Company name"
+                                placeholder="Registered company name"
                                 value={billing.company_name}
                                 onChange={(e) => setBilling({ ...billing, company_name: e.target.value })}
                               />
@@ -339,6 +340,7 @@ export default function BookingCheckInPage() {
                             </div>
                           </>
                         )}
+
                         <div className="flex flex-col gap-1">
                           <Label className="text-xs text-gray-600">Phone</Label>
                           <Input
@@ -356,6 +358,7 @@ export default function BookingCheckInPage() {
                           />
                         </div>
                       </div>
+
                       <div className="flex justify-end">
                         <Button onClick={onBillingSubmit} disabled={saving}>
                           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Continue'}
