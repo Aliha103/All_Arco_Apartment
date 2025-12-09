@@ -107,7 +107,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         # Unauthenticated users: allow retrieval only when looking up a specific booking
         if not getattr(user, 'is_authenticated', False):
-            if self.action == 'retrieve':
+            if self.action in ['retrieve', 'download_pdf']:
                 return queryset
             return queryset.none()
 

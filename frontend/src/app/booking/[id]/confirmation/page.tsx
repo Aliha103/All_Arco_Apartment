@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { CheckCircle, AlertCircle, Mail, CreditCard } from 'lucide-react';
+import { CheckCircle, AlertCircle, Mail, CreditCard, Shield, CalendarClock } from 'lucide-react';
 import SiteNav from '@/app/components/SiteNav';
 import SiteFooter from '@/app/components/SiteFooter';
 
@@ -141,22 +141,25 @@ function ConfirmationContent() {
           {/* Hero */}
           <Card className="border border-amber-100 shadow-xl bg-white/90 backdrop-blur">
             <CardContent className="p-6 sm:p-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Badge
                       variant={isPaid ? 'success' : 'secondary'}
                       className={isPaid ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'}
                     >
                       {isPaid ? 'Paid' : 'Payment pending'}
                     </Badge>
-                    <span className="text-sm text-gray-500">Booking reference</span>
+                    <Badge variant="outline" className="border-gray-200 text-gray-700">
+                      Booking reference · {booking.booking_id}
+                    </Badge>
                   </div>
-                  <p className="text-3xl font-semibold tracking-tight text-gray-900">{booking.booking_id}</p>
-                  <p className="text-base text-gray-700">
-                    {isPaid
-                      ? "You're all set—see you in Venice!"
-                      : 'Please complete payment to lock in your stay.'}
+                  <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <Shield className="w-5 h-5 text-[#C4A572]" />
+                    <span>You're all set—see you in Venice!</span>
+                  </div>
+                  <p className="text-gray-700">
+                    We’ve locked in your dates. Save your PDF confirmation and complete online check-in at your convenience.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -210,13 +213,16 @@ function ConfirmationContent() {
                     <p className="text-gray-500">Email</p>
                     <p className="font-semibold">{booking.guest_email}</p>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Cancellation policy</p>
-                    <p className="font-semibold">
-                      {((booking as any).cancellation_policy || (booking as any).policy) === 'non_refundable'
-                        ? 'Non-refundable (10% discount applied)'
-                        : 'Flexible — free until 24h before check-in'}
-                    </p>
+                  <div className="sm:col-span-2 rounded-lg bg-gray-50 p-3 flex items-start gap-3">
+                    <CalendarClock className="w-4 h-4 text-[#C4A572] mt-0.5" />
+                    <div>
+                      <p className="text-gray-500 text-xs uppercase tracking-wide">Cancellation policy</p>
+                      <p className="font-semibold text-gray-900">
+                        {((booking as any).cancellation_policy || (booking as any).policy) === 'non_refundable'
+                          ? 'Non-refundable · 10% discount applied'
+                          : 'Flexible · Free until 24h before check-in'}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
