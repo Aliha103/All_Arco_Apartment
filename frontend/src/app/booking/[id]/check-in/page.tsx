@@ -107,6 +107,7 @@ export default function BookingCheckInPage() {
   const [guests, setGuests] = useState<GuestForm[]>([]);
   const [checkinDone, setCheckinDone] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
+  const [showFullPolicy, setShowFullPolicy] = useState(false);
   const progress = useMemo(() => (step / 3) * 100, [step]);
 
   // Fetch booking
@@ -522,12 +523,26 @@ export default function BookingCheckInPage() {
                         <p className="mt-1 text-gray-700">
                           We process guest data for check-in, ID verification, and legal compliance. Document photos are not stored beyond your stay.
                         </p>
-                        <div className="max-h-40 overflow-y-auto mt-3 p-3 rounded border border-gray-200 text-xs leading-relaxed text-gray-700 bg-white">
-                          <p className="font-semibold mb-1">Privacy Policy - Online Check-in</p>
-                          <p>Pursuant to Article 13 of EU Regulation 2016/679, we process personal data for check-in, contract management, tourist tax, legal obligations, optional newsletter, and to defend our rights. Data Controller: Ali Hassan Cheema - IT (cheemacheema0078@gmail.com).</p>
-                          <p className="mt-1">Data includes guest identity info, contact details, document info and selfie, stay dates, and group member names/birth data. Document photos/selfie are kept max 7 days; other data kept up to 2 years or as legally required.</p>
-                          <p className="mt-1">Rights: access, rectify, erase, restrict, portability, object, withdraw consent. Contact: cheemacheema0078@gmail.com. Complaint: Italian Garante.</p>
-                        </div>
+                        <button
+                          type="button"
+                          className="text-xs text-blue-600 hover:underline mt-2"
+                          onClick={() => setShowFullPolicy((prev) => !prev)}
+                        >
+                          {showFullPolicy ? 'Hide full policy' : 'Read full policy'}
+                        </button>
+                        {showFullPolicy && (
+                          <div className="max-h-56 overflow-y-auto mt-3 p-3 rounded border border-gray-200 text-xs leading-relaxed text-gray-700 bg-white space-y-2">
+                            <p className="font-semibold">Privacy Policy - Online Check-in</p>
+                            <p>Pursuant to Article 13 of EU Regulation 2016/679, we process personal data you provide for online check-in and related services.</p>
+                            <p><strong>Data Controller:</strong> Ali Hassan Cheema - IT, Chirignago-Zelarino, email cheemacheema0078@gmail.com.</p>
+                            <p><strong>Data processed:</strong> main guest identity, contact, document details & selfie, stay dates; group member names, dates/places of birth, nationality.</p>
+                            <p><strong>Purposes:</strong> check-in & ID verification; contract/tourist tax; legal obligations; optional newsletter; defense of rights.</p>
+                            <p><strong>Legal bases:</strong> contract, legal obligation, consent (newsletter), legitimate interest.</p>
+                            <p><strong>Retention:</strong> document photos/selfie 7 days; other booking data up to 2 years or as required by law; newsletter until consent withdrawn.</p>
+                            <p><strong>Rights:</strong> access, rectify, erase, restrict, portability, object, withdraw consent; complaints to Italian Garante.</p>
+                            <p><strong>Provision:</strong> mandatory for check-in/legal duties; optional for newsletter.</p>
+                          </div>
+                        )}
                         <label className="mt-3 inline-flex items-center gap-2 text-sm text-gray-800">
                           <input
                             type="checkbox"
