@@ -143,6 +143,10 @@ class Booking(models.Model):
     # ETA from online check-in
     eta_checkin_time = models.TimeField(null=True, blank=True)
     eta_checkout_time = models.TimeField(null=True, blank=True)
+    checkin_draft = models.BooleanField(
+        default=False,
+        help_text='Online check-in saved as draft (team can review/complete)'
+    )
 
     # No-show handling: marks the date from which nights are released
     # For full no-show: equals check_in_date (all nights released)

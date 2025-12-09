@@ -360,7 +360,26 @@ export default function BookingCheckInPage() {
     }
   }, [booking, etaCheckin, etaCheckout, cityTaxAck, router]);
 
-  const heading = useMemo(() => {
+  const onSaveDraft = useCallback(async () => {
+    if (!booking) return;
+    setSaving(true);
+    try {
+      await api.bookings.completeCheckin(booking.id, {
+        eta_checkin: etaCheckin,
+        eta_checkout: etaCheckout,
+        city_tax_acknowledged: cityTaxAck,
+        guest_email: booking.guest_email,
+        draft: true,
+      });
+      toast.success('Draft saved. You can return to finish later.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to save draft');
+    } finally {
+      setSaving(false);
+    }
+  }, [booking, etaCheckin, etaCheckout, cityTaxAck]);
+
+    const heading = useMemo(() => {
     if (step === 1) return 'Billing details';
     if (step === 2) return 'Guest details';
     return 'City tax';
@@ -1349,15 +1368,24 @@ export default function BookingCheckInPage() {
                         </div>
                       </div>
 
-                      {/* Action Button */}
-                      <div className="flex justify-center pt-4">
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={onSaveDraft}
+                          disabled={saving}
+                          className="h-12 px-6 border-gray-300"
+                        >
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                          Save as draft
+                        </Button>
                         <Button
                           onClick={onFinish}
                           disabled={saving}
-                          className="h-14 px-12 bg-[#C4A572] hover:bg-[#B39562] text-white text-base font-semibold shadow-xl transition-all disabled:opacity-60"
+                          className="h-12 px-10 bg-[#C4A572] hover:bg-[#B39562] text-white text-base font-semibold shadow-xl transition-all disabled:opacity-60"
                         >
                           {saving ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}
-                          View Booking Confirmation
+                          Finish check-in
                         </Button>
                       </div>
                     </div>

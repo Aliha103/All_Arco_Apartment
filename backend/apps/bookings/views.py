@@ -119,6 +119,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         eta_checkin = request.data.get('eta_checkin')
         eta_checkout = request.data.get('eta_checkout')
         city_tax_ack = request.data.get('city_tax_acknowledged')
+        draft = request.data.get('draft') is True
 
         if eta_checkin:
             booking.eta_checkin_time = eta_checkin
@@ -138,15 +139,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             new_notes = (existing + '\n' if existing else '') + ' | '.join(note_parts)
             booking.internal_notes = new_notes
 
-        booking.save(update_fields=['internal_notes', 'eta_checkin_time', 'eta_checkout_time'])
+        booking.checkin_draft = draft
+        booking.save(update_fields=['internal_notes', 'eta_checkin_time', 'eta_checkout_time', 'checkin_draft'])
 
-        try:
-            from apps.emails.services import send_online_checkin_completed
-            send_online_checkin_completed(booking)
-        except Exception:
-            pass
+        if not draft:
+            try:
+                from apps.emails.services import send_online_checkin_completed
+                send_online_checkin_completed(booking)
+            except Exception:
+                pass
 
-        return Response({'message': 'Check-in completion recorded.'})
+        return Response({'message': 'Check-in saved as draft.' if draft else 'Check-in completion recorded.'})
     
     def get_queryset(self):
         user = self.request.user
