@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2, Building2, FileText, Users, Shield, Clock } from 'lucide-react';
+import { Loader2, CheckCircle2, Building2, FileText, Users, Shield, Clock, Plus, Trash } from 'lucide-react';
 
 type Booking = {
   id: string;
@@ -39,8 +39,15 @@ type GuestForm = {
   last_name: string;
   email?: string;
   country_of_birth?: string;
+  birth_province?: string;
+  birth_city?: string;
   document_type?: string;
   document_number?: string;
+  document_issue_country?: string;
+  document_issue_province?: string;
+  document_issue_city?: string;
+  document_selfie?: File | null;
+  document_image?: File | null;
 };
 
 export const dynamic = 'force-dynamic';
@@ -91,8 +98,15 @@ export default function BookingCheckInPage() {
             last_name: i === 0 ? b.guest_name.split(' ').slice(1).join(' ') : '',
             email: i === 0 ? b.guest_email : '',
             country_of_birth: '',
+            birth_province: '',
+            birth_city: '',
             document_type: 'passport',
             document_number: '',
+            document_issue_country: '',
+            document_issue_province: '',
+            document_issue_city: '',
+            document_selfie: null,
+            document_image: null,
           }))
         );
       } catch (err: any) {
@@ -135,7 +149,14 @@ export default function BookingCheckInPage() {
     if (!booking) return;
     setSaving(true);
     try {
-      await api.bookings.lookupCheckin(booking.booking_id, booking.guest_email, guests);
+      // Strip file objects before sending; backend currently expects JSON
+      const payloadGuests = guests.map((g, idx) => ({
+        ...g,
+        email: idx === 0 ? (g.email || booking.guest_email) : g.email,
+        document_selfie: undefined,
+        document_image: undefined,
+      }));
+      await api.bookings.lookupCheckin(booking.booking_id, booking.guest_email, payloadGuests);
       toast.success('Guest details saved');
       setStep(3);
       setCheckinDone(true);
@@ -287,8 +308,17 @@ export default function BookingCheckInPage() {
                     <div className="space-y-4">
                       {guests.map((guest, idx) => (
                         <Card key={idx} className="border border-gray-100">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm text-gray-700">Guest {idx + 1}</CardTitle>
+                          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                            <CardTitle className="text-sm text-gray-700">Guest {idx + 1} {idx === 0 && '(Primary)'}</CardTitle>
+                            {idx > 0 && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setGuests((prev) => prev.filter((_, i) => i !== idx))}
+                              >
+                                <Trash className="w-4 h-4 text-gray-500" />
+                              </Button>
+                            )}
                           </CardHeader>
                           <CardContent className="grid sm:grid-cols-2 gap-3">
                             <Input
@@ -312,6 +342,16 @@ export default function BookingCheckInPage() {
                               onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, country_of_birth: e.target.value } : g))}
                             />
                             <Input
+                              placeholder="Birth province (Italy only)"
+                              value={guest.birth_province || ''}
+                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, birth_province: e.target.value } : g))}
+                            />
+                            <Input
+                              placeholder="Birth city (Italy only)"
+                              value={guest.birth_city || ''}
+                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, birth_city: e.target.value } : g))}
+                            />
+                            <Input
                               placeholder="Document type (passport, ID)"
                               value={guest.document_type || ''}
                               onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_type: e.target.value } : g))}
@@ -321,9 +361,72 @@ export default function BookingCheckInPage() {
                               value={guest.document_number || ''}
                               onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_number: e.target.value } : g))}
                             />
+                            <Input
+                              placeholder="Issue country"
+                              value={guest.document_issue_country || ''}
+                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_country: e.target.value } : g))}
+                            />
+                            <Input
+                              placeholder="Issue province (Italy documents)"
+                              value={guest.document_issue_province || ''}
+                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_province: e.target.value } : g))}
+                            />
+                            <Input
+                              placeholder="Issue city (Italy documents)"
+                              value={guest.document_issue_city || ''}
+                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_city: e.target.value } : g))}
+                            />
+                            {idx === 0 && (
+                              <div className="sm:col-span-2 grid sm:grid-cols-2 gap-3">
+                                <div className="flex flex-col gap-1">
+                                  <label className="text-xs text-gray-500">Upload selfie (primary guest)</label>
+                                  <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0] || null;
+                                      setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_selfie: file } : g));
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <label className="text-xs text-gray-500">Upload document photo</label>
+                                  <Input
+                                    type="file"
+                                    accept="image/*,application/pdf"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0] || null;
+                                      setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_image: file } : g));
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setGuests((prev) => [...prev, {
+                          first_name: '',
+                          last_name: '',
+                          email: '',
+                          country_of_birth: '',
+                          birth_province: '',
+                          birth_city: '',
+                          document_type: 'passport',
+                          document_number: '',
+                          document_issue_country: '',
+                          document_issue_province: '',
+                          document_issue_city: '',
+                          document_selfie: null,
+                          document_image: null,
+                        }])}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" /> Add guest
+                      </Button>
                       <div className="flex justify-between">
                         <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                         <Button onClick={onGuestsSubmit} disabled={saving}>
@@ -403,4 +506,3 @@ export default function BookingCheckInPage() {
     </div>
   );
 }
-
