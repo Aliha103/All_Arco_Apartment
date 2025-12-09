@@ -701,7 +701,7 @@ export default function FindBookingPage() {
 
                             <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-600">
                               <p className="font-medium text-gray-700 mb-1">Need to change dates or cancel?</p>
-                              <p>Please contact us directly for date changes or cancellations at <a href="mailto:info@allarcoapartment.com" className="text-[#C4A572] hover:underline">info@allarcoapartment.com</a></p>
+                              <p>Please contact us directly for date changes or cancellations at <a href="mailto:support@allarcoapartment.com" className="text-[#C4A572] hover:underline">support@allarcoapartment.com</a></p>
                             </div>
                           </motion.div>
                         )}
@@ -724,7 +724,7 @@ export default function FindBookingPage() {
                                   You&apos;ve already submitted your check-in information for {booking.guests_count} guest(s).
                                 </p>
                                 <p className="text-sm text-gray-500">
-                                  Need to make changes? Contact us at <a href="mailto:info@allarcoapartment.com" className="text-[#C4A572] hover:underline">info@allarcoapartment.com</a>
+                                  Need to make changes? Contact us at <a href="mailto:support@allarcoapartment.com" className="text-[#C4A572] hover:underline">support@allarcoapartment.com</a>
                                 </p>
                               </div>
                             ) : (
@@ -944,7 +944,7 @@ export default function FindBookingPage() {
                       Our team is here to assist you with any questions about your stay.
                     </p>
                     <a
-                      href="mailto:info@allarcoapartment.com"
+                      href="mailto:support@allarcoapartment.com"
                       className="w-full py-3 px-4 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
                     >
                       <Mail className="w-5 h-5" />

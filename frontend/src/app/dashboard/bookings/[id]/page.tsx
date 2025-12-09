@@ -214,8 +214,8 @@ export default function BookingDetailPage() {
                 </p>
                 <p>
                   <span className="font-medium">Check-in:</span>{' '}
-                  <a href="mailto:check-in@allarcoapartment.com" className="text-blue-600 hover:underline">
-                    check-in@allarcoapartment.com
+                  <a href="mailto:support@allarcoapartment.com" className="text-blue-600 hover:underline">
+                    support@allarcoapartment.com
                   </a>
                 </p>
               </div>

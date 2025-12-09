@@ -402,7 +402,7 @@ function GuestDetailsModal({
                   size="sm"
                   onClick={() => {
                     const link = buildCheckinLink(primaryBooking);
-                    const mailto = `mailto:checkin@allarcoapartment.com?subject=Online check-in&body=Please complete your online check-in: ${encodeURIComponent(link)}`;
+                    const mailto = `mailto:support@allarcoapartment.com?subject=Online check-in&body=Please complete your online check-in: ${encodeURIComponent(link)}`;
                     window.location.href = mailto;
                   }}
                   className="bg-blue-600 hover:bg-blue-700"

@@ -710,7 +710,7 @@ export default function BookingCheckInPage() {
                           >
                             <p className="font-semibold text-gray-900">Privacy Policy - Online Check-in</p>
                             <p>Pursuant to Article 13 of EU Regulation 2016/679, we process personal data you provide for online check-in and related services.</p>
-                            <p><strong>Data Controller:</strong> Ali Hassan Cheema - IT, Chirignago-Zelarino, email cheemacheema0078@gmail.com.</p>
+                            <p><strong>Data Controller:</strong> Ali Hassan Cheema - IT, Chirignago-Zelarino, email support@allarcoapartment.com.</p>
                             <p><strong>Data processed:</strong> main guest identity, contact, document details & selfie, stay dates; group member names, dates/places of birth, nationality.</p>
                             <p><strong>Purposes:</strong> check-in & ID verification; contract/tourist tax; legal obligations; optional newsletter; defense of rights.</p>
                             <p><strong>Legal bases:</strong> contract, legal obligation, consent (newsletter), legitimate interest.</p>

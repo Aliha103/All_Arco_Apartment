@@ -437,7 +437,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             right_html += f'<br/><b><font size=10 color=#A68B5B>PROPERTY</font></b><br/>'
             right_html += f'<font size=9>ALL\'ARCO APARTMENT</font><br/>'
             right_html += f'<font size=9>Via Castellana 61</font><br/>'
-            right_html += f'<font size=9>30125 Venice, Italy</font>'
+            right_html += f'<font size=9>30174 Venice, Italy</font>'
 
             left_para = Paragraph(left_html, styles['Normal'])
             right_para = Paragraph(right_html, styles['Normal'])
