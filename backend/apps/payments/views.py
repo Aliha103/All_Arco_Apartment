@@ -76,8 +76,8 @@ def create_checkout_session(request):
                     'price_data': {
                         'currency': 'eur',
                         'product_data': {
-                            'name': f"All'Arco Apartment - {booking.nights} nights",
-                            'description': f"{booking.check_in_date} to {booking.check_out_date}",
+                            'name': f"All'Arco Apartment · {booking.nights} night{'s' if booking.nights != 1 else ''}",
+                            'description': f"Stay in Venice · {booking.check_in_date} → {booking.check_out_date}",
                         },
                         'unit_amount': int(amount_to_charge * 100),  # Convert to cents
                     },
@@ -85,12 +85,22 @@ def create_checkout_session(request):
                 },
             ],
             mode='payment',
+            billing_address_collection='required',
+            phone_number_collection={'enabled': True},
             success_url=(
                 f"{frontend_host}/booking/confirmation"
                 f"?session_id={{CHECKOUT_SESSION_ID}}&booking_id={booking.id}"
             ),
             cancel_url=f"{frontend_host}/book",
             customer_email=booking.guest_email,
+            custom_text={
+                'submit': {
+                    'message': "Secure checkout handled by Stripe for All'Arco Apartment."
+                },
+                'terms_of_service_acceptance': {
+                    'message': "By paying, you confirm the stay details and our house rules."
+                }
+            },
             metadata={
                 'booking_id': str(booking.id),
             },
