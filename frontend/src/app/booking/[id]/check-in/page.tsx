@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle2, Building2, FileText, Users, Shield, Clock, Plus, Trash } from 'lucide-react';
 
 type Booking = {
@@ -208,17 +209,25 @@ export default function BookingCheckInPage() {
 
       <main className="pt-28 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 space-y-8">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-gray-500 uppercase tracking-[0.25em]">Online Check-in</p>
+              <p className="text-xs font-semibold text-[#C4A572] uppercase tracking-[0.3em]">Online Check-in</p>
               <h1 className="text-2xl font-semibold mt-1">Booking {booking.booking_id}</h1>
               <p className="text-gray-600">
                 {booking.check_in_date} → {booking.check_out_date} · {booking.nights} night{booking.nights === 1 ? '' : 's'}
               </p>
             </div>
-            <Badge variant="outline" className="border-gray-200 text-gray-700">
-              Step {step} of 3
-            </Badge>
+            <div className="flex items-center gap-2">
+              {[1, 2, 3].map((s) => (
+                <Badge
+                  key={s}
+                  variant={step === s ? 'default' : 'outline'}
+                  className={step === s ? 'bg-[#C4A572] text-white' : 'border-gray-200 text-gray-700'}
+                >
+                  Step {s}
+                </Badge>
+              ))}
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-[2fr,1fr] gap-6">
@@ -241,6 +250,7 @@ export default function BookingCheckInPage() {
                 <CardContent className="space-y-4">
                   {step === 1 && (
                     <div className="space-y-4">
+                      <p className="text-sm text-gray-600">We’ll use these details for your receipt or invoice.</p>
                       <div className="flex gap-3">
                         <Button variant={billingType === 'receipt' ? 'default' : 'outline'} onClick={() => setBillingType('receipt')}>
                           Receipt
@@ -250,51 +260,75 @@ export default function BookingCheckInPage() {
                         </Button>
                       </div>
                       {billingType === 'receipt' ? (
-                        <>
-                          <Input
-                            placeholder="Full name"
-                            value={billing.full_name}
-                            onChange={(e) => setBilling({ ...billing, full_name: e.target.value })}
-                          />
-                          <Input
-                            placeholder="Address"
-                            value={billing.address}
-                            onChange={(e) => setBilling({ ...billing, address: e.target.value })}
-                          />
-                          <Input
-                            placeholder="Phone"
-                            value={billing.phone}
-                            onChange={(e) => setBilling({ ...billing, phone: e.target.value })}
-                          />
-                          <Textarea
-                            placeholder="Notes (optional)"
-                            value={billing.notes}
-                            onChange={(e) => setBilling({ ...billing, notes: e.target.value })}
-                          />
-                        </>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <div className="sm:col-span-2 flex flex-col gap-1">
+                            <Label className="text-xs text-gray-600">Full name</Label>
+                            <Input
+                              placeholder="Full name"
+                              value={billing.full_name}
+                              onChange={(e) => setBilling({ ...billing, full_name: e.target.value })}
+                            />
+                          </div>
+                          <div className="sm:col-span-2 flex flex-col gap-1">
+                            <Label className="text-xs text-gray-600">Address</Label>
+                            <Input
+                              placeholder="Address"
+                              value={billing.address}
+                              onChange={(e) => setBilling({ ...billing, address: e.target.value })}
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <Label className="text-xs text-gray-600">Phone</Label>
+                            <Input
+                              placeholder="+39 ..."
+                              value={billing.phone}
+                              onChange={(e) => setBilling({ ...billing, phone: e.target.value })}
+                            />
+                          </div>
+                          <div className="sm:col-span-2 flex flex-col gap-1">
+                            <Label className="text-xs text-gray-600">Notes (optional)</Label>
+                            <Textarea
+                              placeholder="Arrival notes, billing reference…"
+                              value={billing.notes}
+                              onChange={(e) => setBilling({ ...billing, notes: e.target.value })}
+                            />
+                          </div>
+                        </div>
                       ) : (
-                        <>
-                          <Input
-                            placeholder="Company name"
-                            value={billing.company_name}
-                            onChange={(e) => setBilling({ ...billing, company_name: e.target.value })}
-                          />
-                          <Input
-                            placeholder="VAT / Tax ID"
-                            value={billing.tax_id}
-                            onChange={(e) => setBilling({ ...billing, tax_id: e.target.value })}
-                          />
-                          <Input
-                            placeholder="Billing address"
-                            value={billing.address}
-                            onChange={(e) => setBilling({ ...billing, address: e.target.value })}
-                          />
-                          <Textarea
-                            placeholder="Notes (optional)"
-                            value={billing.notes}
-                            onChange={(e) => setBilling({ ...billing, notes: e.target.value })}
-                          />
-                        </>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <div className="sm:col-span-2 flex flex-col gap-1">
+                            <Label className="text-xs text-gray-600">Company name</Label>
+                            <Input
+                              placeholder="Company name"
+                              value={billing.company_name}
+                              onChange={(e) => setBilling({ ...billing, company_name: e.target.value })}
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <Label className="text-xs text-gray-600">VAT / Tax ID</Label>
+                            <Input
+                              placeholder="IT123456789"
+                              value={billing.tax_id}
+                              onChange={(e) => setBilling({ ...billing, tax_id: e.target.value })}
+                            />
+                          </div>
+                          <div className="sm:col-span-2 flex flex-col gap-1">
+                            <Label className="text-xs text-gray-600">Billing address</Label>
+                            <Input
+                              placeholder="Street, City, Country"
+                              value={billing.address}
+                              onChange={(e) => setBilling({ ...billing, address: e.target.value })}
+                            />
+                          </div>
+                          <div className="sm:col-span-2 flex flex-col gap-1">
+                            <Label className="text-xs text-gray-600">Notes (optional)</Label>
+                            <Textarea
+                              placeholder="Order reference or PO…"
+                              value={billing.notes}
+                              onChange={(e) => setBilling({ ...billing, notes: e.target.value })}
+                            />
+                          </div>
+                        </div>
                       )}
                       <div className="flex justify-end">
                         <Button onClick={onBillingSubmit} disabled={saving}>
@@ -452,17 +486,17 @@ export default function BookingCheckInPage() {
                           <p>Check-in from 15:00 · Check-out by 10:00. Arrival instructions are emailed 48h before check-in.</p>
                         </div>
                       </div>
-                      <div className="flex justify-end">
+                      <div className="flex justify-between items-center">
+                        {checkinDone && (
+                          <div className="flex items-center gap-2 text-emerald-700 text-sm">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Thanks! Your online check-in is complete.</span>
+                          </div>
+                        )}
                         <Button onClick={onFinish}>
                           Finish
                         </Button>
                       </div>
-                      {checkinDone && (
-                        <div className="flex items-center gap-2 text-emerald-700 text-sm">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Thanks! Your online check-in is complete.</span>
-                        </div>
-                      )}
                     </div>
                   )}
                 </CardContent>
