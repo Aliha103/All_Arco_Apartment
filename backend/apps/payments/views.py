@@ -238,10 +238,12 @@ def confirm_checkout_session(request):
 
             return Response(BookingSerializer(booking).data)
 
-        # If the session was cancelled/expired and booking is still unpaid, delete it
+        # If the session was cancelled/expired and booking is still unpaid, cancel but keep record
         if session_status in ['expired', 'canceled']:
             if booking.payment_status != 'paid':
-                booking.delete()
+                booking.status = 'cancelled'
+                booking.payment_status = 'unpaid'
+                booking.save(update_fields=['status', 'payment_status'])
                 BookingAttempt.objects.filter(stripe_session_id=session_id).update(
                     status='expired',
                     failure_reason='Checkout session expired/canceled'
@@ -395,7 +397,7 @@ def stripe_webhook(request):
             except Booking.DoesNotExist:
                 pass
 
-    # Handle payment/session failures: clean up unpaid bookings
+    # Handle payment/session failures: mark cancelled but keep record
     if event['type'] in ['checkout.session.expired', 'checkout.session.async_payment_failed']:
         session = event['data']['object']
         booking_id = (session.get('metadata') or {}).get('booking_id')
@@ -403,7 +405,9 @@ def stripe_webhook(request):
             try:
                 booking = Booking.objects.get(id=booking_id)
                 if booking.payment_status != 'paid':
-                    booking.delete()
+                    booking.status = 'cancelled'
+                    booking.payment_status = 'unpaid'
+                    booking.save(update_fields=['status', 'payment_status'])
                 BookingAttempt.objects.filter(stripe_session_id=session.get('id')).update(
                     status='expired',
                     failure_reason='Stripe session expired or async payment failed'
@@ -424,7 +428,9 @@ def stripe_webhook(request):
             try:
                 booking = Booking.objects.get(id=booking_id)
                 if booking.payment_status != 'paid':
-                    booking.delete()
+                    booking.status = 'cancelled'
+                    booking.payment_status = 'unpaid'
+                    booking.save(update_fields=['status', 'payment_status'])
                 BookingAttempt.objects.filter(stripe_session_id=obj.get('checkout_session_id')).update(
                     status='failed',
                     failure_reason=error_message
