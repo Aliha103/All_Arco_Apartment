@@ -60,8 +60,8 @@ async function verifyAuthentication(request: NextRequest): Promise<{ authenticat
     });
 
     if (!response.ok) {
-      // Fall back to optimistic auth when session cookie exists to avoid blocking due to upstream/cache issues
-      return { authenticated: true, isTeamMember: true };
+      console.error('Auth verification failed:', response.status, response.statusText);
+      return { authenticated: false, isTeamMember: false };
     }
 
     const userData = await response.json();
@@ -70,8 +70,8 @@ async function verifyAuthentication(request: NextRequest): Promise<{ authenticat
     return { authenticated: true, isTeamMember };
   } catch (error) {
     console.error('Auth verification error in middleware:', error);
-    // If we have a session cookie, allow through and let app-level checks handle it
-    return { authenticated: true, isTeamMember: true };
+    // On network/fetch errors, deny access to be safe
+    return { authenticated: false, isTeamMember: false };
   }
 }
 

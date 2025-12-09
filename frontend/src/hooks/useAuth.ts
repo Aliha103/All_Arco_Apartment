@@ -13,8 +13,6 @@ export function useAuth() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, setUser, setLoading, logout: storeLogout } = useAuthStore();
-  const hasSession =
-    typeof document !== 'undefined' && document.cookie.includes('sessionid=');
 
   const redirectAfterAuth = (nextUser: User) => {
     const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
@@ -22,7 +20,7 @@ export function useAuth() {
     router.replace(target);
   };
 
-  // Fetch current user
+  // Fetch current user - always enabled to ensure auth state is checked on page load
   const { data, isLoading, error } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: async () => {
@@ -30,7 +28,7 @@ export function useAuth() {
       return response.data;
     },
     retry: false,
-    enabled: hasSession,
+    staleTime: 0, // Always revalidate on mount
   });
 
   useEffect(() => {
