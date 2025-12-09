@@ -91,6 +91,7 @@ export default function BookingCheckInPage() {
     first_name: '',
     last_name: '',
     company_name: '',
+    company_email: '',
     tax_id: '',
     tax_code: '',
     address: '',
@@ -105,6 +106,7 @@ export default function BookingCheckInPage() {
   // Guests
   const [guests, setGuests] = useState<GuestForm[]>([]);
   const [checkinDone, setCheckinDone] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const progress = useMemo(() => (step / 3) * 100, [step]);
 
   // Fetch booking
@@ -171,6 +173,9 @@ export default function BookingCheckInPage() {
       } else {
         updates.guest_name = billing.company_name || booking.guest_name;
         updates.guest_tax_code = billing.tax_id || billing.tax_code || '';
+        if (billing.company_email) {
+          updates.guest_email = billing.company_email;
+        }
       }
       await api.bookings.lookupUpdate(booking.booking_id, booking.guest_email, updates);
       toast.success('Billing details saved');
@@ -410,6 +415,14 @@ export default function BookingCheckInPage() {
                                 onChange={(e) => setBilling({ ...billing, company_name: e.target.value })}
                               />
                             </div>
+                            <div className="sm:col-span-2 flex flex-col gap-1">
+                              <Label className="text-xs text-gray-600">Company email (optional)</Label>
+                              <Input
+                                placeholder="billing@company.com"
+                                value={billing.company_email}
+                                onChange={(e) => setBilling({ ...billing, company_email: e.target.value })}
+                              />
+                            </div>
                             <div className="flex flex-col gap-1">
                               <Label className="text-xs text-gray-600">VAT Code (optional)</Label>
                               <Input
@@ -504,6 +517,28 @@ export default function BookingCheckInPage() {
 
                   {step === 2 && (
                     <div className="space-y-4">
+                      <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                        <p className="font-semibold text-gray-900">Privacy & consent</p>
+                        <p className="mt-1 text-gray-700">
+                          We process guest data for check-in, ID verification, and legal compliance. Document photos are not stored beyond your stay.
+                        </p>
+                        <div className="max-h-40 overflow-y-auto mt-3 p-3 rounded border border-gray-200 text-xs leading-relaxed text-gray-700 bg-white">
+                          <p className="font-semibold mb-1">Privacy Policy - Online Check-in</p>
+                          <p>Pursuant to Article 13 of EU Regulation 2016/679, we process personal data for check-in, contract management, tourist tax, legal obligations, optional newsletter, and to defend our rights. Data Controller: Ali Hassan Cheema - IT (cheemacheema0078@gmail.com).</p>
+                          <p className="mt-1">Data includes guest identity info, contact details, document info and selfie, stay dates, and group member names/birth data. Document photos/selfie are kept max 7 days; other data kept up to 2 years or as legally required.</p>
+                          <p className="mt-1">Rights: access, rectify, erase, restrict, portability, object, withdraw consent. Contact: cheemacheema0078@gmail.com. Complaint: Italian Garante.</p>
+                        </div>
+                        <label className="mt-3 inline-flex items-center gap-2 text-sm text-gray-800">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={consentAccepted}
+                            onChange={(e) => setConsentAccepted(e.target.checked)}
+                          />
+                          <span>I have read and accept the Privacy Policy for online check-in.</span>
+                        </label>
+                      </div>
+
                       {guests.map((guest, idx) => (
                         <Card key={idx} className="border border-gray-100">
                           <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -642,7 +677,7 @@ export default function BookingCheckInPage() {
                       </Button>
                       <div className="flex justify-between">
                         <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                        <Button onClick={onGuestsSubmit} disabled={saving}>
+                        <Button onClick={onGuestsSubmit} disabled={saving || !consentAccepted}>
                           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save guests'}
                         </Button>
                       </div>

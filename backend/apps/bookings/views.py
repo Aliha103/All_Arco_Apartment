@@ -1332,7 +1332,7 @@ def public_booking_update(request):
         )
 
     # Allowed fields for guest self-service update
-    allowed_fields = ['guest_name', 'guest_phone', 'special_requests', 'guest_address', 'guest_tax_code']
+    allowed_fields = ['guest_name', 'guest_phone', 'special_requests', 'guest_address', 'guest_tax_code', 'guest_email', 'guest_country']
     updated_fields = []
 
     for field in allowed_fields:
