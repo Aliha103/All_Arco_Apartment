@@ -81,9 +81,16 @@ export interface Booking {
   total_price: string;
   amount_due?: string;
   applied_credit?: string;
+  nightly_rate?: string | number;
+  cleaning_fee?: string | number;
+  tourist_tax?: string | number;
+  city_tax_payment_status?: 'unpaid' | 'pending' | 'paid' | 'refunded';
+  city_tax_paid_at?: string | null;
   status: 'pending' | 'confirmed' | 'paid' | 'checked_in' | 'checked_out' | 'cancelled';
-  payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded';
+  payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'unpaid';
   special_requests?: string;
+  eta_checkin_time?: string | null;
+  eta_checkout_time?: string | null;
   created_at: string;
   updated_at: string;
 }
