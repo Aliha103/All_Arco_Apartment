@@ -142,7 +142,7 @@ def send_booking_confirmation(booking):
 
     return ZeptomailService.send_email(
         to_email=booking.guest_email,
-        from_email='reservations@allarcoapartment.com',
+        from_email='reservation@allarcoapartment.com',
         from_name="All'Arco Apartment",
         subject=f"Booking Confirmed - All'Arco Apartment {booking.booking_id}",
         html_body=html_body,
@@ -211,7 +211,7 @@ def send_payment_receipt(payment):
 
     return ZeptomailService.send_email(
         to_email=booking.guest_email,
-        from_email='reservations@allarcoapartment.com',
+        from_email='reservation@allarcoapartment.com',
         from_name="All'Arco Apartment",
         subject=f"Payment Receipt - All'Arco Apartment {booking.booking_id}",
         html_body=html_body,
