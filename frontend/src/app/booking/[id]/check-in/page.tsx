@@ -617,6 +617,7 @@ export default function BookingCheckInPage() {
                                 <option value="passport">Passport</option>
                                 <option value="id_card">ID Card</option>
                                 <option value="driving_license">Driving License</option>
+                                <option value="other">Other</option>
                               </select>
                             </div>
                             <Input
