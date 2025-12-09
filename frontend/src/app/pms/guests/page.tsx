@@ -91,6 +91,7 @@ interface Guest {
   total_spent: string;
   total_guests_count?: number;
   online_bookings?: number;
+  online_checkin?: boolean;
   date_joined: string;
   created_at: string;
   avatar_url?: string;
@@ -193,9 +194,12 @@ function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
           </div>
 
           {/* Name */}
-          <h3 className="text-lg font-semibold mb-1 text-gray-900">
-            {[guest.first_name, guest.last_name].filter(Boolean).join(' ') || 'Guest'}
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {[guest.first_name, guest.last_name].filter(Boolean).join(' ') || 'Guest'}
+            </h3>
+            {guest.online_checkin && <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">Online check-in</Badge>}
+          </div>
 
           {/* Contact Info */}
           <div className="space-y-2 mb-4">

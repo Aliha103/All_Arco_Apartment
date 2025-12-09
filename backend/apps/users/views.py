@@ -8,7 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from .models import User, GuestNote, Role, Permission, PasswordResetToken, HostProfile, Review
-from apps.bookings.models import Booking
+from apps.bookings.models import Booking, BookingGuest
 from .serializers import (
     UserSerializer, UserCreateSerializer, LoginSerializer, GuestNoteSerializer,
     UserWithRoleSerializer, RoleSerializer, PermissionSerializer,
@@ -254,6 +254,7 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
         Return merged guests:
         - Registered users with guest role
         - Unique guest emails from bookings (even if not registered)
+        - Booking guest records (online check-ins)
         """
         if not request.user.is_team_member():
             return Response([])
@@ -327,6 +328,48 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
             # Count online bookings (website/direct treated as online self-managed)
             if booking.booking_source in ['website', 'direct']:
                 entry['online_bookings'] = entry.get('online_bookings', 0) + 1
+            entry['online_checkin'] = entry.get('online_checkin', False) or booking.guests.filter(is_primary=True).exists()
+            merged[key] = entry
+
+        # Guests from BookingGuest (online check-in)
+        booking_guests_qs = BookingGuest.objects.select_related('booking').all()
+        if search:
+            booking_guests_qs = booking_guests_qs.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(email__icontains=search)
+            )
+
+        for bg in booking_guests_qs:
+            key = (bg.email or '').lower()
+            synthetic = False
+            if not key:
+                # fallback key using name + dob to avoid collisions
+                key = f"bg-{bg.first_name}-{bg.last_name}-{bg.date_of_birth or ''}".lower()
+                synthetic = True
+
+            entry = merged.get(key, {
+                'id': str(bg.id) if not synthetic else key,
+                'first_name': bg.first_name,
+                'last_name': bg.last_name,
+                'email': bg.email or '',
+                'phone': '',
+                'total_bookings': 0,
+                'total_spent': 0.0,
+                'total_guests_count': 0,
+                'online_bookings': 0,
+                'online_checkin': True,
+            })
+
+            entry['first_name'] = entry.get('first_name') or bg.first_name
+            entry['last_name'] = entry.get('last_name') or bg.last_name
+            entry['online_checkin'] = True
+            if bg.booking:
+                entry['total_bookings'] = entry.get('total_bookings', 0) + 1
+                entry['total_spent'] = entry.get('total_spent', 0.0) + float(bg.booking.total_price or 0)
+                entry['total_guests_count'] = entry.get('total_guests_count', 0) + (bg.booking.number_of_guests or 0)
+                if bg.booking.booking_source in ['website', 'direct']:
+                    entry['online_bookings'] = entry.get('online_bookings', 0) + 1
             merged[key] = entry
 
         # Sort by name then email for stable display
