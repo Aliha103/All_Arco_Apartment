@@ -57,6 +57,7 @@ type Booking = {
   city_tax_paid_at?: string;
   eta_checkin_time?: string;
   eta_checkout_time?: string;
+  checkin_draft?: boolean;
 };
 
 type GuestForm = {

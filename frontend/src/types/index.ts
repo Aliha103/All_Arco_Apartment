@@ -86,6 +86,7 @@ export interface Booking {
   tourist_tax?: string | number;
   city_tax_payment_status?: 'unpaid' | 'pending' | 'paid' | 'refunded';
   city_tax_paid_at?: string | null;
+  checkin_draft?: boolean;
   status: 'pending' | 'confirmed' | 'paid' | 'checked_in' | 'checked_out' | 'cancelled';
   payment_status: 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'unpaid';
   special_requests?: string;
