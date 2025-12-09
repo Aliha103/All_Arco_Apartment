@@ -45,6 +45,7 @@ type Booking = {
   guest_phone: string;
   guest_address?: string;
   guest_tax_code?: string;
+  guest_country?: string;
   check_in_date: string;
   check_out_date: string;
   nights: number;
@@ -87,9 +88,16 @@ export default function BookingCheckInPage() {
   const [billingType, setBillingType] = useState<'receipt' | 'invoice'>('receipt');
   const [billing, setBilling] = useState({
     full_name: '',
+    first_name: '',
+    last_name: '',
     company_name: '',
     tax_id: '',
+    tax_code: '',
     address: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
     phone: '',
     notes: '',
   });
@@ -109,9 +117,13 @@ export default function BookingCheckInPage() {
         setBilling((prev) => ({
           ...prev,
           full_name: b.guest_name || '',
+          first_name: b.guest_name ? b.guest_name.split(' ')[0] : '',
+          last_name: b.guest_name ? b.guest_name.split(' ').slice(1).join(' ') : '',
           address: b.guest_address || '',
+          country: b.guest_country || '',
           phone: b.guest_phone || '',
           tax_id: b.guest_tax_code || '',
+          tax_code: b.guest_tax_code || '',
         }));
         const numGuests = Math.max(b.number_of_guests || 1, 1);
         setGuests(
@@ -145,17 +157,20 @@ export default function BookingCheckInPage() {
     if (!booking) return;
     setSaving(true);
     try {
+      const combinedAddress = [billing.address, billing.city, billing.state, billing.zip].filter(Boolean).join(', ');
       const updates: any = {
         guest_phone: billing.phone,
-        guest_address: billing.address,
+        guest_address: combinedAddress || billing.address,
+        guest_country: billing.country,
         special_requests: billing.notes,
       };
       if (billingType === 'receipt') {
-        updates.guest_name = billing.full_name || booking.guest_name;
-        updates.guest_tax_code = '';
+        const name = billing.full_name || `${billing.first_name} ${billing.last_name}`.trim() || booking.guest_name;
+        updates.guest_name = name;
+        updates.guest_tax_code = billing.tax_code || '';
       } else {
         updates.guest_name = billing.company_name || booking.guest_name;
-        updates.guest_tax_code = billing.tax_id || '';
+        updates.guest_tax_code = billing.tax_id || billing.tax_code || '';
       }
       await api.bookings.lookupUpdate(booking.booking_id, booking.guest_email, updates);
       toast.success('Billing details saved');
@@ -283,12 +298,12 @@ export default function BookingCheckInPage() {
                           <p>Pick receipt (guest name) or invoice (company details). We’ll email a PDF copy.</p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-3">
-                        <Button
-                          variant={billingType === 'receipt' ? 'default' : 'outline'}
-                          className={billingType === 'receipt' ? 'bg-[#C4A572] text-black border-0' : ''}
-                          onClick={() => setBillingType('receipt')}
-                        >
+                        <div className="flex flex-wrap gap-3">
+                          <Button
+                            variant={billingType === 'receipt' ? 'default' : 'outline'}
+                            className={billingType === 'receipt' ? 'bg-[#C4A572] text-black border-0' : ''}
+                            onClick={() => setBillingType('receipt')}
+                          >
                           Receipt
                         </Button>
                         <Button
@@ -311,12 +326,77 @@ export default function BookingCheckInPage() {
                                 onChange={(e) => setBilling({ ...billing, full_name: e.target.value })}
                               />
                             </div>
+                            <div className="grid grid-cols-2 gap-3 sm:col-span-2">
+                              <div className="flex flex-col gap-1">
+                                <Label className="text-xs text-gray-600">First name (optional)</Label>
+                                <Input
+                                  placeholder="First name"
+                                  value={billing.first_name}
+                                  onChange={(e) => setBilling({ ...billing, first_name: e.target.value })}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <Label className="text-xs text-gray-600">Last name (optional)</Label>
+                                <Input
+                                  placeholder="Last name"
+                                  value={billing.last_name}
+                                  onChange={(e) => setBilling({ ...billing, last_name: e.target.value })}
+                                />
+                              </div>
+                            </div>
                             <div className="sm:col-span-2 flex flex-col gap-1">
                               <Label className="text-xs text-gray-600">Address</Label>
                               <Input
                                 placeholder="Street, City, Country"
                                 value={billing.address}
                                 onChange={(e) => setBilling({ ...billing, address: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 sm:col-span-2">
+                              <div className="flex flex-col gap-1 col-span-1">
+                                <Label className="text-xs text-gray-600">City</Label>
+                                <Input
+                                  placeholder="City"
+                                  value={billing.city}
+                                  onChange={(e) => setBilling({ ...billing, city: e.target.value })}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 col-span-1">
+                                <Label className="text-xs text-gray-600">State</Label>
+                                <Input
+                                  placeholder="State"
+                                  value={billing.state}
+                                  onChange={(e) => setBilling({ ...billing, state: e.target.value })}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 col-span-1">
+                                <Label className="text-xs text-gray-600">ZIP</Label>
+                                <Input
+                                  placeholder="ZIP"
+                                  value={billing.zip}
+                                  onChange={(e) => setBilling({ ...billing, zip: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1 sm:col-span-1">
+                              <Label className="text-xs text-gray-600">Country</Label>
+                              <select
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                                value={billing.country}
+                                onChange={(e) => setBilling({ ...billing, country: e.target.value })}
+                              >
+                                <option value="">Select country</option>
+                                {COUNTRIES.map((c) => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex flex-col gap-1 sm:col-span-1">
+                              <Label className="text-xs text-gray-600">Tax code (optional)</Label>
+                              <Input
+                                placeholder="Codice fiscale"
+                                value={billing.tax_code}
+                                onChange={(e) => setBilling({ ...billing, tax_code: e.target.value })}
                               />
                             </div>
                           </>
@@ -345,6 +425,45 @@ export default function BookingCheckInPage() {
                                 value={billing.address}
                                 onChange={(e) => setBilling({ ...billing, address: e.target.value })}
                               />
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 sm:col-span-2">
+                              <div className="flex flex-col gap-1 col-span-1">
+                                <Label className="text-xs text-gray-600">City</Label>
+                                <Input
+                                  placeholder="City"
+                                  value={billing.city}
+                                  onChange={(e) => setBilling({ ...billing, city: e.target.value })}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 col-span-1">
+                                <Label className="text-xs text-gray-600">State</Label>
+                                <Input
+                                  placeholder="State"
+                                  value={billing.state}
+                                  onChange={(e) => setBilling({ ...billing, state: e.target.value })}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 col-span-1">
+                                <Label className="text-xs text-gray-600">ZIP</Label>
+                                <Input
+                                  placeholder="ZIP"
+                                  value={billing.zip}
+                                  onChange={(e) => setBilling({ ...billing, zip: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1 sm:col-span-1">
+                              <Label className="text-xs text-gray-600">Country</Label>
+                              <select
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                                value={billing.country}
+                                onChange={(e) => setBilling({ ...billing, country: e.target.value })}
+                              >
+                                <option value="">Select country</option>
+                                {COUNTRIES.map((c) => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
                             </div>
                           </>
                         )}
