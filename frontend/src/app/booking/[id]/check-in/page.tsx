@@ -276,18 +276,26 @@ export default function BookingCheckInPage() {
                 <CardContent className="space-y-4">
                   {step === 1 && (
                     <div className="space-y-6">
-                      <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700 flex items-start gap-2">
+                      <div className="rounded-lg border border-amber-100 bg-amber-50/60 px-4 py-3 text-sm text-gray-800 flex items-start gap-2">
                         <Shield className="w-4 h-4 text-[#C4A572] mt-0.5" />
                         <div>
                           <p className="font-semibold text-gray-900">Billing preference</p>
-                          <p>Choose receipt (guest name) or invoice (company details). A copy will be emailed.</p>
+                          <p>Pick receipt (guest name) or invoice (company details). We’ll email a PDF copy.</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-3">
-                        <Button variant={billingType === 'receipt' ? 'default' : 'outline'} onClick={() => setBillingType('receipt')}>
+                        <Button
+                          variant={billingType === 'receipt' ? 'default' : 'outline'}
+                          className={billingType === 'receipt' ? 'bg-[#C4A572] text-black border-0' : ''}
+                          onClick={() => setBillingType('receipt')}
+                        >
                           Receipt
                         </Button>
-                        <Button variant={billingType === 'invoice' ? 'default' : 'outline'} onClick={() => setBillingType('invoice')}>
+                        <Button
+                          variant={billingType === 'invoice' ? 'default' : 'outline'}
+                          className={billingType === 'invoice' ? 'bg-[#C4A572] text-black border-0' : ''}
+                          onClick={() => setBillingType('invoice')}
+                        >
                           Invoice
                         </Button>
                       </div>
