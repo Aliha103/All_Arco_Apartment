@@ -91,7 +91,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     }
 
     def get_permissions(self):
-        if self.action in ['create', 'retrieve', 'download_pdf']:
+        if self.action in ['create', 'retrieve', 'download_pdf', 'complete_checkin']:
             return [AllowAny()]
         return super().get_permissions()
 
@@ -109,6 +109,12 @@ class BookingViewSet(viewsets.ModelViewSet):
             booking = self.get_object()
         except Booking.DoesNotExist:
             return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # If anonymous, require matching guest email to prevent tampering
+        if not request.user.is_authenticated:
+            provided_email = request.data.get('guest_email')
+            if not provided_email or provided_email.lower() != (booking.guest_email or '').lower():
+                return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_403_FORBIDDEN)
 
         eta_checkin = request.data.get('eta_checkin')
         eta_checkout = request.data.get('eta_checkout')
@@ -142,7 +148,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         # Unauthenticated users: allow retrieval only when looking up a specific booking
         if not getattr(user, 'is_authenticated', False):
-            if self.action in ['retrieve', 'download_pdf']:
+            if self.action in ['retrieve', 'download_pdf', 'complete_checkin']:
                 return queryset
             return queryset.none()
 

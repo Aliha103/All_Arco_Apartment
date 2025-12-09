@@ -322,6 +322,7 @@ export default function BookingCheckInPage() {
         eta_checkin: etaCheckin,
         eta_checkout: etaCheckout,
         city_tax_acknowledged: cityTaxAck,
+        guest_email: booking.guest_email,
       });
       setCheckinDone(true);
       router.push(`/booking/confirmation?booking_id=${booking.id}`);
