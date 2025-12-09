@@ -307,7 +307,7 @@ def create_city_tax_session(request):
                 f"{frontend_host}/booking/confirmation"
                 f"?session_id={{CHECKOUT_SESSION_ID}}&booking_id={booking.id}&city_tax=1"
             ),
-            cancel_url=f"{frontend_host}/book",
+            cancel_url=f"{frontend_host}/booking/{booking.id}/check-in",
             customer_email=booking.guest_email,
             metadata={'booking_id': str(booking.id), 'city_tax': '1'},
             payment_intent_data={'metadata': {'booking_id': str(booking.id), 'city_tax': '1'}},

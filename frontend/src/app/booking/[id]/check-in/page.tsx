@@ -312,7 +312,7 @@ export default function BookingCheckInPage() {
 
   const [etaCheckin, setEtaCheckin] = useState('');
   const [etaCheckout, setEtaCheckout] = useState('');
-  const [cityTaxAck, setCityTaxAck] = useState(false);
+  const [cityTaxAck, setCityTaxAck] = useState(true);
   const [cityTaxPaying, setCityTaxPaying] = useState(false);
 
   const onPayCityTax = useCallback(async () => {
@@ -1296,24 +1296,13 @@ export default function BookingCheckInPage() {
                             </div>
                           </div>
                           {booking.city_tax_payment_status !== 'paid' && (
-                            <>
-                              <Button
-                                onClick={onPayCityTax}
-                                disabled={cityTaxPaying}
-                                className="w-full sm:w-auto bg-[#C4A572] hover:bg-[#B39562] text-white shadow"
-                              >
-                                {cityTaxPaying ? 'Opening Stripe…' : 'Pay city tax online'}
-                              </Button>
-                              <label className="inline-flex items-center gap-2 text-sm text-gray-800">
-                                <input
-                                  type="checkbox"
-                                  className="h-4 w-4"
-                                  checked={cityTaxAck}
-                                  onChange={(e) => setCityTaxAck(e.target.checked)}
-                                />
-                                <span>I’ll pay city tax at the property.</span>
-                              </label>
-                            </>
+                            <Button
+                              onClick={onPayCityTax}
+                              disabled={cityTaxPaying}
+                              className="w-full sm:w-auto bg-[#C4A572] hover:bg-[#B39562] text-white shadow"
+                            >
+                              {cityTaxPaying ? 'Opening Stripe…' : 'Pay city tax online'}
+                            </Button>
                           )}
                           {booking.city_tax_payment_status === 'paid' && (
                             <div className="inline-flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-lg">
