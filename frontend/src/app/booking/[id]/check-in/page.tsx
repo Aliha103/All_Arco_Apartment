@@ -269,8 +269,14 @@ export default function BookingCheckInPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {step === 1 && (
-                    <div className="space-y-4">
-                      <p className="text-sm text-gray-600">We’ll use these details for your receipt or invoice.</p>
+                    <div className="space-y-5">
+                      <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700 flex items-start gap-2">
+                        <Shield className="w-4 h-4 text-[#C4A572] mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-gray-900">Billing preference</p>
+                          <p>Receipts use the guest name; invoices use company details. You’ll get a copy by email.</p>
+                        </div>
+                      </div>
                       <div className="flex gap-3">
                         <Button variant={billingType === 'receipt' ? 'default' : 'outline'} onClick={() => setBillingType('receipt')}>
                           Receipt
@@ -292,7 +298,7 @@ export default function BookingCheckInPage() {
                           <div className="sm:col-span-2 flex flex-col gap-1">
                             <Label className="text-xs text-gray-600">Address</Label>
                             <Input
-                              placeholder="Address"
+                              placeholder="Street, City, Country"
                               value={billing.address}
                               onChange={(e) => setBilling({ ...billing, address: e.target.value })}
                             />
