@@ -152,6 +152,7 @@ def send_booking_confirmation(booking):
 
 def send_online_checkin_prompt(booking):
     """Send online check-in prompt from check-in@."""
+    frontend_host = getattr(settings, 'FRONTEND_URL', None) or 'https://www.allarcoapartment.com'
     html_body = f"""
     <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -159,11 +160,11 @@ def send_online_checkin_prompt(booking):
                 <h1 style="color: #C4A572;">Complete your online check-in</h1>
                 <p>Hi {booking.guest_name},</p>
                 <p>Your stay from <strong>{booking.check_in_date}</strong> to <strong>{booking.check_out_date}</strong> is confirmed. Please complete online check-in so we can share arrival instructions.</p>
-                <p style="margin: 16px 0;"><a href="{settings.FRONTEND_URL or 'https://www.allarcoapartment.com'}/bookings/find" style="background:#C4A572;color:white;padding:12px 18px;text-decoration:none;border-radius:6px;">Start online check-in</a></p>
+                <p style="margin: 16px 0;"><a href="{frontend_host}/bookings/find" style="background:#C4A572;color:white;padding:12px 18px;text-decoration:none;border-radius:6px;">Start online check-in</a></p>
                 <ul>
                     <li>City tax (€{booking.tourist_tax}) is paid at the property.</li>
                     <li>Cancellation: {"Non-refundable (10% discount applied)" if booking.cancellation_policy == "non_refundable" else "Flexible — free until 24h before check-in"}.</li>
-                    <li>Check-in: 3pm · Check-out: 11am</li>
+                    <li>Check-in: 15:00 · Check-out: 10:00</li>
                 </ul>
                 <p>Questions? Reply to this email.</p>
                 <p style="margin-top: 30px;">All'Arco Apartment Team</p>
