@@ -443,59 +443,56 @@ function ConfirmationContent() {
                     </p>
                     <a
                       href="mailto:support@allarcoapartment.com"
-                      className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100"
                     >
                       <Mail className="w-5 h-5 text-blue-600 flex-shrink-0" />
                       <div className="flex-1">
                         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Email Support</p>
-                        <p className="text-sm font-bold text-blue-600 group-hover:text-blue-700">support@allarcoapartment.com</p>
+                        <p className="text-sm font-bold text-blue-600">support@allarcoapartment.com</p>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-blue-400 group-hover:translate-x-1 transition-transform" />
                     </a>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Action Buttons */}
-              <div className="space-y-3 flex flex-col items-center">
+              <div className="space-y-3">
                 {isSameDay && (
-                  <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-100 to-amber-50 text-amber-900 px-5 py-4 flex gap-3 items-start shadow-lg w-full"
-                  >
+                  <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-100 to-amber-50 text-amber-900 px-5 py-4 flex gap-3 items-start w-full">
                     <Clock className="w-6 h-6 flex-shrink-0 mt-0.5 text-amber-600" />
                     <div>
                       <p className="font-bold text-base mb-1">Same-day arrival</p>
                       <p className="text-sm leading-relaxed">Please complete online check-in now to receive access instructions.</p>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
 
-                <Link href={`/booking/${booking.id}/check-in`}>
-                  <Button className="h-12 px-8 bg-[#C4A572] text-white hover:bg-[#B39562] text-sm font-semibold shadow-lg transition-all hover:shadow-xl">
-                    <Shield className="w-4 h-4 mr-2" />
-                    Complete online check-in
-                  </Button>
-                </Link>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link href={`/booking/${booking.id}/check-in`}>
+                    <Button className="w-full sm:w-auto h-11 px-6 bg-[#C4A572] text-white hover:bg-[#B39562] text-sm font-semibold">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Complete online check-in
+                    </Button>
+                  </Link>
 
-                {!isPaid && (
-                  <Button
-                    className="h-11 px-8 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-lg"
-                    onClick={() => payMutation.mutate()}
-                    disabled={payMutation.isPending}
-                  >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
-                  </Button>
-                )}
+                  {!isPaid && (
+                    <Button
+                      className="w-full sm:w-auto h-11 px-6 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold"
+                      onClick={() => payMutation.mutate()}
+                      disabled={payMutation.isPending}
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
+                    </Button>
+                  )}
 
-                <Link href="/">
-                  <Button variant="outline" className="h-11 px-8 border-2 border-gray-300 hover:bg-gray-50 text-sm font-semibold">
-                    <Home className="w-4 h-4 mr-2" />
-                    Back to home
-                  </Button>
-                </Link>
+                  <Link href="/">
+                    <Button variant="outline" className="w-full sm:w-auto h-11 px-6 border-2 border-gray-300 hover:bg-gray-50 text-sm font-semibold">
+                      <Home className="w-4 h-4 mr-2" />
+                      Back to home
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </motion.div>
           </div>
