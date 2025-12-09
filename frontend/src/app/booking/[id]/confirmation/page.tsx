@@ -131,7 +131,8 @@ function ConfirmationContent() {
   const touristTax = Number((booking as any).tourist_tax ?? 0) || 0;
   const appliedCredit = Number((booking as any).applied_credit ?? 0) || 0;
   const stayAmount = nightlyRate * (booking.nights || 0);
-  const chargedNow = Math.max((booking.total_price || 0) - touristTax, 0);
+  const totalPrice = Number((booking as any).total_price ?? 0) || 0;
+  const chargedNow = Math.max(totalPrice - touristTax, 0);
   const today = new Date().toISOString().slice(0, 10);
   const isSameDay = booking.check_in_date === today;
 
