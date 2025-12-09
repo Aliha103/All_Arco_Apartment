@@ -60,11 +60,14 @@ type GuestForm = {
   last_name: string;
   email?: string;
   country_of_birth?: string;
+  date_of_birth?: string;
   birth_province?: string;
   birth_city?: string;
   document_type?: string;
   document_number?: string;
   document_issue_country?: string;
+  document_issue_date?: string;
+  document_expire_date?: string;
   document_issue_province?: string;
   document_issue_city?: string;
   document_selfie?: File | null;
@@ -135,11 +138,14 @@ export default function BookingCheckInPage() {
             last_name: i === 0 ? b.guest_name.split(' ').slice(1).join(' ') : '',
             email: i === 0 ? b.guest_email : '',
             country_of_birth: '',
+            date_of_birth: '',
             birth_province: '',
             birth_city: '',
             document_type: 'passport',
             document_number: '',
             document_issue_country: '',
+            document_issue_date: '',
+            document_expire_date: '',
             document_issue_province: '',
             document_issue_city: '',
             document_selfie: null,
@@ -190,6 +196,42 @@ export default function BookingCheckInPage() {
 
   const onGuestsSubmit = useCallback(async () => {
     if (!booking) return;
+
+    // Basic validation
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      const isPrimary = i === 0;
+      const needDocProvince = (g.country_of_birth === 'Italy') || (g.document_issue_country === 'Italy');
+      if (!g.first_name.trim() || !g.last_name.trim()) {
+        toast.error(`Guest ${i + 1}: first and last name are required.`);
+        return;
+      }
+      if (!g.country_of_birth) {
+        toast.error(`Guest ${i + 1}: country of birth is required.`);
+        return;
+      }
+      if (!g.date_of_birth) {
+        toast.error(`Guest ${i + 1}: date of birth is required.`);
+        return;
+      }
+      if (isPrimary) {
+        if (!g.document_type || !g.document_number || !g.document_issue_country || !g.document_issue_date || !g.document_expire_date) {
+          toast.error('Primary guest: document type, number, issue/expiry dates, and issue country are required.');
+          return;
+        }
+        if (needDocProvince) {
+          if (!g.birth_province || !g.birth_city) {
+            toast.error('Primary guest: birth province and city required for Italy.');
+            return;
+          }
+          if (!g.document_issue_province || !g.document_issue_city) {
+            toast.error('Primary guest: document issue province and city required for Italy.');
+            return;
+          }
+        }
+      }
+    }
+
     setSaving(true);
     try {
       // Strip file objects before sending; backend currently expects JSON
@@ -861,6 +903,15 @@ export default function BookingCheckInPage() {
                                           ))}
                                         </select>
                                       </div>
+                                      <div className="flex flex-col gap-2">
+                                        <Label className="text-sm font-medium text-gray-700">Date of birth</Label>
+                                        <Input
+                                          type="date"
+                                          value={guest.date_of_birth || ''}
+                                          onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, date_of_birth: e.target.value } : g))}
+                                          className="h-11"
+                                        />
+                                      </div>
                                       {isItalian && (
                                         <div className="grid sm:grid-cols-2 gap-4">
                                           <div className="flex flex-col gap-2">
@@ -929,6 +980,26 @@ export default function BookingCheckInPage() {
                                             <option key={c} value={c}>{c}</option>
                                           ))}
                                         </select>
+                                      </div>
+                                      <div className="grid sm:grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-2">
+                                          <Label className="text-sm font-medium text-gray-700">Issue date</Label>
+                                          <Input
+                                            type="date"
+                                            value={guest.document_issue_date || ''}
+                                            onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_date: e.target.value } : g))}
+                                            className="h-11"
+                                          />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                          <Label className="text-sm font-medium text-gray-700">Expiry date</Label>
+                                          <Input
+                                            type="date"
+                                            value={guest.document_expire_date || ''}
+                                            onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_expire_date: e.target.value } : g))}
+                                            className="h-11"
+                                          />
+                                        </div>
                                       </div>
                                       {isItalianDoc && (
                                         <div className="grid sm:grid-cols-2 gap-4">
