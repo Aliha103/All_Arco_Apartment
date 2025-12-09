@@ -248,12 +248,50 @@ export default function BookingCheckInPage() {
     setSaving(true);
     try {
       // Strip file objects before sending; backend currently expects JSON
-      const payloadGuests = guests.map((g, idx) => ({
-        ...g,
-        email: idx === 0 ? (g.email || booking.guest_email) : g.email,
-        document_selfie: undefined,
-        document_image: undefined,
-      }));
+      const payloadGuests = guests.map((g, idx) => {
+        const isPrimary = idx === 0;
+        const cleaned: any = {
+          ...g,
+          email: isPrimary ? (g.email || booking.guest_email) : g.email,
+          document_selfie: undefined,
+          document_image: undefined,
+        };
+
+        // Drop optional fields if empty to avoid backend date parsing errors
+        const optionalKeys = [
+          'birth_province',
+          'birth_city',
+          'document_issue_country',
+          'document_issue_date',
+          'document_expire_date',
+          'document_issue_province',
+          'document_issue_city',
+          'relationship',
+        ];
+        optionalKeys.forEach((key) => {
+          if (cleaned[key] === '') cleaned[key] = undefined;
+        });
+
+        // Non-primary guests: document fields are optional, strip empties entirely
+        if (!isPrimary) {
+          const docKeys = [
+            'document_type',
+            'document_number',
+            'document_issue_country',
+            'document_issue_date',
+            'document_expire_date',
+            'document_issue_province',
+            'document_issue_city',
+          ];
+          docKeys.forEach((key) => {
+            if (!cleaned[key]) {
+              delete cleaned[key];
+            }
+          });
+        }
+
+        return cleaned;
+      });
       await api.bookings.lookupCheckin(booking.booking_id, booking.guest_email, payloadGuests);
       toast.success('Guest details saved');
       setStep(3);
