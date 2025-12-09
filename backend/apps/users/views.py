@@ -325,6 +325,15 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
             entry['total_spent'] = entry.get('total_spent', 0.0) + float(booking.total_price or 0)
             entry['total_guests_count'] = entry.get('total_guests_count', 0) + (booking.number_of_guests or 0)
 
+            # Track latest booking code for quick access in UI
+            checkin_date = getattr(booking, 'check_in_date', None) or getattr(booking, 'check_in', None)
+            code = getattr(booking, 'booking_id', None) or getattr(booking, 'confirmation_code', None) or str(booking.id)
+            if checkin_date and code:
+                existing_date = entry.get('latest_booking_date')
+                if not existing_date or checkin_date > existing_date:
+                    entry['latest_booking_date'] = checkin_date
+                    entry['latest_booking_code'] = code
+
             # Count online bookings (website/direct treated as online self-managed)
             if booking.booking_source in ['website', 'direct']:
                 entry['online_bookings'] = entry.get('online_bookings', 0) + 1
@@ -368,6 +377,8 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
                 entry['total_bookings'] = 1
                 entry['total_spent'] = float(bg.booking.total_price or 0)
                 entry['total_guests_count'] = bg.booking.number_of_guests or 0
+                code = getattr(bg.booking, 'booking_id', None) or getattr(bg.booking, 'confirmation_code', None) or str(bg.booking.id)
+                entry['latest_booking_code'] = code
                 if bg.booking.booking_source in ['website', 'direct']:
                     entry['online_bookings'] = 1
             merged[key] = entry

@@ -81,6 +81,7 @@ interface Guest {
   document_number?: string;
   document_type?: string;
   date_of_birth?: string;
+  latest_booking_code?: string;
   address?: string;
   city?: string;
   country?: string;
@@ -158,6 +159,7 @@ function StatCard({
 // Guest Card Component
 function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
   const initials = `${(guest.first_name || '?')[0]}${(guest.last_name || '?')[0]}`.toUpperCase();
+  const bookingCode = guest.latest_booking_code || '—';
 
   return (
     <motion.div
@@ -169,102 +171,59 @@ function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
       onClick={onClick}
       className="cursor-pointer"
     >
-      <Card className="h-full hover:border-blue-300 transition-colors">
-        <CardContent className="p-6">
-          {/* Avatar & VIP Badge */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="relative">
-              {guest.avatar_url ? (
-                <img
-                  src={guest.avatar_url}
-                  alt={`${guest.first_name} ${guest.last_name}`}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
-                  {initials}
+      <Card className="h-full hover:border-blue-300 transition-colors shadow-sm">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold">
+                {initials}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {[guest.first_name, guest.last_name].filter(Boolean).join(' ') || 'Guest'}
+                  </h3>
+                  {guest.online_checkin && <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">Online check-in</Badge>}
                 </div>
-              )}
-              {guest.is_vip && (
-                <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1">
-                  <Star className="w-4 h-4 text-white fill-current" />
-                </div>
-              )}
+                <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-gray-400" />
+                  Booking {bookingCode}
+                </p>
+              </div>
             </div>
             {guest.is_vip && (
               <Badge className="bg-yellow-400 text-yellow-900">VIP</Badge>
             )}
           </div>
 
-          {/* Name */}
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {[guest.first_name, guest.last_name].filter(Boolean).join(' ') || 'Guest'}
-            </h3>
-            {guest.online_checkin && <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">Online check-in</Badge>}
-          </div>
-
-          {/* Contact & ID Info */}
-          <div className="space-y-2 mb-4 text-sm text-gray-700">
-            <div className="flex items-center">
-              <Mail className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center text-gray-700">
+              <Mail className="w-4 h-4 mr-2 text-gray-500" />
               <span className="truncate">{guest.email}</span>
             </div>
             {guest.phone && (
-              <div className="flex items-center">
-                <Phone className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
-                <span>{guest.phone}</span>
+              <div className="flex items-center text-gray-700">
+                <Phone className="w-4 h-4 mr-2 text-gray-500" />
+                <span className="truncate">{guest.phone}</span>
               </div>
             )}
-            {guest.nationality && (
-              <div className="flex items-center">
-                <MapPin className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
-                <span>Birth country: {guest.nationality}</span>
-              </div>
-            )}
-            {guest.date_of_birth && (
-              <div className="flex items-center text-xs text-gray-600">
-                <Calendar className="w-3 h-3 mr-1 flex-shrink-0 text-gray-500" />
-                <span>DOB: {guest.date_of_birth}</span>
-              </div>
-            )}
-            {guest.document_number && (
-              <div className="flex items-center text-xs text-gray-600">
-                <FileText className="w-3 h-3 mr-1 flex-shrink-0 text-gray-500" />
-                <span>{guest.document_type || 'Document'}: {guest.document_number}</span>
-              </div>
-            )}
-            {guest.relationship && (
-              <div className="flex items-center text-xs text-gray-600">
-                <Users className="w-3 h-3 mr-1 flex-shrink-0 text-gray-500" />
-                <span>Relationship: {guest.relationship}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-            <div>
-              <p className="text-xs font-medium text-gray-600">Bookings</p>
-              <p className="text-lg font-semibold text-gray-900">{guest.total_bookings}</p>
+            <div className="flex items-center text-gray-700">
+              <Users className="w-4 h-4 mr-2 text-gray-500" />
+              <span>{guest.total_bookings} booking{guest.total_bookings === 1 ? '' : 's'}</span>
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">Total Spent</p>
-              <p className="text-lg font-semibold text-green-600">
-                {formatCurrency(guest.total_spent)}
-              </p>
+            <div className="flex items-center text-gray-700">
+              <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
+              <span>{formatCurrency(guest.total_spent)}</span>
             </div>
           </div>
 
-          {/* Documents Status */}
-          {guest.documents && guest.documents.length > 0 && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="flex items-center text-xs font-medium text-green-600">
-                <UserCheck className="w-4 h-4 mr-1" />
-                <span>{guest.documents.length} documents verified</span>
-              </div>
+          <div className="flex items-center justify-between pt-3 border-t">
+            <div className="flex items-center gap-2 text-xs text-gray-600">
+              <Eye className="w-4 h-4 text-blue-500" />
+              <span>View registered guests & documents</span>
             </div>
-          )}
+            <ChevronRight className="w-4 h-4 text-gray-500" />
+          </div>
         </CardContent>
       </Card>
     </motion.div>
@@ -349,6 +308,16 @@ function GuestDetailsModal({
     }
     return sortedBookings[sortedBookings.length - 1];
   }, [sortedBookings]);
+
+  const registeredGuests = useMemo(() => {
+    if (!primaryBooking) return [];
+    const candidates = [
+      (primaryBooking as any).guests,
+      (primaryBooking as any).guest_details,
+      (primaryBooking as any).booking_guests,
+    ].find((arr) => Array.isArray(arr) && arr.length > 0);
+    return Array.isArray(candidates) ? candidates : [];
+  }, [primaryBooking]);
 
   const buildCheckinLink = (booking: any) => {
     if (!booking || !guest?.email) return '';
@@ -685,6 +654,57 @@ function GuestDetailsModal({
                     </Button>
                   )}
                 </div>
+
+                <Card className="border-gray-200">
+                  <CardHeader className="bg-gray-50">
+                    <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      Registered guests for latest booking
+                    </CardTitle>
+                    <p className="text-sm text-gray-600">
+                      Expand each guest to see the details captured during online check-in.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-3">
+                    {registeredGuests.length === 0 && (
+                      <p className="text-sm text-gray-600">No companion details available yet.</p>
+                    )}
+                    {registeredGuests.map((g: any, idx: number) => (
+                      <details key={idx} className="group border rounded-lg p-3">
+                        <summary className="flex items-center justify-between cursor-pointer text-sm font-semibold text-gray-900">
+                          <span>{g.first_name} {g.last_name}</span>
+                          <ChevronRight className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform" />
+                        </summary>
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700">
+                          {g.date_of_birth && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-gray-500" />
+                              <span>DOB: {g.date_of_birth}</span>
+                            </div>
+                          )}
+                          {g.country_of_birth && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-gray-500" />
+                              <span>Birth country: {g.country_of_birth}</span>
+                            </div>
+                          )}
+                          {g.document_number && (
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-gray-500" />
+                              <span>{g.document_type || 'Document'}: {g.document_number}</span>
+                            </div>
+                          )}
+                          {g.relationship && (
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 text-gray-500" />
+                              <span>Relationship: {g.relationship}</span>
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    ))}
+                  </CardContent>
+                </Card>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1074,7 +1094,9 @@ export default function GuestsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-3xl font-bold mb-2">Guest Directory</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          Guest Directory {filteredGuests.length ? `(${filteredGuests.length})` : ''}
+        </h1>
         <p className="text-gray-600">
           Comprehensive guest management with profiles, documents, and booking history
         </p>
