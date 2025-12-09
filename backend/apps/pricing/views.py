@@ -11,12 +11,21 @@ from .serializers import (
 )
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 @permission_classes([AllowAny])
 def get_settings(request):
     """Get pricing settings."""
     settings = Settings.get_settings()
-    return Response(SettingsSerializer(settings).data)
+    if request.method == 'GET':
+        return Response(SettingsSerializer(settings).data)
+    # Allow patch from same endpoint for clients expecting PATCH /settings/
+    if not request.user.is_authenticated or not request.user.is_team_member():
+        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+    serializer = SettingsSerializer(settings, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save(updated_by=request.user)
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['PATCH'])

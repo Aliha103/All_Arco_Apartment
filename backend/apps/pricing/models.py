@@ -11,6 +11,7 @@ class Settings(models.Model):
     id = models.IntegerField(primary_key=True, default=1, editable=False)
     default_nightly_rate = models.DecimalField(max_digits=10, decimal_places=2)
     cleaning_fee = models.DecimalField(max_digits=10, decimal_places=2)
+    pet_cleaning_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tourist_tax_per_person_per_night = models.DecimalField(max_digits=6, decimal_places=2)
     minimum_stay_nights = models.IntegerField(default=2)
     maximum_stay_nights = models.IntegerField(default=30)
@@ -74,9 +75,10 @@ class Settings(models.Model):
             'nights': nights,
             'accommodation': float(accommodation),
             'cleaning_fee': float(self.cleaning_fee),
+            'pet_cleaning_fee': float(self.pet_cleaning_fee),
             'tourist_tax': float(tourist_tax),
             'extra_guest_fee': float(extra_guest_cost),
-            'total': float(accommodation + self.cleaning_fee + tourist_tax + extra_guest_cost)
+            'total': float(accommodation + self.cleaning_fee + self.pet_cleaning_fee + tourist_tax + extra_guest_cost)
         }
     
     def get_rate_for_dates(self, check_in, check_out):

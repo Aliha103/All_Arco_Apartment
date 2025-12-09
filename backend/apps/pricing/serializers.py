@@ -8,7 +8,7 @@ class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Settings
         fields = '__all__'
-        read_only_fields = ['id', 'updated_at']
+        read_only_fields = ['id', 'updated_at', 'updated_by']
 
 
 class PricingRuleSerializer(serializers.ModelSerializer):

@@ -10,6 +10,7 @@ router.register(r'vouchers', views.VoucherViewSet, basename='voucher')
 urlpatterns = [
     path('settings/', views.get_settings, name='get-settings'),
     path('settings/update/', views.update_settings, name='update-settings'),
+    path('settings/patch/', views.update_settings, name='patch-settings'),  # compatibility
     path('calculate/', views.calculate_price, name='calculate-price'),
     path('validate-promo/', views.validate_promo_code, name='validate-promo'),
     path('', include(router.urls)),
