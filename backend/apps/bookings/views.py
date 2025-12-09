@@ -121,6 +121,9 @@ class BookingViewSet(viewsets.ModelViewSet):
         city_tax_ack = request.data.get('city_tax_acknowledged')
         draft = request.data.get('draft') is True
 
+        if not draft and booking.city_tax_payment_status != 'paid':
+            return Response({'error': 'City tax must be paid online before finishing check-in.'}, status=status.HTTP_400_BAD_REQUEST)
+
         if eta_checkin:
             booking.eta_checkin_time = eta_checkin
         if eta_checkout:

@@ -336,8 +336,8 @@ export default function BookingCheckInPage() {
 
   const onFinish = useCallback(async () => {
     if (!booking) return;
-    if (!cityTaxAck && booking.city_tax_payment_status !== 'paid') {
-      toast.error('Please confirm city tax will be paid at the property.');
+    if (booking.city_tax_payment_status !== 'paid') {
+      toast.error('Please pay city tax online before finishing check-in.');
       return;
     }
     if (!etaCheckin || !etaCheckout) {
