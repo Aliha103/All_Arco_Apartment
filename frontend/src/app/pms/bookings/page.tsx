@@ -126,21 +126,6 @@ const COLORS = {
 
 const BOOKING_COLORS = [COLORS.blue, COLORS.purple, COLORS.green, COLORS.orange];
 
-// Generate ARCO reference
-const generateArcoReference = (id: string | number): string => {
-  const seed = typeof id === 'string' ? id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : id;
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  let random = seed;
-
-  for (let i = 0; i < 5; i++) {
-    random = (random * 9301 + 49297) % 233280;
-    code += chars[Math.floor((random / 233280) * chars.length)];
-  }
-
-  return `ARCO${code}`;
-};
-
 // Copy to clipboard
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text);
@@ -181,7 +166,7 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
     booking.payment_status === 'partial' && amountPaid <= 0 ? 'unpaid' : booking.payment_status;
   const paymentConfig =
     PAYMENT_STATUS_CONFIG[normalizedPaymentStatus as keyof typeof PAYMENT_STATUS_CONFIG] || PAYMENT_STATUS_CONFIG.pending;
-  const arcoRef = generateArcoReference(booking.id);
+  const arcoRef = booking.booking_id;
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -1478,7 +1463,7 @@ export default function BookingsPage() {
           {cancelBooking && (
             <div className="space-y-4">
               <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <p className="text-sm"><strong>Reference:</strong> {generateArcoReference(cancelBooking.id)}</p>
+                <p className="text-sm"><strong>Reference:</strong> {cancelBooking.booking_id}</p>
                 <p className="text-sm"><strong>Guest:</strong> {cancelBooking.guest_name}</p>
               </div>
               <div>
