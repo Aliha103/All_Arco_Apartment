@@ -213,7 +213,7 @@ function ConfirmationContent() {
                   <div>
                     <p className="text-gray-500">Cancellation policy</p>
                     <p className="font-semibold">
-                      {booking.cancellation_policy === 'non_refundable'
+                      {((booking as any).cancellation_policy || (booking as any).policy) === 'non_refundable'
                         ? 'Non-refundable (10% discount applied)'
                         : 'Flexible — free until 24h before check-in'}
                     </p>
