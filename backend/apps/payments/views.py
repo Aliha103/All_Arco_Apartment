@@ -87,6 +87,9 @@ def create_checkout_session(request):
             mode='payment',
             billing_address_collection='required',
             phone_number_collection={'enabled': True},
+            consent_collection={
+                'terms_of_service': 'required',
+            },
             success_url=(
                 f"{frontend_host}/booking/confirmation"
                 f"?session_id={{CHECKOUT_SESSION_ID}}&booking_id={booking.id}"
@@ -139,104 +142,113 @@ def confirm_checkout_session(request):
     Verify a Stripe Checkout session and force-update booking/payment status.
     Useful if the webhook is delayed or missed.
     """
-    session_id = request.data.get('session_id')
-    booking_id = request.data.get('booking_id')
-
-    if not session_id:
-        return Response({'error': 'Missing session_id'}, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-        session = stripe.checkout.Session.retrieve(session_id)
-    except Exception:
-        return Response({'error': 'Invalid or expired session'}, status=status.HTTP_400_BAD_REQUEST)
+        session_id = request.data.get('session_id')
+        booking_id = request.data.get('booking_id')
 
-    resolved_booking_id = booking_id or (session.get('metadata') or {}).get('booking_id')
-    if not resolved_booking_id:
-        return Response({'error': 'Booking id missing'}, status=status.HTTP_400_BAD_REQUEST)
+        if not session_id:
+            return Response({'error': 'Missing session_id'}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        booking = Booking.objects.get(id=resolved_booking_id)
-    except Booking.DoesNotExist:
-        return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    # Already paid
-    if booking.payment_status == 'paid':
-        return Response(BookingSerializer(booking).data)
-
-    session_status = session.get('status')
-    payment_status = session.get('payment_status')
-    payment_intent = session.get('payment_intent')
-
-    # Only mark paid when Stripe marks it complete/paid
-    if session_status == 'complete' or payment_status == 'paid':
-        amount_total = (session.get('amount_total') or 0) / 100
-        currency = (session.get('currency') or 'eur').upper()
-        payment_method_types = session.get('payment_method_types') or ['card']
-
-        # Mark attempt as paid
-        BookingAttempt.objects.filter(stripe_session_id=session_id).update(
-            status='paid',
-            failure_reason=''
-        )
-
-        payment, created = Payment.objects.get_or_create(
-            stripe_payment_intent_id=payment_intent,
-            defaults={
-                'booking': booking,
-                'amount': amount_total or (booking.amount_due or booking.total_price),
-                'currency': currency,
-                'status': 'succeeded',
-                'payment_method': payment_method_types[0],
-                'paid_at': timezone.now(),
-            },
-        )
-        if not created:
-            payment.status = 'succeeded'
-            if amount_total:
-                payment.amount = amount_total
-            if not payment.paid_at:
-                payment.paid_at = timezone.now()
-            payment.save(update_fields=['status', 'amount', 'paid_at'])
-
-        # Update booking
-        booking.status = 'confirmed'
-        booking.payment_status = 'paid'
-        booking.amount_due = 0
-        booking.save(update_fields=['status', 'payment_status', 'amount_due'])
-
-        # Send confirmation + receipt emails
         try:
-            send_booking_confirmation(booking)
+            session = stripe.checkout.Session.retrieve(session_id)
         except Exception:
-            pass
+            return Response({'error': 'Invalid or expired session'}, status=status.HTTP_400_BAD_REQUEST)
+
+        resolved_booking_id = booking_id or (session.get('metadata') or {}).get('booking_id')
+        if not resolved_booking_id:
+            return Response({'error': 'Booking id missing'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            send_payment_receipt(payment)
-        except Exception:
-            pass
+            booking = Booking.objects.get(id=resolved_booking_id)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response(BookingSerializer(booking).data)
+        # Already paid
+        if booking.payment_status == 'paid':
+            return Response(BookingSerializer(booking).data)
 
-    # If the session was cancelled/expired and booking is still unpaid, delete it
-    if session_status in ['expired', 'canceled']:
-        if booking.payment_status != 'paid':
-            booking.delete()
+        session_status = session.get('status')
+        payment_status = session.get('payment_status')
+        payment_intent = session.get('payment_intent')
+
+        # Only mark paid when Stripe marks it complete/paid
+        if session_status == 'complete' or payment_status == 'paid':
+            if not payment_intent:
+                return Response(
+                    {'status': 'pending', 'session_status': session_status, 'payment_status': payment_status},
+                    status=status.HTTP_202_ACCEPTED,
+                )
+
+            amount_total = (session.get('amount_total') or 0) / 100
+            currency = (session.get('currency') or 'eur').upper()
+            payment_method_types = session.get('payment_method_types') or ['card']
+
+            # Mark attempt as paid
             BookingAttempt.objects.filter(stripe_session_id=session_id).update(
-                status='expired',
-                failure_reason='Checkout session expired/canceled'
+                status='paid',
+                failure_reason=''
             )
-        return Response(
-            {'error': 'Payment session expired; booking was not completed.'},
-            status=status.HTTP_410_GONE,
-        )
 
-    return Response(
-        {
-            'status': 'pending',
-            'session_status': session_status,
-            'payment_status': payment_status,
-        },
-        status=status.HTTP_202_ACCEPTED,
-    )
+            payment, created = Payment.objects.get_or_create(
+                stripe_payment_intent_id=payment_intent,
+                defaults={
+                    'booking': booking,
+                    'amount': amount_total or (booking.amount_due or booking.total_price),
+                    'currency': currency,
+                    'status': 'succeeded',
+                    'payment_method': payment_method_types[0],
+                    'paid_at': timezone.now(),
+                },
+            )
+            if not created:
+                payment.status = 'succeeded'
+                if amount_total:
+                    payment.amount = amount_total
+                if not payment.paid_at:
+                    payment.paid_at = timezone.now()
+                payment.save(update_fields=['status', 'amount', 'paid_at'])
+
+            # Update booking
+            booking.status = 'confirmed'
+            booking.payment_status = 'paid'
+            booking.amount_due = 0
+            booking.save(update_fields=['status', 'payment_status', 'amount_due'])
+
+            # Send confirmation + receipt emails
+            try:
+                send_booking_confirmation(booking)
+            except Exception:
+                pass
+            try:
+                send_payment_receipt(payment)
+            except Exception:
+                pass
+
+            return Response(BookingSerializer(booking).data)
+
+        # If the session was cancelled/expired and booking is still unpaid, delete it
+        if session_status in ['expired', 'canceled']:
+            if booking.payment_status != 'paid':
+                booking.delete()
+                BookingAttempt.objects.filter(stripe_session_id=session_id).update(
+                    status='expired',
+                    failure_reason='Checkout session expired/canceled'
+                )
+            return Response(
+                {'error': 'Payment session expired; booking was not completed.'},
+                status=status.HTTP_410_GONE,
+            )
+
+        return Response(
+            {
+                'status': 'pending',
+                'session_status': session_status,
+                'payment_status': payment_status,
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
