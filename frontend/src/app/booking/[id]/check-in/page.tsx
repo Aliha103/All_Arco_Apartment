@@ -388,8 +388,8 @@ export default function BookingCheckInPage() {
                             <FileText className="w-5 h-5 text-[#C4A572]" />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900 text-base">Billing preference</p>
-                            <p className="text-sm text-gray-600 mt-1">Pick receipt (guest name) or invoice (company details). We'll email a PDF copy.</p>
+                           <p className="font-semibold text-gray-900 text-base">Billing preference</p>
+                            <p className="text-sm text-gray-600 mt-1">Use a receipt for personal stays or an invoice for business. A PDF copy will be emailed.</p>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-3">
