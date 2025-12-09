@@ -13,9 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle2, Building2, FileText, Users, Shield, Clock, Plus, Trash } from 'lucide-react';
+import { Loader2, CheckCircle2, Building2, FileText, Users, Shield, Clock, Plus, Trash, Check, ChevronDown, ChevronUp, Info } from 'lucide-react';
 const COUNTRIES = [
   'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia', 'Australia', 'Austria',
   'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia',
@@ -108,6 +107,7 @@ export default function BookingCheckInPage() {
   const [checkinDone, setCheckinDone] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [showFullPolicy, setShowFullPolicy] = useState(false);
+  const [expandedGuests, setExpandedGuests] = useState<Set<number>>(new Set([0])); // Primary guest expanded by default
   const progress = useMemo(() => (step / 3) * 100, [step]);
 
   // Fetch booking
@@ -251,29 +251,58 @@ export default function BookingCheckInPage() {
 
       <main className="pt-28 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 space-y-8">
+          {/* Header */}
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold text-[#C4A572] uppercase tracking-[0.3em]">Online Check-in</p>
-                <h1 className="text-2xl font-semibold mt-1">Booking {booking.booking_id}</h1>
-                <p className="text-gray-600">
+                <h1 className="text-3xl font-bold mt-1">Booking {booking.booking_id}</h1>
+                <p className="text-gray-600 mt-1">
                   {booking.check_in_date} → {booking.check_out_date} · {booking.nights} night{booking.nights === 1 ? '' : 's'}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3].map((s) => (
-                  <Badge
-                    key={s}
-                    variant={step === s ? 'default' : 'outline'}
-                    className={step === s ? 'bg-[#C4A572] text-white' : 'border-gray-200 text-gray-700'}
-                  >
-                    Step {s}
-                  </Badge>
+            </div>
+
+            {/* Enhanced Step Navigation */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                {[
+                  { num: 1, title: 'Billing', icon: FileText, desc: 'Billing details' },
+                  { num: 2, title: 'Guests', icon: Users, desc: 'Guest information' },
+                  { num: 3, title: 'Complete', icon: CheckCircle2, desc: 'City tax & finish' }
+                ].map((s, idx) => (
+                  <div key={s.num} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center flex-1">
+                      <div className={`
+                        w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all
+                        ${step > s.num ? 'bg-emerald-500 text-white' :
+                          step === s.num ? 'bg-[#C4A572] text-white shadow-lg scale-110' :
+                          'bg-gray-200 text-gray-500'}
+                      `}>
+                        {step > s.num ? <Check className="w-5 h-5" /> : s.num}
+                      </div>
+                      <div className={`mt-2 text-center hidden sm:block ${
+                        step === s.num ? 'text-gray-900 font-semibold' : 'text-gray-500'
+                      }`}>
+                        <p className="text-xs">{s.title}</p>
+                      </div>
+                    </div>
+                    {idx < 2 && (
+                      <div className={`h-0.5 flex-1 -mt-5 transition-all ${
+                        step > s.num ? 'bg-emerald-500' : 'bg-gray-200'
+                      }`} />
+                    )}
+                  </div>
                 ))}
               </div>
-            </div>
-            <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
-              <div className="h-full bg-[#C4A572] transition-all" style={{ width: `${progress}%` }} />
+              <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                <motion.div
+                  className="h-full bg-[#C4A572] transition-all"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                />
+              </div>
             </div>
           </div>
 
@@ -297,242 +326,389 @@ export default function BookingCheckInPage() {
                 <CardContent className="space-y-4">
                   {step === 1 && (
                     <div className="space-y-6">
-                      <div className="rounded-lg border border-amber-100 bg-amber-50/60 px-4 py-3 text-sm text-gray-800 flex items-start gap-2">
-                        <Shield className="w-4 h-4 text-[#C4A572] mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-gray-900">Billing preference</p>
-                          <p>Pick receipt (guest name) or invoice (company details). We’ll email a PDF copy.</p>
+                      {/* Billing Type Selection */}
+                      <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50/80 to-amber-50/40 p-5">
+                        <div className="flex items-start gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-full bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-[#C4A572]" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-base">Billing preference</p>
+                            <p className="text-sm text-gray-600 mt-1">Pick receipt (guest name) or invoice (company details). We'll email a PDF copy.</p>
+                          </div>
                         </div>
-                      </div>
                         <div className="flex flex-wrap gap-3">
                           <Button
                             variant={billingType === 'receipt' ? 'default' : 'outline'}
-                            className={billingType === 'receipt' ? 'bg-[#C4A572] text-black border-0' : ''}
+                            className={`h-11 px-6 text-sm font-medium transition-all ${
+                              billingType === 'receipt'
+                                ? 'bg-[#C4A572] hover:bg-[#B39562] text-white border-0 shadow-md'
+                                : 'border-2 border-gray-300 hover:border-[#C4A572] hover:bg-amber-50'
+                            }`}
                             onClick={() => setBillingType('receipt')}
                           >
-                          Receipt
-                        </Button>
-                        <Button
-                          variant={billingType === 'invoice' ? 'default' : 'outline'}
-                          className={billingType === 'invoice' ? 'bg-[#C4A572] text-black border-0' : ''}
-                          onClick={() => setBillingType('invoice')}
-                        >
-                          Invoice
-                        </Button>
+                            <FileText className="w-4 h-4 mr-2" />
+                            Receipt
+                          </Button>
+                          <Button
+                            variant={billingType === 'invoice' ? 'default' : 'outline'}
+                            className={`h-11 px-6 text-sm font-medium transition-all ${
+                              billingType === 'invoice'
+                                ? 'bg-[#C4A572] hover:bg-[#B39562] text-white border-0 shadow-md'
+                                : 'border-2 border-gray-300 hover:border-[#C4A572] hover:bg-amber-50'
+                            }`}
+                            onClick={() => setBillingType('invoice')}
+                          >
+                            <Building2 className="w-4 h-4 mr-2" />
+                            Invoice
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="grid sm:grid-cols-2 gap-4">
+                      {/* Form Fields with Sections */}
+                      <div className="space-y-6">
                         {billingType === 'receipt' ? (
                           <>
-                            <div className="sm:col-span-2 flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">Full name</Label>
-                              <Input
-                                placeholder="Full name on receipt"
-                                value={billing.full_name}
-                                onChange={(e) => setBilling({ ...billing, full_name: e.target.value })}
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 sm:col-span-2">
-                              <div className="flex flex-col gap-1">
-                                <Label className="text-xs text-gray-600">First name (optional)</Label>
-                                <Input
-                                  placeholder="First name"
-                                  value={billing.first_name}
-                                  onChange={(e) => setBilling({ ...billing, first_name: e.target.value })}
-                                />
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <Label className="text-xs text-gray-600">Last name (optional)</Label>
-                                <Input
-                                  placeholder="Last name"
-                                  value={billing.last_name}
-                                  onChange={(e) => setBilling({ ...billing, last_name: e.target.value })}
-                                />
-                              </div>
-                            </div>
-                            <div className="sm:col-span-2 flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">Address</Label>
-                              <Input
-                                placeholder="Street, City, Country"
-                                value={billing.address}
-                                onChange={(e) => setBilling({ ...billing, address: e.target.value })}
-                              />
-                            </div>
-                            <div className="grid grid-cols-3 gap-3 sm:col-span-2">
-                              <div className="flex flex-col gap-1 col-span-1">
-                                <Label className="text-xs text-gray-600">City</Label>
-                                <Input
-                                  placeholder="City"
-                                  value={billing.city}
-                                  onChange={(e) => setBilling({ ...billing, city: e.target.value })}
-                                />
-                              </div>
-                              <div className="flex flex-col gap-1 col-span-1">
-                                <Label className="text-xs text-gray-600">State</Label>
-                                <Input
-                                  placeholder="State"
-                                  value={billing.state}
-                                  onChange={(e) => setBilling({ ...billing, state: e.target.value })}
-                                />
-                              </div>
-                              <div className="flex flex-col gap-1 col-span-1">
-                                <Label className="text-xs text-gray-600">ZIP</Label>
-                                <Input
-                                  placeholder="ZIP"
-                                  value={billing.zip}
-                                  onChange={(e) => setBilling({ ...billing, zip: e.target.value })}
-                                />
+                            {/* Personal Information */}
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-[#C4A572] rounded"></div>
+                                Personal Information
+                              </h3>
+                              <div className="grid sm:grid-cols-2 gap-4 pl-3">
+                                <div className="sm:col-span-2 flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Full name <span className="text-red-500">*</span></Label>
+                                  <Input
+                                    placeholder="John Doe"
+                                    value={billing.full_name}
+                                    onChange={(e) => setBilling({ ...billing, full_name: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">First name <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                  <Input
+                                    placeholder="John"
+                                    value={billing.first_name}
+                                    onChange={(e) => setBilling({ ...billing, first_name: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Last name <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                  <Input
+                                    placeholder="Doe"
+                                    value={billing.last_name}
+                                    onChange={(e) => setBilling({ ...billing, last_name: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
                               </div>
                             </div>
-                            <div className="flex flex-col gap-1 sm:col-span-1">
-                              <Label className="text-xs text-gray-600">Country</Label>
-                              <select
-                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                                value={billing.country}
-                                onChange={(e) => setBilling({ ...billing, country: e.target.value })}
-                              >
-                                <option value="">Select country</option>
-                                {COUNTRIES.map((c) => (
-                                  <option key={c} value={c}>{c}</option>
-                                ))}
-                              </select>
+
+                            {/* Address Information */}
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-[#C4A572] rounded"></div>
+                                Address
+                              </h3>
+                              <div className="grid gap-4 pl-3">
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Street address</Label>
+                                  <Input
+                                    placeholder="123 Main Street"
+                                    value={billing.address}
+                                    onChange={(e) => setBilling({ ...billing, address: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                  <div className="flex flex-col gap-2">
+                                    <Label className="text-sm font-medium text-gray-700">City</Label>
+                                    <Input
+                                      placeholder="Venice"
+                                      value={billing.city}
+                                      onChange={(e) => setBilling({ ...billing, city: e.target.value })}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    <Label className="text-sm font-medium text-gray-700">State/Province</Label>
+                                    <Input
+                                      placeholder="VE"
+                                      value={billing.state}
+                                      onChange={(e) => setBilling({ ...billing, state: e.target.value })}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    <Label className="text-sm font-medium text-gray-700">ZIP/Postal</Label>
+                                    <Input
+                                      placeholder="30100"
+                                      value={billing.zip}
+                                      onChange={(e) => setBilling({ ...billing, zip: e.target.value })}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Country</Label>
+                                  <select
+                                    className="w-full h-11 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C4A572] focus:border-[#C4A572] transition-all"
+                                    value={billing.country}
+                                    onChange={(e) => setBilling({ ...billing, country: e.target.value })}
+                                  >
+                                    <option value="">Select country</option>
+                                    {COUNTRIES.map((c) => (
+                                      <option key={c} value={c}>{c}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex flex-col gap-1 sm:col-span-1">
-                              <Label className="text-xs text-gray-600">Tax code (optional)</Label>
-                              <Input
-                                placeholder="Codice fiscale"
-                                value={billing.tax_code}
-                                onChange={(e) => setBilling({ ...billing, tax_code: e.target.value })}
-                              />
+
+                            {/* Additional Information */}
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-[#C4A572] rounded"></div>
+                                Additional Information
+                              </h3>
+                              <div className="grid sm:grid-cols-2 gap-4 pl-3">
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Tax code <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                  <Input
+                                    placeholder="Codice fiscale"
+                                    value={billing.tax_code}
+                                    onChange={(e) => setBilling({ ...billing, tax_code: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Phone</Label>
+                                  <Input
+                                    placeholder="+39 123 456 7890"
+                                    value={billing.phone}
+                                    onChange={(e) => setBilling({ ...billing, phone: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="sm:col-span-2 flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Notes <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                  <Textarea
+                                    placeholder="Arrival notes, billing reference, or special requests..."
+                                    value={billing.notes}
+                                    onChange={(e) => setBilling({ ...billing, notes: e.target.value })}
+                                    className="min-h-[100px] resize-y"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className="sm:col-span-2 flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">Company name</Label>
-                              <Input
-                                placeholder="Registered company name"
-                                value={billing.company_name}
-                                onChange={(e) => setBilling({ ...billing, company_name: e.target.value })}
-                              />
-                            </div>
-                            <div className="sm:col-span-2 flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">Company email (optional)</Label>
-                              <Input
-                                placeholder="billing@company.com"
-                                value={billing.company_email}
-                                onChange={(e) => setBilling({ ...billing, company_email: e.target.value })}
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">VAT Code (optional)</Label>
-                              <Input
-                                placeholder="IT123456789"
-                                value={billing.tax_id}
-                                onChange={(e) => setBilling({ ...billing, tax_id: e.target.value })}
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">Tax Code (optional)</Label>
-                              <Input
-                                placeholder="Codice fiscale"
-                                value={billing.tax_code}
-                                onChange={(e) => setBilling({ ...billing, tax_code: e.target.value })}
-                              />
-                            </div>
-                            <div className="sm:col-span-2 flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">Billing address</Label>
-                              <Input
-                                placeholder="Street, City, Country"
-                                value={billing.address}
-                                onChange={(e) => setBilling({ ...billing, address: e.target.value })}
-                              />
-                            </div>
-                            <div className="grid grid-cols-3 gap-3 sm:col-span-2">
-                              <div className="flex flex-col gap-1 col-span-1">
-                                <Label className="text-xs text-gray-600">City</Label>
-                                <Input
-                                  placeholder="City"
-                                  value={billing.city}
-                                  onChange={(e) => setBilling({ ...billing, city: e.target.value })}
-                                />
-                              </div>
-                              <div className="flex flex-col gap-1 col-span-1">
-                                <Label className="text-xs text-gray-600">State</Label>
-                                <Input
-                                  placeholder="State"
-                                  value={billing.state}
-                                  onChange={(e) => setBilling({ ...billing, state: e.target.value })}
-                                />
-                              </div>
-                              <div className="flex flex-col gap-1 col-span-1">
-                                <Label className="text-xs text-gray-600">ZIP</Label>
-                                <Input
-                                  placeholder="ZIP"
-                                  value={billing.zip}
-                                  onChange={(e) => setBilling({ ...billing, zip: e.target.value })}
-                                />
+                            {/* Company Information */}
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-[#C4A572] rounded"></div>
+                                Company Information
+                              </h3>
+                              <div className="grid gap-4 pl-3">
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Company name <span className="text-red-500">*</span></Label>
+                                  <Input
+                                    placeholder="Acme Corporation"
+                                    value={billing.company_name}
+                                    onChange={(e) => setBilling({ ...billing, company_name: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Company email <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                  <Input
+                                    type="email"
+                                    placeholder="billing@company.com"
+                                    value={billing.company_email}
+                                    onChange={(e) => setBilling({ ...billing, company_email: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                  <div className="flex flex-col gap-2">
+                                    <Label className="text-sm font-medium text-gray-700">VAT Code <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                    <Input
+                                      placeholder="IT12345678901"
+                                      value={billing.tax_id}
+                                      onChange={(e) => setBilling({ ...billing, tax_id: e.target.value })}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    <Label className="text-sm font-medium text-gray-700">Tax Code <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                    <Input
+                                      placeholder="Codice fiscale"
+                                      value={billing.tax_code}
+                                      onChange={(e) => setBilling({ ...billing, tax_code: e.target.value })}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                            <div className="flex flex-col gap-1 sm:col-span-1">
-                              <Label className="text-xs text-gray-600">Country</Label>
-                              <select
-                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                                value={billing.country}
-                                onChange={(e) => setBilling({ ...billing, country: e.target.value })}
-                              >
-                                <option value="">Select country</option>
-                                {COUNTRIES.map((c) => (
-                                  <option key={c} value={c}>{c}</option>
-                                ))}
-                              </select>
+
+                            {/* Billing Address */}
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-[#C4A572] rounded"></div>
+                                Billing Address
+                              </h3>
+                              <div className="grid gap-4 pl-3">
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Street address</Label>
+                                  <Input
+                                    placeholder="123 Business Street"
+                                    value={billing.address}
+                                    onChange={(e) => setBilling({ ...billing, address: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                  <div className="flex flex-col gap-2">
+                                    <Label className="text-sm font-medium text-gray-700">City</Label>
+                                    <Input
+                                      placeholder="Milan"
+                                      value={billing.city}
+                                      onChange={(e) => setBilling({ ...billing, city: e.target.value })}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    <Label className="text-sm font-medium text-gray-700">State/Province</Label>
+                                    <Input
+                                      placeholder="MI"
+                                      value={billing.state}
+                                      onChange={(e) => setBilling({ ...billing, state: e.target.value })}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    <Label className="text-sm font-medium text-gray-700">ZIP/Postal</Label>
+                                    <Input
+                                      placeholder="20100"
+                                      value={billing.zip}
+                                      onChange={(e) => setBilling({ ...billing, zip: e.target.value })}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Country</Label>
+                                  <select
+                                    className="w-full h-11 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C4A572] focus:border-[#C4A572] transition-all"
+                                    value={billing.country}
+                                    onChange={(e) => setBilling({ ...billing, country: e.target.value })}
+                                  >
+                                    <option value="">Select country</option>
+                                    {COUNTRIES.map((c) => (
+                                      <option key={c} value={c}>{c}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Contact Information */}
+                            <div className="space-y-4">
+                              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-[#C4A572] rounded"></div>
+                                Contact Information
+                              </h3>
+                              <div className="grid gap-4 pl-3">
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Phone</Label>
+                                  <Input
+                                    placeholder="+39 123 456 7890"
+                                    value={billing.phone}
+                                    onChange={(e) => setBilling({ ...billing, phone: e.target.value })}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-sm font-medium text-gray-700">Notes <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                  <Textarea
+                                    placeholder="Order reference, PO number, or special billing instructions..."
+                                    value={billing.notes}
+                                    onChange={(e) => setBilling({ ...billing, notes: e.target.value })}
+                                    className="min-h-[100px] resize-y"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </>
                         )}
-
-                        <div className="flex flex-col gap-1">
-                          <Label className="text-xs text-gray-600">Phone</Label>
-                          <Input
-                            placeholder="+39 ..."
-                            value={billing.phone}
-                            onChange={(e) => setBilling({ ...billing, phone: e.target.value })}
-                          />
-                        </div>
-                        <div className="sm:col-span-2 flex flex-col gap-1">
-                          <Label className="text-xs text-gray-600">Notes (optional)</Label>
-                          <Textarea
-                            placeholder={billingType === 'invoice' ? 'Order reference or PO…' : 'Arrival notes, billing reference…'}
-                            value={billing.notes}
-                            onChange={(e) => setBilling({ ...billing, notes: e.target.value })}
-                          />
-                        </div>
                       </div>
 
-                      <div className="flex justify-end">
-                        <Button onClick={onBillingSubmit} disabled={saving}>
-                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Continue'}
+                      <div className="flex justify-end pt-4 border-t border-gray-200">
+                        <Button
+                          onClick={onBillingSubmit}
+                          disabled={saving}
+                          className="h-12 px-8 bg-[#C4A572] hover:bg-[#B39562] text-white font-semibold shadow-lg transition-all"
+                        >
+                          {saving ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              Save & Continue
+                              <Check className="w-5 h-5 ml-2" />
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
                   )}
 
                   {step === 2 && (
-                    <div className="space-y-4">
-                      <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                        <p className="font-semibold text-gray-900">Privacy & consent</p>
-                        <p className="mt-1 text-gray-700">
-                          We process guest data for check-in, ID verification, and legal compliance. Document photos are not stored beyond your stay.
-                        </p>
+                    <div className="space-y-6">
+                      {/* Privacy & Consent */}
+                      <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50/80 to-blue-50/40 p-5">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                            <Shield className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-base">Privacy & consent</p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              We process guest data for check-in, ID verification, and legal compliance. Document photos are not stored beyond your stay.
+                            </p>
+                          </div>
+                        </div>
                         <button
                           type="button"
-                          className="text-xs text-blue-600 hover:underline mt-2"
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 mb-3 transition-colors"
                           onClick={() => setShowFullPolicy((prev) => !prev)}
                         >
-                          {showFullPolicy ? 'Hide full policy' : 'Read full policy'}
+                          {showFullPolicy ? (
+                            <>
+                              <ChevronUp className="w-4 h-4" />
+                              Hide full policy
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-4 h-4" />
+                              Read full policy
+                            </>
+                          )}
                         </button>
                         {showFullPolicy && (
-                          <div className="max-h-56 overflow-y-auto mt-3 p-3 rounded border border-gray-200 text-xs leading-relaxed text-gray-700 bg-white space-y-2">
-                            <p className="font-semibold">Privacy Policy - Online Check-in</p>
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="max-h-64 overflow-y-auto mb-4 p-4 rounded-lg border border-blue-200 text-xs leading-relaxed text-gray-700 bg-white space-y-2 shadow-inner"
+                          >
+                            <p className="font-semibold text-gray-900">Privacy Policy - Online Check-in</p>
                             <p>Pursuant to Article 13 of EU Regulation 2016/679, we process personal data you provide for online check-in and related services.</p>
                             <p><strong>Data Controller:</strong> Ali Hassan Cheema - IT, Chirignago-Zelarino, email cheemacheema0078@gmail.com.</p>
                             <p><strong>Data processed:</strong> main guest identity, contact, document details & selfie, stay dates; group member names, dates/places of birth, nationality.</p>
@@ -541,190 +717,430 @@ export default function BookingCheckInPage() {
                             <p><strong>Retention:</strong> document photos/selfie 7 days; other booking data up to 2 years or as required by law; newsletter until consent withdrawn.</p>
                             <p><strong>Rights:</strong> access, rectify, erase, restrict, portability, object, withdraw consent; complaints to Italian Garante.</p>
                             <p><strong>Provision:</strong> mandatory for check-in/legal duties; optional for newsletter.</p>
-                          </div>
+                          </motion.div>
                         )}
-                        <label className="mt-3 inline-flex items-center gap-2 text-sm text-gray-800">
+                        <label className="inline-flex items-start gap-3 text-sm text-gray-800 cursor-pointer group">
                           <input
                             type="checkbox"
-                            className="h-4 w-4"
+                            className="h-5 w-5 mt-0.5 rounded border-gray-300 text-[#C4A572] focus:ring-[#C4A572] cursor-pointer"
                             checked={consentAccepted}
                             onChange={(e) => setConsentAccepted(e.target.checked)}
                           />
-                          <span>I have read and accept the Privacy Policy for online check-in.</span>
+                          <span className="group-hover:text-gray-900 transition-colors">I have read and accept the Privacy Policy for online check-in. <span className="text-red-500">*</span></span>
                         </label>
                       </div>
 
-                      {guests.map((guest, idx) => (
-                        <Card key={idx} className="border border-gray-100">
-                          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                            <CardTitle className="text-sm text-gray-700">Guest {idx + 1} {idx === 0 && '(Primary)'}</CardTitle>
-                            {idx > 0 && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setGuests((prev) => prev.filter((_, i) => i !== idx))}
-                              >
-                                <Trash className="w-4 h-4 text-gray-500" />
-                              </Button>
-                            )}
-                          </CardHeader>
-                          <CardContent className="grid sm:grid-cols-2 gap-3">
-                            <Input
-                              placeholder="First name"
-                              value={guest.first_name}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, first_name: e.target.value } : g))}
-                            />
-                            <Input
-                              placeholder="Last name"
-                              value={guest.last_name}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, last_name: e.target.value } : g))}
-                            />
-                            <Input
-                              placeholder="Email (primary)"
-                              value={guest.email || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, email: e.target.value } : g))}
-                            />
-                            <div className="flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">Country of birth</Label>
-                              <select
-                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                                value={guest.country_of_birth || ''}
-                                onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, country_of_birth: e.target.value } : g))}
-                              >
-                                <option value="">Select country</option>
-                                {COUNTRIES.map((c) => (
-                                  <option key={c} value={c}>{c}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <Input
-                              placeholder="Birth province (Italy only)"
-                              value={guest.birth_province || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, birth_province: e.target.value } : g))}
-                            />
-                            <Input
-                              placeholder="Birth city (Italy only)"
-                              value={guest.birth_city || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, birth_city: e.target.value } : g))}
-                            />
-                            <div className="flex flex-col gap-1">
-                              <Label className="text-xs text-gray-600">Document type</Label>
-                              <select
-                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                                value={guest.document_type || 'passport'}
-                                onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_type: e.target.value } : g))}
-                              >
-                                <option value="passport">Passport</option>
-                                <option value="id_card">ID Card</option>
-                                <option value="driving_license">Driving License</option>
-                                <option value="other">Other</option>
-                              </select>
-                            </div>
-                            <Input
-                              placeholder="Document number"
-                              value={guest.document_number || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_number: e.target.value } : g))}
-                            />
-                            <Input
-                              placeholder="Issue country"
-                              value={guest.document_issue_country || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_country: e.target.value } : g))}
-                            />
-                            <Input
-                              placeholder="Issue province (Italy documents)"
-                              value={guest.document_issue_province || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_province: e.target.value } : g))}
-                            />
-                            <Input
-                              placeholder="Issue city (Italy documents)"
-                              value={guest.document_issue_city || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_city: e.target.value } : g))}
-                            />
-                            {idx === 0 && (
-                              <div className="sm:col-span-2 grid sm:grid-cols-2 gap-3">
-                                <div className="flex flex-col gap-1">
-                                  <label className="text-xs text-gray-500">Upload selfie (primary guest)</label>
-                                  <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0] || null;
-                                      setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_selfie: file } : g));
-                                    }}
-                                  />
+                      {/* Guest Cards */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                            <Users className="w-5 h-5 text-[#C4A572]" />
+                            Guest Information
+                          </h3>
+                          <span className="text-sm text-gray-500">{guests.length} {guests.length === 1 ? 'guest' : 'guests'}</span>
+                        </div>
+
+                        {guests.map((guest, idx) => {
+                          const isExpanded = expandedGuests.has(idx);
+                          const isPrimary = idx === 0;
+                          const isItalian = guest.country_of_birth === 'Italy';
+                          const isItalianDoc = guest.document_issue_country === 'Italy';
+
+                          return (
+                            <Card key={idx} className="border-2 border-gray-200 hover:border-[#C4A572]/50 transition-all">
+                              <CardHeader className="pb-3 bg-gradient-to-r from-gray-50 to-white">
+                                <div className="flex items-center justify-between">
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedGuests((prev) => {
+                                      const newSet = new Set(prev);
+                                      if (newSet.has(idx)) {
+                                        newSet.delete(idx);
+                                      } else {
+                                        newSet.add(idx);
+                                      }
+                                      return newSet;
+                                    })}
+                                    className="flex items-center gap-3 flex-1 text-left group"
+                                  >
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm ${
+                                      isPrimary ? 'bg-[#C4A572] text-white' : 'bg-gray-200 text-gray-700'
+                                    }`}>
+                                      {idx + 1}
+                                    </div>
+                                    <div className="flex-1">
+                                      <CardTitle className="text-base font-semibold text-gray-900 group-hover:text-[#C4A572] transition-colors">
+                                        Guest {idx + 1} {isPrimary && '(Primary)'}
+                                      </CardTitle>
+                                      {!isExpanded && guest.first_name && guest.last_name && (
+                                        <p className="text-sm text-gray-600 mt-0.5">{guest.first_name} {guest.last_name}</p>
+                                      )}
+                                    </div>
+                                    <div className="text-gray-400 transition-transform duration-200" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                      <ChevronDown className="w-5 h-5" />
+                                    </div>
+                                  </button>
+                                  {idx > 0 && (
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => setGuests((prev) => {
+                                        setExpandedGuests((expPrev) => {
+                                          const newSet = new Set(expPrev);
+                                          newSet.delete(idx);
+                                          return newSet;
+                                        });
+                                        return prev.filter((_, i) => i !== idx);
+                                      })}
+                                      className="ml-2 hover:bg-red-50 hover:text-red-600"
+                                    >
+                                      <Trash className="w-4 h-4" />
+                                    </Button>
+                                  )}
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                  <label className="text-xs text-gray-500">Upload document photo</label>
-                                  <Input
-                                    type="file"
-                                    accept="image/*,application/pdf"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0] || null;
-                                      setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_image: file } : g));
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setGuests((prev) => [...prev, {
-                          first_name: '',
-                          last_name: '',
-                          email: '',
-                          country_of_birth: '',
-                          birth_province: '',
-                          birth_city: '',
-                          document_type: 'passport',
-                          document_number: '',
-                          document_issue_country: '',
-                          document_issue_province: '',
-                          document_issue_city: '',
-                          document_selfie: null,
-                          document_image: null,
-                        }])}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" /> Add guest
-                      </Button>
-                      <div className="flex justify-between">
-                        <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                        <Button onClick={onGuestsSubmit} disabled={saving || !consentAccepted}>
-                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save guests'}
+                              </CardHeader>
+                              {isExpanded && (
+                                <CardContent className="pt-4 space-y-5">
+                                  {/* Basic Information */}
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                      <div className="w-1 h-3 bg-[#C4A572] rounded"></div>
+                                      Basic Information
+                                    </h4>
+                                    <div className="grid sm:grid-cols-2 gap-4 pl-3">
+                                      <div className="flex flex-col gap-2">
+                                        <Label className="text-sm font-medium text-gray-700">First name <span className="text-red-500">*</span></Label>
+                                        <Input
+                                          placeholder="John"
+                                          value={guest.first_name}
+                                          onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, first_name: e.target.value } : g))}
+                                          className="h-11"
+                                        />
+                                      </div>
+                                      <div className="flex flex-col gap-2">
+                                        <Label className="text-sm font-medium text-gray-700">Last name <span className="text-red-500">*</span></Label>
+                                        <Input
+                                          placeholder="Doe"
+                                          value={guest.last_name}
+                                          onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, last_name: e.target.value } : g))}
+                                          className="h-11"
+                                        />
+                                      </div>
+                                      {isPrimary && (
+                                        <div className="sm:col-span-2 flex flex-col gap-2">
+                                          <Label className="text-sm font-medium text-gray-700">Email</Label>
+                                          <Input
+                                            type="email"
+                                            placeholder="john@example.com"
+                                            value={guest.email || ''}
+                                            onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, email: e.target.value } : g))}
+                                            className="h-11"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Birth Information */}
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                      <div className="w-1 h-3 bg-[#C4A572] rounded"></div>
+                                      Birth Information
+                                    </h4>
+                                    <div className="grid gap-4 pl-3">
+                                      <div className="flex flex-col gap-2">
+                                        <Label className="text-sm font-medium text-gray-700">Country of birth</Label>
+                                        <select
+                                          className="w-full h-11 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C4A572] focus:border-[#C4A572] transition-all"
+                                          value={guest.country_of_birth || ''}
+                                          onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, country_of_birth: e.target.value } : g))}
+                                        >
+                                          <option value="">Select country</option>
+                                          {COUNTRIES.map((c) => (
+                                            <option key={c} value={c}>{c}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                      {isItalian && (
+                                        <div className="grid sm:grid-cols-2 gap-4">
+                                          <div className="flex flex-col gap-2">
+                                            <Label className="text-sm font-medium text-gray-700">Birth province <span className="text-xs text-gray-500">(Italy only)</span></Label>
+                                            <Input
+                                              placeholder="VE"
+                                              value={guest.birth_province || ''}
+                                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, birth_province: e.target.value } : g))}
+                                              className="h-11"
+                                            />
+                                          </div>
+                                          <div className="flex flex-col gap-2">
+                                            <Label className="text-sm font-medium text-gray-700">Birth city <span className="text-xs text-gray-500">(Italy only)</span></Label>
+                                            <Input
+                                              placeholder="Venice"
+                                              value={guest.birth_city || ''}
+                                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, birth_city: e.target.value } : g))}
+                                              className="h-11"
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Document Information */}
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                      <div className="w-1 h-3 bg-[#C4A572] rounded"></div>
+                                      Document Information
+                                    </h4>
+                                    <div className="grid gap-4 pl-3">
+                                      <div className="grid sm:grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-2">
+                                          <Label className="text-sm font-medium text-gray-700">Document type</Label>
+                                          <select
+                                            className="w-full h-11 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C4A572] focus:border-[#C4A572] transition-all"
+                                            value={guest.document_type || 'passport'}
+                                            onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_type: e.target.value } : g))}
+                                          >
+                                            <option value="passport">Passport</option>
+                                            <option value="id_card">ID Card</option>
+                                            <option value="driving_license">Driving License</option>
+                                            <option value="other">Other</option>
+                                          </select>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                          <Label className="text-sm font-medium text-gray-700">Document number</Label>
+                                          <Input
+                                            placeholder="AB1234567"
+                                            value={guest.document_number || ''}
+                                            onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_number: e.target.value } : g))}
+                                            className="h-11"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex flex-col gap-2">
+                                        <Label className="text-sm font-medium text-gray-700">Issue country</Label>
+                                        <select
+                                          className="w-full h-11 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C4A572] focus:border-[#C4A572] transition-all"
+                                          value={guest.document_issue_country || ''}
+                                          onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_country: e.target.value } : g))}
+                                        >
+                                          <option value="">Select country</option>
+                                          {COUNTRIES.map((c) => (
+                                            <option key={c} value={c}>{c}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                      {isItalianDoc && (
+                                        <div className="grid sm:grid-cols-2 gap-4">
+                                          <div className="flex flex-col gap-2">
+                                            <Label className="text-sm font-medium text-gray-700">Issue province <span className="text-xs text-gray-500">(Italy only)</span></Label>
+                                            <Input
+                                              placeholder="MI"
+                                              value={guest.document_issue_province || ''}
+                                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_province: e.target.value } : g))}
+                                              className="h-11"
+                                            />
+                                          </div>
+                                          <div className="flex flex-col gap-2">
+                                            <Label className="text-sm font-medium text-gray-700">Issue city <span className="text-xs text-gray-500">(Italy only)</span></Label>
+                                            <Input
+                                              placeholder="Milan"
+                                              value={guest.document_issue_city || ''}
+                                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_issue_city: e.target.value } : g))}
+                                              className="h-11"
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* File Uploads (Primary Guest Only) */}
+                                  {isPrimary && (
+                                    <div className="space-y-3">
+                                      <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                        <div className="w-1 h-3 bg-[#C4A572] rounded"></div>
+                                        Document Uploads
+                                      </h4>
+                                      <div className="grid sm:grid-cols-2 gap-4 pl-3">
+                                        <div className="flex flex-col gap-2">
+                                          <Label className="text-sm font-medium text-gray-700">Upload selfie <span className="text-xs text-gray-500">(Primary guest)</span></Label>
+                                          <Input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                              const file = e.target.files?.[0] || null;
+                                              setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_selfie: file } : g));
+                                            }}
+                                            className="h-11 cursor-pointer"
+                                          />
+                                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                                            <Info className="w-3 h-3" />
+                                            Clear photo of your face
+                                          </p>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                          <Label className="text-sm font-medium text-gray-700">Upload document photo</Label>
+                                          <Input
+                                            type="file"
+                                            accept="image/*,application/pdf"
+                                            onChange={(e) => {
+                                              const file = e.target.files?.[0] || null;
+                                              setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_image: file } : g));
+                                            }}
+                                            className="h-11 cursor-pointer"
+                                          />
+                                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                                            <Info className="w-3 h-3" />
+                                            Photo of ID/passport
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </CardContent>
+                              )}
+                            </Card>
+                          );
+                        })}
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const newIndex = guests.length;
+                            setGuests((prev) => [...prev, {
+                              first_name: '',
+                              last_name: '',
+                              email: '',
+                              country_of_birth: '',
+                              birth_province: '',
+                              birth_city: '',
+                              document_type: 'passport',
+                              document_number: '',
+                              document_issue_country: '',
+                              document_issue_province: '',
+                              document_issue_city: '',
+                              document_selfie: null,
+                              document_image: null,
+                            }]);
+                            setExpandedGuests((prev) => new Set(prev).add(newIndex));
+                          }}
+                          className="w-full h-12 border-2 border-dashed border-gray-300 hover:border-[#C4A572] hover:bg-amber-50 transition-all"
+                        >
+                          <Plus className="w-5 h-5 mr-2" />
+                          Add another guest
+                        </Button>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                        <Button
+                          variant="outline"
+                          onClick={() => setStep(1)}
+                          className="h-12 px-6 border-2"
+                        >
+                          <ChevronDown className="w-5 h-5 mr-2 rotate-90" />
+                          Back
+                        </Button>
+                        <Button
+                          onClick={onGuestsSubmit}
+                          disabled={saving || !consentAccepted}
+                          className="h-12 px-8 bg-[#C4A572] hover:bg-[#B39562] text-white font-semibold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {saving ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              Save guest details
+                              <Check className="w-5 h-5 ml-2" />
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
                   )}
 
                   {step === 3 && (
-                    <div className="space-y-4 text-sm text-gray-700">
-                      <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-100 flex gap-3">
-                        <Shield className="w-5 h-5 text-emerald-600 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-gray-900">City tax payable at property</p>
-                          <p>€{booking.tourist_tax} will be settled upon arrival. No online payment needed.</p>
-                        </div>
-                      </div>
-                      <div className="p-4 rounded-lg bg-gray-50 border border-gray-100 flex gap-3">
-                        <Clock className="w-5 h-5 text-gray-500 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-gray-900">Check-in / Check-out</p>
-                          <p>Check-in from 15:00 · Check-out by 10:00. Arrival instructions are emailed 48h before check-in.</p>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        {checkinDone && (
-                          <div className="flex items-center gap-2 text-emerald-700 text-sm">
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Thanks! Your online check-in is complete.</span>
+                    <div className="space-y-6">
+                      {/* Success Message */}
+                      {checkinDone && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-50/50 p-6 text-center"
+                        >
+                          <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-4">
+                            <CheckCircle2 className="w-10 h-10 text-white" />
                           </div>
-                        )}
-                        <Button onClick={onFinish}>
-                          Finish
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">Check-in Complete!</h3>
+                          <p className="text-gray-600">Thank you for completing your online check-in. We look forward to welcoming you.</p>
+                        </motion.div>
+                      )}
+
+                      {/* City Tax Information */}
+                      <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50/80 to-amber-50/40 p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                            <Shield className="w-6 h-6 text-amber-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-semibold text-gray-900 mb-2">City tax payable at property</h4>
+                            <p className="text-gray-700 mb-3">
+                              <span className="text-2xl font-bold text-[#C4A572]">€{booking.tourist_tax}</span> per person will be collected upon arrival.
+                            </p>
+                            <p className="text-sm text-gray-600">No online payment needed. Cash or card accepted at the property.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Check-in / Check-out Times */}
+                      <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50/80 to-blue-50/40 p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                            <Clock className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-semibold text-gray-900 mb-3">Check-in / Check-out</h4>
+                            <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-white border border-blue-200 flex items-center justify-center">
+                                  <span className="text-lg font-bold text-blue-600">→</span>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 uppercase tracking-wide">Check-in</p>
+                                  <p className="text-base font-semibold text-gray-900">From 15:00</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-white border border-blue-200 flex items-center justify-center">
+                                  <span className="text-lg font-bold text-blue-600">←</span>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500 uppercase tracking-wide">Check-out</p>
+                                  <p className="text-base font-semibold text-gray-900">By 10:00</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-2 text-sm text-gray-600 bg-white/60 rounded-lg p-3">
+                              <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500" />
+                              <p>Arrival instructions and access details will be emailed to you 48 hours before check-in.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <div className="flex justify-center pt-4">
+                        <Button
+                          onClick={onFinish}
+                          className="h-14 px-12 bg-[#C4A572] hover:bg-[#B39562] text-white text-base font-semibold shadow-xl transition-all"
+                        >
+                          <CheckCircle2 className="w-5 h-5 mr-2" />
+                          View Booking Confirmation
                         </Button>
                       </div>
                     </div>
