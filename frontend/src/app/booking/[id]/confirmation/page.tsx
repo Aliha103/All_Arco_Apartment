@@ -126,7 +126,11 @@ function ConfirmationContent() {
 
   const isPaid = booking.payment_status === 'paid';
   const guestCount = (booking as any).number_of_guests ?? (booking as any).guests;
-  const stayAmount = (parseFloat(String(booking.nightly_rate || 0)) || 0) * (booking.nights || 0);
+  const nightlyRate = Number((booking as any).nightly_rate ?? 0) || 0;
+  const cleaningFee = Number((booking as any).cleaning_fee ?? 0) || 0;
+  const touristTax = Number((booking as any).tourist_tax ?? 0) || 0;
+  const appliedCredit = Number((booking as any).applied_credit ?? 0) || 0;
+  const stayAmount = nightlyRate * (booking.nights || 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#fdf8ec] to-white text-gray-900">
@@ -231,16 +235,16 @@ function ConfirmationContent() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Cleaning</span>
-                    <span className="font-semibold">{formatCurrency(booking.cleaning_fee)}</span>
+                    <span className="font-semibold">{formatCurrency(cleaningFee)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Tourist tax</span>
-                    <span className="font-semibold">{formatCurrency(booking.tourist_tax)}</span>
+                    <span className="font-semibold">{formatCurrency(touristTax)}</span>
                   </div>
-                  {booking.applied_credit > 0 && (
+                  {appliedCredit > 0 && (
                     <div className="flex items-center justify-between text-emerald-700">
                       <span>Credit applied</span>
-                      <span className="font-semibold">- {formatCurrency(booking.applied_credit)}</span>
+                      <span className="font-semibold">- {formatCurrency(appliedCredit)}</span>
                     </div>
                   )}
                   <div className="border-t border-dashed border-gray-200 pt-3 flex items-center justify-between">
