@@ -423,7 +423,7 @@ export default function BookingCheckInPage() {
             document_image: null,
           }));
           setGuests(mapped);
-          if (booking.checkin_draft) setStep(3);
+          setStep(3);
         }
       } catch (err) {
         // Ignore errors; fallback to defaults
