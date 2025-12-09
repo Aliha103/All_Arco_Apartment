@@ -317,25 +317,19 @@ function ConfirmationContent() {
               </Card>
 
               <div className="flex flex-col gap-3">
-                {isPaid ? (
-                  <>
-                    <Link href="/dashboard" className="w-full">
-                      <Button className="w-full">View my bookings</Button>
-                    </Link>
-                    <Link href="/" className="w-full">
-                      <Button variant="outline" className="w-full">Back to home</Button>
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Button className="w-full" onClick={() => payMutation.mutate()} disabled={payMutation.isPending}>
-                      {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
-                    </Button>
-                    <Link href="/" className="w-full">
-                      <Button variant="outline" className="w-full">Back to home</Button>
-                    </Link>
-                  </>
+                <Link href="/bookings/find" className="w-full">
+                  <Button className="w-full bg-[#C4A572] text-white hover:bg-[#B39562]">
+                    Complete online check-in
+                  </Button>
+                </Link>
+                {!isPaid && (
+                  <Button className="w-full" onClick={() => payMutation.mutate()} disabled={payMutation.isPending}>
+                    {payMutation.isPending ? 'Starting payment…' : 'Proceed to Payment'}
+                  </Button>
                 )}
+                <Link href="/" className="w-full">
+                  <Button variant="outline" className="w-full">Back to home</Button>
+                </Link>
               </div>
             </div>
           </div>

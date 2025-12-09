@@ -90,7 +90,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     }
 
     def get_permissions(self):
-        if self.action in ['create', 'retrieve']:
+        if self.action in ['create', 'retrieve', 'download_pdf']:
             return [AllowAny()]
         return super().get_permissions()
 
