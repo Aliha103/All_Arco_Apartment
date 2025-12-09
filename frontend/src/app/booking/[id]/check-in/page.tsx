@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle2, Building2, FileText, Users, Shield, Clock, Plus, Trash } from 'lucide-react';
+import { COUNTRIES } from '@/app/book/page';
 
 type Booking = {
   id: string;
@@ -370,11 +371,19 @@ export default function BookingCheckInPage() {
                               value={guest.email || ''}
                               onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, email: e.target.value } : g))}
                             />
-                            <Input
-                              placeholder="Country of birth"
-                              value={guest.country_of_birth || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, country_of_birth: e.target.value } : g))}
-                            />
+                            <div className="flex flex-col gap-1">
+                              <Label className="text-xs text-gray-600">Country of birth</Label>
+                              <select
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                                value={guest.country_of_birth || ''}
+                                onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, country_of_birth: e.target.value } : g))}
+                              >
+                                <option value="">Select country</option>
+                                {COUNTRIES.map((c) => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                            </div>
                             <Input
                               placeholder="Birth province (Italy only)"
                               value={guest.birth_province || ''}
@@ -385,11 +394,18 @@ export default function BookingCheckInPage() {
                               value={guest.birth_city || ''}
                               onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, birth_city: e.target.value } : g))}
                             />
-                            <Input
-                              placeholder="Document type (passport, ID)"
-                              value={guest.document_type || ''}
-                              onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_type: e.target.value } : g))}
-                            />
+                            <div className="flex flex-col gap-1">
+                              <Label className="text-xs text-gray-600">Document type</Label>
+                              <select
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                                value={guest.document_type || 'passport'}
+                                onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, document_type: e.target.value } : g))}
+                              >
+                                <option value="passport">Passport</option>
+                                <option value="id_card">ID Card</option>
+                                <option value="driving_license">Driving License</option>
+                              </select>
+                            </div>
                             <Input
                               placeholder="Document number"
                               value={guest.document_number || ''}
