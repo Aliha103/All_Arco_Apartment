@@ -252,13 +252,26 @@ export default function BookingCheckInPage() {
     }
   }, [booking, guests]);
 
-  const onFinish = useCallback(() => {
-    if (booking) {
+  const [etaCheckin, setEtaCheckin] = useState('');
+  const [etaCheckout, setEtaCheckout] = useState('');
+  const [cityTaxAck, setCityTaxAck] = useState(false);
+
+  const onFinish = useCallback(async () => {
+    if (!booking) return;
+    setSaving(true);
+    try {
+      await api.bookings.completeCheckin(booking.id, {
+        eta_checkin: etaCheckin,
+        eta_checkout: etaCheckout,
+        city_tax_acknowledged: cityTaxAck,
+      });
       router.push(`/booking/confirmation?booking_id=${booking.id}`);
-    } else {
-      router.push('/');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Failed to finalize check-in');
+    } finally {
+      setSaving(false);
     }
-  }, [booking, router]);
+  }, [booking, etaCheckin, etaCheckout, cityTaxAck, router]);
 
   const heading = useMemo(() => {
     if (step === 1) return 'Billing details';
@@ -1153,7 +1166,7 @@ export default function BookingCheckInPage() {
                       )}
 
                       {/* City Tax Information */}
-                      <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50/80 to-amber-50/40 p-6">
+                      <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50/80 to-amber-50/40 p-6 space-y-4">
                         <div className="flex items-start gap-4">
                           <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
                             <Shield className="w-6 h-6 text-amber-600" />
@@ -1165,6 +1178,35 @@ export default function BookingCheckInPage() {
                             </p>
                             <p className="text-sm text-gray-600">No online payment needed. Cash or card accepted at the property.</p>
                           </div>
+                        </div>
+                        <div className="rounded-lg border border-white/50 bg-white/70 p-4 space-y-3">
+                          <div className="grid sm:grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-1">
+                              <Label className="text-xs text-gray-600">Estimated check-in time</Label>
+                              <Input
+                                type="time"
+                                value={etaCheckin}
+                                onChange={(e) => setEtaCheckin(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <Label className="text-xs text-gray-600">Estimated check-out time</Label>
+                              <Input
+                                type="time"
+                                value={etaCheckout}
+                                onChange={(e) => setEtaCheckout(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <label className="inline-flex items-center gap-2 text-sm text-gray-800">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4"
+                              checked={cityTaxAck}
+                              onChange={(e) => setCityTaxAck(e.target.checked)}
+                            />
+                            <span>I’ll pay city tax at the property.</span>
+                          </label>
                         </div>
                       </div>
 
@@ -1208,9 +1250,10 @@ export default function BookingCheckInPage() {
                       <div className="flex justify-center pt-4">
                         <Button
                           onClick={onFinish}
-                          className="h-14 px-12 bg-[#C4A572] hover:bg-[#B39562] text-white text-base font-semibold shadow-xl transition-all"
+                          disabled={saving}
+                          className="h-14 px-12 bg-[#C4A572] hover:bg-[#B39562] text-white text-base font-semibold shadow-xl transition-all disabled:opacity-60"
                         >
-                          <CheckCircle2 className="w-5 h-5 mr-2" />
+                          {saving ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}
                           View Booking Confirmation
                         </Button>
                       </div>

@@ -101,6 +101,40 @@ class BookingViewSet(viewsets.ModelViewSet):
         elif self.action == 'create':
             return BookingCreateSerializer
         return BookingSerializer
+
+    @action(detail=True, methods=['post'])
+    def complete_checkin(self, request, pk=None):
+        """Mark online check-in complete, capture ETA and send thank-you email."""
+        try:
+            booking = self.get_object()
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        eta_checkin = request.data.get('eta_checkin')
+        eta_checkout = request.data.get('eta_checkout')
+        city_tax_ack = request.data.get('city_tax_acknowledged')
+
+        note_parts = []
+        if eta_checkin:
+          note_parts.append(f"ETA check-in: {eta_checkin}")
+        if eta_checkout:
+          note_parts.append(f"ETA check-out: {eta_checkout}")
+        if city_tax_ack:
+          note_parts.append("City tax acknowledged (pay at property).")
+
+        if note_parts:
+            existing = booking.internal_notes or ''
+            new_notes = (existing + '\n' if existing else '') + ' | '.join(note_parts)
+            booking.internal_notes = new_notes
+            booking.save(update_fields=['internal_notes'])
+
+        try:
+            from apps.emails.services import send_online_checkin_completed
+            send_online_checkin_completed(booking)
+        except Exception:
+            pass
+
+        return Response({'message': 'Check-in completion recorded.'})
     
     def get_queryset(self):
         user = self.request.user
@@ -1458,12 +1492,6 @@ def public_booking_checkin(request):
             'error': 'Some guests could not be added',
             'details': errors
         }, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        from apps.emails.services import send_online_checkin_completed
-        send_online_checkin_completed(booking)
-    except Exception:
-        pass
 
     return Response({
         'message': 'Check-in information submitted successfully',

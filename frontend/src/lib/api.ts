@@ -122,6 +122,8 @@ export const api = {
       apiClient.post('/bookings/lookup/update/', { confirmation, email, updates }),
     lookupCheckin: (confirmation: string, email: string, guests: any[]) =>
       apiClient.post('/bookings/lookup/checkin/', { confirmation, email, guests }),
+    completeCheckin: (id: string, data: any) =>
+      apiClient.post(`/bookings/${id}/complete_checkin/`, data),
     // Booking Guests management
     guests: {
       list: (bookingId: string) => apiClient.get(`/bookings/${bookingId}/guests/`),
