@@ -782,6 +782,14 @@ def seed_rbac_data(request):
             ('pricing.view', 'pricing', 'View pricing settings'),
             ('pricing.update', 'pricing', 'Update pricing settings'),
             ('pricing.rules_manage', 'pricing', 'Manage pricing rules'),
+            ('pricing.settings.view', 'pricing', 'View pricing settings'),
+            ('pricing.settings.edit', 'pricing', 'Edit pricing settings'),
+            ('pricing.rules.view', 'pricing', 'View pricing rules'),
+            ('pricing.rules.manage', 'pricing', 'Manage pricing rules'),
+            ('pricing.promotions.view', 'pricing', 'View promotions'),
+            ('pricing.promotions.manage', 'pricing', 'Manage promotions'),
+            ('pricing.vouchers.view', 'pricing', 'View vouchers'),
+            ('pricing.vouchers.manage', 'pricing', 'Manage vouchers'),
 
             # Team
             ('team.view', 'team', 'View team members'),

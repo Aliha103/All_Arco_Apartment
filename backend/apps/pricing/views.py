@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from datetime import datetime
+from apps.users.permissions import HasPermissionForAction, HasPermission
 from .models import Settings, PricingRule, Promotion, Voucher, PromoUsage
 from .serializers import (
     SettingsSerializer, PricingRuleSerializer,
@@ -19,7 +20,7 @@ def get_settings(request):
     if request.method == 'GET':
         return Response(SettingsSerializer(settings).data)
     # Allow patch from same endpoint for clients expecting PATCH /settings/
-    if not request.user.is_authenticated or not request.user.is_team_member():
+    if not request.user.is_authenticated or not request.user.has_any_perm(['pricing.settings.edit']):
         return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     serializer = SettingsSerializer(settings, data=request.data, partial=True)
     if serializer.is_valid():
@@ -32,7 +33,7 @@ def get_settings(request):
 @permission_classes([IsAuthenticated])
 def update_settings(request):
     """Update pricing settings (team/admin only)."""
-    if not request.user.is_team_member():
+    if not request.user.has_any_perm(['pricing.settings.edit']):
         return Response(
             {'error': 'Permission denied'},
             status=status.HTTP_403_FORBIDDEN
@@ -81,11 +82,19 @@ class PricingRuleViewSet(viewsets.ModelViewSet):
     """ViewSet for pricing rules management."""
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasPermissionForAction]
+    action_permissions = {
+        'list': 'pricing.rules.view',
+        'retrieve': 'pricing.rules.view',
+        'create': 'pricing.rules.manage',
+        'update': 'pricing.rules.manage',
+        'partial_update': 'pricing.rules.manage',
+        'destroy': 'pricing.rules.manage',
+    }
     
     def get_queryset(self):
         # Only team/admin can view pricing rules
-        if not self.request.user.is_team_member():
+        if not self.request.user.has_any_perm(['pricing.rules.view']):
             return PricingRule.objects.none()
         
         return PricingRule.objects.all().order_by('start_date')
@@ -98,11 +107,19 @@ class PromotionViewSet(viewsets.ModelViewSet):
     """ViewSet for promotion management (team members only)."""
     queryset = Promotion.objects.all()
     serializer_class = PromotionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasPermissionForAction]
+    action_permissions = {
+        'list': 'pricing.promotions.view',
+        'retrieve': 'pricing.promotions.view',
+        'create': 'pricing.promotions.manage',
+        'update': 'pricing.promotions.manage',
+        'partial_update': 'pricing.promotions.manage',
+        'destroy': 'pricing.promotions.manage',
+    }
 
     def get_queryset(self):
         # Only team members can manage promotions
-        if not self.request.user.is_team_member():
+        if not self.request.user.has_any_perm(['pricing.promotions.view']):
             return Promotion.objects.none()
         return Promotion.objects.all().order_by('-created_at')
 
@@ -125,11 +142,19 @@ class VoucherViewSet(viewsets.ModelViewSet):
     """ViewSet for voucher management (team members only)."""
     queryset = Voucher.objects.all()
     serializer_class = VoucherSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasPermissionForAction]
+    action_permissions = {
+        'list': 'pricing.vouchers.view',
+        'retrieve': 'pricing.vouchers.view',
+        'create': 'pricing.vouchers.manage',
+        'update': 'pricing.vouchers.manage',
+        'partial_update': 'pricing.vouchers.manage',
+        'destroy': 'pricing.vouchers.manage',
+    }
 
     def get_queryset(self):
         # Only team members can manage vouchers
-        if not self.request.user.is_team_member():
+        if not self.request.user.has_any_perm(['pricing.vouchers.view']):
             return Voucher.objects.none()
         return Voucher.objects.all().order_by('-created_at')
 
