@@ -90,7 +90,6 @@ export default function BookingCheckInPage() {
   // Billing form
   const [billingType, setBillingType] = useState<'receipt' | 'invoice'>('receipt');
   const [billing, setBilling] = useState({
-    full_name: '',
     first_name: '',
     last_name: '',
     company_name: '',
@@ -176,7 +175,12 @@ export default function BookingCheckInPage() {
         special_requests: billing.notes,
       };
       if (billingType === 'receipt') {
-        const name = billing.full_name || `${billing.first_name} ${billing.last_name}`.trim() || booking.guest_name;
+        if (!billing.first_name.trim() || !billing.last_name.trim()) {
+          toast.error('First and last name are required for receipt.');
+          setSaving(false);
+          return;
+        }
+        const name = `${billing.first_name} ${billing.last_name}`.trim();
         updates.guest_name = name;
         updates.guest_tax_code = billing.tax_code || '';
       } else {
@@ -491,17 +495,8 @@ export default function BookingCheckInPage() {
                                 Personal Information
                               </h3>
                               <div className="grid sm:grid-cols-2 gap-4 pl-3">
-                                <div className="sm:col-span-2 flex flex-col gap-2">
-                                  <Label className="text-sm font-medium text-gray-700">Full name <span className="text-red-500">*</span></Label>
-                                  <Input
-                                    placeholder="John Doe"
-                                    value={billing.full_name}
-                                    onChange={(e) => setBilling({ ...billing, full_name: e.target.value })}
-                                    className="h-11"
-                                  />
-                                </div>
                                 <div className="flex flex-col gap-2">
-                                  <Label className="text-sm font-medium text-gray-700">First name <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                  <Label className="text-sm font-medium text-gray-700">First name <span className="text-red-500">*</span></Label>
                                   <Input
                                     placeholder="John"
                                     value={billing.first_name}
@@ -510,7 +505,7 @@ export default function BookingCheckInPage() {
                                   />
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                  <Label className="text-sm font-medium text-gray-700">Last name <span className="text-gray-400 text-xs">(optional)</span></Label>
+                                  <Label className="text-sm font-medium text-gray-700">Last name <span className="text-red-500">*</span></Label>
                                   <Input
                                     placeholder="Doe"
                                     value={billing.last_name}
