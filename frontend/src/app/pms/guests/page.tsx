@@ -78,6 +78,8 @@ interface Guest {
   phone?: string;
   nationality?: string;
   passport_number?: string;
+  document_number?: string;
+  document_type?: string;
   date_of_birth?: string;
   address?: string;
   city?: string;
@@ -85,6 +87,7 @@ interface Guest {
   postal_code?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  relationship?: string;
   is_vip: boolean;
   preferences?: string;
   total_bookings: number;
@@ -201,22 +204,40 @@ function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
             {guest.online_checkin && <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">Online check-in</Badge>}
           </div>
 
-          {/* Contact Info */}
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center text-sm text-gray-700">
+          {/* Contact & ID Info */}
+          <div className="space-y-2 mb-4 text-sm text-gray-700">
+            <div className="flex items-center">
               <Mail className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
               <span className="truncate">{guest.email}</span>
             </div>
             {guest.phone && (
-              <div className="flex items-center text-sm text-gray-700">
+              <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
                 <span>{guest.phone}</span>
               </div>
             )}
             {guest.nationality && (
-              <div className="flex items-center text-sm text-gray-700">
+              <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
-                <span>{guest.nationality}</span>
+                <span>Birth country: {guest.nationality}</span>
+              </div>
+            )}
+            {guest.date_of_birth && (
+              <div className="flex items-center text-xs text-gray-600">
+                <Calendar className="w-3 h-3 mr-1 flex-shrink-0 text-gray-500" />
+                <span>DOB: {guest.date_of_birth}</span>
+              </div>
+            )}
+            {guest.document_number && (
+              <div className="flex items-center text-xs text-gray-600">
+                <FileText className="w-3 h-3 mr-1 flex-shrink-0 text-gray-500" />
+                <span>{guest.document_type || 'Document'}: {guest.document_number}</span>
+              </div>
+            )}
+            {guest.relationship && (
+              <div className="flex items-center text-xs text-gray-600">
+                <Users className="w-3 h-3 mr-1 flex-shrink-0 text-gray-500" />
+                <span>Relationship: {guest.relationship}</span>
               </div>
             )}
           </div>
@@ -560,8 +581,15 @@ function GuestDetailsModal({
                       <FileText className="w-4 h-4 text-blue-600" />
                     </div>
                     <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Passport Number</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.passport_number || 'Not provided'}</p>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Document</label>
+                      <p className="text-sm mt-1 text-gray-900 font-medium">
+                        {guest.document_number
+                          ? `${guest.document_type ? guest.document_type.replace('_', ' ') + ': ' : ''}${guest.document_number}`
+                          : guest.passport_number || 'Not provided'}
+                      </p>
+                      {guest.relationship && (
+                        <p className="text-xs text-gray-600 mt-1">Relationship: {guest.relationship}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -645,7 +673,7 @@ function GuestDetailsModal({
 
                 <div className="p-3 border rounded-lg bg-gray-50">
                   <p className="text-sm text-gray-800">
-                    Additional guests are not recorded here yet. Open the booking to add family members and documents.
+                    Companions added via online check-in appear as separate guest entries. Open the booking to review or update their details.
                   </p>
                   {primaryBooking && (
                     <Button
@@ -653,7 +681,7 @@ function GuestDetailsModal({
                       className="mt-3"
                       onClick={() => window.open(`/pms/bookings/${primaryBooking.id}`, '_blank')}
                     >
-                      Add guest details
+                      View booking
                     </Button>
                   )}
                 </div>

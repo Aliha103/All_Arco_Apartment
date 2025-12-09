@@ -341,35 +341,35 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
         for bg in booking_guests_qs:
-            key = (bg.email or '').lower()
-            synthetic = False
-            if not key:
-                # fallback key using name + dob to avoid collisions
-                key = f"bg-{bg.first_name}-{bg.last_name}-{bg.date_of_birth or ''}".lower()
-                synthetic = True
-
-            entry = merged.get(key, {
-                'id': str(bg.id) if not synthetic else key,
+            # Use unique key per BookingGuest to avoid collapsing multiple guests
+            key = f"bookingguest-{bg.id}"
+            entry = {
+                'id': str(bg.id),
                 'first_name': bg.first_name,
                 'last_name': bg.last_name,
                 'email': bg.email or '',
                 'phone': '',
+                'nationality': bg.country_of_birth or '',
+                'date_of_birth': bg.date_of_birth,
+                'address': '',
+                'city': '',
+                'country': '',
+                'document_number': bg.document_number or '',
+                'document_type': bg.document_type or '',
+                'relationship': bg.relationship or '',
                 'total_bookings': 0,
                 'total_spent': 0.0,
                 'total_guests_count': 0,
                 'online_bookings': 0,
                 'online_checkin': True,
-            })
+            }
 
-            entry['first_name'] = entry.get('first_name') or bg.first_name
-            entry['last_name'] = entry.get('last_name') or bg.last_name
-            entry['online_checkin'] = True
             if bg.booking:
-                entry['total_bookings'] = entry.get('total_bookings', 0) + 1
-                entry['total_spent'] = entry.get('total_spent', 0.0) + float(bg.booking.total_price or 0)
-                entry['total_guests_count'] = entry.get('total_guests_count', 0) + (bg.booking.number_of_guests or 0)
+                entry['total_bookings'] = 1
+                entry['total_spent'] = float(bg.booking.total_price or 0)
+                entry['total_guests_count'] = bg.booking.number_of_guests or 0
                 if bg.booking.booking_source in ['website', 'direct']:
-                    entry['online_bookings'] = entry.get('online_bookings', 0) + 1
+                    entry['online_bookings'] = 1
             merged[key] = entry
 
         # Sort by name then email for stable display

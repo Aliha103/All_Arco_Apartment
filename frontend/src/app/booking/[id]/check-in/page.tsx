@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
@@ -35,6 +34,7 @@ const COUNTRIES = [
   'Turkmenistan', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay',
   'Uzbekistan', 'Venezuela', 'Vietnam', 'Zambia', 'Zimbabwe'
 ];
+const RELATIONSHIP_OPTIONS = ['Spouse/Partner', 'Child', 'Sibling', 'Parent', 'Friend/Group', 'Colleague', 'Other'];
 
 type Booking = {
   id: string;
@@ -59,6 +59,7 @@ type GuestForm = {
   first_name: string;
   last_name: string;
   email?: string;
+  relationship?: string;
   country_of_birth?: string;
   date_of_birth?: string;
   birth_province?: string;
@@ -137,6 +138,7 @@ export default function BookingCheckInPage() {
             first_name: i === 0 ? b.guest_name.split(' ')[0] || '' : '',
             last_name: i === 0 ? b.guest_name.split(' ').slice(1).join(' ') : '',
             email: i === 0 ? b.guest_email : '',
+            relationship: i === 0 ? 'primary' : '',
             country_of_birth: '',
             date_of_birth: '',
             birth_province: '',
@@ -198,12 +200,21 @@ export default function BookingCheckInPage() {
     if (!booking) return;
 
     // Basic validation
+    if (!consentAccepted) {
+      toast.error('Please accept the privacy policy to continue.');
+      return;
+    }
+
     for (let i = 0; i < guests.length; i++) {
       const g = guests[i];
       const isPrimary = i === 0;
       const needDocProvince = (g.country_of_birth === 'Italy') || (g.document_issue_country === 'Italy');
       if (!g.first_name.trim() || !g.last_name.trim()) {
         toast.error(`Guest ${i + 1}: first and last name are required.`);
+        return;
+      }
+      if (!isPrimary && !g.relationship) {
+        toast.error(`Guest ${i + 1}: relationship to primary guest is required.`);
         return;
       }
       if (!g.country_of_birth) {
@@ -229,6 +240,8 @@ export default function BookingCheckInPage() {
             return;
           }
         }
+      } else {
+        // non-primary: documents optional
       }
     }
 
@@ -244,13 +257,12 @@ export default function BookingCheckInPage() {
       await api.bookings.lookupCheckin(booking.booking_id, booking.guest_email, payloadGuests);
       toast.success('Guest details saved');
       setStep(3);
-      setCheckinDone(true);
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Failed to submit guest details');
     } finally {
       setSaving(false);
     }
-  }, [booking, guests]);
+  }, [booking, consentAccepted, guests]);
 
   const [etaCheckin, setEtaCheckin] = useState('');
   const [etaCheckout, setEtaCheckout] = useState('');
@@ -258,6 +270,14 @@ export default function BookingCheckInPage() {
 
   const onFinish = useCallback(async () => {
     if (!booking) return;
+    if (!cityTaxAck) {
+      toast.error('Please confirm city tax will be paid at the property.');
+      return;
+    }
+    if (!etaCheckin || !etaCheckout) {
+      toast.error('Please provide estimated check-in and check-out times.');
+      return;
+    }
     setSaving(true);
     try {
       await api.bookings.completeCheckin(booking.id, {
@@ -265,6 +285,7 @@ export default function BookingCheckInPage() {
         eta_checkout: etaCheckout,
         city_tax_acknowledged: cityTaxAck,
       });
+      setCheckinDone(true);
       router.push(`/booking/confirmation?booking_id=${booking.id}`);
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Failed to finalize check-in');
@@ -881,6 +902,21 @@ export default function BookingCheckInPage() {
                                           className="h-11"
                                         />
                                       </div>
+                                      {!isPrimary && (
+                                        <div className="flex flex-col gap-2 sm:col-span-2">
+                                          <Label className="text-sm font-medium text-gray-700">Relationship to primary <span className="text-red-500">*</span></Label>
+                                          <select
+                                            className="w-full h-11 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#C4A572] focus:border-[#C4A572] transition-all"
+                                            value={guest.relationship || ''}
+                                            onChange={(e) => setGuests((prev) => prev.map((g, i) => i === idx ? { ...g, relationship: e.target.value } : g))}
+                                          >
+                                            <option value="">Select relationship</option>
+                                            {RELATIONSHIP_OPTIONS.map((opt) => (
+                                              <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                      )}
                                       {isPrimary && (
                                         <div className="sm:col-span-2 flex flex-col gap-2">
                                           <Label className="text-sm font-medium text-gray-700">Email</Label>
