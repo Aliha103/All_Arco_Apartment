@@ -102,7 +102,7 @@ interface GuestBooking {
 
 export default function GuestDirectoryPage() {
   const queryClient = useQueryClient();
-  const guestsApi = (api as any).guests;
+  const guestsApi = api.users.guests;
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
