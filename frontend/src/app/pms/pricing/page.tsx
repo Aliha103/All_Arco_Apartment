@@ -119,15 +119,15 @@ export default function PricingPage() {
   }, [settings]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0f172a] via-[#0b1223] to-[#0f172a] text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       <div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
         <div className="flex flex-col gap-3">
-          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-amber-200">
+          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#C4A572]">
             <Sparkles className="w-4 h-4" />
             Pricing
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold">Pricing Management</h1>
-          <p className="text-slate-300 max-w-3xl">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Pricing Management</h1>
+          <p className="text-gray-600 max-w-3xl">
             Control base rates, fees, and seasonal rules in one place. Changes take effect immediately across booking and check-in flows.
           </p>
         </div>
@@ -137,13 +137,13 @@ export default function PricingPage() {
             {stats.map((s) => {
               const Icon = s.icon;
               return (
-                <Card key={s.label} className="bg-white/5 border-white/10 backdrop-blur">
+                <Card key={s.label} className="bg-white border border-gray-200 shadow-sm">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-300">{s.label}</p>
-                      <p className="text-xl font-semibold text-white mt-1">{s.value}</p>
+                      <p className="text-xs uppercase tracking-wide text-gray-500">{s.label}</p>
+                      <p className="text-xl font-semibold text-gray-900 mt-1">{s.value}</p>
                     </div>
-                    <div className="p-2 rounded-full bg-amber-500/20 text-amber-200">
+                    <div className="p-2 rounded-full bg-amber-100 text-[#C4A572]">
                       <Icon className="w-5 h-5" />
                     </div>
                   </CardContent>
@@ -154,42 +154,42 @@ export default function PricingPage() {
         )}
 
         {/* Base Settings */}
-        <Card className="bg-white/5 border-white/10 backdrop-blur">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <p className="text-sm text-amber-200 flex items-center gap-2">
+              <p className="text-sm text-[#C4A572] flex items-center gap-2">
                 <Shield className="w-4 h-4" /> Base Pricing Settings
               </p>
-              <CardTitle className="text-2xl text-white">Core fees & taxes</CardTitle>
-              <p className="text-slate-300 text-sm">Update nightly, cleaning, pet cleaning, extras, and tourist tax.</p>
+              <CardTitle className="text-2xl text-gray-900">Core fees & taxes</CardTitle>
+              <p className="text-gray-600 text-sm">Update nightly, cleaning, pet cleaning, extras, and tourist tax.</p>
             </div>
             {!isEditingSettings && (
-              <Button variant="secondary" onClick={handleEdit} className="bg-amber-500 text-black hover:bg-amber-400">
+              <Button variant="secondary" onClick={handleEdit} className="bg-[#C4A572] text-white hover:bg-[#b99050]">
                 Edit settings
               </Button>
             )}
           </CardHeader>
           <CardContent>
             {!isEditingSettings ? (
-              <div className="grid md:grid-cols-2 gap-6 text-white">
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-sm text-slate-300 mb-1">Default Nightly Rate</p>
+              <div className="grid md:grid-cols-2 gap-6 text-gray-900">
+                <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600 mb-1">Default Nightly Rate</p>
                   <p className="text-2xl font-semibold">{settings ? formatCurrency(settings.default_nightly_rate) : '—'}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-sm text-slate-300 mb-1">Cleaning Fee</p>
+                <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600 mb-1">Cleaning Fee</p>
                   <p className="text-2xl font-semibold">{settings ? formatCurrency(settings.cleaning_fee) : '—'}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-sm text-slate-300 mb-1">Pet Cleaning Fee</p>
+                <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600 mb-1">Pet Cleaning Fee</p>
                   <p className="text-2xl font-semibold">{settings ? formatCurrency(settings.pet_cleaning_fee || 0) : '—'}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-sm text-slate-300 mb-1">Extra Guest Fee (per person)</p>
+                <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600 mb-1">Extra Guest Fee (per person)</p>
                   <p className="text-2xl font-semibold">{settings ? formatCurrency(settings.extra_guest_fee ?? settings.extra_guest_fee_per_person ?? 0) : '—'}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                  <p className="text-sm text-slate-300 mb-1">Tourist Tax (per person/night)</p>
+                <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600 mb-1">Tourist Tax (per person/night)</p>
                   <p className="text-2xl font-semibold">{settings ? formatCurrency(settings.tourist_tax_per_person_per_night) : '—'}</p>
                 </div>
               </div>
@@ -197,7 +197,7 @@ export default function PricingPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-white">Default Nightly Rate (€)</Label>
+                    <Label className="text-gray-800">Default Nightly Rate (€)</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -207,7 +207,7 @@ export default function PricingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-white">Cleaning Fee (€)</Label>
+                    <Label className="text-gray-800">Cleaning Fee (€)</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -217,7 +217,7 @@ export default function PricingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-white">Pet Cleaning Fee (€)</Label>
+                    <Label className="text-gray-800">Pet Cleaning Fee (€)</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -226,7 +226,7 @@ export default function PricingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-white">Extra Guest Fee (€)</Label>
+                    <Label className="text-gray-800">Extra Guest Fee (€)</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -236,7 +236,7 @@ export default function PricingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-white">Tourist Tax (€)</Label>
+                    <Label className="text-gray-800">Tourist Tax (€)</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -249,7 +249,7 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <Button type="submit" disabled={updateSettings.isPending} className="bg-amber-500 text-black hover:bg-amber-400">
+                  <Button type="submit" disabled={updateSettings.isPending} className="bg-[#C4A572] text-white hover:bg-[#b99050]">
                     {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     {updateSettings.isPending ? 'Saving...' : 'Save changes'}
                   </Button>
@@ -263,16 +263,16 @@ export default function PricingPage() {
         </Card>
 
         {/* Seasonal Rules */}
-        <Card className="bg-white/5 border-white/10 backdrop-blur">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-amber-200" />
+              <CalendarDays className="w-5 h-5 text-[#C4A572]" />
               <div>
-                <p className="text-sm text-amber-200">Seasonal Pricing Rules</p>
-                <CardTitle className="text-xl text-white">Rate overrides by season</CardTitle>
+                <p className="text-sm text-[#C4A572]">Seasonal Pricing Rules</p>
+                <CardTitle className="text-xl text-gray-900">Rate overrides by season</CardTitle>
               </div>
             </div>
-            <Button onClick={handleCreateRule} className="bg-white text-black hover:bg-slate-100 flex items-center gap-2">
+            <Button onClick={handleCreateRule} className="bg-[#C4A572] text-white hover:bg-[#b99050] flex items-center gap-2">
               <PlusCircle className="w-4 h-4" />
               Add new rule
             </Button>
@@ -281,22 +281,22 @@ export default function PricingPage() {
             {rules && rules.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/10">
-                    <TableHead className="text-slate-200">Name</TableHead>
-                    <TableHead className="text-slate-200">Start Date</TableHead>
-                    <TableHead className="text-slate-200">End Date</TableHead>
-                    <TableHead className="text-slate-200">Nightly Rate</TableHead>
-                    <TableHead className="text-slate-200">Status</TableHead>
-                    <TableHead className="text-slate-200">Actions</TableHead>
+                  <TableRow className="border-gray-200">
+                    <TableHead className="text-gray-600">Name</TableHead>
+                    <TableHead className="text-gray-600">Start Date</TableHead>
+                    <TableHead className="text-gray-600">End Date</TableHead>
+                    <TableHead className="text-gray-600">Nightly Rate</TableHead>
+                    <TableHead className="text-gray-600">Status</TableHead>
+                    <TableHead className="text-gray-600">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rules.map((rule: PricingRule) => (
-                    <TableRow key={rule.id} className="border-white/5">
-                      <TableCell className="font-medium text-white">{rule.name}</TableCell>
-                      <TableCell className="text-slate-200">{formatDate(rule.start_date)}</TableCell>
-                      <TableCell className="text-slate-200">{formatDate(rule.end_date)}</TableCell>
-                      <TableCell className="font-semibold text-white">
+                    <TableRow key={rule.id} className="border-gray-100">
+                      <TableCell className="font-medium text-gray-900">{rule.name}</TableCell>
+                      <TableCell className="text-gray-700">{formatDate(rule.start_date)}</TableCell>
+                      <TableCell className="text-gray-700">{formatDate(rule.end_date)}</TableCell>
+                      <TableCell className="font-semibold text-gray-900">
                         {formatCurrency(rule.nightly_rate)}
                       </TableCell>
                       <TableCell>
@@ -324,9 +324,9 @@ export default function PricingPage() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="text-center py-10 text-slate-300">
-                <p className="mb-3 text-lg">No seasonal rules defined</p>
-                <p className="text-sm text-slate-400">Create your first rule to override the base rate during high/low seasons.</p>
+              <div className="text-center py-10 text-gray-500">
+                <p className="mb-3 text-lg text-gray-700">No seasonal rules defined</p>
+                <p className="text-sm text-gray-500">Create your first rule to override the base rate during high/low seasons.</p>
               </div>
             )}
           </CardContent>
