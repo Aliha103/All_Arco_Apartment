@@ -54,6 +54,8 @@ interface CleaningSchedule {
   priority: 'low' | 'medium' | 'high';
   assigned_to?: string;
   assigned_to_name?: string;
+  completed_by?: string;
+  completed_by_name?: string;
   special_instructions?: string;
   created_at?: string;
   updated_at?: string;
@@ -149,6 +151,9 @@ export default function CleaningPage() {
     special_instructions: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completingCleaning, setCompletingCleaning] = useState<CleaningSchedule | null>(null);
+  const [completedBy, setCompletedBy] = useState<string>('');
 
   const currentMonth = selectedDate.getMonth() + 1;
   const currentYear = selectedDate.getFullYear();
@@ -256,14 +261,20 @@ export default function CleaningPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      api.cleaning.schedules.update(id, { status }),
+    mutationFn: ({ id, status, completed_by }: { id: string; status: string; completed_by?: string }) =>
+      api.cleaning.schedules.update(id, { status, completed_by }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cleaning-schedules'] });
       queryClient.invalidateQueries({ queryKey: ['cleaning-stats'] });
+      setShowCompletionModal(false);
+      setCompletingCleaning(null);
+      setCompletedBy('');
       toast.success('Status updated');
     },
-    onError: () => toast.error('Failed to update status'),
+    onError: () => {
+      toast.error('Failed to update status');
+      setShowCompletionModal(false);
+    },
   });
 
   // ============================================================================
@@ -736,6 +747,14 @@ export default function CleaningPage() {
                             </div>
                           )}
 
+                          {cleaning.status === 'completed' && cleaning.completed_by_name && (
+                            <div className="flex items-center gap-2 text-sm text-gray-700 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              <span className="font-medium">Completed by:</span>
+                              <span className="font-semibold text-emerald-700">{cleaning.completed_by_name}</span>
+                            </div>
+                          )}
+
                           {cleaning.special_instructions && (
                             <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-3">
                               <p className="text-xs font-bold text-amber-900 mb-1">
@@ -759,7 +778,11 @@ export default function CleaningPage() {
                             </Button>
                           ) : cleaning.status === 'in_progress' ? (
                             <Button
-                              onClick={() => updateStatus.mutate({ id: cleaning.id, status: 'completed' })}
+                              onClick={() => {
+                                setCompletingCleaning(cleaning);
+                                setCompletedBy(cleaning.assigned_to || '');
+                                setShowCompletionModal(true);
+                              }}
                               className="flex-1 lg:flex-none bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
                             >
                               <CheckCircle2 className="w-4 h-4 mr-2" />
@@ -795,14 +818,14 @@ export default function CleaningPage() {
             <div className="space-y-2">
               <Label className="text-gray-900 font-semibold">Booking (Optional)</Label>
               <Select
-                value={formData.booking || ''}
-                onValueChange={(value) => handleChange('booking', value || undefined)}
+                value={formData.booking || 'none'}
+                onValueChange={(value) => handleChange('booking', value === 'none' ? undefined : value)}
               >
                 <SelectTrigger className="text-gray-900 bg-white border-gray-300">
                   <SelectValue placeholder="Select booking (optional)" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px]">
-                  <SelectItem value="">No booking (general cleaning)</SelectItem>
+                  <SelectItem value="none">No booking (general cleaning)</SelectItem>
                   {upcomingBookings?.map((booking: any) => (
                     <SelectItem key={booking.id} value={booking.id}>
                       {booking.guest_name} - {booking.booking_id}
@@ -881,14 +904,14 @@ export default function CleaningPage() {
             <div className="space-y-2">
               <Label className="text-gray-900 font-semibold">Assign to Staff</Label>
               <Select
-                value={formData.assigned_to || ''}
-                onValueChange={(value) => handleChange('assigned_to', value || undefined)}
+                value={formData.assigned_to || 'unassigned'}
+                onValueChange={(value) => handleChange('assigned_to', value === 'unassigned' ? undefined : value)}
               >
                 <SelectTrigger className="text-gray-900 bg-white border-gray-300">
                   <SelectValue placeholder="Select staff member" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {staffMembers?.map((staff: any) => (
                     <SelectItem key={staff.id} value={staff.id}>
                       {staff.first_name} {staff.last_name}
@@ -939,6 +962,103 @@ export default function CleaningPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Completion Modal */}
+      <Dialog open={showCompletionModal} onOpenChange={setShowCompletionModal}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Mark Cleaning as Complete
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Who completed this cleaning task?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {completingCleaning && (
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-1">
+                  {completingCleaning.booking?.guest_name || 'General Cleaning'}
+                </p>
+                {completingCleaning.booking && (
+                  <p className="text-xs text-gray-600">
+                    Booking: {completingCleaning.booking.booking_id}
+                  </p>
+                )}
+                <p className="text-xs text-gray-600 mt-1">
+                  {new Date(completingCleaning.scheduled_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })} at {completingCleaning.scheduled_time}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-gray-900 font-semibold">Completed By</Label>
+              <Select
+                value={completedBy || 'team_member'}
+                onValueChange={(value) => setCompletedBy(value === 'team_member' ? '' : value)}
+              >
+                <SelectTrigger className="text-gray-900 bg-white border-gray-300">
+                  <SelectValue placeholder="Select who completed this" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="team_member">Team Member (Unspecified)</SelectItem>
+                  {staffMembers?.map((staff: any) => (
+                    <SelectItem key={staff.id} value={staff.id}>
+                      {staff.first_name} {staff.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                If no cleaning staff was assigned, select &quot;Team Member&quot;
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowCompletionModal(false);
+                setCompletingCleaning(null);
+                setCompletedBy('');
+              }}
+              disabled={updateStatus.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (completingCleaning) {
+                  updateStatus.mutate({
+                    id: completingCleaning.id,
+                    status: 'completed',
+                    completed_by: completedBy || undefined,
+                  });
+                }
+              }}
+              disabled={updateStatus.isPending}
+              className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg"
+            >
+              {updateStatus.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Mark as Complete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

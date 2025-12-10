@@ -73,6 +73,14 @@ class CleaningSchedule(models.Model):
     # Completion tracking
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    completed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='completed_cleanings',
+        help_text='User who completed this cleaning'
+    )
     actual_duration = models.IntegerField(
         null=True,
         blank=True,

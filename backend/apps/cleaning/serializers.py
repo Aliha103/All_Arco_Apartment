@@ -45,6 +45,7 @@ class CleaningScheduleSerializer(serializers.ModelSerializer):
     booking_details = BookingSerializer(source='booking', read_only=True)
     booking = serializers.SerializerMethodField()  # Override to include status
     assigned_to_name = serializers.SerializerMethodField()
+    completed_by_name = serializers.SerializerMethodField()
     inspected_by_name = serializers.SerializerMethodField()
     task_completion_rate = serializers.SerializerMethodField()
 
@@ -64,6 +65,8 @@ class CleaningScheduleSerializer(serializers.ModelSerializer):
             'priority',
             'started_at',
             'completed_at',
+            'completed_by',
+            'completed_by_name',
             'actual_duration',
             'quality_rating',
             'quality_notes',
@@ -82,6 +85,7 @@ class CleaningScheduleSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'assigned_to_name',
+            'completed_by_name',
             'inspected_by_name',
             'task_completion_rate',
         ]
@@ -89,6 +93,11 @@ class CleaningScheduleSerializer(serializers.ModelSerializer):
     def get_assigned_to_name(self, obj):
         if obj.assigned_to:
             return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}".strip()
+        return None
+
+    def get_completed_by_name(self, obj):
+        if obj.completed_by:
+            return f"{obj.completed_by.first_name} {obj.completed_by.last_name}".strip()
         return None
 
     def get_inspected_by_name(self, obj):
