@@ -102,3 +102,102 @@ class Refund(models.Model):
     
     def __str__(self):
         return f"Refund {self.id} - {self.booking.booking_id} - €{self.amount}"
+
+
+class PaymentRequest(models.Model):
+    """
+    Payment requests sent to guests with Stripe payment links.
+    For collecting deposits, remaining balances, or additional charges.
+    """
+    TYPE_CHOICES = [
+        ('deposit', 'Security Deposit'),
+        ('remaining_balance', 'Remaining Balance'),
+        ('additional_charge', 'Additional Charge'),
+        ('custom', 'Custom'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('cancelled', 'Cancelled'),
+        ('overdue', 'Overdue'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name='payment_requests'
+    )
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    description = models.TextField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='EUR')
+    due_date = models.DateField(null=True, blank=True)
+
+    # Stripe payment link
+    stripe_payment_link_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    stripe_payment_link_url = models.URLField(max_length=500, null=True, blank=True)
+
+    # Status tracking
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    paid_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    # Who created and who paid
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='payment_requests_created'
+    )
+
+    # Metadata
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'payments_payment_request'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['booking']),
+            models.Index(fields=['status']),
+            models.Index(fields=['due_date']),
+            models.Index(fields=['stripe_payment_link_id']),
+        ]
+
+    def __str__(self):
+        return f"PaymentRequest {self.id} - {self.booking.booking_id} - €{self.amount} - {self.status}"
+
+    @property
+    def is_overdue(self):
+        """Check if payment request is overdue"""
+        from django.utils import timezone
+        if self.status == 'pending' and self.due_date:
+            return timezone.now().date() > self.due_date
+        return False
+
+    @property
+    def guest_name(self):
+        """Get guest name from booking"""
+        return self.booking.guest_name
+
+    @property
+    def guest_email(self):
+        """Get guest email from booking"""
+        return self.booking.guest_email
+
+    def mark_as_paid(self):
+        """Mark payment request as paid"""
+        from django.utils import timezone
+        self.status = 'paid'
+        self.paid_at = timezone.now()
+        self.save(update_fields=['status', 'paid_at', 'updated_at'])
+
+    def cancel(self):
+        """Cancel payment request"""
+        from django.utils import timezone
+        self.status = 'cancelled'
+        self.cancelled_at = timezone.now()
+        self.save(update_fields=['status', 'cancelled_at', 'updated_at'])
