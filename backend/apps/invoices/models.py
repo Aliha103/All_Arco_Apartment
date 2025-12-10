@@ -288,7 +288,7 @@ class CompanyNote(models.Model):
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
-        related_name='notes',
+        related_name='company_notes',
         help_text='Company this note belongs to'
     )
     created_by = models.ForeignKey(
