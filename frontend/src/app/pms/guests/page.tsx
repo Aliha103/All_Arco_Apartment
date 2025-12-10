@@ -129,7 +129,8 @@ export default function GuestDirectoryPage() {
     queryFn: async () => {
       if (!selectedBooking?.id) return [];
       const response = await api.bookings.guests.list(selectedBooking.id);
-      return response.data || [];
+      // Handle both paginated response (with results) and direct array response
+      return response.data?.results || response.data || [];
     },
     enabled: !!selectedBooking?.id && isModalOpen,
   });
