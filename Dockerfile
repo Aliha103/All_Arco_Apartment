@@ -56,6 +56,8 @@ COPY --from=backend-builder /usr/local/bin/celery /usr/local/bin/celery
 
 # Copy backend code
 COPY backend/ ./backend/
+# Legacy path compatibility for environments calling /app/back/manage.py
+RUN ln -s /app/backend /app/back
 # Convenience manage.py at /app for deployment commands
 COPY manage.py ./manage.py
 
