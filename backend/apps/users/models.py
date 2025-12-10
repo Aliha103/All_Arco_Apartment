@@ -27,6 +27,7 @@ class Permission(models.Model):
         ('payments', 'Payments & Invoices'),
         ('guests', 'Guests'),
         ('pricing', 'Pricing'),
+        ('expenses', 'Expense Management'),
         ('team', 'Team & Roles'),
         ('gallery', 'Gallery Management'),
         ('reports', 'Reports & Logs'),

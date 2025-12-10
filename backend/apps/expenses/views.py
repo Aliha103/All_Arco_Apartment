@@ -14,6 +14,7 @@ from .serializers import (
     ExpenseCreateUpdateSerializer,
     ExpenseStatsSerializer
 )
+from .permissions import ExpensePermission
 
 
 class ExpenseViewSet(viewsets.ModelViewSet):
@@ -25,8 +26,15 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     - Create, retrieve, update, and delete expenses
     - Approve/reject expenses
     - Get expense statistics
+
+    Permissions:
+    - expenses.view: View expenses
+    - expenses.create: Create new expenses
+    - expenses.edit: Edit expenses
+    - expenses.delete: Delete expenses
+    - expenses.approve: Approve/reject expenses
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ExpensePermission]
     queryset = Expense.objects.select_related('created_by', 'approved_by').all()
 
     def get_serializer_class(self):

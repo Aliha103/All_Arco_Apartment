@@ -17,9 +17,12 @@ import {
   Loader2,
   TrendingUp,
   Sparkles,
+  Lock,
+  Edit2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api';
+import { useAuthStore } from '@/stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -103,6 +106,15 @@ interface Expense {
 
 export default function ExpensesPage() {
   const queryClient = useQueryClient();
+  const { hasPermission } = useAuthStore();
+
+  // Check permissions
+  const canView = hasPermission('expenses.view');
+  const canCreate = hasPermission('expenses.create');
+  const canEdit = hasPermission('expenses.edit');
+  const canDelete = hasPermission('expenses.delete');
+  const canApprove = hasPermission('expenses.approve');
+
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -249,13 +261,21 @@ export default function ExpensesPage() {
               Track and manage all business expenses professionally
             </p>
           </div>
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            className="bg-gradient-to-r from-[#C4A572] to-[#B39562] hover:from-[#B39562] hover:to-[#A08552] text-white shadow-lg shadow-[#C4A572]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#C4A572]/30 hover:scale-105"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Expense
-          </Button>
+          {canCreate && (
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              className="bg-gradient-to-r from-[#C4A572] to-[#B39562] hover:from-[#B39562] hover:to-[#A08552] text-white shadow-lg shadow-[#C4A572]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#C4A572]/30 hover:scale-105"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Expense
+            </Button>
+          )}
+          {!canView && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+              <Lock className="w-4 h-4 text-amber-600" />
+              <span className="text-sm text-amber-800 font-medium">Limited Access</span>
+            </div>
+          )}
         </motion.div>
 
         {/* Statistics Cards */}
@@ -429,15 +449,19 @@ export default function ExpensesPage() {
                   </motion.div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">No expenses yet</h3>
                   <p className="text-gray-500 mb-6 text-center max-w-md">
-                    Start tracking your business expenses by adding your first entry
+                    {canCreate
+                      ? 'Start tracking your business expenses by adding your first entry'
+                      : 'No expenses have been created yet. Contact an administrator to add expenses.'}
                   </p>
-                  <Button
-                    onClick={() => setIsFormOpen(true)}
-                    className="bg-gradient-to-r from-[#C4A572] to-[#B39562] hover:from-[#B39562] hover:to-[#A08552] text-white shadow-lg"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Your First Expense
-                  </Button>
+                  {canCreate && (
+                    <Button
+                      onClick={() => setIsFormOpen(true)}
+                      className="bg-gradient-to-r from-[#C4A572] to-[#B39562] hover:from-[#B39562] hover:to-[#A08552] text-white shadow-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Expense
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -523,7 +547,7 @@ export default function ExpensesPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
-                                  {expense.status === 'pending' && (
+                                  {canApprove && expense.status === 'pending' && (
                                     <>
                                       <DropdownMenuItem
                                         onClick={() => approveExpense.mutate(expense.id)}
@@ -542,13 +566,30 @@ export default function ExpensesPage() {
                                       <DropdownMenuSeparator />
                                     </>
                                   )}
-                                  <DropdownMenuItem
-                                    onClick={() => deleteExpense.mutate(expense.id)}
-                                    className="cursor-pointer text-rose-600 focus:text-rose-600"
-                                  >
-                                    <Ban className="w-4 h-4 mr-2" />
-                                    <span className="font-medium">Delete</span>
-                                  </DropdownMenuItem>
+                                  {canEdit && (
+                                    <DropdownMenuItem className="cursor-pointer">
+                                      <Edit2 className="w-4 h-4 mr-2" />
+                                      <span className="font-medium">Edit</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  {canDelete && (
+                                    <>
+                                      {canEdit && <DropdownMenuSeparator />}
+                                      <DropdownMenuItem
+                                        onClick={() => deleteExpense.mutate(expense.id)}
+                                        className="cursor-pointer text-rose-600 focus:text-rose-600"
+                                      >
+                                        <Ban className="w-4 h-4 mr-2" />
+                                        <span className="font-medium">Delete</span>
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {!canEdit && !canDelete && !canApprove && (
+                                    <DropdownMenuItem disabled className="text-gray-400">
+                                      <Lock className="w-4 h-4 mr-2" />
+                                      <span>No actions available</span>
+                                    </DropdownMenuItem>
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </td>
