@@ -13,7 +13,7 @@
 // - Responsive design with animations
 // ============================================================================
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -25,20 +25,13 @@ import {
   XCircle,
   Mail,
   Copy,
-  MoreHorizontal,
   Clock,
   Calendar,
   User,
   FileText,
   Ban,
-  CreditCard,
-  Banknote,
-  Wallet,
-  Building2,
-  X,
-  ChevronDown,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,13 +45,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -77,20 +63,22 @@ import api from '@/lib/api';
 
 interface PaymentRequest {
   id: string;
+  booking: string;
   booking_id: string;
-  booking_reference: string;
-  guest_name: string;
-  guest_email: string;
-  title: string;
+  type: 'deposit' | 'remaining_balance' | 'additional_charge' | 'custom';
   description: string;
-  amount: number;
-  status: 'pending' | 'overdue' | 'paid' | 'cancelled';
-  payment_method?: 'card' | 'bank_transfer' | 'cash' | 'paypal' | 'stripe' | 'other';
-  payment_url: string;
+  amount: string | number;
+  currency: string;
   due_date: string;
+  stripe_payment_link_id?: string;
+  stripe_payment_link_url?: string;
+  status: 'pending' | 'overdue' | 'paid' | 'cancelled';
   paid_at?: string;
   cancelled_at?: string;
-  cancellation_reason?: string;
+  guest_name?: string;
+  guest_email?: string;
+  is_overdue?: boolean;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -108,8 +96,8 @@ interface Booking {
 }
 
 interface CreatePaymentForm {
-  booking_id: string;
-  title: string;
+  booking: string;
+  type: 'deposit' | 'remaining_balance' | 'additional_charge' | 'custom';
   description: string;
   amount: string;
   due_date: string;
@@ -142,58 +130,23 @@ const STATUS_CONFIG = {
   },
 };
 
-const PAYMENT_METHODS = [
-  { value: 'card', label: 'Credit/Debit Card', icon: CreditCard },
-  { value: 'bank_transfer', label: 'Bank Transfer', icon: Building2 },
-  { value: 'cash', label: 'Cash', icon: Banknote },
-  { value: 'paypal', label: 'PayPal', icon: Wallet },
-  { value: 'stripe', label: 'Stripe', icon: CreditCard },
-  { value: 'other', label: 'Other', icon: DollarSign },
-];
 
 // ============================================================================
-// Mock Data (Replace with real API)
+// Payment Type Display Names
 // ============================================================================
 
-const MOCK_PAYMENTS: PaymentRequest[] = [
-  {
-    id: '1',
-    booking_id: '1',
-    booking_reference: 'ARCO-2024-001',
-    guest_name: 'John Doe',
-    guest_email: 'john@example.com',
-    title: 'Remaining Balance',
-    description: 'Final payment for 3-night stay',
-    amount: 450.00,
-    status: 'pending',
-    payment_url: 'https://pay.arco.com/abc123',
-    due_date: '2024-12-15',
-    created_at: '2024-12-01T10:00:00Z',
-    updated_at: '2024-12-01T10:00:00Z',
-  },
-  {
-    id: '2',
-    booking_id: '2',
-    booking_reference: 'ARCO-2024-002',
-    guest_name: 'Jane Smith',
-    guest_email: 'jane@example.com',
-    title: 'Security Deposit',
-    description: 'Refundable security deposit',
-    amount: 200.00,
-    status: 'overdue',
-    payment_url: 'https://pay.arco.com/def456',
-    due_date: '2024-11-20',
-    created_at: '2024-11-15T10:00:00Z',
-    updated_at: '2024-11-15T10:00:00Z',
-  },
-];
+const TYPE_DISPLAY: Record<string, string> = {
+  deposit: 'Security Deposit',
+  remaining_balance: 'Remaining Balance',
+  additional_charge: 'Additional Charge',
+  custom: 'Custom Payment',
+};
 
 // ============================================================================
 // Main Component
 // ============================================================================
 
 export default function PaymentsPage() {
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -204,16 +157,22 @@ export default function PaymentsPage() {
   const debouncedSearch = useDebounce(search, 300);
 
   // ============================================================================
-  // Data Fetching (Using mock data for now)
+  // Data Fetching
   // ============================================================================
 
   const { data: payments = [], isLoading } = useQuery({
-    queryKey: ['payments'],
+    queryKey: ['payment-requests'],
     queryFn: async () => {
-      // TODO: Replace with real API call
-      // const response = await api.payments.list();
-      // return response.data;
-      return MOCK_PAYMENTS;
+      const response = await api.paymentRequests.list();
+      return response.data;
+    },
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['payment-requests-statistics'],
+    queryFn: async () => {
+      const response = await api.paymentRequests.statistics();
+      return response.data;
     },
   });
 
@@ -229,10 +188,10 @@ export default function PaymentsPage() {
       const searchLower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
         (payment) =>
-          payment.booking_reference.toLowerCase().includes(searchLower) ||
-          payment.guest_name.toLowerCase().includes(searchLower) ||
-          payment.guest_email.toLowerCase().includes(searchLower) ||
-          payment.title.toLowerCase().includes(searchLower)
+          payment.booking_id?.toLowerCase().includes(searchLower) ||
+          payment.guest_name?.toLowerCase().includes(searchLower) ||
+          payment.guest_email?.toLowerCase().includes(searchLower) ||
+          payment.description?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -252,26 +211,40 @@ export default function PaymentsPage() {
   // ============================================================================
 
   const statistics = useMemo(() => {
-    const openPayments = payments.filter((p) => p.status === 'pending' || p.status === 'overdue');
-    const totalOpenBalance = openPayments.reduce((sum, p) => sum + p.amount, 0);
-    const overduePayments = payments.filter((p) => p.status === 'overdue');
-    const totalOverdue = overduePayments.reduce((sum, p) => sum + p.amount, 0);
-    const paidPayments = payments.filter((p) => p.status === 'paid');
-    const totalPaid = paidPayments.reduce((sum, p) => sum + p.amount, 0);
-
+    if (stats) {
+      return {
+        totalOpenBalance: stats.total_open_balance || 0,
+        openCount: stats.pending_count || 0,
+        totalOverdue: stats.overdue_amount || 0,
+        overdueCount: stats.overdue_count || 0,
+        totalPaid: stats.total_collected || 0,
+        paidCount: stats.paid_count || 0,
+      };
+    }
     return {
-      totalOpenBalance,
-      openCount: openPayments.length,
-      totalOverdue,
-      overdueCount: overduePayments.length,
-      totalPaid,
-      paidCount: paidPayments.length,
+      totalOpenBalance: 0,
+      openCount: 0,
+      totalOverdue: 0,
+      overdueCount: 0,
+      totalPaid: 0,
+      paidCount: 0,
     };
-  }, [payments]);
+  }, [stats]);
 
   // ============================================================================
   // Actions
   // ============================================================================
+
+  const sendEmailMutation = useMutation({
+    mutationFn: (id: string) => api.paymentRequests.sendEmail(id),
+    onSuccess: (_, id) => {
+      const payment = payments.find((p: PaymentRequest) => p.id === id);
+      toast.success(`Payment request sent to ${payment?.guest_email || 'guest'}`);
+    },
+    onError: () => {
+      toast.error('Failed to send payment request email');
+    },
+  });
 
   const copyPaymentUrl = useCallback((url: string) => {
     navigator.clipboard.writeText(url);
@@ -279,9 +252,12 @@ export default function PaymentsPage() {
   }, []);
 
   const sendPaymentEmail = useCallback((payment: PaymentRequest) => {
-    // TODO: Implement email sending
-    toast.success(`Payment request sent to ${payment.guest_email}`);
-  }, []);
+    if (!payment.stripe_payment_link_url) {
+      toast.error('No payment URL available');
+      return;
+    }
+    sendEmailMutation.mutate(payment.id);
+  }, [sendEmailMutation]);
 
   const handleMarkPaid = useCallback((payment: PaymentRequest) => {
     setSelectedPayment(payment);
@@ -578,7 +554,9 @@ function PaymentCard({
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
-              <h3 className="text-lg font-semibold text-gray-900 truncate">{payment.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 truncate">
+                {TYPE_DISPLAY[payment.type] || payment.type}
+              </h3>
               <Badge
                 className={cn(
                   statusConfig.color,
@@ -627,7 +605,7 @@ function PaymentCard({
                 Booking
               </p>
               <p className="text-sm font-semibold text-gray-900 truncate">
-                {payment.booking_reference}
+                {payment.booking_id}
               </p>
             </div>
           </div>
@@ -673,25 +651,10 @@ function PaymentCard({
             </div>
           </div>
 
-          {payment.payment_method && (
-            <div className="flex items-start gap-2.5">
-              <div className="p-1.5 bg-green-50 rounded border border-green-100">
-                <CreditCard className="w-3.5 h-3.5 text-green-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 font-medium mb-0.5">
-                  Payment Method
-                </p>
-                <p className="text-sm font-semibold text-gray-900 capitalize truncate">
-                  {payment.payment_method.replace('_', ' ')}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Actions Section */}
-        {isPending && (
+        {isPending && payment.stripe_payment_link_url && (
           <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-3 border-t border-gray-200">
             <Button
               onClick={() => onSendEmail(payment)}
@@ -702,7 +665,7 @@ function PaymentCard({
               Send Email
             </Button>
             <Button
-              onClick={() => onCopyUrl(payment.payment_url)}
+              onClick={() => onCopyUrl(payment.stripe_payment_link_url!)}
               variant="outline"
               size="sm"
               className="w-full sm:w-auto"
@@ -750,8 +713,8 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
   const [bookingSearch, setBookingSearch] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [formData, setFormData] = useState<CreatePaymentForm>({
-    booking_id: '',
-    title: '',
+    booking: '',
+    type: 'remaining_balance',
     description: '',
     amount: '',
     due_date: '',
@@ -759,71 +722,54 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
 
   const debouncedBookingSearch = useDebounce(bookingSearch, 300);
 
-  // Mock bookings data
   const { data: bookings = [] } = useQuery({
     queryKey: ['bookings-search', debouncedBookingSearch],
     queryFn: async () => {
       if (!debouncedBookingSearch) return [];
-      // TODO: Replace with real API call
-      // const response = await api.bookings.search(debouncedBookingSearch);
-      // return response.data;
-      return [
-        {
-          id: '1',
-          booking_id: 'ARCO-2024-001',
-          guest_name: 'John Doe',
-          guest_email: 'john@example.com',
-          check_in_date: '2024-12-10',
-          check_out_date: '2024-12-13',
-          total_price: 900,
-          nights: 3,
-          status: 'confirmed',
-        },
-      ];
+      const response = await api.bookings.list({ search: debouncedBookingSearch });
+      return response.data;
     },
     enabled: debouncedBookingSearch.length > 2,
+  });
+
+  const createPaymentMutation = useMutation({
+    mutationFn: (data: CreatePaymentForm) => api.paymentRequests.create(data),
+    onSuccess: () => {
+      toast.success('Payment request created successfully');
+      queryClient.invalidateQueries({ queryKey: ['payment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-requests-statistics'] });
+      handleClose();
+    },
+    onError: () => {
+      toast.error('Failed to create payment request');
+    },
   });
 
   const handleBookingSelect = useCallback((booking: Booking) => {
     setSelectedBooking(booking);
     setFormData((prev) => ({
       ...prev,
-      booking_id: booking.id,
+      booking: booking.id,
     }));
     setStep('details');
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (!selectedBooking || !formData.title || !formData.amount || !formData.due_date) {
+    if (!selectedBooking || !formData.type || !formData.amount || !formData.due_date) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    // TODO: Implement create payment request
-    toast.success('Payment request created successfully');
-    queryClient.invalidateQueries({ queryKey: ['payments'] });
-    onClose();
-
-    // Reset form
-    setStep('search');
-    setBookingSearch('');
-    setSelectedBooking(null);
-    setFormData({
-      booking_id: '',
-      title: '',
-      description: '',
-      amount: '',
-      due_date: '',
-    });
-  }, [selectedBooking, formData, onClose, queryClient]);
+    createPaymentMutation.mutate(formData);
+  }, [selectedBooking, formData, createPaymentMutation]);
 
   const handleClose = useCallback(() => {
     setStep('search');
     setBookingSearch('');
     setSelectedBooking(null);
     setFormData({
-      booking_id: '',
-      title: '',
+      booking: '',
+      type: 'remaining_balance',
       description: '',
       amount: '',
       due_date: '',
@@ -867,7 +813,7 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
                     </div>
                   ) : (
                     <div className="divide-y">
-                      {bookings.map((booking) => (
+                      {bookings.map((booking: Booking) => (
                         <button
                           key={booking.id}
                           onClick={() => handleBookingSelect(booking)}
@@ -930,16 +876,20 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
               {/* Payment Details Form */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="title" className="text-gray-900 font-medium">
-                    Title <span className="text-red-500">*</span>
+                  <Label htmlFor="type" className="text-gray-900 font-medium">
+                    Payment Type <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g., Remaining Balance, Security Deposit"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="text-gray-900 mt-1.5"
-                  />
+                  <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select payment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="deposit">Security Deposit</SelectItem>
+                      <SelectItem value="remaining_balance">Remaining Balance</SelectItem>
+                      <SelectItem value="additional_charge">Additional Charge</SelectItem>
+                      <SelectItem value="custom">Custom Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -1018,23 +968,29 @@ interface MarkPaidModalProps {
 
 function MarkPaidModal({ isOpen, onClose, payment }: MarkPaidModalProps) {
   const queryClient = useQueryClient();
-  const [paymentMethod, setPaymentMethod] = useState<string>('');
+
+  const markPaidMutation = useMutation({
+    mutationFn: (id: string) => api.paymentRequests.markPaid(id),
+    onSuccess: () => {
+      toast.success('Payment marked as paid');
+      queryClient.invalidateQueries({ queryKey: ['payment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-requests-statistics'] });
+      handleClose();
+    },
+    onError: () => {
+      toast.error('Failed to mark payment as paid');
+    },
+  });
 
   const handleSubmit = useCallback(() => {
-    if (!payment || !paymentMethod) {
-      toast.error('Please select a payment method');
+    if (!payment) {
       return;
     }
 
-    // TODO: Implement mark as paid
-    toast.success('Payment marked as paid');
-    queryClient.invalidateQueries({ queryKey: ['payments'] });
-    onClose();
-    setPaymentMethod('');
-  }, [payment, paymentMethod, onClose, queryClient]);
+    markPaidMutation.mutate(payment.id);
+  }, [payment, markPaidMutation]);
 
   const handleClose = useCallback(() => {
-    setPaymentMethod('');
     onClose();
   }, [onClose]);
 
@@ -1053,32 +1009,18 @@ function MarkPaidModal({ isOpen, onClose, payment }: MarkPaidModalProps) {
         <div className="space-y-4">
           {/* Payment Info */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <p className="font-semibold text-gray-900 mb-1">{payment.title}</p>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(payment.amount)}</p>
-            <p className="text-sm text-gray-600 mt-1">{payment.booking_reference}</p>
+            <p className="font-semibold text-gray-900 mb-1">{TYPE_DISPLAY[payment.type] || payment.type}</p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(Number(payment.amount))}</p>
+            <p className="text-sm text-gray-600 mt-1">{payment.booking_id}</p>
           </div>
 
-          {/* Payment Method Selection */}
-          <div>
-            <Label className="text-gray-900 font-medium">Payment Method <span className="text-red-500">*</span></Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="mt-1.5">
-                <SelectValue placeholder="Select payment method" className="text-gray-900" />
-              </SelectTrigger>
-              <SelectContent>
-                {PAYMENT_METHODS.map((method) => {
-                  const Icon = method.icon;
-                  return (
-                    <SelectItem key={method.value} value={method.value} className="text-gray-900">
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" />
-                        {method.label}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex gap-2">
+              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p>This will mark the payment request as paid. The guest will not be charged via the payment link anymore.</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1108,60 +1050,46 @@ interface CancelPaymentModalProps {
 
 function CancelPaymentModal({ isOpen, onClose, payment }: CancelPaymentModalProps) {
   const queryClient = useQueryClient();
-  const [reason, setReason] = useState('');
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => api.paymentRequests.cancelRequest(id),
+    onSuccess: () => {
+      toast.success('Payment request cancelled');
+      queryClient.invalidateQueries({ queryKey: ['payment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-requests-statistics'] });
+      onClose();
+    },
+    onError: () => {
+      toast.error('Failed to cancel payment request');
+    },
+  });
 
   const handleSubmit = useCallback(() => {
-    if (!payment || !reason.trim()) {
-      toast.error('Please provide a reason for cancellation');
+    if (!payment) {
       return;
     }
 
-    // TODO: Check user permissions
-    // TODO: Implement cancel payment
-    toast.success('Payment request cancelled');
-    queryClient.invalidateQueries({ queryKey: ['payments'] });
-    onClose();
-    setReason('');
-  }, [payment, reason, onClose, queryClient]);
-
-  const handleClose = useCallback(() => {
-    setReason('');
-    onClose();
-  }, [onClose]);
+    cancelMutation.mutate(payment.id);
+  }, [payment, cancelMutation]);
 
   if (!payment) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="text-gray-900">Cancel Payment Request</DialogTitle>
           <DialogDescription className="text-gray-700">
-            Why are you cancelling this payment request?
+            Are you sure you want to cancel this payment request?
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Payment Info */}
           <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-            <p className="font-semibold text-gray-900 mb-1">{payment.title}</p>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(payment.amount)}</p>
-            <p className="text-sm text-gray-600 mt-1">{payment.booking_reference}</p>
-          </div>
-
-          {/* Cancellation Reason */}
-          <div>
-            <Label htmlFor="reason" className="text-gray-900 font-medium">
-              Cancellation Reason <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              id="reason"
-              placeholder="Explain why this payment is being cancelled..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={4}
-              className="mt-1.5 text-gray-900"
-            />
+            <p className="font-semibold text-gray-900 mb-1">{TYPE_DISPLAY[payment.type] || payment.type}</p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(Number(payment.amount))}</p>
+            <p className="text-sm text-gray-600 mt-1">{payment.booking_id}</p>
           </div>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -1169,14 +1097,14 @@ function CancelPaymentModal({ isOpen, onClose, payment }: CancelPaymentModalProp
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-yellow-800">
                 <p className="font-semibold mb-1">Warning</p>
-                <p>This action cannot be undone. The guest will be notified that their payment request has been cancelled.</p>
+                <p>This action cannot be undone. The payment link will be deactivated.</p>
               </div>
             </div>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={onClose}>
             Keep Payment Request
           </Button>
           <Button onClick={handleSubmit} variant="destructive">

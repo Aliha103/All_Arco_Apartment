@@ -162,6 +162,19 @@ export const api = {
       apiClient.post(`/payments/${paymentId}/refund/`, data),
   },
 
+  // Payment Requests
+  paymentRequests: {
+    list: (params?: any) => apiClient.get('/payments/requests/', { params }),
+    get: (id: string) => apiClient.get(`/payments/requests/${id}/`),
+    create: (data: any) => apiClient.post('/payments/requests/', data),
+    update: (id: string, data: any) => apiClient.patch(`/payments/requests/${id}/`, data),
+    delete: (id: string) => apiClient.delete(`/payments/requests/${id}/`),
+    sendEmail: (id: string) => apiClient.post(`/payments/requests/${id}/send_email/`),
+    markPaid: (id: string) => apiClient.post(`/payments/requests/${id}/mark_paid/`),
+    cancelRequest: (id: string) => apiClient.post(`/payments/requests/${id}/cancel_request/`),
+    statistics: () => apiClient.get('/payments/requests/statistics/'),
+  },
+
   // Invoices
   invoices: {
     list: (params?: any) => apiClient.get('/invoices/', { params }),
