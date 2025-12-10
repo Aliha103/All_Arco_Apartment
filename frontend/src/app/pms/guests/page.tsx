@@ -98,6 +98,7 @@ interface GuestBooking {
 
 export default function GuestDirectoryPage() {
   const queryClient = useQueryClient();
+  const guestsApi = (api as any).guests;
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,7 +114,7 @@ export default function GuestDirectoryPage() {
   const { data: guestsData, isLoading: loadingGuests } = useQuery({
     queryKey: ['guests'],
     queryFn: async () => {
-      const response = await api.guests.list();
+      const response = await guestsApi.list();
       return response.data;
     },
     refetchInterval: 60000, // Refresh every minute
@@ -135,7 +136,7 @@ export default function GuestDirectoryPage() {
     queryKey: ['guest-notes', selectedGuest?.id],
     queryFn: async () => {
       if (!selectedGuest?.id) return [];
-      const response = await api.guests.notes(selectedGuest.id);
+      const response = await guestsApi.notes(selectedGuest.id);
       return response.data;
     },
     enabled: !!selectedGuest?.id,
@@ -147,7 +148,7 @@ export default function GuestDirectoryPage() {
 
   const addNoteMutation = useMutation({
     mutationFn: async ({ guestId, note }: { guestId: string; note: string }) => {
-      return await api.guests.addNote(guestId, note);
+      return await guestsApi.addNote(guestId, note);
     },
     onSuccess: () => {
       toast.success('Note added successfully');
