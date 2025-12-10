@@ -340,13 +340,5 @@ export default function PricingPage() {
         />
       </div>
     </div>
-
-      {/* Pricing Rule Modal */}
-      <PricingRuleModal
-        isOpen={isRuleModalOpen}
-        onClose={handleRuleModalClose}
-        rule={selectedRule}
-      />
-    </div>
   );
 }
