@@ -524,8 +524,40 @@ def stripe_webhook(request):
         session = event['data']['object']
         metadata = session.get('metadata') or {}
         booking_id = metadata.get('booking_id')
+        payment_request_id = metadata.get('payment_request_id')
         is_city_tax = metadata.get('city_tax') == '1'
-        
+
+        # Handle Payment Request (Payment Link) checkout
+        if payment_request_id:
+            try:
+                from .models import PaymentRequest
+                payment_request = PaymentRequest.objects.get(id=payment_request_id)
+
+                # Mark as paid (will also send confirmation email)
+                payment_request.mark_as_paid()
+
+                # Archive the Stripe Payment Link to prevent reuse
+                try:
+                    if payment_request.stripe_payment_link_id:
+                        stripe.PaymentLink.modify(
+                            payment_request.stripe_payment_link_id,
+                            active=False
+                        )
+                except Exception as e:
+                    # Log but don't fail if link archiving fails
+                    print(f"Failed to archive payment link: {e}")
+
+                # Send confirmation email
+                try:
+                    from apps.emails.services import send_payment_confirmation_email
+                    send_payment_confirmation_email(payment_request)
+                except Exception:
+                    pass
+
+            except PaymentRequest.DoesNotExist:
+                pass
+
+        # Handle regular booking checkout
         if booking_id:
             try:
                 booking = Booking.objects.get(id=booking_id)

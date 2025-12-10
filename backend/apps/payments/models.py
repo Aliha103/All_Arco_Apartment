@@ -189,15 +189,39 @@ class PaymentRequest(models.Model):
         return self.booking.guest_email
 
     def mark_as_paid(self):
-        """Mark payment request as paid"""
+        """Mark payment request as paid and deactivate payment link"""
         from django.utils import timezone
+        import stripe
+
         self.status = 'paid'
         self.paid_at = timezone.now()
         self.save(update_fields=['status', 'paid_at', 'updated_at'])
 
+        # Deactivate Stripe payment link to prevent duplicate payments
+        if self.stripe_payment_link_id:
+            try:
+                stripe.PaymentLink.modify(
+                    self.stripe_payment_link_id,
+                    active=False
+                )
+            except Exception:
+                pass  # Don't fail if link deactivation fails
+
     def cancel(self):
-        """Cancel payment request"""
+        """Cancel payment request and deactivate payment link"""
         from django.utils import timezone
+        import stripe
+
         self.status = 'cancelled'
         self.cancelled_at = timezone.now()
         self.save(update_fields=['status', 'cancelled_at', 'updated_at'])
+
+        # Deactivate Stripe payment link to prevent accidental payments
+        if self.stripe_payment_link_id:
+            try:
+                stripe.PaymentLink.modify(
+                    self.stripe_payment_link_id,
+                    active=False
+                )
+            except Exception:
+                pass  # Don't fail if link deactivation fails
