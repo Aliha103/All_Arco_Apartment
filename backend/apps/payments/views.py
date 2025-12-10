@@ -8,8 +8,8 @@ from django.db.models import Q
 from django.utils import timezone
 from decimal import Decimal
 import stripe
-from .models import Payment, Refund
-from .serializers import PaymentSerializer, RefundSerializer
+from .models import Payment, Refund, PaymentRequest
+from .serializers import PaymentSerializer, RefundSerializer, PaymentRequestSerializer
 from apps.bookings.models import Booking, BookingAttempt
 from apps.bookings.serializers import BookingSerializer
 from apps.emails.services import (
@@ -628,5 +628,158 @@ def stripe_webhook(request):
                 )
             except Booking.DoesNotExist:
                 pass
-    
+
     return Response({'status': 'success'})
+
+
+# ============================================================================
+# PAYMENT REQUEST VIEWS
+# ============================================================================
+
+class PaymentRequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing payment requests with Stripe payment links.
+    """
+    queryset = PaymentRequest.objects.all()
+    serializer_class = PaymentRequestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Filter payment requests based on query params"""
+        queryset = super().get_queryset()
+
+        # Filter by status
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            if status_filter == 'unpaid':
+                # Show pending and overdue requests
+                queryset = queryset.filter(status__in=['pending', 'overdue'])
+            else:
+                queryset = queryset.filter(status=status_filter)
+
+        # Filter by booking
+        booking_id = self.request.query_params.get('booking')
+        if booking_id:
+            queryset = queryset.filter(booking__id=booking_id)
+
+        # Search by booking ID or guest name/email
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(booking__booking_id__icontains=search) |
+                Q(booking__guest_name__icontains=search) |
+                Q(booking__guest_email__icontains=search)
+            )
+
+        return queryset.select_related('booking', 'created_by')
+
+    def perform_create(self, serializer):
+        """Create payment request and generate Stripe payment link"""
+        payment_request = serializer.save(created_by=self.request.user)
+
+        # Generate Stripe payment link
+        try:
+            link = stripe.PaymentLink.create(
+                line_items=[{
+                    'price_data': {
+                        'currency': payment_request.currency.lower(),
+                        'product_data': {
+                            'name': f"{payment_request.get_type_display()} - {payment_request.booking.booking_id}",
+                            'description': payment_request.description,
+                        },
+                        'unit_amount': int(payment_request.amount * 100),  # Convert to cents
+                    },
+                    'quantity': 1,
+                }],
+                metadata={
+                    'payment_request_id': str(payment_request.id),
+                    'booking_id': str(payment_request.booking.id),
+                    'type': payment_request.type,
+                },
+            )
+
+            payment_request.stripe_payment_link_id = link.id
+            payment_request.stripe_payment_link_url = link.url
+            payment_request.save(update_fields=['stripe_payment_link_id', 'stripe_payment_link_url'])
+
+        except Exception as e:
+            # If Stripe fails, still create the payment request but without link
+            print(f"Failed to create Stripe payment link: {e}")
+
+    @action(detail=True, methods=['post'])
+    def send_email(self, request, pk=None):
+        """Send payment request email to guest with payment link"""
+        payment_request = self.get_object()
+
+        if not payment_request.stripe_payment_link_url:
+            return Response(
+                {'error': 'No payment link available'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if payment_request.status != 'pending':
+            return Response(
+                {'error': 'Payment request is not pending'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Send email
+        from apps.emails.services import send_payment_request_email
+        try:
+            send_payment_request_email(payment_request)
+            return Response({'message': 'Email sent successfully'})
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to send email: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'])
+    def mark_paid(self, request, pk=None):
+        """Manually mark payment request as paid"""
+        payment_request = self.get_object()
+
+        if payment_request.status == 'paid':
+            return Response(
+                {'error': 'Payment request is already paid'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        payment_request.mark_as_paid()
+        serializer = self.get_serializer(payment_request)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def cancel_request(self, request, pk=None):
+        """Cancel payment request"""
+        payment_request = self.get_object()
+
+        if payment_request.status == 'paid':
+            return Response(
+                {'error': 'Cannot cancel paid payment request'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        payment_request.cancel()
+        serializer = self.get_serializer(payment_request)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """Get payment request statistics"""
+        total_pending = PaymentRequest.objects.filter(status='pending')
+        total_overdue = PaymentRequest.objects.filter(status='overdue')
+        total_paid = PaymentRequest.objects.filter(status='paid')
+
+        pending_amount = sum(float(pr.amount) for pr in total_pending)
+        overdue_amount = sum(float(pr.amount) for pr in total_overdue)
+        paid_amount = sum(float(pr.amount) for pr in total_paid)
+
+        return Response({
+            'total_open_balance': pending_amount + overdue_amount,
+            'pending_count': total_pending.count(),
+            'overdue_amount': overdue_amount,
+            'overdue_count': total_overdue.count(),
+            'total_collected': paid_amount,
+            'paid_count': total_paid.count(),
+        })

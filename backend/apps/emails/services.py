@@ -456,6 +456,119 @@ def send_cleaning_cancelled_notification(cleaning_schedule, reason=''):
         from_name="All'Arco Apartment",
         subject=f"Cleaning Cancelled - {cleaning_schedule.scheduled_date}",
         html_body=html_body,
-        booking=cleaning_schedule.booking,
+        booking=cleaning_schedule.assigned_to,
         sender_type='support'
+    )
+
+
+def send_payment_request_email(payment_request):
+    """
+    Send payment request email to guest with Stripe payment link.
+
+    Args:
+        payment_request: PaymentRequest instance with stripe_payment_link_url
+    """
+    if not payment_request.guest_email:
+        return False
+
+    due_date_text = payment_request.due_date.strftime('%B %d, %Y') if payment_request.due_date else 'as soon as possible'
+
+    html_body = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #1e40af;">Payment Request</h1>
+                <p>Dear {payment_request.guest_name},</p>
+                <p>We have a payment request for your booking <strong>{payment_request.booking.booking_id}</strong>.</p>
+
+                <div style="background: #eff6ff; border-left: 4px solid #1e40af; padding: 20px; margin: 20px 0;">
+                    <h2 style="margin-top: 0; color: #1e40af;">Payment Details</h2>
+                    <p><strong>Type:</strong> {payment_request.get_type_display()}</p>
+                    <p><strong>Amount:</strong> €{payment_request.amount}</p>
+                    <p><strong>Description:</strong> {payment_request.description}</p>
+                    <p><strong>Due Date:</strong> {due_date_text}</p>
+                </div>
+
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{payment_request.stripe_payment_link_url}"
+                       style="background: #1e40af; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
+                        Pay Now
+                    </a>
+                </div>
+
+                <p>Click the button above to securely pay with credit/debit card through Stripe.</p>
+
+                <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                    This payment is for booking <strong>{payment_request.booking.booking_id}</strong><br>
+                    Check-in: {payment_request.booking.check_in_date.strftime('%B %d, %Y')}<br>
+                    Check-out: {payment_request.booking.check_out_date.strftime('%B %d, %Y')}
+                </p>
+
+                <p style="margin-top: 30px;">Best regards,<br>All'Arco Apartment Team</p>
+            </div>
+        </body>
+    </html>
+    """
+
+    return ZeptomailService.send_email(
+        to_email=payment_request.guest_email,
+        from_email='payments@allarcoapartment.com',
+        from_name="All'Arco Apartment - Payments",
+        subject=f"Payment Request - {payment_request.booking.booking_id}",
+        html_body=html_body,
+        booking=payment_request.booking,
+        sender_type='booking'
+    )
+
+
+def send_payment_confirmation_email(payment_request):
+    """
+    Send thank you email to guest after successful payment.
+
+    Args:
+        payment_request: PaymentRequest instance that was paid
+    """
+    if not payment_request.guest_email or payment_request.status != 'paid':
+        return False
+
+    html_body = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #10b981;">Payment Received - Thank You!</h1>
+                <p>Dear {payment_request.guest_name},</p>
+                <p>We have successfully received your payment for booking <strong>{payment_request.booking.booking_id}</strong>.</p>
+
+                <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0;">
+                    <h2 style="margin-top: 0; color: #059669;">Payment Confirmed</h2>
+                    <p><strong>Type:</strong> {payment_request.get_type_display()}</p>
+                    <p><strong>Amount:</strong> €{payment_request.amount}</p>
+                    <p><strong>Paid On:</strong> {payment_request.paid_at.strftime('%B %d, %Y at %H:%M') if payment_request.paid_at else 'Recently'}</p>
+                </div>
+
+                <p>Thank you for your prompt payment. Your booking is now fully confirmed.</p>
+
+                <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                    Booking Details:<br>
+                    <strong>Booking ID:</strong> {payment_request.booking.booking_id}<br>
+                    <strong>Check-in:</strong> {payment_request.booking.check_in_date.strftime('%B %d, %Y')}<br>
+                    <strong>Check-out:</strong> {payment_request.booking.check_out_date.strftime('%B %d, %Y')}
+                </p>
+
+                <p>We look forward to welcoming you!</p>
+
+                <p style="margin-top: 30px;">Best regards,<br>All'Arco Apartment Team</p>
+            </div>
+        </body>
+    </html>
+    """
+
+    return ZeptomailService.send_email(
+        to_email=payment_request.guest_email,
+        from_email='payments@allarcoapartment.com',
+        from_name="All'Arco Apartment - Payments",
+        subject=f"Payment Confirmed - Thank You!",
+        html_body=html_body,
+        booking=payment_request.booking,
+        sender_type='booking'
     )
