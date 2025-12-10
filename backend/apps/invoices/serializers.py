@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Invoice, Company
+from .models import Invoice, Company, CompanyNote
 from apps.bookings.serializers import BookingListSerializer
 
 
@@ -17,6 +17,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
     extra_guest_fee = serializers.SerializerMethodField()
     tourist_tax = serializers.SerializerMethodField()
     issued_at = serializers.DateField(source='issue_date', read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+    calculated_total = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -34,6 +37,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'issued_at',
             'amount',
             'total_amount',
+            'calculated_total',
             'accommodation_total',
             'cleaning_fee',
             'extra_guest_fee',
@@ -41,6 +45,14 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'status',
             'payment_method',
             'pdf_url',
+            'pdf_file',
+            'download_url',
+            'line_items',
+            'sent_to_email',
+            'sent_count',
+            'last_sent_at',
+            'created_by',
+            'created_by_name',
             'sent_at',
             'paid_at',
             'notes',
@@ -50,7 +62,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'guest_email',
             'company_name',
         ]
-        read_only_fields = ['id', 'invoice_number', 'created_at', 'updated_at', 'issued_at', 'booking_details', 'company_details']
+        read_only_fields = [
+            'id',
+            'invoice_number',
+            'created_at',
+            'updated_at',
+            'issued_at',
+            'booking_details',
+            'company_details',
+            'calculated_total',
+            'download_url',
+            'created_by_name',
+            'pdf_file'
+        ]
 
     def get_guest_name(self, obj):
         """Get guest name from linked booking."""
@@ -122,14 +146,30 @@ class InvoiceSerializer(serializers.ModelSerializer):
             return str(getattr(obj.booking, 'tourist_tax', 0))
         return "0.00"
 
+    def get_created_by_name(self, obj):
+        """Get name of user who created the invoice."""
+        if obj.created_by:
+            return obj.created_by.get_full_name() or obj.created_by.email
+        return None
+
+    def get_calculated_total(self, obj):
+        """Calculate total from line_items JSON."""
+        return str(obj.calculate_total())
+
+    def get_download_url(self, obj):
+        """Get URL for PDF download."""
+        return obj.get_download_url()
+
     def create(self, validated_data):
         """
         Ensure amount is set from booking total if not provided.
         Prevent duplicate invoices/receipts of the same type for the same booking.
+        Auto-generate line items if not provided.
         """
         booking = validated_data.get('booking')
         amount = validated_data.get('amount')
         doc_type = validated_data.get('type', 'receipt')
+        line_items = validated_data.get('line_items', [])
 
         # Check if document of same type already exists for this booking
         if booking:
@@ -154,12 +194,110 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if booking and (amount is None or float(amount) == 0):
             validated_data['amount'] = booking.total_price
 
+        # Set created_by from context if available
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['created_by'] = request.user
+
         invoice = super().create(validated_data)
+
+        # Auto-generate line items if not provided
+        if not line_items and booking:
+            invoice.line_items = invoice.generate_line_items_from_booking()
+            invoice.save(update_fields=['line_items'])
+
         return invoice
 
 
 class CompanySerializer(serializers.ModelSerializer):
+    """Serializer for Company model with CRM features."""
+    created_by_name = serializers.SerializerMethodField()
+    recent_invoices = serializers.SerializerMethodField()
+
     class Meta:
         model = Company
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
+        fields = [
+            'id',
+            'name',
+            'vat_number',
+            'sdi',
+            'tax_code',
+            'address',
+            'country',
+            'email',
+            'phone',
+            'website',
+            'contact_person_name',
+            'contact_person_email',
+            'contact_person_phone',
+            'notes',
+            'tags',
+            'is_active',
+            'invoice_count',
+            'total_invoiced',
+            'last_invoice_date',
+            'created_by',
+            'created_by_name',
+            'created_at',
+            'updated_at',
+            'recent_invoices',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+            'updated_at',
+            'created_by',
+            'created_by_name',
+            'invoice_count',
+            'total_invoiced',
+            'last_invoice_date',
+            'recent_invoices',
+        ]
+
+    def get_created_by_name(self, obj):
+        """Get name of user who created the company."""
+        if obj.created_by:
+            return obj.created_by.get_full_name() or obj.created_by.email
+        return None
+
+    def get_recent_invoices(self, obj):
+        """Get recent invoices for this company (last 5)."""
+        # Only include in detail view to avoid N+1 queries
+        if self.context.get('include_recent_invoices'):
+            from apps.invoices.models import Invoice
+            recent = Invoice.objects.filter(company=obj).order_by('-issue_date')[:5]
+            return InvoiceSerializer(recent, many=True, context=self.context).data
+        return None
+
+
+class CompanyNoteSerializer(serializers.ModelSerializer):
+    """Serializer for CompanyNote model (CRM feature)."""
+    created_by_name = serializers.SerializerMethodField()
+    note_type_display = serializers.CharField(source='get_note_type_display', read_only=True)
+
+    class Meta:
+        model = CompanyNote
+        fields = [
+            'id',
+            'company',
+            'created_by',
+            'created_by_name',
+            'note_type',
+            'note_type_display',
+            'content',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_by', 'created_by_name', 'created_at', 'note_type_display']
+
+    def get_created_by_name(self, obj):
+        """Get name of user who created the note."""
+        if obj.created_by:
+            return obj.created_by.get_full_name() or obj.created_by.email
+        return None
+
+    def create(self, validated_data):
+        """Set created_by from context."""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['created_by'] = request.user
+        return super().create(validated_data)

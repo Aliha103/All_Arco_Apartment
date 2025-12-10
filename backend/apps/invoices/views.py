@@ -40,6 +40,21 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice = self.get_object()
 
         try:
+            # Use new PDF service if line_items exist, otherwise legacy code
+            if invoice.line_items or invoice.pdf_file:
+                # Generate or retrieve PDF using new service
+                if not invoice.pdf_file:
+                    invoice.generate_pdf_file()
+                    invoice.save()
+
+                # Serve PDF file
+                is_invoice = invoice.type == 'invoice'
+                filename_prefix = 'invoice' if is_invoice else 'receipt'
+                response = HttpResponse(invoice.pdf_file.read(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{filename_prefix}-{invoice.invoice_number}.pdf"'
+                return response
+
+            # Legacy PDF generation for backward compatibility
             import os
             from io import BytesIO
             from reportlab.lib.pagesizes import A4
