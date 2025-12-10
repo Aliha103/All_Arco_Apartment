@@ -56,6 +56,8 @@ COPY --from=backend-builder /usr/local/bin/celery /usr/local/bin/celery
 
 # Copy backend code
 COPY backend/ ./backend/
+# Convenience manage.py at /app for deployment commands
+COPY manage.py ./manage.py
 
 # Copy built frontend from builder
 COPY --from=frontend-builder /app/frontend/.next ./frontend/.next
