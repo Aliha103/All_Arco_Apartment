@@ -164,7 +164,7 @@ export default function PaymentsPage() {
     queryKey: ['payment-requests'],
     queryFn: async () => {
       const response = await api.paymentRequests.list();
-      return response.data;
+      return response.data?.results || response.data || [];
     },
   });
 
@@ -181,7 +181,8 @@ export default function PaymentsPage() {
   // ============================================================================
 
   const filteredPayments = useMemo(() => {
-    let filtered = [...payments];
+    const safePayments: PaymentRequest[] = Array.isArray(payments) ? payments : [];
+    let filtered = [...safePayments];
 
     // Search filter
     if (debouncedSearch) {
