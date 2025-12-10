@@ -557,7 +557,6 @@ function GuestRow({ guest, isSelected, onClick }: GuestRowProps) {
         {/* Stats */}
         <div className="flex-shrink-0 text-right">
           <div className="text-sm font-medium text-gray-900">{guest.total_bookings} bookings</div>
-          <div className="text-xs text-gray-500">{formatCurrency(parseFloat(guest.total_spent || '0'))}</div>
         </div>
 
         <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
@@ -742,10 +741,6 @@ function GuestDetailPanel({ guest, bookings, notes, newNote, onNewNoteChange, on
                         <div>
                           <p className="text-gray-600">Guests</p>
                           <p className="font-medium text-gray-900">{booking.number_of_guests}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <p className="text-gray-600">Total</p>
-                          <p className="text-lg font-bold text-gray-900">{formatCurrency(parseFloat(booking.total_price))}</p>
                         </div>
                       </div>
                     </CardContent>
