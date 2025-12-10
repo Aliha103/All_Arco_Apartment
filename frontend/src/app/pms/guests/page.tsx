@@ -7,7 +7,6 @@ import {
   Users,
   Star,
   TrendingUp,
-  DollarSign,
   UserCheck,
   Mail,
   Phone,
@@ -36,7 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 
 // ============================================================================
@@ -172,7 +171,6 @@ export default function GuestDirectoryPage() {
   const stats = useMemo(() => {
     const totalGuests = guests.length;
     const totalBookings = guests.reduce((sum, g) => sum + (g.total_bookings || 0), 0);
-    const totalSpent = guests.reduce((sum, g) => sum + parseFloat(g.total_spent || '0'), 0);
     const avgBookingsPerGuest = totalGuests > 0 ? (totalBookings / totalGuests).toFixed(1) : '0';
     const onlineCheckins = guests.filter((g) => g.online_checkin).length;
     const vipGuests = guests.filter((g) => g.is_vip).length;
@@ -180,7 +178,6 @@ export default function GuestDirectoryPage() {
     return {
       totalGuests,
       totalBookings,
-      totalSpent,
       avgBookingsPerGuest,
       onlineCheckins,
       vipGuests,
@@ -237,14 +234,13 @@ export default function GuestDirectoryPage() {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Nationality', 'Total Bookings', 'Total Spent', 'VIP'];
+    const headers = ['Name', 'Email', 'Phone', 'Nationality', 'Total Bookings', 'VIP'];
     const rows = filteredGuests.map((g) => [
       `${g.first_name} ${g.last_name}`,
       g.email,
       g.phone || '',
       g.nationality || '',
       g.total_bookings,
-      g.total_spent,
       g.is_vip ? 'Yes' : 'No',
     ]);
 
@@ -297,7 +293,7 @@ export default function GuestDirectoryPage() {
 
       <div className="max-w-[1800px] mx-auto px-6 py-6">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           <StatCard
             icon={Users}
             label="Total Guests"
@@ -315,18 +311,12 @@ export default function GuestDirectoryPage() {
             bgColor="bg-green-50"
           />
           <StatCard
-            icon={DollarSign}
-            label="Total Revenue"
-            value={formatCurrency(stats.totalSpent)}
-            sublabel="All-time"
-            iconColor="text-purple-600"
-            bgColor="bg-purple-50"
-          />
-          <StatCard
             icon={UserCheck}
             label="Online Check-ins"
             value={stats.onlineCheckins.toString()}
-            sublabel={`${((stats.onlineCheckins / stats.totalGuests) * 100 || 0).toFixed(0)}% completion`}
+            sublabel={`${
+              stats.totalGuests ? ((stats.onlineCheckins / stats.totalGuests) * 100).toFixed(0) : '0'
+            }% completion`}
             iconColor="text-emerald-600"
             bgColor="bg-emerald-50"
           />
