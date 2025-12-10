@@ -46,7 +46,8 @@ interface CleaningSchedule {
     id: string;
     booking_id: string;
     guest_name: string;
-  };
+    status?: string; // Add booking status
+  } | null;
   scheduled_date: string;
   scheduled_time: string;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
@@ -351,7 +352,11 @@ export default function CleaningPage() {
     if (!cleanings) return [];
     let filtered = [...cleanings];
 
-    if (filterStatus !== 'all') {
+    // SMART FILTER: Hide cancelled cleanings by default (unless specifically filtering for them)
+    if (filterStatus === 'all') {
+      // By default, don't show cancelled cleanings - they're already handled
+      filtered = filtered.filter((c) => c.status !== 'cancelled');
+    } else if (filterStatus !== 'all') {
       filtered = filtered.filter((c) => c.status === filterStatus);
     }
 
@@ -647,10 +652,18 @@ export default function CleaningPage() {
                   const priorityConfig = PRIORITY_CONFIG[cleaning.priority];
                   const StatusIcon = statusConfig.icon;
 
+                  // Check if booking is cancelled or deleted (orphaned)
+                  const isBookingCancelled = cleaning.booking?.status === 'cancelled' || cleaning.booking?.status === 'no_show';
+                  const isOrphaned = cleaning.booking === null && cleaning.status !== 'cancelled';
+
                   return (
                     <div
                       key={cleaning.id}
-                      className="border-2 border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all bg-white"
+                      className={`border-2 rounded-xl p-5 hover:shadow-md transition-all ${
+                        isBookingCancelled || isOrphaned
+                          ? 'border-red-300 bg-red-50'
+                          : 'border-gray-200 bg-white hover:border-blue-300'
+                      }`}
                     >
                       <div className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1 space-y-3">
@@ -660,9 +673,21 @@ export default function CleaningPage() {
                                 {cleaning.booking?.guest_name || 'General Cleaning'}
                               </h3>
                               {cleaning.booking && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  Booking: <span className="font-medium">{cleaning.booking.booking_id}</span>
-                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <p className="text-sm text-gray-600">
+                                    Booking: <span className="font-medium">{cleaning.booking.booking_id}</span>
+                                  </p>
+                                  {isBookingCancelled && (
+                                    <Badge className="bg-red-100 text-red-700 border-red-300 text-xs">
+                                      Booking {cleaning.booking.status === 'no_show' ? 'No-Show' : 'Cancelled'}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                              {isOrphaned && (
+                                <Badge className="bg-red-100 text-red-700 border-red-300 text-xs mt-1">
+                                  ⚠️ Orphaned - Booking Deleted
+                                </Badge>
                               )}
                             </div>
                             <div className="flex gap-2">

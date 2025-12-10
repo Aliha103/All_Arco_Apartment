@@ -407,3 +407,55 @@ def send_password_reset_email(user, reset_code):
         html_body=html_body,
         sender_type='support'
     )
+
+
+def send_cleaning_cancelled_notification(cleaning_schedule, reason=''):
+    """
+    Send email notification to assigned cleaner when their cleaning task is cancelled.
+
+    Args:
+        cleaning_schedule: CleaningSchedule instance
+        reason: Reason for cancellation (e.g., "Booking cancelled")
+    """
+    # Only send if cleaner is assigned
+    if not cleaning_schedule.assigned_to or not cleaning_schedule.assigned_to.email:
+        return False
+
+    cleaner_name = cleaning_schedule.assigned_to.get_full_name() or 'Team Member'
+    booking_ref = f" (Booking: {cleaning_schedule.booking.booking_id})" if cleaning_schedule.booking else ""
+
+    html_body = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #dc2626;">Cleaning Task Cancelled</h1>
+                <p>Hi {cleaner_name},</p>
+                <p>A cleaning task that was assigned to you has been cancelled.</p>
+
+                <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 20px; margin: 20px 0;">
+                    <h2 style="margin-top: 0; color: #dc2626;">Cancelled Cleaning</h2>
+                    <p><strong>Scheduled Date:</strong> {cleaning_schedule.scheduled_date} at {cleaning_schedule.scheduled_time}</p>
+                    <p><strong>Priority:</strong> {cleaning_schedule.get_priority_display()}</p>
+                    {f'<p><strong>Booking:</strong> {cleaning_schedule.booking.booking_id}</p>' if cleaning_schedule.booking else ''}
+                    {f'<p><strong>Guest:</strong> {cleaning_schedule.booking.guest_name}</p>' if cleaning_schedule.booking else ''}
+                    {f'<p><strong>Reason:</strong> {reason}</p>' if reason else ''}
+                </div>
+
+                <p>This task has been removed from your schedule. No action is required from you.</p>
+                <p>If you have any questions, please contact the management team.</p>
+
+                <p style="margin-top: 30px;">Best regards,<br>All'Arco Apartment Management</p>
+            </div>
+        </body>
+    </html>
+    """
+
+    return ZeptomailService.send_email(
+        to_email=cleaning_schedule.assigned_to.email,
+        from_email='support@allarcoapartment.com',
+        from_name="All'Arco Apartment",
+        subject=f"Cleaning Cancelled - {cleaning_schedule.scheduled_date}",
+        html_body=html_body,
+        booking=cleaning_schedule.booking,
+        sender_type='support'
+    )

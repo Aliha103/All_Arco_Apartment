@@ -151,6 +151,28 @@ class CleaningSchedule(models.Model):
         self.status = 'assigned'
         self.save(update_fields=['assigned_to', 'assigned_at', 'status', 'updated_at'])
 
+    def cancel(self, reason=''):
+        """Cancel this cleaning schedule and all associated tasks"""
+        # Only cancel if not already completed
+        if self.status != 'completed':
+            self.status = 'cancelled'
+            self.notes = f"{self.notes}\n\nCancelled: {reason}".strip() if reason else self.notes
+            self.save(update_fields=['status', 'notes', 'updated_at'])
+            return True
+        return False
+
+    @property
+    def is_active(self):
+        """Check if this cleaning is active (not cancelled or completed)"""
+        return self.status not in ['cancelled', 'completed']
+
+    @property
+    def has_valid_booking(self):
+        """Check if associated booking exists and is not cancelled/no-show"""
+        if not self.booking:
+            return False
+        return self.booking.status not in ['cancelled', 'no_show']
+
 
 class CleaningTask(models.Model):
     """

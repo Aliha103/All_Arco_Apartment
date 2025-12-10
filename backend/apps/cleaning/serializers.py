@@ -43,6 +43,7 @@ class CleaningScheduleSerializer(serializers.ModelSerializer):
 
     tasks = CleaningTaskSerializer(many=True, read_only=True)
     booking_details = BookingSerializer(source='booking', read_only=True)
+    booking = serializers.SerializerMethodField()  # Override to include status
     assigned_to_name = serializers.SerializerMethodField()
     inspected_by_name = serializers.SerializerMethodField()
     task_completion_rate = serializers.SerializerMethodField()
@@ -93,6 +94,17 @@ class CleaningScheduleSerializer(serializers.ModelSerializer):
     def get_inspected_by_name(self, obj):
         if obj.inspected_by:
             return f"{obj.inspected_by.first_name} {obj.inspected_by.last_name}".strip()
+        return None
+
+    def get_booking(self, obj):
+        """Return essential booking info including status for smart filtering."""
+        if obj.booking:
+            return {
+                'id': str(obj.booking.id),
+                'booking_id': obj.booking.booking_id,
+                'guest_name': obj.booking.guest_name,
+                'status': obj.booking.status,  # IMPORTANT: Include booking status
+            }
         return None
 
     def get_task_completion_rate(self, obj):

@@ -32,8 +32,20 @@ class CleaningScheduleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filter queryset based on query parameters.
+
+        NEW: Supports 'active_only' filter to exclude cleanings with cancelled/deleted bookings.
         """
         queryset = super().get_queryset()
+
+        # SMART FILTER: Active cleanings only (exclude cancelled bookings and orphaned cleanings)
+        active_only = self.request.query_params.get('active_only', 'false').lower() == 'true'
+        if active_only:
+            # Exclude cleanings that are cancelled
+            queryset = queryset.exclude(status='cancelled')
+            # Exclude cleanings where booking is cancelled or no-show
+            queryset = queryset.exclude(
+                Q(booking__status='cancelled') | Q(booking__status='no_show')
+            )
 
         # Filter by status
         status_param = self.request.query_params.get('status')
