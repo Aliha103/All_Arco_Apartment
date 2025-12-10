@@ -218,7 +218,7 @@ export default function FindBookingPage() {
   }, [isAuthenticated, router]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#fdf8ec] via-[#f7f0e0] to-white text-slate-900">
+    <div className="min-h-screen flex flex-col bg-white text-gray-900">
       <SiteNav />
 
       <main className="flex-1 pt-6 pb-16">
