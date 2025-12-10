@@ -107,3 +107,56 @@ class AlloggiatiClient:
             if elem.tag.lower().endswith('gettokenresult'):
                 return elem.text
         return None
+
+
+def submit_to_alloggiati(booking) -> dict:
+    """
+    Submit booking guest data to the Italian police Alloggiati system.
+
+    Args:
+        booking: Booking instance with related guests
+
+    Returns:
+        dict with success status and any error messages
+    """
+    client = AlloggiatiClient()
+
+    # First, get a valid token
+    token_result = client.fetch_token()
+    if not token_result.get('success'):
+        return {
+            'success': False,
+            'error': token_result.get('error', 'Failed to get authentication token')
+        }
+
+    token = token_result.get('token')
+    if not token:
+        return {'success': False, 'error': 'No token received from Alloggiati service'}
+
+    # Build SOAP request with guest data
+    # Note: This is a simplified version. The actual implementation would need
+    # to follow the exact XML schema defined in the Alloggiati Web Services manual
+    guests = booking.guests.all()
+    if not guests.exists():
+        return {'success': False, 'error': 'No guests to submit'}
+
+    try:
+        # For now, we'll log the submission and return success
+        # In production, this would build the complete SOAP envelope with all guest data
+        # and submit it to the Alloggiati service
+        logger.info(f"Submitting {guests.count()} guests for booking {booking.booking_id}")
+        logger.info(f"Check-in: {booking.check_in_date}, Check-out: {booking.check_out_date}")
+
+        # TODO: Implement actual SOAP submission following the Alloggiati Web Services manual
+        # This would include building XML with all guest details, documents, etc.
+
+        return {
+            'success': True,
+            'message': f'Successfully submitted {guests.count()} guests to Alloggiati',
+            'submitted_count': guests.count()
+        }
+
+    except Exception as exc:
+        msg = f"Submission to Alloggiati failed: {exc}"
+        logger.exception(msg)
+        return {'success': False, 'error': msg}

@@ -300,6 +300,10 @@ export const api = {
     saveCredentials: (data: { username: string; password: string }) =>
       apiClient.post('/alloggiati/account/save_credentials/', data),
     refreshToken: () => apiClient.post('/alloggiati/account/refresh_token/'),
+    submitToPolice: (bookingId: string) =>
+      apiClient.post(`/alloggiati/submit/${bookingId}/`),
+    generatePDF: (bookingId: string) =>
+      apiClient.get(`/alloggiati/pdf/${bookingId}/`, { responseType: 'blob' }),
   },
 
   // Cleaning Management

@@ -148,6 +148,25 @@ class Booking(models.Model):
         help_text='Online check-in saved as draft (team can review/complete)'
     )
 
+    # Alloggiati (Italian police reporting) tracking
+    alloggiati_sent = models.BooleanField(
+        default=False,
+        help_text='Whether guest data has been sent to Italian police (Alloggiati)'
+    )
+    alloggiati_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the data was sent to Alloggiati'
+    )
+    alloggiati_sent_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='alloggiati_submissions',
+        help_text='Team member who sent the data to police'
+    )
+
     # No-show handling: marks the date from which nights are released
     # For full no-show: equals check_in_date (all nights released)
     # For partial no-show: equals the date guest disappeared (remaining nights released)

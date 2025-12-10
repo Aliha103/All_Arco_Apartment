@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Users,
@@ -15,61 +14,34 @@ import {
   MapPin,
   Calendar,
   FileText,
-  Upload,
   X,
   ChevronRight,
   Filter,
   Download,
-  Eye,
-  Plus,
   User,
   Clock,
+  CheckCircle2,
+  Building2,
+  Globe,
+  CreditCard,
+  MessageSquare,
+  AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 import api from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 
-// Types
-interface GuestDocument {
-  id: string;
-  document_type: 'passport' | 'id' | 'visa' | 'other';
-  document_number?: string;
-  file_url: string;
-  file_name: string;
-  uploaded_at: string;
-}
-
-interface GuestPhoto {
-  id: string;
-  photo_url: string;
-  uploaded_at: string;
-  description?: string;
-}
-
-interface GuestNote {
-  id: string;
-  note: string;
-  created_by: string;
-  created_at: string;
-}
-
-interface GuestBooking {
-  id: string;
-  confirmation_code: string;
-  check_in: string;
-  check_out: string;
-  total_amount: string;
-  status: string;
-  guests_count: number;
-}
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface Guest {
   id: string;
@@ -97,1201 +69,771 @@ interface Guest {
   total_guests_count?: number;
   online_bookings?: number;
   online_checkin?: boolean;
-  date_joined: string;
   created_at: string;
-  avatar_url?: string;
-  documents?: GuestDocument[];
-  photos?: GuestPhoto[];
-  notes?: GuestNote[];
-  bookings?: GuestBooking[];
+  eta_checkin_time?: string;
+  eta_checkout_time?: string;
 }
 
-// Statistics Card Component
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  trend,
-  color = 'blue'
-}: {
-  title: string;
-  value: string | number;
-  icon: any;
-  trend?: string;
-  color?: string;
-}) {
-  const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    orange: 'bg-orange-500',
-    pink: 'bg-pink-500',
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">{title}</p>
-              <p className="text-2xl font-bold mt-2">{value}</p>
-              {trend && (
-                <p className="text-xs text-green-600 mt-1 flex items-center">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  {trend}
-                </p>
-              )}
-            </div>
-            <div className={`${colorClasses[color as keyof typeof colorClasses]} p-3 rounded-lg`}>
-              <Icon className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
+interface GuestNote {
+  id: string;
+  note: string;
+  created_by_name: string;
+  created_at: string;
 }
 
-// Guest Card Component
-function GuestCard({ guest, onClick }: { guest: Guest; onClick: () => void }) {
-  const initials = `${(guest.first_name || '?')[0]}${(guest.last_name || '?')[0]}`.toUpperCase();
-  const bookingCode = guest.latest_booking_code || '—';
-  const etaCheckin = (guest as any).eta_checkin_time;
-  const etaCheckout = (guest as any).eta_checkout_time;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ y: -4, boxShadow: '0 12px 24px rgba(0,0,0,0.1)' }}
-      transition={{ duration: 0.2 }}
-      onClick={onClick}
-      className="cursor-pointer"
-    >
-      <Card className="h-full hover:border-blue-300 transition-colors shadow-sm">
-        <CardContent className="p-5 space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold">
-                {initials}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {[guest.first_name, guest.last_name].filter(Boolean).join(' ') || 'Guest'}
-                  </h3>
-                  {guest.online_checkin && <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">Online check-in</Badge>}
-                </div>
-                <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-gray-400" />
-                  Booking {bookingCode}
-                </p>
-              </div>
-            </div>
-            {guest.is_vip && (
-              <Badge className="bg-yellow-400 text-yellow-900">VIP</Badge>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center text-gray-700">
-              <Mail className="w-4 h-4 mr-2 text-gray-500" />
-              <span className="truncate">{guest.email}</span>
-            </div>
-            {guest.phone && (
-              <div className="flex items-center text-gray-700">
-                <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                <span className="truncate">{guest.phone}</span>
-              </div>
-            )}
-            {(etaCheckin || etaCheckout) && (
-              <div className="col-span-2 flex items-center text-gray-700">
-                <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                <span>
-                  ETA {etaCheckin || '—'} / ETD {etaCheckout || '—'}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center text-gray-700">
-              <Users className="w-4 h-4 mr-2 text-gray-500" />
-              <span>{guest.total_bookings} booking{guest.total_bookings === 1 ? '' : 's'}</span>
-            </div>
-            <div className="flex items-center text-gray-700">
-              <DollarSign className="w-4 h-4 mr-2 text-gray-500" />
-              <span>{formatCurrency(guest.total_spent)}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-3 border-t">
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <Eye className="w-4 h-4 text-blue-500" />
-              <span>View registered guests & documents</span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-500" />
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
+interface GuestBooking {
+  id: string;
+  booking_id: string;
+  check_in_date: string;
+  check_out_date: string;
+  total_price: string;
+  status: string;
+  number_of_guests: number;
+  nights: number;
 }
 
-// Guest Details Modal
-function GuestDetailsModal({
-  guest,
-  isOpen,
-  onClose
-}: {
-  guest: Guest | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  const [activeTab, setActiveTab] = useState('profile');
-  const [newNote, setNewNote] = useState('');
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export default function GuestDirectoryPage() {
   const queryClient = useQueryClient();
 
-  // Fetch bookings for this guest (by email) to power check-in links and history
-  const { data: guestBookings = [], isLoading: bookingsLoading } = useQuery({
-    queryKey: ['guest-bookings', guest?.email],
+  // State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [nationalityFilter, setNationalityFilter] = useState('all');
+  const [vipFilter, setVipFilter] = useState('all');
+  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
+  const [newNote, setNewNote] = useState('');
+
+  // ============================================================================
+  // QUERIES
+  // ============================================================================
+
+  const { data: guestsData, isLoading: loadingGuests } = useQuery({
+    queryKey: ['guests'],
     queryFn: async () => {
-      if (!guest?.email) return [];
-      const res = await api.bookings.list({ guest_email: guest.email });
-      return res.data.results || res.data || [];
+      const response = await api.guests.list();
+      return response.data;
     },
-    enabled: Boolean(guest?.email),
+    refetchInterval: 60000, // Refresh every minute
   });
 
+  const guests: Guest[] = guestsData || [];
+
+  const { data: selectedGuestBookings } = useQuery({
+    queryKey: ['guest-bookings', selectedGuest?.email],
+    queryFn: async () => {
+      if (!selectedGuest?.email) return [];
+      const response = await api.bookings.list({ guest_email: selectedGuest.email });
+      return response.data.results || response.data || [];
+    },
+    enabled: !!selectedGuest?.email,
+  });
+
+  const { data: selectedGuestNotes, refetch: refetchNotes } = useQuery({
+    queryKey: ['guest-notes', selectedGuest?.id],
+    queryFn: async () => {
+      if (!selectedGuest?.id) return [];
+      const response = await api.guests.notes(selectedGuest.id);
+      return response.data;
+    },
+    enabled: !!selectedGuest?.id,
+  });
+
+  // ============================================================================
+  // MUTATIONS
+  // ============================================================================
+
   const addNoteMutation = useMutation({
-    mutationFn: async (note: string) => {
-      if (!guest?.id) throw new Error('Guest not available');
-      return api.users.guests.addNote(guest.id, note);
+    mutationFn: async ({ guestId, note }: { guestId: string; note: string }) => {
+      return await api.guests.addNote(guestId, note);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-guests'] });
-      queryClient.invalidateQueries({ queryKey: ['guest-notes', guest?.id] });
-      setNewNote('');
       toast.success('Note added successfully');
+      setNewNote('');
+      refetchNotes();
     },
     onError: () => {
       toast.error('Failed to add note');
     },
   });
 
-  const handleAddNote = () => {
-    if (!newNote.trim()) return;
-    addNoteMutation.mutate(newNote);
-  };
+  // ============================================================================
+  // COMPUTED VALUES
+  // ============================================================================
 
-  const bookings = useMemo(() => {
-    if (guest?.bookings && Array.isArray(guest.bookings) && guest.bookings.length > 0) {
-      return guest.bookings as any[];
-    }
-    if (Array.isArray(guestBookings)) {
-      return guestBookings as any[];
-    }
-    return [];
-  }, [guest?.bookings, guestBookings]);
-
-  const sortedBookings = useMemo(() => {
-    if (!bookings || bookings.length === 0) return [];
-    return [...bookings].sort((a: any, b: any) => {
-      const aDate = new Date(a.check_in_date || a.check_in);
-      const bDate = new Date(b.check_in_date || b.check_in);
-      return aDate.getTime() - bDate.getTime();
-    });
-  }, [bookings]);
-
-  // Pick earliest upcoming; if none upcoming, pick most recent past
-  const primaryBooking = useMemo(() => {
-    if (!sortedBookings || sortedBookings.length === 0) return null;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const upcoming = sortedBookings.filter((b: any) => {
-      const d = new Date(b.check_in_date || b.check_in);
-      return d >= today;
-    });
-    if (upcoming.length > 0) {
-      return upcoming[0];
-    }
-    return sortedBookings[sortedBookings.length - 1];
-  }, [sortedBookings]);
-
-  const registeredGuests = useMemo(() => {
-    if (!primaryBooking) return [];
-    const candidates = [
-      (primaryBooking as any).guests,
-      (primaryBooking as any).guest_details,
-      (primaryBooking as any).booking_guests,
-    ].find((arr) => Array.isArray(arr) && arr.length > 0);
-    return Array.isArray(candidates) ? candidates : [];
-  }, [primaryBooking]);
-
-  const buildCheckinLink = (booking: any) => {
-    if (!booking || !guest?.email) return '';
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const confirmation = booking.confirmation_code || booking.booking_id || booking.id;
-    if (!confirmation) return '';
-    return `${origin}/booking/checkin?confirmation=${encodeURIComponent(confirmation)}&email=${encodeURIComponent(guest.email)}`;
-  };
-
-  const safeFirst = guest?.first_name || '';
-  const safeLast = guest?.last_name || '';
-  const safeInitials = `${safeFirst.charAt(0) || '?'}${safeLast.charAt(0) || '?'}`.toUpperCase();
-
-  if (!guest) {
-    return null;
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white">
-        <DialogHeader className="border-b pb-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              {guest.avatar_url ? (
-                <img
-                  src={guest.avatar_url}
-                  alt={`${safeFirst} ${safeLast}`.trim() || 'Guest'}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-blue-100"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                  {safeInitials}
-                </div>
-              )}
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <DialogTitle className="text-2xl font-bold text-gray-900">
-                    {[safeFirst, safeLast].filter(Boolean).join(' ') || 'Guest'}
-                  </DialogTitle>
-                  {guest.is_vip && (
-                    <Badge className="bg-yellow-400 text-yellow-900">
-                      <Star className="w-3 h-3 mr-1 fill-current" />
-                      VIP
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-base text-gray-600 mt-1 flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  {guest.email}
-                </p>
-                {guest.phone && (
-                  <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
-                    <Phone className="w-4 h-4" />
-                    {guest.phone}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {primaryBooking && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const link = buildCheckinLink(primaryBooking);
-                    navigator.clipboard.writeText(link);
-                    toast.success('Check-in link copied');
-                  }}
-                  className="text-gray-900"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Copy Check-in Link
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const link = buildCheckinLink(primaryBooking);
-                    const mailto = `mailto:support@allarcoapartment.com?subject=Online check-in&body=Please complete your online check-in: ${encodeURIComponent(link)}`;
-                    window.location.href = mailto;
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Send Email
-                </Button>
-              </div>
-            )}
-          </div>
-        </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              <User className="w-4 h-4 mr-2" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="guests" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              <Users className="w-4 h-4 mr-2" />
-              Guests
-            </TabsTrigger>
-            <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              <Calendar className="w-4 h-4 mr-2" />
-              Bookings
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              <FileText className="w-4 h-4 mr-2" />
-              Documents
-            </TabsTrigger>
-            <TabsTrigger value="notes" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-              <FileText className="w-4 h-4 mr-2" />
-              Notes
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-4 mt-6">
-            {/* Contact Information */}
-            <Card className="border-gray-200">
-              <CardHeader className="bg-gray-50">
-                <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-blue-600" />
-                  Contact Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <Mail className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-green-50 rounded-lg">
-                      <Phone className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Phone</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.phone || 'Not provided'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-purple-50 rounded-lg">
-                      <Calendar className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date of Birth</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.date_of_birth ? formatDate(guest.date_of_birth) : 'Not provided'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-orange-50 rounded-lg">
-                      <MapPin className="w-4 h-4 text-orange-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nationality</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.nationality || 'Not provided'}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Address */}
-            <Card className="border-gray-200">
-              <CardHeader className="bg-gray-50">
-                <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  Address
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="col-span-2 flex items-start gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <MapPin className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Street Address</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.address || 'Not provided'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-green-50 rounded-lg">
-                      <MapPin className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">City</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.city || 'Not provided'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-purple-50 rounded-lg">
-                      <MapPin className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Country</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.country || 'Not provided'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-orange-50 rounded-lg">
-                      <MapPin className="w-4 h-4 text-orange-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Postal Code</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">{guest.postal_code || 'Not provided'}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Identification */}
-              <Card className="border-gray-200">
-                <CardHeader className="bg-gray-50">
-                  <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    Identification
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <FileText className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Document</label>
-                      <p className="text-sm mt-1 text-gray-900 font-medium">
-                        {guest.document_number
-                          ? `${guest.document_type ? guest.document_type.replace('_', ' ') + ': ' : ''}${guest.document_number}`
-                          : guest.passport_number || 'Not provided'}
-                      </p>
-                      {guest.relationship && (
-                        <p className="text-xs text-gray-600 mt-1">Relationship: {guest.relationship}</p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Emergency Contact */}
-              <Card className="border-gray-200">
-                <CardHeader className="bg-gray-50">
-                  <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                    <Phone className="w-5 h-5 text-red-600" />
-                    Emergency Contact
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-red-50 rounded-lg">
-                        <User className="w-4 h-4 text-red-600" />
-                      </div>
-                      <div className="flex-1">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</label>
-                        <p className="text-sm mt-1 text-gray-900 font-medium">{guest.emergency_contact_name || 'Not provided'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-red-50 rounded-lg">
-                        <Phone className="w-4 h-4 text-red-600" />
-                      </div>
-                      <div className="flex-1">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Phone</label>
-                        <p className="text-sm mt-1 text-gray-900 font-medium">{guest.emergency_contact_phone || 'Not provided'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Preferences */}
-            {guest.preferences && (
-              <Card className="border-gray-200">
-                <CardHeader className="bg-gray-50">
-                  <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    Preferences & Special Requests
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <p className="text-sm text-gray-900 leading-relaxed">{guest.preferences}</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Guests Tab */}
-          <TabsContent value="guests" className="space-y-4 mt-6">
-            <Card className="border-gray-200">
-              <CardHeader className="bg-gray-50 flex flex-col gap-2">
-                <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-blue-600" />
-                  Guests
-                </CardTitle>
-                <p className="text-sm text-gray-600">
-                  Primary guest plus any family members or companions attached to their bookings.
-                </p>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <User className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Primary guest</p>
-                    <p className="text-base font-semibold text-gray-900">
-                      {[safeFirst, safeLast].filter(Boolean).join(' ') || 'Guest'}
-                    </p>
-                    <p className="text-sm text-gray-600">{guest.email}</p>
-                    {guest.phone && <p className="text-sm text-gray-600">{guest.phone}</p>}
-                  </div>
-                </div>
-
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <p className="text-sm text-gray-800">
-                    Companions added via online check-in appear as separate guest entries. Open the booking to review or update their details.
-                  </p>
-                  {primaryBooking && (
-                    <Button
-                      size="sm"
-                      className="mt-3"
-                      onClick={() => window.open(`/pms/bookings/${primaryBooking.id}`, '_blank')}
-                    >
-                      View booking
-                    </Button>
-                  )}
-                </div>
-
-                <Card className="border-gray-200">
-                  <CardHeader className="bg-gray-50">
-                    <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                      <Users className="w-5 h-5 text-blue-600" />
-                      Registered guests for latest booking
-                    </CardTitle>
-                    <p className="text-sm text-gray-600">
-                      Expand each guest to see the details captured during online check-in.
-                    </p>
-                  </CardHeader>
-                  <CardContent className="pt-4 space-y-3">
-                    {registeredGuests.length === 0 && (
-                      <p className="text-sm text-gray-600">No companion details available yet.</p>
-                    )}
-                    {registeredGuests.map((g: any, idx: number) => (
-                      <details key={idx} className="group border rounded-lg p-3">
-                        <summary className="flex items-center justify-between cursor-pointer text-sm font-semibold text-gray-900">
-                          <span>{g.first_name} {g.last_name}</span>
-                          <ChevronRight className="w-4 h-4 text-gray-500 group-open:rotate-90 transition-transform" />
-                        </summary>
-                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700">
-                          {g.date_of_birth && (
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-gray-500" />
-                              <span>DOB: {g.date_of_birth}</span>
-                            </div>
-                          )}
-                          {g.country_of_birth && (
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-4 h-4 text-gray-500" />
-                              <span>Birth country: {g.country_of_birth}</span>
-                            </div>
-                          )}
-                          {g.document_number && (
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-gray-500" />
-                              <span>{g.document_type || 'Document'}: {g.document_number}</span>
-                            </div>
-                          )}
-                          {g.relationship && (
-                            <div className="flex items-center gap-2">
-                              <Users className="w-4 h-4 text-gray-500" />
-                              <span>Relationship: {g.relationship}</span>
-                            </div>
-                          )}
-                        </div>
-                      </details>
-                    ))}
-                  </CardContent>
-                </Card>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Bookings Tab */}
-          <TabsContent value="bookings">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-gray-900">Current Booking</CardTitle>
-                  {bookings && bookings.length > 1 && (
-                    <Badge variant="secondary" className="text-gray-900">{bookings.length} total bookings</Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {bookingsLoading ? (
-                  <p className="text-center py-8 text-gray-600">Loading booking information…</p>
-                ) : primaryBooking ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-6"
-                  >
-                    {/* Booking Header */}
-                    <div className="flex items-center justify-between pb-4 border-b">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <Calendar className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg text-gray-900">
-                            {primaryBooking.confirmation_code || primaryBooking.booking_id || `#${primaryBooking.id}`}
-                          </h3>
-                          <p className="text-sm text-gray-600">Booking Reference</p>
-                        </div>
-                      </div>
-                      <Badge className="text-sm text-gray-900">{primaryBooking.status}</Badge>
-                    </div>
-
-                    {/* Booking Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-green-50 rounded-lg">
-                          <Calendar className="w-5 h-5 text-green-600" />
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Check-in</label>
-                          <p className="text-base mt-1 text-gray-900 font-semibold">
-                            {(primaryBooking.check_in_date || primaryBooking.check_in)
-                              ? formatDate(primaryBooking.check_in_date || primaryBooking.check_in)
-                              : '—'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-orange-50 rounded-lg">
-                          <Calendar className="w-5 h-5 text-orange-600" />
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Check-out</label>
-                          <p className="text-base mt-1 text-gray-900 font-semibold">
-                            {(primaryBooking.check_out_date || primaryBooking.check_out)
-                              ? formatDate(primaryBooking.check_out_date || primaryBooking.check_out)
-                              : '—'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-purple-50 rounded-lg">
-                          <DollarSign className="w-5 h-5 text-purple-600" />
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Amount</label>
-                          <p className="text-base mt-1 text-green-600 font-bold">
-                            {formatCurrency(primaryBooking.total_price || primaryBooking.total_amount || 0)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t">
-                      <Button
-                        size="default"
-                        variant="outline"
-                        className="flex-1 text-gray-900"
-                        onClick={() => {
-                          const link = buildCheckinLink(primaryBooking);
-                          if (!link) return toast.error('No check-in link available for this booking');
-                          navigator.clipboard.writeText(link);
-                          toast.success('Check-in link copied to clipboard');
-                        }}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Copy Check-in Link
-                      </Button>
-                      <Button
-                        size="default"
-                        variant="outline"
-                        className="flex-1 text-gray-900"
-                        onClick={() => {
-                          const link = buildCheckinLink(primaryBooking);
-                          if (!link) return toast.error('No check-in link available for this booking');
-                          const mailto = `mailto:${guest.email}?subject=Complete your online check-in&body=Hi ${guest.first_name},%0D%0A%0D%0APlease complete your online check-in for your upcoming stay:%0D%0A${encodeURIComponent(link)}`;
-                          window.location.href = mailto;
-                        }}
-                      >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Send Check-in Email
-                      </Button>
-                      <Button
-                        size="default"
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={() => window.open(`/pms/bookings/${primaryBooking.id}`, '_blank')}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Full Details
-                      </Button>
-                    </div>
-
-                    {/* Additional Info - Only show if guest has multiple upcoming/active bookings */}
-                    {(() => {
-                      const upcomingBookings = bookings?.filter((b: any) => {
-                        const checkInDate = new Date(b.check_in_date || b.check_in);
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        return checkInDate >= today && b.status !== 'cancelled';
-                      }) || [];
-
-                      return upcomingBookings.length > 1 ? (
-                        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                          <p className="text-sm text-blue-900">
-                            <span className="font-semibold">Note:</span> This guest has {upcomingBookings.length} upcoming bookings.
-                            Showing the most recent one. Click "View Full Details" to see all booking history.
-                          </p>
-                        </div>
-                      ) : null;
-                    })()}
-                  </motion.div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No bookings found for this guest</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Documents Tab */}
-          <TabsContent value="documents">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Documents & Photos</CardTitle>
-                  <Button
-                    size="sm"
-                    onClick={() => toast.info('Document upload coming soon')}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Documents Section */}
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">Identity Documents</h4>
-                  {guest.documents && guest.documents.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      {guest.documents.map((doc) => (
-                        <motion.div
-                          key={doc.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <FileText className="w-8 h-8 text-blue-500" />
-                            <Badge>{doc.document_type}</Badge>
-                          </div>
-                          <p className="font-medium text-sm mb-1 text-gray-900">{doc.file_name}</p>
-                          {doc.document_number && (
-                            <p className="text-xs text-gray-600 mb-2">
-                              #{doc.document_number}
-                            </p>
-                          )}
-                          <p className="text-xs text-gray-500 mb-3">
-                            Uploaded {formatDate(doc.uploaded_at)}
-                          </p>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline" className="flex-1">
-                              <Eye className="w-3 h-3 mr-1" />
-                              View
-                            </Button>
-                            <Button size="sm" variant="outline" className="flex-1">
-                              <Download className="w-3 h-3 mr-1" />
-                              Download
-                            </Button>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-600 py-4">No documents uploaded</p>
-                  )}
-                </div>
-
-                {/* Photos Section */}
-                <div>
-                  <h4 className="font-semibold mb-3 text-gray-900">Photos</h4>
-                  {guest.photos && guest.photos.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-4">
-                      {guest.photos.map((photo) => (
-                        <motion.div
-                          key={photo.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          whileHover={{ scale: 1.05 }}
-                          className="relative aspect-square rounded-lg overflow-hidden border cursor-pointer"
-                        >
-                          <img
-                            src={photo.photo_url}
-                            alt={photo.description || 'Guest photo'}
-                            className="w-full h-full object-cover"
-                          />
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-600 py-4">No photos uploaded</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notes Tab */}
-          <TabsContent value="notes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Team Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Add Note Form */}
-                <div className="mb-6">
-                  <Textarea
-                    placeholder="Add a note about this guest..."
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    className="mb-2"
-                    rows={3}
-                  />
-                  <Button
-                    onClick={handleAddNote}
-                    disabled={!newNote.trim() || addNoteMutation.isPending}
-                    size="sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {addNoteMutation.isPending ? 'Adding...' : 'Add Note'}
-                  </Button>
-                </div>
-
-                {/* Notes List */}
-                {guest.notes && guest.notes.length > 0 ? (
-                  <div className="space-y-4">
-                    {guest.notes.map((note) => (
-                      <motion.div
-                        key={note.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="border-l-4 border-blue-500 bg-gray-50 p-4 rounded"
-                      >
-                        <p className="text-sm mb-2 text-gray-900">{note.note}</p>
-                        <div className="flex items-center justify-between text-xs text-gray-600">
-                          <span>By {note.created_by}</span>
-                          <span>{formatDate(note.created_at)}</span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center py-8 text-gray-600">No notes yet</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Main Component
-export default function GuestsPage() {
-  const [search, setSearch] = useState('');
-  const [nationalityFilter, setNationalityFilter] = useState('all');
-  const [vipFilter, setVipFilter] = useState('all');
-  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  // Fetch guests
-  const { data: guests, isLoading } = useQuery({
-    queryKey: ['all-guests'],
-    queryFn: async () => {
-      const response = await api.users.guests.list();
-      return (response.data.results || response.data) as Guest[];
-    },
-  });
-
-  // Debounced search and filtering
-  const filteredGuests = useMemo(() => {
-    if (!guests) return [];
-
-    // Only show guests that are tied to at least one booking
-    const bookingGuests = guests.filter((g) => (g.total_bookings || 0) > 0);
-
-    return bookingGuests.filter((guest) => {
-      const searchLower = search.toLowerCase();
-      const matchesSearch =
-        guest.first_name.toLowerCase().includes(searchLower) ||
-        guest.last_name.toLowerCase().includes(searchLower) ||
-        guest.email.toLowerCase().includes(searchLower) ||
-        guest.phone?.toLowerCase().includes(searchLower) ||
-        guest.passport_number?.toLowerCase().includes(searchLower);
-
-      const matchesNationality =
-        nationalityFilter === 'all' || guest.nationality === nationalityFilter;
-
-      const matchesVIP =
-        vipFilter === 'all' ||
-        (vipFilter === 'vip' && guest.is_vip) ||
-        (vipFilter === 'regular' && !guest.is_vip);
-
-      return matchesSearch && matchesNationality && matchesVIP;
-    });
-  }, [guests, search, nationalityFilter, vipFilter]);
-
-  // Calculate statistics
   const stats = useMemo(() => {
-    if (!guests) return null;
-
-    const bookingGuests = guests.filter((g) => (g.total_bookings || 0) > 0);
-    if (bookingGuests.length === 0) {
-      return {
-        totalGuests: 0,
-        totalBookings: 0,
-        avgBookingsPerGuest: '0',
-        avgGuestsPerBooking: '0.00',
-        onlineBookings: 0,
-      };
-    }
-
-    const totalGuests = bookingGuests.length;
-    const totalBookings = bookingGuests.reduce((sum, g) => sum + (g.total_bookings || 0), 0);
-    const totalGuestCount = bookingGuests.reduce((sum, g) => sum + (g.total_guests_count || 0), 0);
-    const onlineBookings = bookingGuests.reduce((sum, g) => sum + (g.online_bookings || 0), 0);
+    const totalGuests = guests.length;
+    const totalBookings = guests.reduce((sum, g) => sum + (g.total_bookings || 0), 0);
+    const totalSpent = guests.reduce((sum, g) => sum + parseFloat(g.total_spent || '0'), 0);
+    const avgBookingsPerGuest = totalGuests > 0 ? (totalBookings / totalGuests).toFixed(1) : '0';
+    const onlineCheckins = guests.filter((g) => g.online_checkin).length;
+    const vipGuests = guests.filter((g) => g.is_vip).length;
 
     return {
       totalGuests,
       totalBookings,
-      avgBookingsPerGuest: totalGuests > 0 ? (totalBookings / totalGuests).toFixed(1) : '0',
-      avgGuestsPerBooking:
-        totalBookings > 0 ? (totalGuestCount / totalBookings).toFixed(2) : '0.00',
-      onlineBookings,
+      totalSpent,
+      avgBookingsPerGuest,
+      onlineCheckins,
+      vipGuests,
     };
   }, [guests]);
 
-  // Get unique nationalities for filter
   const nationalities = useMemo(() => {
-    if (!guests) return [];
-    const uniqueNationalities = [...new Set(guests.map((g) => g.nationality).filter(Boolean))];
-    return uniqueNationalities.sort();
+    const uniqueNationalities = new Set(guests.map((g) => g.nationality).filter(Boolean));
+    return Array.from(uniqueNationalities).sort();
   }, [guests]);
 
-  const handleGuestClick = (guest: Guest) => {
-    setSelectedGuest(guest);
-    setIsDetailsOpen(true);
+  const filteredGuests = useMemo(() => {
+    let filtered = [...guests];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (g) =>
+          g.first_name?.toLowerCase().includes(query) ||
+          g.last_name?.toLowerCase().includes(query) ||
+          g.email?.toLowerCase().includes(query) ||
+          g.phone?.toLowerCase().includes(query) ||
+          g.passport_number?.toLowerCase().includes(query)
+      );
+    }
+
+    // Nationality filter
+    if (nationalityFilter !== 'all') {
+      filtered = filtered.filter((g) => g.nationality === nationalityFilter);
+    }
+
+    // VIP filter
+    if (vipFilter === 'vip') {
+      filtered = filtered.filter((g) => g.is_vip);
+    } else if (vipFilter === 'regular') {
+      filtered = filtered.filter((g) => !g.is_vip);
+    }
+
+    return filtered.sort((a, b) => {
+      const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+      const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [guests, searchQuery, nationalityFilter, vipFilter]);
+
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+
+  const handleAddNote = () => {
+    if (!selectedGuest || !newNote.trim()) return;
+    addNoteMutation.mutate({ guestId: selectedGuest.id, note: newNote });
   };
 
+  const handleExportCSV = () => {
+    const headers = ['Name', 'Email', 'Phone', 'Nationality', 'Total Bookings', 'Total Spent', 'VIP'];
+    const rows = filteredGuests.map((g) => [
+      `${g.first_name} ${g.last_name}`,
+      g.email,
+      g.phone || '',
+      g.nationality || '',
+      g.total_bookings,
+      g.total_spent,
+      g.is_vip ? 'Yes' : 'No',
+    ]);
+
+    const csvContent = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `guests-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Guest list exported');
+  };
+
+  const activeFilters = [
+    searchQuery && { key: 'search', label: `Search: "${searchQuery}"`, clear: () => setSearchQuery('') },
+    nationalityFilter !== 'all' && {
+      key: 'nationality',
+      label: `Nationality: ${nationalityFilter}`,
+      clear: () => setNationalityFilter('all'),
+    },
+    vipFilter !== 'all' && {
+      key: 'vip',
+      label: `VIP: ${vipFilter === 'vip' ? 'Yes' : 'No'}`,
+      clear: () => setVipFilter('all'),
+    },
+  ].filter(Boolean) as Array<{ key: string; label: string; clear: () => void }>;
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-3xl font-bold mb-2">
-          Guest Directory {filteredGuests.length ? `(${filteredGuests.length})` : ''}
-        </h1>
-        <p className="text-gray-600">
-          Comprehensive guest management with profiles, documents, and booking history
-        </p>
-      </motion.div>
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-[1800px] mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Guest Directory</h1>
+              <p className="text-gray-600 mt-1">Comprehensive guest management with profiles and booking history</p>
+            </div>
+            <Button onClick={handleExportCSV} variant="outline" className="gap-2">
+              <Download className="w-4 h-4" />
+              Export CSV
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      {/* Statistics */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="max-w-[1800px] mx-auto px-6 py-6">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <StatCard
-            title="Total Guests"
-            value={stats.totalGuests}
             icon={Users}
-            color="blue"
+            label="Total Guests"
+            value={stats.totalGuests.toString()}
+            sublabel={`${stats.vipGuests} VIP`}
+            iconColor="text-blue-600"
+            bgColor="bg-blue-50"
           />
           <StatCard
-            title="Total Bookings"
-            value={stats.totalBookings}
-            icon={Calendar}
-            color="purple"
-          />
-          <StatCard
-            title="Avg. Guests / Booking"
-            value={stats.avgGuestsPerBooking}
-            icon={Users}
-            color="orange"
-          />
-          <StatCard
-            title="Online Check-ins"
-            value={stats.onlineBookings}
             icon={TrendingUp}
-            color="green"
+            label="Total Bookings"
+            value={stats.totalBookings.toString()}
+            sublabel={`${stats.avgBookingsPerGuest} avg/guest`}
+            iconColor="text-green-600"
+            bgColor="bg-green-50"
+          />
+          <StatCard
+            icon={DollarSign}
+            label="Total Revenue"
+            value={formatCurrency(stats.totalSpent)}
+            sublabel="All-time"
+            iconColor="text-purple-600"
+            bgColor="bg-purple-50"
+          />
+          <StatCard
+            icon={UserCheck}
+            label="Online Check-ins"
+            value={stats.onlineCheckins.toString()}
+            sublabel={`${((stats.onlineCheckins / stats.totalGuests) * 100 || 0).toFixed(0)}% completion`}
+            iconColor="text-emerald-600"
+            bgColor="bg-emerald-50"
           />
         </div>
-      )}
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Search by name, email, phone, or passport..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
+        {/* Filters */}
+        <Card className="mb-6 border-gray-200 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Input
+                    placeholder="Search by name, email, phone, or passport..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-11 border-gray-300"
+                  />
+                </div>
+              </div>
+              <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
+                <SelectTrigger className="w-full lg:w-[200px] h-11 border-gray-300">
+                  <SelectValue placeholder="Nationality" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Nationalities</SelectItem>
+                  {nationalities.map((nat) => (
+                    <SelectItem key={nat} value={nat!}>
+                      {nat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={vipFilter} onValueChange={setVipFilter}>
+                <SelectTrigger className="w-full lg:w-[180px] h-11 border-gray-300">
+                  <SelectValue placeholder="VIP Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Guests</SelectItem>
+                  <SelectItem value="vip">VIP Only</SelectItem>
+                  <SelectItem value="regular">Regular Only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Nationality Filter */}
-            <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by nationality" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Nationalities</SelectItem>
-                {nationalities.map((nationality) => (
-                  <SelectItem key={nationality} value={nationality!}>
-                    {nationality}
-                  </SelectItem>
+            {/* Active Filters */}
+            {activeFilters.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
+                <span className="text-sm text-gray-600 font-medium">Active Filters:</span>
+                {activeFilters.map((filter) => (
+                  <Badge
+                    key={filter.key}
+                    variant="secondary"
+                    className="gap-1 px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                  >
+                    {filter.label}
+                    <button onClick={filter.clear} className="ml-1 hover:text-blue-900">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
                 ))}
-              </SelectContent>
-            </Select>
-
-            {/* VIP Filter */}
-            <Select value={vipFilter} onValueChange={setVipFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Guests</SelectItem>
-                <SelectItem value="vip">VIP Only</SelectItem>
-                <SelectItem value="regular">Regular Only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Active Filters Display */}
-          {(search || nationalityFilter !== 'all' || vipFilter !== 'all') && (
-            <div className="mt-4 flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-600">Active filters:</span>
-              {search && (
-                <Badge variant="secondary">
-                  Search: {search}
-                  <X
-                    className="w-3 h-3 ml-1 cursor-pointer"
-                    onClick={() => setSearch('')}
-                  />
-                </Badge>
-              )}
-              {nationalityFilter !== 'all' && (
-                <Badge variant="secondary">
-                  {nationalityFilter}
-                  <X
-                    className="w-3 h-3 ml-1 cursor-pointer"
-                    onClick={() => setNationalityFilter('all')}
-                  />
-                </Badge>
-              )}
-              {vipFilter !== 'all' && (
-                <Badge variant="secondary">
-                  {vipFilter === 'vip' ? 'VIP' : 'Regular'}
-                  <X
-                    className="w-3 h-3 ml-1 cursor-pointer"
-                    onClick={() => setVipFilter('all')}
-                  />
-                </Badge>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Guest Tree/Directory */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">
-            Guest Directory ({filteredGuests.length})
-          </h2>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <Card key={i} className="h-64 animate-pulse">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-gray-200 rounded-full mb-4" />
-                  <div className="h-4 bg-gray-200 rounded mb-2" />
-                  <div className="h-3 bg-gray-200 rounded mb-1" />
-                  <div className="h-3 bg-gray-200 rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredGuests.length > 0 ? (
-          <motion.div
-            layout
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-          >
-            <AnimatePresence>
-              {filteredGuests.map((guest) => (
-                <GuestCard
-                  key={guest.id}
-                  guest={guest}
-                  onClick={() => handleGuestClick(guest)}
-                />
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        ) : (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No guests found matching your filters</p>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="mt-4"
                   onClick={() => {
-                    setSearch('');
+                    setSearchQuery('');
                     setNationalityFilter('all');
                     setVipFilter('all');
                   }}
+                  className="h-6 px-2 text-xs"
                 >
-                  Clear Filters
+                  Clear All
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Guest Details Modal */}
-      <GuestDetailsModal
-        guest={selectedGuest}
-        isOpen={isDetailsOpen}
-        onClose={() => {
-          setIsDetailsOpen(false);
-          setSelectedGuest(null);
-        }}
-      />
+        {/* Main Content: Guest List + Side Panel */}
+        <div className="flex gap-6">
+          {/* Guest List */}
+          <div className={`transition-all duration-300 ${selectedGuest ? 'lg:w-1/2' : 'w-full'}`}>
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="border-b border-gray-200 bg-gray-50">
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Guests ({filteredGuests.length})
+                </CardTitle>
+                <CardDescription>Click on a guest to view detailed information</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loadingGuests ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading guests...</p>
+                    </div>
+                  </div>
+                ) : filteredGuests.length === 0 ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="text-center">
+                      <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No guests found</h3>
+                      <p className="text-gray-500 mb-6">
+                        {activeFilters.length > 0 ? 'Try adjusting your filters' : 'No guests registered yet'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-200 max-h-[700px] overflow-y-auto">
+                    {filteredGuests.map((guest) => (
+                      <GuestRow
+                        key={guest.id}
+                        guest={guest}
+                        isSelected={selectedGuest?.id === guest.id}
+                        onClick={() => setSelectedGuest(guest)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Side Panel */}
+          {selectedGuest && (
+            <div className="hidden lg:block w-1/2">
+              <GuestDetailPanel
+                guest={selectedGuest}
+                bookings={selectedGuestBookings || []}
+                notes={selectedGuestNotes || []}
+                newNote={newNote}
+                onNewNoteChange={setNewNote}
+                onAddNote={handleAddNote}
+                onClose={() => setSelectedGuest(null)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
+}
+
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
+
+interface StatCardProps {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  sublabel: string;
+  iconColor: string;
+  bgColor: string;
+}
+
+function StatCard({ icon: Icon, label, value, sublabel, iconColor, bgColor }: StatCardProps) {
+  return (
+    <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-600 mb-1">{label}</p>
+            <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
+            <p className="text-xs text-gray-500">{sublabel}</p>
+          </div>
+          <div className={`${bgColor} p-3 rounded-xl`}>
+            <Icon className={`w-6 h-6 ${iconColor}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface GuestRowProps {
+  guest: Guest;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+function GuestRow({ guest, isSelected, onClick }: GuestRowProps) {
+  const fullName = `${guest.first_name} ${guest.last_name}`;
+  const initials = `${guest.first_name[0] || ''}${guest.last_name[0] || ''}`.toUpperCase();
+
+  return (
+    <div
+      onClick={onClick}
+      className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+        isSelected ? 'bg-blue-50 border-l-4 border-blue-600' : ''
+      }`}
+    >
+      <div className="flex items-center gap-4">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+            {initials}
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-gray-900 truncate">{fullName}</h3>
+            {guest.is_vip && (
+              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 text-xs">
+                <Star className="w-3 h-3 mr-1" />
+                VIP
+              </Badge>
+            )}
+            {guest.online_checkin && (
+              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 text-xs">
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                Online
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+            <span className="flex items-center gap-1">
+              <Mail className="w-3.5 h-3.5" />
+              {guest.email}
+            </span>
+            {guest.phone && (
+              <span className="flex items-center gap-1">
+                <Phone className="w-3.5 h-3.5" />
+                {guest.phone}
+              </span>
+            )}
+            {guest.nationality && (
+              <span className="flex items-center gap-1">
+                <Globe className="w-3.5 h-3.5" />
+                {guest.nationality}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="flex-shrink-0 text-right">
+          <div className="text-sm font-medium text-gray-900">{guest.total_bookings} bookings</div>
+          <div className="text-xs text-gray-500">{formatCurrency(parseFloat(guest.total_spent || '0'))}</div>
+        </div>
+
+        <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
+      </div>
+    </div>
+  );
+}
+
+interface GuestDetailPanelProps {
+  guest: Guest;
+  bookings: GuestBooking[];
+  notes: GuestNote[];
+  newNote: string;
+  onNewNoteChange: (value: string) => void;
+  onAddNote: () => void;
+  onClose: () => void;
+}
+
+function GuestDetailPanel({ guest, bookings, notes, newNote, onNewNoteChange, onAddNote, onClose }: GuestDetailPanelProps) {
+  const fullName = `${guest.first_name} ${guest.last_name}`;
+  const initials = `${guest.first_name[0] || ''}${guest.last_name[0] || ''}`.toUpperCase();
+
+  return (
+    <Card className="border-gray-200 shadow-lg sticky top-6 max-h-[calc(100vh-120px)] flex flex-col">
+      {/* Header */}
+      <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+              {initials}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-2xl font-bold text-gray-900">{fullName}</h2>
+                {guest.is_vip && (
+                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                    <Star className="w-3 h-3 mr-1" />
+                    VIP
+                  </Badge>
+                )}
+              </div>
+              <p className="text-gray-600">{guest.email}</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      {/* Tabs */}
+      <CardContent className="p-0 flex-1 overflow-hidden">
+        <Tabs defaultValue="profile" className="h-full flex flex-col">
+          <TabsList className="w-full justify-start border-b border-gray-200 rounded-none bg-gray-50 flex-shrink-0 px-6">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="bookings">Bookings ({bookings.length})</TabsTrigger>
+            <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
+          </TabsList>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="mt-0 space-y-6">
+              {/* Contact Information */}
+              <Section title="Contact Information" icon={Mail}>
+                <InfoRow icon={Mail} label="Email" value={guest.email} />
+                <InfoRow icon={Phone} label="Phone" value={guest.phone || 'Not provided'} />
+                <InfoRow icon={Calendar} label="Date of Birth" value={guest.date_of_birth ? formatDate(guest.date_of_birth) : 'Not provided'} />
+                <InfoRow icon={Globe} label="Nationality" value={guest.nationality || 'Not provided'} />
+              </Section>
+
+              {/* Address */}
+              {(guest.address || guest.city || guest.country) && (
+                <Section title="Address" icon={MapPin}>
+                  <InfoRow label="Street" value={guest.address || 'Not provided'} />
+                  <InfoRow label="City" value={guest.city || 'Not provided'} />
+                  <InfoRow label="Country" value={guest.country || 'Not provided'} />
+                  <InfoRow label="Postal Code" value={guest.postal_code || 'Not provided'} />
+                </Section>
+              )}
+
+              {/* Identification */}
+              {(guest.document_number || guest.passport_number) && (
+                <Section title="Identification" icon={CreditCard}>
+                  <InfoRow icon={FileText} label="Document Type" value={guest.document_type || 'Passport'} />
+                  <InfoRow label="Document Number" value={guest.document_number || guest.passport_number || 'Not provided'} />
+                </Section>
+              )}
+
+              {/* Emergency Contact */}
+              {(guest.emergency_contact_name || guest.emergency_contact_phone) && (
+                <Section title="Emergency Contact" icon={AlertCircle}>
+                  <InfoRow icon={User} label="Name" value={guest.emergency_contact_name || 'Not provided'} />
+                  <InfoRow icon={Phone} label="Phone" value={guest.emergency_contact_phone || 'Not provided'} />
+                </Section>
+              )}
+
+              {/* Preferences */}
+              {guest.preferences && (
+                <Section title="Preferences" icon={MessageSquare}>
+                  <p className="text-sm text-gray-700">{guest.preferences}</p>
+                </Section>
+              )}
+
+              {/* Stats */}
+              <Section title="Guest Statistics" icon={TrendingUp}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <p className="text-sm text-gray-600 mb-1">Total Bookings</p>
+                    <p className="text-2xl font-bold text-blue-600">{guest.total_bookings}</p>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                    <p className="text-sm text-gray-600 mb-1">Total Spent</p>
+                    <p className="text-2xl font-bold text-purple-600">{formatCurrency(parseFloat(guest.total_spent || '0'))}</p>
+                  </div>
+                  {guest.online_bookings !== undefined && (
+                    <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                      <p className="text-sm text-gray-600 mb-1">Online Check-ins</p>
+                      <p className="text-2xl font-bold text-emerald-600">{guest.online_bookings}</p>
+                    </div>
+                  )}
+                  {guest.total_guests_count !== undefined && (
+                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                      <p className="text-sm text-gray-600 mb-1">Total Companions</p>
+                      <p className="text-2xl font-bold text-orange-600">{guest.total_guests_count}</p>
+                    </div>
+                  )}
+                </div>
+              </Section>
+            </TabsContent>
+
+            {/* Bookings Tab */}
+            <TabsContent value="bookings" className="mt-0 space-y-4">
+              {bookings.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">No bookings found for this guest</p>
+                </div>
+              ) : (
+                bookings.map((booking) => (
+                  <Card key={booking.id} className="border-gray-200 shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-1">{booking.booking_id}</h4>
+                          <Badge className={getStatusBadgeClass(booking.status)}>{booking.status}</Badge>
+                        </div>
+                        <Button variant="ghost" size="sm" asChild>
+                          <a href={`/pms/bookings/${booking.id}`} target="_blank">
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-600">Check-in</p>
+                          <p className="font-medium text-gray-900">{formatDate(booking.check_in_date)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Check-out</p>
+                          <p className="font-medium text-gray-900">{formatDate(booking.check_out_date)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Nights</p>
+                          <p className="font-medium text-gray-900">{booking.nights}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Guests</p>
+                          <p className="font-medium text-gray-900">{booking.number_of_guests}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-gray-600">Total</p>
+                          <p className="text-lg font-bold text-gray-900">{formatCurrency(parseFloat(booking.total_price))}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
+
+            {/* Notes Tab */}
+            <TabsContent value="notes" className="mt-0 space-y-4">
+              {/* Add Note */}
+              <Card className="border-gray-200 shadow-sm bg-blue-50">
+                <CardContent className="p-4">
+                  <Textarea
+                    placeholder="Add a note about this guest..."
+                    value={newNote}
+                    onChange={(e) => onNewNoteChange(e.target.value)}
+                    className="mb-3 border-gray-300 bg-white"
+                    rows={3}
+                  />
+                  <Button onClick={onAddNote} disabled={!newNote.trim()} className="w-full">
+                    Add Note
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Notes List */}
+              {notes.length === 0 ? (
+                <div className="text-center py-12">
+                  <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">No notes yet for this guest</p>
+                </div>
+              ) : (
+                notes.map((note) => (
+                  <Card key={note.id} className="border-gray-200 shadow-sm">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-gray-700 mb-3">{note.note}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <User className="w-3 h-3" />
+                        <span>{note.created_by_name}</span>
+                        <span>•</span>
+                        <Clock className="w-3 h-3" />
+                        <span>{formatDate(note.created_at)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
+          </div>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface SectionProps {
+  title: string;
+  icon?: React.ElementType;
+  children: React.ReactNode;
+}
+
+function Section({ title, icon: Icon, children }: SectionProps) {
+  return (
+    <div className="bg-gray-50 rounded-lg border border-gray-200 p-5">
+      <div className="flex items-center gap-2 mb-4">
+        {Icon && <Icon className="w-5 h-5 text-gray-600" />}
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">{title}</h3>
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+interface InfoRowProps {
+  icon?: React.ElementType;
+  label: string;
+  value: string;
+}
+
+function InfoRow({ icon: Icon, label, value }: InfoRowProps) {
+  return (
+    <div className="flex items-start gap-3">
+      {Icon && <Icon className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-gray-600 mb-0.5">{label}</p>
+        <p className="text-sm font-medium text-gray-900">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function getStatusBadgeClass(status: string) {
+  const classes: Record<string, string> = {
+    confirmed: 'bg-blue-100 text-blue-800 border-blue-300',
+    paid: 'bg-green-100 text-green-800 border-green-300',
+    checked_in: 'bg-purple-100 text-purple-800 border-purple-300',
+    checked_out: 'bg-gray-100 text-gray-800 border-gray-300',
+    cancelled: 'bg-red-100 text-red-800 border-red-300',
+    pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+  };
+  return classes[status] || 'bg-gray-100 text-gray-800 border-gray-300';
 }

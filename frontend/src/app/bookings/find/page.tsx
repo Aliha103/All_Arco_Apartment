@@ -45,13 +45,13 @@ interface Booking {
 
 // Status colors and icons
 const statusConfig: Record<string, { color: string; bg: string; icon: typeof CheckCircle2 }> = {
-  pending: { color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock },
-  confirmed: { color: 'text-blue-600', bg: 'bg-blue-50', icon: CheckCircle2 },
-  paid: { color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CreditCard },
-  checked_in: { color: 'text-purple-600', bg: 'bg-purple-50', icon: Building },
-  checked_out: { color: 'text-gray-600', bg: 'bg-gray-50', icon: CheckCircle2 },
+  pending: { color: 'text-[#b57b2a]', bg: 'bg-[#fdf1da]', icon: Clock },
+  confirmed: { color: 'text-[#2d5a7b]', bg: 'bg-[#e6f0f6]', icon: CheckCircle2 },
+  paid: { color: 'text-emerald-700', bg: 'bg-emerald-50', icon: CreditCard },
+  checked_in: { color: 'text-[#3b3c63]', bg: 'bg-[#edeafb]', icon: Building },
+  checked_out: { color: 'text-slate-600', bg: 'bg-slate-100', icon: CheckCircle2 },
   cancelled: { color: 'text-red-600', bg: 'bg-red-50', icon: X },
-  no_show: { color: 'text-gray-600', bg: 'bg-gray-100', icon: AlertCircle },
+  no_show: { color: 'text-slate-600', bg: 'bg-slate-100', icon: AlertCircle },
 };
 
 // Benefits for creating account
@@ -218,47 +218,7 @@ export default function FindBookingPage() {
   }, [isAuthenticated, router]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
-      {/* Custom styles for navbar on this page */}
-      <style>{`
-        /* Make navbar background always gray */
-        header {
-          background-color: #F3F4F6 !important;
-          background-image: none !important;
-        }
-
-        /* Enlarge logo */
-        header img[alt="All'Arco Apartment"] {
-          height: 2.5rem !important;
-        }
-
-        @media (min-width: 640px) {
-          header img[alt="All'Arco Apartment"] {
-            height: 3.5rem !important;
-          }
-        }
-
-        @media (min-width: 1024px) {
-          header img[alt="All'Arco Apartment"] {
-            height: 4.5rem !important;
-          }
-        }
-
-        /* Make text dark on gray background */
-        header {
-          color: #1F2937;
-        }
-
-        /* Style nav links for gray background */
-        nav a, header button {
-          color: #374151;
-        }
-
-        nav a:hover, header button:hover {
-          color: #C4A572;
-        }
-      `}</style>
-
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#fdf8ec] via-[#f7f0e0] to-white text-slate-900">
       <SiteNav />
 
       <main className="flex-1 pt-6 pb-16">
@@ -289,40 +249,40 @@ export default function FindBookingPage() {
             transition={{ delay: 0.1 }}
             className="max-w-2xl mx-auto mb-12"
           >
-            <form onSubmit={handleSearch} className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 md:p-8 border border-gray-100">
+            <form onSubmit={handleSearch} className="bg-white/90 backdrop-blur rounded-2xl shadow-xl shadow-[#c4a572]/10 p-6 md:p-8 border border-[#eadcc2]">
               <div className="grid md:grid-cols-2 gap-4 mb-6">
                 {/* Confirmation Number */}
                 <div>
-                  <label htmlFor="confirmation" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="confirmation" className="block text-sm font-medium text-slate-700 mb-2">
                     Confirmation Number
                   </label>
                   <div className="relative">
-                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       id="confirmation"
                       type="text"
                       value={confirmation}
                       onChange={(e) => setConfirmation(e.target.value.toUpperCase())}
                       placeholder="ARK-20241128-0001"
-                      className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
+                      className="w-full pl-12 pr-4 py-3.5 bg-[#fdf8ec] border border-[#eadcc2] rounded-xl text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
+                      className="w-full pl-12 pr-4 py-3.5 bg-[#fdf8ec] border border-[#eadcc2] rounded-xl text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -382,7 +342,7 @@ export default function FindBookingPage() {
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
                   {/* Booking Header Card */}
-                  <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 overflow-hidden border border-gray-100">
+                  <div className="bg-white/95 backdrop-blur rounded-2xl shadow-xl shadow-[#c4a572]/10 overflow-hidden border border-[#eadcc2]">
                     {/* Status Banner */}
                     <div className={`px-6 py-4 ${statusConfig[booking.status]?.bg || 'bg-gray-50'} flex items-center justify-between`}>
                       <div className="flex items-center gap-3">
@@ -403,8 +363,8 @@ export default function FindBookingPage() {
                     <div className="p-6">
                       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
                         <div>
-                          <p className="text-sm text-gray-500 mb-1">Confirmation Number</p>
-                          <p className="text-2xl font-bold text-gray-900 font-mono">{booking.booking_id}</p>
+                          <p className="text-sm text-slate-500 mb-1">Confirmation Number</p>
+                          <p className="text-2xl font-bold text-slate-900 font-mono">{booking.booking_id}</p>
                         </div>
                         {daysUntilCheckin !== null && daysUntilCheckin > 0 && (
                           <div className="bg-[#C4A572]/10 px-4 py-2 rounded-xl">
@@ -417,35 +377,35 @@ export default function FindBookingPage() {
 
                       {/* Date Cards */}
                       <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                        <div className="bg-gray-50 rounded-xl p-4">
-                          <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+                        <div className="bg-[#fdf5e7] rounded-xl p-4 border border-[#eadcc2]">
+                          <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
                             <Calendar className="w-4 h-4" />
                             Check-in
                           </div>
-                          <p className="font-semibold text-gray-900">{formatDate(booking.check_in_date)}</p>
-                          <p className="text-sm text-gray-500">From 3:00 PM</p>
+                          <p className="font-semibold text-slate-900">{formatDate(booking.check_in_date)}</p>
+                          <p className="text-sm text-slate-500">From 3:00 PM</p>
                         </div>
-                        <div className="bg-gray-50 rounded-xl p-4">
-                          <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+                        <div className="bg-[#fdf5e7] rounded-xl p-4 border border-[#eadcc2]">
+                          <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
                             <Calendar className="w-4 h-4" />
                             Check-out
                           </div>
-                          <p className="font-semibold text-gray-900">{formatDate(booking.check_out_date)}</p>
-                          <p className="text-sm text-gray-500">Until 11:00 AM</p>
+                          <p className="font-semibold text-slate-900">{formatDate(booking.check_out_date)}</p>
+                          <p className="text-sm text-slate-500">Until 11:00 AM</p>
                         </div>
                       </div>
 
                       {/* Quick Stats */}
-                      <div className="flex flex-wrap gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600">
+                      <div className="flex flex-wrap gap-4 text-sm text-slate-700">
+                        <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
                           {booking.nights} {booking.nights === 1 ? 'night' : 'nights'}
                         </div>
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2">
                           <Users className="w-4 h-4" />
                           {booking.number_of_guests} {booking.number_of_guests === 1 ? 'guest' : 'guests'}
                         </div>
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
                           Venice, Italy
                         </div>
@@ -454,9 +414,9 @@ export default function FindBookingPage() {
                   </div>
 
                   {/* Tabs */}
-                  <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 overflow-hidden border border-gray-100">
+                  <div className="bg-white/95 backdrop-blur rounded-2xl shadow-xl shadow-[#c4a572]/10 overflow-hidden border border-[#eadcc2]">
                     {/* Tab Headers */}
-                    <div className="flex border-b border-gray-100">
+                    <div className="flex border-b border-[#eadcc2]">
                       {[
                         { id: 'details', label: 'Details', icon: FileText },
                         { id: 'modify', label: 'Modify', icon: Edit3 },
@@ -488,66 +448,66 @@ export default function FindBookingPage() {
                       <AnimatePresence mode="wait">
                         {activeTab === 'details' && (
                           <motion.div
-                            key="details"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="space-y-6"
-                          >
-                            {/* Guest Info */}
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900 mb-4">Guest Information</h3>
-                              <div className="grid sm:grid-cols-2 gap-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                                    <User className="w-5 h-5 text-gray-500" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-gray-500">Name</p>
-                                    <p className="font-medium text-gray-900">{booking.guest_name}</p>
-                                  </div>
+                          key="details"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          className="space-y-6"
+                        >
+                          {/* Guest Info */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-slate-900 mb-4">Guest Information</h3>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-[#fdf5e7] rounded-xl flex items-center justify-center">
+                                  <User className="w-5 h-5 text-slate-500" />
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                                    <Mail className="w-5 h-5 text-gray-500" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-gray-500">Email</p>
-                                    <p className="font-medium text-gray-900">{booking.guest_email}</p>
-                                  </div>
+                                <div>
+                                  <p className="text-sm text-slate-500">Name</p>
+                                  <p className="font-medium text-slate-900">{booking.guest_name}</p>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                                    <Phone className="w-5 h-5 text-gray-500" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-gray-500">Phone</p>
-                                    <p className="font-medium text-gray-900">{booking.guest_phone || 'Not provided'}</p>
-                                  </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-[#fdf5e7] rounded-xl flex items-center justify-center">
+                                  <Mail className="w-5 h-5 text-slate-500" />
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                                    <Globe className="w-5 h-5 text-gray-500" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-gray-500">Country</p>
-                                    <p className="font-medium text-gray-900">{booking.guest_country}</p>
-                                  </div>
+                                <div>
+                                  <p className="text-sm text-slate-500">Email</p>
+                                  <p className="font-medium text-slate-900">{booking.guest_email}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-[#fdf5e7] rounded-xl flex items-center justify-center">
+                                  <Phone className="w-5 h-5 text-slate-500" />
+                                </div>
+                                <div>
+                                  <p className="text-sm text-slate-500">Phone</p>
+                                  <p className="font-medium text-slate-900">{booking.guest_phone || 'Not provided'}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-[#fdf5e7] rounded-xl flex items-center justify-center">
+                                  <Globe className="w-5 h-5 text-slate-500" />
+                                </div>
+                                <div>
+                                  <p className="text-sm text-slate-500">Country</p>
+                                  <p className="font-medium text-slate-900">{booking.guest_country}</p>
                                 </div>
                               </div>
                             </div>
+                          </div>
 
-                            {/* Special Requests */}
-                            {booking.special_requests && (
-                              <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-3">Special Requests</h3>
-                                <p className="text-gray-600 bg-gray-50 rounded-xl p-4">
-                                  {booking.special_requests}
-                                </p>
-                              </div>
-                            )}
+                          {/* Special Requests */}
+                          {booking.special_requests && (
+                            <div>
+                              <h3 className="text-lg font-semibold text-slate-900 mb-3">Special Requests</h3>
+                              <p className="text-slate-700 bg-[#fdf5e7] rounded-xl p-4 border border-[#eadcc2]">
+                                {booking.special_requests}
+                              </p>
+                            </div>
+                          )}
 
-                            {/* Check-in Status */}
+                          {/* Check-in Status */}
                             <div className={`rounded-xl p-4 flex items-center gap-3 ${
                               booking.has_checkin_data ? 'bg-emerald-50' : 'bg-amber-50'
                             }`}>
@@ -578,19 +538,19 @@ export default function FindBookingPage() {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
-                            className="space-y-6"
-                          >
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-semibold text-gray-900">Modify Booking Details</h3>
-                              {!isEditing && (
-                                <button
-                                  onClick={() => setIsEditing(true)}
-                                  className="flex items-center gap-2 text-[#C4A572] hover:text-[#B39562] font-medium"
-                                >
-                                  <Edit3 className="w-4 h-4" />
-                                  Edit
-                                </button>
-                              )}
+                          className="space-y-6"
+                        >
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-slate-900">Modify Booking Details</h3>
+                            {!isEditing && (
+                              <button
+                                onClick={() => setIsEditing(true)}
+                                className="flex items-center gap-2 text-[#C4A572] hover:text-[#B39562] font-medium"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                                Edit
+                              </button>
+                            )}
                             </div>
 
                             {/* Success Message */}
@@ -617,16 +577,16 @@ export default function FindBookingPage() {
                                   <input
                                     type="text"
                                     value={editData.guest_name}
-                                    onChange={(e) => setEditData(prev => ({ ...prev, guest_name: e.target.value }))}
-                                    disabled={!isEditing}
-                                    className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all ${
-                                      isEditing
-                                        ? 'bg-white border-gray-200 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent'
-                                        : 'bg-gray-50 border-gray-100 text-gray-700'
-                                    }`}
-                                  />
-                                </div>
-                              </div>
+                                onChange={(e) => setEditData(prev => ({ ...prev, guest_name: e.target.value }))}
+                                disabled={!isEditing}
+                                className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all ${
+                                  isEditing
+                                    ? 'bg-white border-[#eadcc2] focus:ring-2 focus:ring-[#C4A572] focus:border-transparent'
+                                    : 'bg-[#fdf5e7] border-[#eadcc2] text-slate-700'
+                                }`}
+                              />
+                            </div>
+                          </div>
 
                               {/* Phone */}
                               <div>
@@ -636,17 +596,17 @@ export default function FindBookingPage() {
                                   <input
                                     type="tel"
                                     value={editData.guest_phone}
-                                    onChange={(e) => setEditData(prev => ({ ...prev, guest_phone: e.target.value }))}
-                                    disabled={!isEditing}
-                                    placeholder="+39 123 456 7890"
-                                    className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all ${
-                                      isEditing
-                                        ? 'bg-white border-gray-200 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent'
-                                        : 'bg-gray-50 border-gray-100 text-gray-700'
-                                    }`}
-                                  />
-                                </div>
-                              </div>
+                                onChange={(e) => setEditData(prev => ({ ...prev, guest_phone: e.target.value }))}
+                                disabled={!isEditing}
+                                placeholder="+39 123 456 7890"
+                                className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all ${
+                                  isEditing
+                                    ? 'bg-white border-[#eadcc2] focus:ring-2 focus:ring-[#C4A572] focus:border-transparent'
+                                    : 'bg-[#fdf5e7] border-[#eadcc2] text-slate-700'
+                                }`}
+                              />
+                            </div>
+                          </div>
 
                               {/* Special Requests */}
                               <div>
@@ -659,8 +619,8 @@ export default function FindBookingPage() {
                                   placeholder="Any special requests or preferences..."
                                   className={`w-full px-4 py-3 rounded-xl border transition-all ${
                                     isEditing
-                                      ? 'bg-white border-gray-200 focus:ring-2 focus:ring-[#C4A572] focus:border-transparent'
-                                      : 'bg-gray-50 border-gray-100 text-gray-700'
+                                      ? 'bg-white border-[#eadcc2] focus:ring-2 focus:ring-[#C4A572] focus:border-transparent'
+                                      : 'bg-[#fdf5e7] border-[#eadcc2] text-slate-700'
                                   }`}
                                 />
                               </div>
@@ -677,7 +637,7 @@ export default function FindBookingPage() {
                                         special_requests: booking.special_requests || '',
                                       });
                                     }}
-                                    className="flex-1 py-3 px-4 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-all"
+                                    className="flex-1 py-3 px-4 border border-[#eadcc2] rounded-xl text-slate-700 font-medium hover:bg-[#fdf5e7] transition-all"
                                   >
                                     Cancel
                                   </button>
@@ -699,8 +659,8 @@ export default function FindBookingPage() {
                               )}
                             </div>
 
-                            <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-600">
-                              <p className="font-medium text-gray-700 mb-1">Need to change dates or cancel?</p>
+                            <div className="bg-[#fdf5e7] rounded-xl p-4 text-sm text-slate-700 border border-[#eadcc2]">
+                              <p className="font-medium text-slate-800 mb-1">Need to change dates or cancel?</p>
                               <p>Please contact us directly for date changes or cancellations at <a href="mailto:support@allarcoapartment.com" className="text-[#C4A572] hover:underline">support@allarcoapartment.com</a></p>
                             </div>
                           </motion.div>
@@ -848,11 +808,11 @@ export default function FindBookingPage() {
                                 <button
                                   onClick={handleSubmitCheckin}
                                   disabled={submittingCheckin}
-                                  className="w-full bg-[#C4A572] text-white py-4 rounded-xl font-semibold hover:bg-[#B39562] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                >
-                                  {submittingCheckin ? (
-                                    <>
-                                      <Loader2 className="w-5 h-5 animate-spin" />
+                                    className="w-full bg-[#C4A572] text-white py-4 rounded-xl font-semibold hover:bg-[#B39562] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                  >
+                                    {submittingCheckin ? (
+                                      <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
                                       Submitting...
                                     </>
                                   ) : (
@@ -874,29 +834,29 @@ export default function FindBookingPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                   {/* Price Summary */}
-                  <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 border border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Price Summary</h3>
+                  <div className="bg-white/95 backdrop-blur rounded-2xl shadow-xl shadow-[#c4a572]/10 p-6 border border-[#eadcc2]">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Price Summary</h3>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">${booking.nightly_rate} x {booking.nights} nights</span>
-                        <span className="font-medium">${(booking.nightly_rate * booking.nights).toFixed(2)}</span>
+                        <span className="text-slate-700">${booking.nightly_rate} x {booking.nights} nights</span>
+                        <span className="font-medium text-slate-900">${(booking.nightly_rate * booking.nights).toFixed(2)}</span>
                       </div>
                       {booking.cleaning_fee > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Cleaning fee</span>
-                          <span className="font-medium">${booking.cleaning_fee.toFixed(2)}</span>
+                          <span className="text-slate-700">Cleaning fee</span>
+                          <span className="font-medium text-slate-900">${booking.cleaning_fee.toFixed(2)}</span>
                         </div>
                       )}
                       {booking.tourist_tax > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Tourist tax</span>
-                          <span className="font-medium">${booking.tourist_tax.toFixed(2)}</span>
+                          <span className="text-slate-700">Tourist tax</span>
+                          <span className="font-medium text-slate-900">${booking.tourist_tax.toFixed(2)}</span>
                         </div>
                       )}
-                      <div className="border-t border-gray-100 pt-3 mt-3">
+                      <div className="border-t border-[#eadcc2] pt-3 mt-3">
                         <div className="flex justify-between">
-                          <span className="font-semibold text-gray-900">Total</span>
-                          <span className="font-bold text-xl text-gray-900">${booking.total_price.toFixed(2)}</span>
+                          <span className="font-semibold text-slate-900">Total</span>
+                          <span className="font-bold text-xl text-slate-900">${booking.total_price.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -908,7 +868,7 @@ export default function FindBookingPage() {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.3 }}
-                      className="bg-gradient-to-br from-[#C4A572]/10 to-[#C4A572]/5 rounded-2xl p-6 border border-[#C4A572]/20"
+                      className="bg-gradient-to-br from-[#C4A572]/12 via-white to-[#fdf5e7] rounded-2xl p-6 border border-[#eadcc2] shadow-lg shadow-[#c4a572]/10"
                     >
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-[#C4A572] rounded-xl flex items-center justify-center">
@@ -938,14 +898,14 @@ export default function FindBookingPage() {
                   )}
 
                   {/* Need Help */}
-                  <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6 border border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Need Help?</h3>
-                    <p className="text-gray-600 text-sm mb-4">
+                  <div className="bg-white/95 backdrop-blur rounded-2xl shadow-xl shadow-[#c4a572]/10 p-6 border border-[#eadcc2]">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Need Help?</h3>
+                    <p className="text-slate-700 text-sm mb-4">
                       Our team is here to assist you with any questions about your stay.
                     </p>
                     <a
                       href="mailto:support@allarcoapartment.com"
-                      className="w-full py-3 px-4 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-3 px-4 border border-[#eadcc2] rounded-xl text-slate-800 font-medium hover:bg-[#fdf5e7] transition-all flex items-center justify-center gap-2"
                     >
                       <Mail className="w-5 h-5" />
                       Contact Us
@@ -983,13 +943,13 @@ export default function FindBookingPage() {
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg shadow-gray-100/50"
+                  className="bg-white/95 backdrop-blur rounded-2xl p-6 border border-[#eadcc2] shadow-lg shadow-[#c4a572]/10"
                 >
                   <div className="w-12 h-12 bg-[#C4A572]/10 rounded-xl flex items-center justify-center mb-4">
                     <item.icon className="w-6 h-6 text-[#C4A572]" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-600 text-sm">{item.description}</p>
+                  <h3 className="font-semibold text-slate-900 mb-2">{item.title}</h3>
+                  <p className="text-slate-700 text-sm">{item.description}</p>
                 </div>
               ))}
             </motion.div>
