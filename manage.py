@@ -10,8 +10,11 @@ import sys
 
 def _normalize_argv(argv):
     """
-    Convert common unicode dashes (em/en) to standard double-dash so options like
-    “—deploy” are interpreted correctly instead of as app labels.
+    Normalize CLI args:
+    - Convert common unicode dashes (em/en) to standard double-dash so options like
+      “—deploy” are interpreted correctly instead of as app labels.
+    - For the `check` command, drop stray positional tokens (e.g., pasted log text)
+      that would otherwise be treated as app labels and crash deployments.
     """
     if not argv:
         return argv
@@ -25,6 +28,13 @@ def _normalize_argv(argv):
             if arg == "--":
                 continue  # skip stray dash-only args
         normalized.append(arg)
+
+    # If running `check`, strip non-flag positional args to avoid crashes from stray text
+    if len(normalized) >= 2 and normalized[1] == "check":
+        filtered = [normalized[0], normalized[1]]
+        filtered.extend(arg for arg in normalized[2:] if arg.startswith("-"))
+        return filtered
+
     return normalized
 
 
