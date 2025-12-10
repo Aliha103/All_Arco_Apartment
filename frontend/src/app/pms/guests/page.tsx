@@ -53,6 +53,8 @@ interface Guest {
   passport_number?: string;
   document_number?: string;
   document_type?: string;
+  document_issue_date?: string;
+  document_expire_date?: string;
   date_of_birth?: string;
   latest_booking_code?: string;
   address?: string;
@@ -72,6 +74,9 @@ interface Guest {
   created_at: string;
   eta_checkin_time?: string;
   eta_checkout_time?: string;
+  has_billing_details?: boolean;
+  billing_company_name?: string;
+  billing_vat_number?: string;
 }
 
 interface GuestNote {
@@ -648,6 +653,30 @@ function GuestDetailPanel({ guest, bookings, notes, newNote, onNewNoteChange, on
                 <Section title="Identification" icon={CreditCard}>
                   <InfoRow icon={FileText} label="Document Type" value={guest.document_type || 'Passport'} />
                   <InfoRow label="Document Number" value={guest.document_number || guest.passport_number || 'Not provided'} />
+                  {guest.document_issue_date && (
+                    <InfoRow icon={Calendar} label="Issue Date" value={formatDate(guest.document_issue_date)} />
+                  )}
+                  {guest.document_expire_date && (
+                    <InfoRow icon={Calendar} label="Expire Date" value={formatDate(guest.document_expire_date)} />
+                  )}
+                </Section>
+              )}
+
+              {/* Billing Details */}
+              {guest.has_billing_details && (
+                <Section title="Billing Details" icon={Building2}>
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-3">
+                    <div className="flex items-center gap-2 text-sm text-blue-800">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span className="font-medium">Billing information provided</span>
+                    </div>
+                  </div>
+                  {guest.billing_company_name && (
+                    <InfoRow icon={Building2} label="Company Name" value={guest.billing_company_name} />
+                  )}
+                  {guest.billing_vat_number && (
+                    <InfoRow icon={FileText} label="VAT Number" value={guest.billing_vat_number} />
+                  )}
                 </Section>
               )}
 
@@ -669,14 +698,6 @@ function GuestDetailPanel({ guest, bookings, notes, newNote, onNewNoteChange, on
               {/* Stats */}
               <Section title="Guest Statistics" icon={TrendingUp}>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <p className="text-sm text-gray-600 mb-1">Total Bookings</p>
-                    <p className="text-2xl font-bold text-blue-600">{guest.total_bookings}</p>
-                  </div>
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                    <p className="text-sm text-gray-600 mb-1">Total Spent</p>
-                    <p className="text-2xl font-bold text-purple-600">{formatCurrency(parseFloat(guest.total_spent || '0'))}</p>
-                  </div>
                   {guest.online_bookings !== undefined && (
                     <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
                       <p className="text-sm text-gray-600 mb-1">Online Check-ins</p>
