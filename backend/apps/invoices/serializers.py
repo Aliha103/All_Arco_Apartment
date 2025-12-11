@@ -177,6 +177,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
         doc_type = validated_data.get('type', 'receipt')
         line_items = validated_data.get('line_items', [])
 
+        # Check if booking is paid before allowing invoice/receipt creation
+        if booking and hasattr(booking, 'payment_status'):
+            if booking.payment_status != 'paid':
+                raise serializers.ValidationError({
+                    'booking': 'Cannot generate invoice/receipt. Payment must be completed before generating documents. Please ensure the booking is fully paid first.'
+                })
+
         # Check if document of same type already exists for this booking
         if booking:
             existing_doc = Invoice.objects.filter(
