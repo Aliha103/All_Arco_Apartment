@@ -16,14 +16,15 @@ class BookingSerializer(serializers.ModelSerializer):
 
 class BookingListSerializer(serializers.ModelSerializer):
     """Minimal serializer for booking lists."""
-    
+
     class Meta:
         model = Booking
         fields = [
             'id', 'booking_id', 'guest_name', 'guest_email', 'check_in_date',
             'check_out_date', 'nights', 'status', 'payment_status', 'total_price',
             'amount_due', 'applied_credit',
-            'booking_source', 'number_of_guests', 'guest_tax_code', 'created_at'
+            'booking_source', 'number_of_guests', 'guest_tax_code', 'created_at',
+            'nightly_rate', 'cleaning_fee', 'tourist_tax'  # Added for invoice line items
         ]
         read_only_fields = fields
 
