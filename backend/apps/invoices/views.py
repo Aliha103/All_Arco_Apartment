@@ -522,6 +522,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def send_email(self, request, pk=None):
         """Send invoice via email to specified or default email address."""
+        from django.core.mail import EmailMessage
+        from django.template.loader import render_to_string
+
         invoice = self.get_object()
 
         # Get email from request body, default to guest email
@@ -535,16 +538,69 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # TODO: Actually send email to recipient_email
-        # For now, just mark as sent
-        invoice.status = 'sent'
-        invoice.sent_at = timezone.now()
-        invoice.save()
+        try:
+            # Generate PDF if it doesn't exist
+            if not invoice.pdf_file:
+                invoice.generate_pdf_file()
 
-        return Response({
-            'message': f'Invoice email sent to {recipient_email}',
-            'recipient': recipient_email
-        })
+            # Prepare email
+            doc_type = 'Invoice' if invoice.type == 'invoice' else 'Receipt'
+            subject = f'{doc_type} {invoice.invoice_number} - All\'Arco Apartment'
+
+            # Email body
+            message = f"""
+Dear {invoice.booking.guest_name if invoice.booking else 'Guest'},
+
+Please find attached your {doc_type.lower()} {invoice.invoice_number} for your stay at All'Arco Apartment.
+
+{doc_type} Details:
+- {doc_type} Number: {invoice.invoice_number}
+- Issue Date: {invoice.issue_date.strftime('%B %d, %Y')}
+- Total Amount: €{invoice.calculate_total():.2f}
+
+If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+All'Arco Apartment Team
+
+---
+This is an automated message. Please do not reply to this email.
+For inquiries, contact us at support@allarcoapartment.com
+"""
+
+            # Create email with PDF attachment
+            email = EmailMessage(
+                subject=subject,
+                body=message,
+                from_email='support@allarcoapartment.com',  # From address
+                to=[recipient_email],
+                reply_to=['support@allarcoapartment.com'],
+            )
+
+            # Attach PDF
+            if invoice.pdf_file:
+                email.attach_file(invoice.pdf_file.path)
+
+            # Send email
+            email.send()
+
+            # Update invoice tracking fields
+            invoice.sent_to_email = recipient_email
+            invoice.sent_count = (invoice.sent_count or 0) + 1
+            invoice.last_sent_at = timezone.now()
+            invoice.save()
+
+            return Response({
+                'message': f'{doc_type} email sent successfully to {recipient_email}',
+                'recipient': recipient_email,
+                'sent_count': invoice.sent_count
+            })
+
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to send email: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=True, methods=['post'])
     def mark_sent(self, request, pk=None):

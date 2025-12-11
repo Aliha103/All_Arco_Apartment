@@ -25,6 +25,7 @@ class Permission(models.Model):
         ('dashboard', 'Dashboard & Analytics'),
         ('bookings', 'Bookings & Calendar'),
         ('payments', 'Payments & Invoices'),
+        ('invoices', 'Invoice Management'),
         ('guests', 'Guests'),
         ('pricing', 'Pricing'),
         ('expenses', 'Expense Management'),

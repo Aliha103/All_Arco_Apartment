@@ -337,7 +337,8 @@ class InvoicePDFGenerator:
             description = item.get('description', '')
             quantity = item.get('quantity', 1)
             unit_price = item.get('unit_price', 0)
-            amount = item.get('amount', 0)
+            # Support both 'total' (new) and 'amount' (legacy) field names
+            amount = item.get('total', item.get('amount', 0))
 
             table_data.append([
                 description,
@@ -347,7 +348,7 @@ class InvoicePDFGenerator:
             ])
 
         # Total row
-        total = sum(Decimal(str(item.get('amount', 0))) for item in line_items)
+        total = sum(Decimal(str(item.get('total', item.get('amount', 0)))) for item in line_items)
         table_data.append(['', '', 'TOTAL:', f'EUR {float(total):.2f}'])
 
         # Create table with professional styling

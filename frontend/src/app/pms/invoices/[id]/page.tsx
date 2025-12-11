@@ -3,19 +3,61 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils';
-import { Invoice } from '@/types';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Download, Mail, Lock } from 'lucide-react';
+
+interface LineItem {
+  id?: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  total: number;
+}
+
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  type: 'invoice' | 'receipt';
+  booking: string;
+  booking_id: string;
+  guest_name: string;
+  guest_email: string;
+  company_name?: string;
+  issued_at: string;
+  due_date?: string;
+  total_amount: string;
+  line_items: LineItem[];
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  sent_to_email?: string;
+  sent_count?: number;
+  last_sent_at?: string;
+}
 
 export default function InvoiceDetailPage() {
   const params = useParams();
   const queryClient = useQueryClient();
   const invoiceId = params.id as string;
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
 
   // Fetch invoice details
   const { data: invoice, isLoading, error } = useQuery({
@@ -29,15 +71,16 @@ export default function InvoiceDetailPage() {
   // Set page title when invoice data is loaded
   useEffect(() => {
     if (invoice) {
-      const docType = invoice.invoice_number.startsWith('INV') ? 'Invoice' : 'Receipt';
+      const docType = invoice.type === 'invoice' ? 'Invoice' : 'Receipt';
       document.title = `${docType} ${invoice.invoice_number} - All'Arco Apartment`;
+      setEmailAddress(invoice.guest_email || '');
     }
   }, [invoice]);
 
   // Download PDF
-  const downloadPDF = async () => {
-    if (!invoice) return;
-    try {
+  const downloadPDF = useMutation({
+    mutationFn: async () => {
+      if (!invoice) return;
       const response = await api.invoices.downloadPDF(invoiceId);
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -45,30 +88,49 @@ export default function InvoiceDetailPage() {
       a.href = url;
       a.download = `${invoice.invoice_number}.pdf`;
       a.click();
-    } catch (error) {
+    },
+    onError: () => {
       toast.error('Failed to download PDF');
-    }
-  };
+    },
+  });
 
   // Send email
   const sendEmail = useMutation({
-    mutationFn: () => api.invoices.sendEmail(invoiceId),
+    mutationFn: async (email: string) => {
+      await api.invoices.sendEmail(invoiceId, { email });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
-      toast.success('Invoice email sent successfully');
+      setIsEmailDialogOpen(false);
+      toast.success('Invoice sent successfully from support@allarcoapartment.com');
     },
     onError: () => {
       toast.error('Failed to send email');
     },
   });
 
-  // Mark as sent
-  const markSent = useMutation({
-    mutationFn: () => api.invoices.markSent(invoiceId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
-    },
-  });
+  const handleSendEmail = () => {
+    if (!emailAddress || !emailAddress.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    sendEmail.mutate(emailAddress);
+  };
+
+  const calculateSubtotal = (items: LineItem[]) => {
+    return items.reduce((sum, item) => {
+      const subtotal = item.quantity * item.unit_price;
+      return sum + subtotal;
+    }, 0);
+  };
+
+  const calculateTax = (items: LineItem[]) => {
+    return items.reduce((sum, item) => {
+      const subtotal = item.quantity * item.unit_price;
+      const tax = subtotal * (item.tax_rate / 100);
+      return sum + tax;
+    }, 0);
+  };
 
   if (isLoading) {
     return (
@@ -89,7 +151,9 @@ export default function InvoiceDetailPage() {
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="text-center py-12 bg-white rounded-lg shadow-sm">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Invoice Not Found</h2>
-          <p className="text-gray-600 mb-4">The invoice you&apos;re looking for doesn&apos;t exist.</p>
+          <p className="text-gray-600 mb-4">
+            The invoice you&apos;re looking for doesn&apos;t exist.
+          </p>
           <Link href="/pms/invoices">
             <Button className="bg-blue-600 hover:bg-blue-700">Back to Invoices</Button>
           </Link>
@@ -98,38 +162,69 @@ export default function InvoiceDetailPage() {
     );
   }
 
-  const canSendEmail = invoice.status === 'draft' || invoice.status === 'sent';
-
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="w-full sm:w-auto">
           <div className="flex items-center gap-4 mb-2">
-            <Link href="/pms/invoices" className="text-blue-600 hover:text-blue-800 font-medium">
+            <Link
+              href="/pms/invoices"
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
               ← Back to Invoices
             </Link>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{invoice.invoice_number}</h1>
-          <p className="text-sm sm:text-base text-gray-600">Issued on {formatDate(invoice.issued_at)}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge className={`${getStatusColor(invoice.status)} text-sm sm:text-base px-3 py-1`}>
-            {invoice.status.toUpperCase()}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              {invoice.invoice_number}
+            </h1>
+            <Badge
+              className={`text-sm px-3 py-1 capitalize ${
+                invoice.type === 'invoice'
+                  ? 'bg-purple-100 text-purple-800'
+                  : 'bg-green-100 text-green-800'
+              }`}
+            >
+              {invoice.type}
+            </Badge>
+          </div>
+          <p className="text-sm sm:text-base text-gray-600">
+            Issued on {formatDate(invoice.issued_at)}
+          </p>
         </div>
       </div>
+
+      {/* Immutability Notice */}
+      <Card className="mb-6 bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Lock className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-blue-900">Invoice is Immutable</p>
+              <p className="text-sm text-blue-700">
+                This {invoice.type} has been generated and cannot be edited. You can download
+                the PDF or send it via email.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
         {/* Invoice Information */}
         <Card className="bg-white shadow-sm">
           <CardHeader>
-            <CardTitle className="text-gray-900">Invoice Information</CardTitle>
+            <CardTitle className="text-gray-900">
+              {invoice.type === 'invoice' ? 'Invoice' : 'Receipt'} Information
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm text-gray-600">Invoice Number</p>
+              <p className="text-sm text-gray-600">
+                {invoice.type === 'invoice' ? 'Invoice' : 'Receipt'} Number
+              </p>
               <p className="text-lg font-semibold text-gray-900">{invoice.invoice_number}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -144,22 +239,22 @@ export default function InvoiceDetailPage() {
                 </div>
               )}
             </div>
-            {invoice.sent_at && (
+            {invoice.sent_count && invoice.sent_count > 0 && (
               <div>
-                <p className="text-sm text-gray-600">Sent At</p>
-                <p className="font-semibold text-gray-900">{formatDateTime(invoice.sent_at)}</p>
-              </div>
-            )}
-            {invoice.paid_at && (
-              <div>
-                <p className="text-sm text-gray-600">Paid At</p>
-                <p className="font-semibold text-gray-900">{formatDateTime(invoice.paid_at)}</p>
+                <p className="text-sm text-gray-600">Email Status</p>
+                <p className="font-semibold text-gray-900">
+                  Sent {invoice.sent_count} time{invoice.sent_count > 1 ? 's' : ''}
+                  {invoice.last_sent_at && ` (last: ${formatDate(invoice.last_sent_at)})`}
+                </p>
+                {invoice.sent_to_email && (
+                  <p className="text-sm text-gray-600">To: {invoice.sent_to_email}</p>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Guest Information */}
+        {/* Bill To Information */}
         <Card className="bg-white shadow-sm">
           <CardHeader>
             <CardTitle className="text-gray-900">Bill To</CardTitle>
@@ -171,10 +266,19 @@ export default function InvoiceDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Email</p>
-              <a href={`mailto:${invoice.guest_email}`} className="text-blue-600 hover:underline font-medium">
+              <a
+                href={`mailto:${invoice.guest_email}`}
+                className="text-blue-600 hover:underline font-medium"
+              >
                 {invoice.guest_email}
               </a>
             </div>
+            {invoice.company_name && (
+              <div>
+                <p className="text-sm text-gray-600">Company</p>
+                <p className="font-semibold text-gray-900">{invoice.company_name}</p>
+              </div>
+            )}
             <div>
               <p className="text-sm text-gray-600">Booking Reference</p>
               <Link
@@ -188,35 +292,89 @@ export default function InvoiceDetailPage() {
         </Card>
       </div>
 
-      {/* Pricing Breakdown */}
+      {/* Line Items */}
       <Card className="mb-6 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-gray-900">Invoice Details</CardTitle>
+          <CardTitle className="text-gray-900">Line Items</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm sm:text-base text-gray-600">Accommodation</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(invoice.accommodation_total)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm sm:text-base text-gray-600">Cleaning Fee</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(invoice.cleaning_fee)}</span>
-            </div>
-            {parseFloat(invoice.extra_guest_fee) > 0 && (
-              <div className="flex justify-between items-center">
-                <span className="text-sm sm:text-base text-gray-600">Extra Guest Fee</span>
-                <span className="font-semibold text-gray-900">{formatCurrency(invoice.extra_guest_fee)}</span>
-              </div>
-            )}
-            <div className="flex justify-between items-center">
-              <span className="text-sm sm:text-base text-gray-600">Tourist Tax</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(invoice.tourist_tax)}</span>
-            </div>
-            <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
-              <span className="text-base sm:text-lg font-bold text-gray-900">Total Amount</span>
-              <span className="text-base sm:text-lg font-bold text-gray-900">{formatCurrency(invoice.total_amount)}</span>
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b-2 border-gray-200">
+                <tr>
+                  <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">
+                    Description
+                  </th>
+                  <th className="text-right py-3 px-2 text-sm font-semibold text-gray-700">
+                    Qty
+                  </th>
+                  <th className="text-right py-3 px-2 text-sm font-semibold text-gray-700">
+                    Unit Price
+                  </th>
+                  <th className="text-right py-3 px-2 text-sm font-semibold text-gray-700">
+                    Tax %
+                  </th>
+                  <th className="text-right py-3 px-2 text-sm font-semibold text-gray-700">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {invoice.line_items && invoice.line_items.length > 0 ? (
+                  invoice.line_items.map((item: LineItem, index: number) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="py-3 px-2 text-sm text-gray-900">{item.description}</td>
+                      <td className="py-3 px-2 text-sm text-gray-900 text-right">
+                        {item.quantity}
+                      </td>
+                      <td className="py-3 px-2 text-sm text-gray-900 text-right">
+                        {formatCurrency(item.unit_price)}
+                      </td>
+                      <td className="py-3 px-2 text-sm text-gray-900 text-right">
+                        {item.tax_rate}%
+                      </td>
+                      <td className="py-3 px-2 text-sm font-semibold text-gray-900 text-right">
+                        {formatCurrency(item.total)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-500">
+                      No line items
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              {invoice.line_items && invoice.line_items.length > 0 && (
+                <tfoot className="border-t-2 border-gray-200">
+                  <tr>
+                    <td colSpan={4} className="py-3 px-2 text-sm font-semibold text-gray-700 text-right">
+                      Subtotal
+                    </td>
+                    <td className="py-3 px-2 text-sm font-semibold text-gray-900 text-right">
+                      {formatCurrency(calculateSubtotal(invoice.line_items))}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="py-3 px-2 text-sm font-semibold text-gray-700 text-right">
+                      Tax
+                    </td>
+                    <td className="py-3 px-2 text-sm font-semibold text-gray-900 text-right">
+                      {formatCurrency(calculateTax(invoice.line_items))}
+                    </td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td colSpan={4} className="py-4 px-2 text-base font-bold text-gray-900 text-right">
+                      Total Amount
+                    </td>
+                    <td className="py-4 px-2 text-base font-bold text-blue-600 text-right">
+                      {formatCurrency(parseFloat(invoice.total_amount))}
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
         </CardContent>
       </Card>
@@ -240,38 +398,60 @@ export default function InvoiceDetailPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={downloadPDF}>
-              Download PDF
+            <Button onClick={() => downloadPDF.mutate()} disabled={downloadPDF.isPending}>
+              <Download className="w-4 h-4 mr-2" />
+              {downloadPDF.isPending ? 'Downloading...' : 'Download PDF'}
             </Button>
 
-            {canSendEmail && (
-              <Button
-                variant="outline"
-                onClick={() => sendEmail.mutate()}
-                disabled={sendEmail.isPending}
-              >
-                {sendEmail.isPending ? 'Sending...' : 'Send via Email'}
-              </Button>
-            )}
-
-            {invoice.status === 'draft' && (
-              <Button
-                variant="outline"
-                onClick={() => markSent.mutate()}
-                disabled={markSent.isPending}
-              >
-                Mark as Sent
-              </Button>
-            )}
-
-            {invoice.pdf_url && (
-              <a href={invoice.pdf_url} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline">View PDF</Button>
-              </a>
-            )}
+            <Button
+              variant="outline"
+              onClick={() => setIsEmailDialogOpen(true)}
+              disabled={sendEmail.isPending}
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Send via Email
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Email Dialog */}
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send {invoice.type === 'invoice' ? 'Invoice' : 'Receipt'} via Email</DialogTitle>
+            <DialogDescription>
+              Email will be sent from <strong>support@allarcoapartment.com</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="email">Recipient Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter email address"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendEmail}
+              disabled={sendEmail.isPending || !emailAddress}
+              className="bg-blue-600"
+            >
+              {sendEmail.isPending ? 'Sending...' : 'Send Email'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
