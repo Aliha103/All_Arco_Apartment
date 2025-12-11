@@ -533,19 +533,11 @@ def stripe_webhook(request):
                 from .models import PaymentRequest
                 payment_request = PaymentRequest.objects.get(id=payment_request_id)
 
-                # Mark as paid (will also send confirmation email)
-                payment_request.mark_as_paid()
+                # Get payment intent ID from session
+                payment_intent_id = session.get('payment_intent')
 
-                # Archive the Stripe Payment Link to prevent reuse
-                try:
-                    if payment_request.stripe_payment_link_id:
-                        stripe.PaymentLink.modify(
-                            payment_request.stripe_payment_link_id,
-                            active=False
-                        )
-                except Exception as e:
-                    # Log but don't fail if link archiving fails
-                    print(f"Failed to archive payment link: {e}")
+                # Mark as paid (will create Payment record, update booking financials, and deactivate link)
+                payment_request.mark_as_paid(stripe_payment_intent_id=payment_intent_id)
 
                 # Send confirmation email
                 try:

@@ -7,11 +7,21 @@ from apps.users.serializers import UserSerializer
 class BookingSerializer(serializers.ModelSerializer):
     """Full serializer for Booking model."""
     user_details = UserSerializer(source='user', read_only=True)
+    total_paid = serializers.SerializerMethodField()
+    balance_remaining = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = '__all__'
         read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'amount_due', 'created_at', 'updated_at', 'cancelled_at']
+
+    def get_total_paid(self, obj):
+        """Get total amount paid for this booking from all sources."""
+        return obj.get_total_paid()
+
+    def get_balance_remaining(self, obj):
+        """Get remaining balance for this booking."""
+        return obj.get_balance_remaining()
 
 
 class BookingListSerializer(serializers.ModelSerializer):

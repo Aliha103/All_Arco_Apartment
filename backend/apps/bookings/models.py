@@ -410,6 +410,35 @@ class Booking(models.Model):
         from django.utils import timezone
         return self.review_token_expires_at > timezone.now()
 
+    def get_total_paid(self):
+        """
+        Calculate total amount paid for this booking from all Payment records.
+        Includes: booking payments, city tax payments, and custom payments (Payment Requests).
+        Excludes: refunded amounts.
+        """
+        from apps.payments.models import Payment
+        from decimal import Decimal
+
+        # Sum all succeeded payments
+        payments = Payment.objects.filter(booking=self, status='succeeded')
+        total_paid = sum(Decimal(p.amount) for p in payments)
+
+        # Subtract refunded amounts
+        for payment in payments.filter(status__in=['refunded', 'partially_refunded']):
+            refunded = sum(Decimal(r.amount) for r in payment.refunds.filter(status='succeeded'))
+            total_paid -= refunded
+
+        return float(max(total_paid, Decimal('0')))
+
+    def get_balance_remaining(self):
+        """
+        Calculate the remaining balance for this booking.
+        Formula: total_price - total_paid
+        """
+        from decimal import Decimal
+        total_paid = Decimal(str(self.get_total_paid()))
+        return float(max(self.total_price - total_paid, Decimal('0')))
+
 
 class BookingAttempt(models.Model):
     """
