@@ -1126,9 +1126,14 @@ def booking_statistics(request):
         check_out_date__gte=month_start
     ).exclude(status='cancelled')
 
-    # Calculate occupied nights for occupancy rate
+    # Revenue statistics (all active bookings this month, regardless of payment status)
+    # Include confirmed, paid, checked_in, and checked_out bookings for revenue
+    revenue_bookings = month_bookings.filter(status__in=['confirmed', 'paid', 'checked_in', 'checked_out'])
+    total_revenue = revenue_bookings.aggregate(Sum('total_price'))['total_price__sum'] or 0
+
+    # Calculate occupied nights for occupancy rate (use same statuses as revenue for consistency)
     occupied_nights = 0
-    for booking in month_bookings:
+    for booking in revenue_bookings:
         # Calculate overlap with current month
         overlap_start = max(booking.check_in_date, month_start.date())
         overlap_end = min(booking.check_out_date, month_end.date())
@@ -1138,10 +1143,6 @@ def booking_statistics(request):
 
     # Occupancy rate for single apartment
     occupancy_rate = round((occupied_nights / days_in_month) * 100, 1) if days_in_month > 0 else 0
-
-    # Revenue statistics (paid bookings this month)
-    revenue_bookings = month_bookings.filter(payment_status='paid')
-    total_revenue = revenue_bookings.aggregate(Sum('total_price'))['total_price__sum'] or 0
 
     # Total bookings count
     total_bookings = month_bookings.count()
