@@ -145,13 +145,20 @@ class InvoicePDFGenerator:
         Returns BytesIO buffer containing the generated PDF.
         """
         buffer = BytesIO()
+
+        # Set document title
+        doc_type = 'Invoice' if self.is_invoice else 'Receipt'
+        doc_title = f"{doc_type} {self.invoice.invoice_number} - All'Arco Apartment"
+
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
             rightMargin=2.5*cm,
             leftMargin=2.5*cm,
             topMargin=1.5*cm,
-            bottomMargin=2*cm
+            bottomMargin=2*cm,
+            title=doc_title,
+            author="All'Arco Apartment"
         )
 
         elements = []
