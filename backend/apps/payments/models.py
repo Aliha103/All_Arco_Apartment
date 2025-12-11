@@ -252,10 +252,11 @@ class PaymentRequest(models.Model):
         from decimal import Decimal
         import stripe
 
-        # If additional_charge type and not yet paid, revert booking totals
-        if self.type == 'additional_charge' and self.status != 'paid':
+        # If additional_charge, deposit, or custom type and not yet paid, revert booking totals
+        # These types add to the booking total, so cancelling should remove the amount
+        if self.type in ['additional_charge', 'deposit', 'custom'] and self.status != 'paid':
             booking = self.booking
-            booking.total_price = Decimal(booking.total_price) - self.amount
+            booking.total_price = max(Decimal('0'), Decimal(booking.total_price) - self.amount)
             booking.amount_due = max(Decimal('0'), Decimal(booking.amount_due or booking.total_price) - self.amount)
             booking.save(update_fields=['total_price', 'amount_due', 'updated_at'])
 

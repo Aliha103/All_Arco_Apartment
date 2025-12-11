@@ -711,9 +711,10 @@ class PaymentRequestViewSet(viewsets.ModelViewSet):
 
         payment_request = serializer.save(created_by=self.request.user)
 
-        # For additional_charge type, increase booking total_price and amount_due
-        # Other types (deposit, remaining_balance, custom) are parts of existing total
-        if payment_request.type == 'additional_charge':
+        # For additional_charge, deposit, and custom types: increase booking total_price and amount_due
+        # These represent NEW charges that add to the booking
+        # remaining_balance does NOT add to total (it's part of the existing total)
+        if payment_request.type in ['additional_charge', 'deposit', 'custom']:
             booking = payment_request.booking
             booking.total_price = Decimal(booking.total_price) + payment_request.amount
             booking.amount_due = Decimal(booking.amount_due or booking.total_price) + payment_request.amount
