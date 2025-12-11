@@ -160,12 +160,13 @@ export default function PaymentsPage() {
   // Data Fetching
   // ============================================================================
 
-  const { data: payments = [], isLoading } = useQuery({
+  const { data: payments = [], isLoading, isError, error } = useQuery({
     queryKey: ['payment-requests'],
     queryFn: async () => {
       const response = await api.paymentRequests.list();
       return response.data?.results || response.data || [];
     },
+    retry: false, // Don't retry on auth errors
   });
 
   const { data: stats } = useQuery({
@@ -239,7 +240,8 @@ export default function PaymentsPage() {
   const sendEmailMutation = useMutation({
     mutationFn: (id: string) => api.paymentRequests.sendEmail(id),
     onSuccess: (_, id) => {
-      const payment = payments.find((p: PaymentRequest) => p.id === id);
+      const safePayments = Array.isArray(payments) ? payments : [];
+      const payment = safePayments.find((p: PaymentRequest) => p.id === id);
       toast.success(`Payment request sent to ${payment?.guest_email || 'guest'}`);
     },
     onError: () => {
@@ -432,7 +434,18 @@ export default function PaymentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isError ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Your session has expired. Please refresh the page and log in again.
+                </p>
+                <Button onClick={() => window.location.reload()} className="bg-blue-600">
+                  Reload Page
+                </Button>
+              </div>
+            ) : isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
@@ -728,7 +741,8 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
     queryFn: async () => {
       if (!debouncedBookingSearch) return [];
       const response = await api.bookings.list({ search: debouncedBookingSearch });
-      return response.data;
+      // Handle both paginated and direct array responses, ensure we always return an array
+      return response.data?.results || response.data || [];
     },
     enabled: debouncedBookingSearch.length > 2,
   });
@@ -808,7 +822,7 @@ function CreatePaymentModal({ isOpen, onClose }: CreatePaymentModalProps) {
               {/* Booking Results */}
               {debouncedBookingSearch.length > 2 && (
                 <div className="border border-gray-200 rounded-lg max-h-[400px] overflow-y-auto">
-                  {bookings.length === 0 ? (
+                  {!Array.isArray(bookings) || bookings.length === 0 ? (
                     <div className="p-8 text-center text-gray-600">
                       No bookings found
                     </div>
