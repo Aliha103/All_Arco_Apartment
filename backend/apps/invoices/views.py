@@ -41,16 +41,17 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
         try:
             # Use new PDF service if line_items exist, otherwise legacy code
-            if invoice.line_items or invoice.pdf_file:
-                # Generate or retrieve PDF using new service
-                if not invoice.pdf_file:
-                    invoice.generate_pdf_file()
-                    invoice.save()
+            if invoice.line_items:
+                # Generate PDF using new service
+                from apps.invoices.pdf_service import InvoicePDFGenerator
 
-                # Serve PDF file
+                generator = InvoicePDFGenerator(invoice)
+                pdf_buffer = generator.generate()
+
+                # Serve PDF directly from buffer
                 is_invoice = invoice.type == 'invoice'
                 filename_prefix = 'invoice' if is_invoice else 'receipt'
-                response = HttpResponse(invoice.pdf_file.read(), content_type='application/pdf')
+                response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
                 response['Content-Disposition'] = f'attachment; filename="{filename_prefix}-{invoice.invoice_number}.pdf"'
                 return response
 
