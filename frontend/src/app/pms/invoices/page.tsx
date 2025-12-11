@@ -797,7 +797,10 @@ function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps) {
   };
 
   const calculateGrandTotal = () => {
-    return lineItems.reduce((sum, item) => sum + item.total, 0);
+    return lineItems.reduce((sum, item) => {
+      const total = typeof item.total === 'number' && !isNaN(item.total) ? item.total : 0;
+      return sum + total;
+    }, 0);
   };
 
   const handleSubmit = () => {
@@ -1062,7 +1065,7 @@ function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps) {
                             <Label className="text-xs">Total (€)</Label>
                             <Input
                               type="text"
-                              value={item.total.toFixed(2)}
+                              value={typeof item.total === 'number' && !isNaN(item.total) ? item.total.toFixed(2) : '0.00'}
                               disabled
                               className="bg-gray-100"
                             />
