@@ -405,18 +405,20 @@ class InvoicePDFGenerator:
 
     def build_payment_section(self):
         """Build payment status section."""
-        # Check invoice status first - if paid, show paid status regardless of payment method
+        # Check invoice status first
         if self.invoice.status == 'paid':
-            payment_msg = 'This booking has been PAID.'
-        else:
+            # Show payment method for paid invoices
             payment_messages = {
-                'cash': 'Payment method: Cash',
-                'card': 'Payment method: Card',
-                'bank_transfer': 'Payment method: Bank Transfer',
-                'property': 'Payment method: At Property',
-                'stripe': 'Payment method: Online (Stripe)'
+                'cash': 'This booking has been PAID BY CASH.',
+                'card': 'This booking has been PAID BY CARD.',
+                'bank_transfer': 'This booking has been PAID BY BANK TRANSFER.',
+                'property': 'This booking has been PAID AT PROPERTY.',
+                'stripe': 'This booking has been PAID ONLINE.'
             }
-            payment_msg = payment_messages.get(self.invoice.payment_method, 'Payment pending.')
+            payment_msg = payment_messages.get(self.invoice.payment_method, 'This booking has been PAID.')
+        else:
+            # For draft/sent/overdue invoices, just show payment pending
+            payment_msg = 'Payment pending.'
 
         payment_text = f'<b><font size=9 color=#A68B5B>PAYMENT STATUS</font></b><br/><font size=10>{payment_msg}</font>'
         payment_para = Paragraph(payment_text, self.payment_box_style)
