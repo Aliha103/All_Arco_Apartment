@@ -2,7 +2,7 @@
 
 > A comprehensive full-stack web platform for managing a vacation rental in Venice, Italy. Built with Next.js 16, React 19, Django 5.2, and PostgreSQL 15.
 
-[![Version](https://img.shields.io/badge/version-1.1.6-blue.svg)](https://github.com)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb)](https://reactjs.org/)
 [![Django](https://img.shields.io/badge/Django-5.2-092e20)](https://www.djangoproject.com/)
@@ -122,26 +122,62 @@
 - Refund reason tracking
 - Transaction failure logging
 
-#### 4. Invoices & Receipts System
+#### 4. Invoices & Receipts System (Professional & Immutable)
 
 **Dual Document Type Support:**
 - **Invoices** - For companies with detailed business information
   - Numbering format: `INV-YYYY-xxxxx`
-  - Company details (name, VAT, tax code, address)
+  - Company details (name, VAT, SDI code, tax code, address)
   - Business contact email
+  - Optional due date
 - **Receipts** - For individual guests
   - Numbering format: `REC-YYYY-xxxxx`
   - Guest name and contact info
+  - Immediate payment tracking
 
-**Features:**
-- **Company Management** - Store and reuse company details
-- **Automatic Calculation** - Amounts pulled from bookings
+**Dynamic Line Item Management:**
+- **Add/Remove Items** - Full control during invoice creation
+  - Auto-populated from booking (accommodation, cleaning, tourist tax)
+  - Manual line items with custom descriptions
+  - Quantity, unit price, and tax rate per item
+  - Real-time total calculation
+- **Immutable After Creation** - Invoices cannot be edited once generated
+  - Ensures document integrity
+  - Clear visual indicators on frontend
+  - Audit trail preservation
+
+**Professional Features:**
+- **Multi-Step Creation Wizard**
+  1. Select booking
+  2. Choose document type (Invoice/Receipt)
+  3. Select company (for invoices)
+  4. Add/edit line items dynamically
+  5. Review and create
+- **Company Management** - Full CRUD operations
+  - Store and reuse company details
+  - VAT number, SDI code, tax code support
+  - Multiple companies support
+  - Search and filter capabilities
 - **PDF Generation** - Professional branded documents (ReportLab)
-- **Email Delivery** - Send directly to guest/company email
-- **Status Tracking** - Draft → Sent → Paid / Overdue
-- **Duplicate Prevention** - Maximum one invoice + one receipt per booking
-- **Payment Methods** - Cash, Card, Bank Transfer, At Property, Stripe
-- **Smart Defaults** - Pre-filled amounts and dates
+  - Line items table with quantities and prices
+  - Subtotal, tax, and grand total
+  - Company branding and styling
+- **Email Delivery** - Automated sending from support@allarcoapartment.com
+  - Professional email template
+  - PDF attachment included
+  - Email tracking (sent count, last sent date)
+  - Send to custom or guest email
+- **Permission-Based Access** - RBAC integration
+  - View invoices
+  - Create invoices/receipts
+  - Delete invoices
+  - Send emails
+  - Edit settings
+- **Smart Features**
+  - Duplicate prevention per booking
+  - Auto-generated invoice numbers
+  - Date tracking (issued, due, sent)
+  - Payment method tracking
 
 #### 5. Guests Directory
 - Complete guest profiles with contact information
@@ -190,15 +226,17 @@
   - Assign roles and permissions
   - Revoke access
   - View team activity logs
-- **Granular Permissions** (8 groups)
-  - Dashboard access
-  - Bookings management
-  - Payments and refunds
-  - Guest directory
-  - Pricing configuration
-  - Team management
-  - Gallery management
-  - Reports and analytics
+- **Granular Permissions** (10 groups, 50+ permissions)
+  - **Dashboard** - View metrics and analytics
+  - **Bookings** - Create, view, edit, cancel reservations
+  - **Payments** - Process payments and refunds
+  - **Invoices** - Create, view, send, delete invoices/receipts
+  - **Guests** - Manage guest directory
+  - **Pricing** - Configure rates and rules
+  - **Expenses** - Track and approve business expenses
+  - **Team** - Manage team members (Admin only)
+  - **Gallery** - Upload and manage images
+  - **Reports** - View analytics and exports
 
 #### 9. Reports & Analytics
 - **Revenue Reports**
@@ -847,16 +885,21 @@ GET    /api/payments/confirm-checkout-session/  # Confirm session
 GET    /api/payments/confirm-city-tax-session/  # Confirm city tax
 ```
 
-#### Invoice Endpoints (5+)
+#### Invoice Endpoints (8+)
 ```
-GET    /api/invoices/                    # List invoices
-POST   /api/invoices/                    # Create invoice
+GET    /api/invoices/                    # List invoices (with filters)
+POST   /api/invoices/                    # Create invoice with line items
 GET    /api/invoices/{id}/               # Get invoice details
-PATCH  /api/invoices/{id}/               # Update invoice
 DELETE /api/invoices/{id}/               # Delete invoice
-POST   /api/invoices/{id}/generate_pdf/  # Generate PDF
-POST   /api/invoices/{id}/send_email/    # Send via email
+POST   /api/invoices/{id}/generate_pdf/  # Generate PDF with line items
+POST   /api/invoices/{id}/send_email/    # Send via email from support@
 GET    /api/invoices/{id}/download_pdf/  # Download PDF
+
+GET    /api/companies/                   # List companies
+POST   /api/companies/                   # Create company
+GET    /api/companies/{id}/              # Get company details
+PATCH  /api/companies/{id}/              # Update company
+DELETE /api/companies/{id}/              # Delete company
 ```
 
 #### Pricing Endpoints (4+)
@@ -1090,22 +1133,35 @@ volumes:
 
 ### Role-Based Access Control (RBAC)
 
-**Permission Groups (8 total):**
-1. Dashboard - View metrics and overview
-2. Bookings - Manage reservations
-3. Payments - Process payments and refunds
-4. Guests - View and manage guest directory
-5. Pricing - Configure pricing and rules
-6. Team - Manage team members (Admin only)
-7. Gallery - Manage images
-8. Reports - View analytics and reports
+**Permission Groups (10 total, 50+ individual permissions):**
+1. **Dashboard** - View metrics and overview
+2. **Bookings** - Manage reservations
+3. **Payments** - Process payments and refunds
+4. **Invoices** - Create, view, send, delete invoices/receipts
+   - `invoices.view` - View invoices and receipts
+   - `invoices.create` - Create new invoices/receipts
+   - `invoices.edit` - Edit invoice settings
+   - `invoices.delete` - Delete invoices
+   - `invoices.send` - Send invoices via email
+5. **Guests** - View and manage guest directory
+6. **Pricing** - Configure pricing and rules
+7. **Expenses** - Track and approve business expenses
+   - `expenses.view` - View expenses and statistics
+   - `expenses.create` - Create expense records
+   - `expenses.edit` - Edit expenses
+   - `expenses.delete` - Delete expenses
+   - `expenses.approve` - Approve/reject expenses
+8. **Team** - Manage team members (Admin only)
+9. **Gallery** - Manage images
+10. **Reports** - View analytics and reports
 
 **Permission Levels:**
-- View - Read-only access
-- Create - Add new records
-- Update - Edit existing records
-- Delete - Remove records
-- Execute - Perform actions (refunds, emails)
+- **View** - Read-only access to resources
+- **Create** - Add new records
+- **Edit** - Modify existing records
+- **Delete** - Remove records
+- **Approve** - Approve/reject submissions (expenses)
+- **Send** - Send communications (emails, invoices)
 
 ### Application Security
 
@@ -1529,12 +1585,13 @@ Built with these amazing technologies:
 
 ## 📊 Project Stats
 
-- **Version:** 1.1.6
+- **Version:** 1.2.0
 - **Status:** Production Ready
-- **Lines of Code:** ~50,000+
-- **Components:** 40+ React components
-- **API Endpoints:** 40+ REST endpoints
-- **Database Models:** 10+ Django models
+- **Lines of Code:** ~55,000+
+- **Components:** 45+ React components
+- **API Endpoints:** 50+ REST endpoints
+- **Database Models:** 12+ Django models
+- **Permission Groups:** 10 groups, 50+ permissions
 - **Languages:** TypeScript, Python
 - **Test Coverage:** TBD
 
