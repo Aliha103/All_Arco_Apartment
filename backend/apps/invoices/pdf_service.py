@@ -405,15 +405,18 @@ class InvoicePDFGenerator:
 
     def build_payment_section(self):
         """Build payment status section."""
-        payment_messages = {
-            'cash': 'This booking has been PAID BY CASH.',
-            'card': 'This booking has been PAID BY CARD.',
-            'bank_transfer': 'This booking has been PAID BY BANK TRANSFER.',
-            'property': 'This booking is to be PAID AT PROPERTY.',
-            'stripe': 'This booking has been PAID ONLINE.'
-        }
-
-        payment_msg = payment_messages.get(self.invoice.payment_method, 'Payment pending.')
+        # Check invoice status first - if paid, show paid status regardless of payment method
+        if self.invoice.status == 'paid':
+            payment_msg = 'This booking has been PAID.'
+        else:
+            payment_messages = {
+                'cash': 'Payment method: Cash',
+                'card': 'Payment method: Card',
+                'bank_transfer': 'Payment method: Bank Transfer',
+                'property': 'Payment method: At Property',
+                'stripe': 'Payment method: Online (Stripe)'
+            }
+            payment_msg = payment_messages.get(self.invoice.payment_method, 'Payment pending.')
 
         payment_text = f'<b><font size=9 color=#A68B5B>PAYMENT STATUS</font></b><br/><font size=10>{payment_msg}</font>'
         payment_para = Paragraph(payment_text, self.payment_box_style)
@@ -445,9 +448,6 @@ class InvoicePDFGenerator:
         elements.append(footer_line_table)
 
         elements.append(Paragraph("Thank you for choosing All'Arco Apartment Venice", self.footer_thanks_style))
-        elements.append(Paragraph("www.allarcoapartment.com", self.footer_url_style))
-        elements.append(Paragraph("Via Castellana 61, 30174 Venice, Italy", self.footer_info_style))
-        elements.append(Paragraph("Email: support@allarcoapartment.com | Phone: Available upon request", self.footer_info_style))
         elements.append(Spacer(1, 4))
         elements.append(Paragraph("This document serves as official confirmation of your booking and payment.", self.footer_legal_style))
         elements.append(Paragraph("All prices are in EUR. Tourist tax is calculated per person per night as per local regulations.", self.footer_legal_style))
