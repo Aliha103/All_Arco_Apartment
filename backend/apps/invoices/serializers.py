@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils import timezone
 from .models import Invoice, Company, CompanyNote
 from apps.bookings.serializers import BookingListSerializer
 
@@ -212,6 +213,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             validated_data['created_by'] = request.user
+
+        # Auto-set invoice status based on booking payment status
+        if booking and hasattr(booking, 'payment_status'):
+            if booking.payment_status == 'paid':
+                validated_data['status'] = 'paid'
+                validated_data['paid_at'] = timezone.now()
+            elif booking.payment_status == 'partially_paid':
+                validated_data['status'] = 'sent'
+            # Otherwise keep default 'draft' status
 
         invoice = super().create(validated_data)
 
