@@ -167,6 +167,8 @@ export default function PaymentsPage() {
       return response.data?.results || response.data || [];
     },
     retry: false, // Don't retry on auth errors
+    refetchInterval: 30000, // Refetch every 30 seconds to catch webhook updates
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
   const { data: stats } = useQuery({
@@ -175,6 +177,8 @@ export default function PaymentsPage() {
       const response = await api.paymentRequests.statistics();
       return response.data;
     },
+    refetchInterval: 30000, // Refetch every 30 seconds to catch webhook updates
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
   // ============================================================================

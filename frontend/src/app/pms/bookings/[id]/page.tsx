@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { formatCurrency, formatDate, formatDateTime, getStatusColor } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Booking, Payment } from '@/types';
+import { Booking, Payment, PaymentRequest } from '@/types';
 
 export default function BookingDetailPage() {
   const params = useParams();
@@ -75,6 +75,18 @@ export default function BookingDetailPage() {
       return (response.data.results || response.data) as Payment[];
     },
     enabled: isClient && !!booking,
+  });
+
+  // Fetch payment requests for this booking
+  const { data: paymentRequests } = useQuery({
+    queryKey: ['booking-payment-requests', bookingId],
+    queryFn: async () => {
+      const response = await api.paymentRequests.list({ booking: bookingId });
+      return (response.data.results || response.data) as PaymentRequest[];
+    },
+    enabled: isClient && !!booking,
+    refetchInterval: 30000, // Refetch every 30 seconds to catch webhook updates
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
   // Update booking status
@@ -432,6 +444,56 @@ export default function BookingDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Requests */}
+      {paymentRequests && paymentRequests.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Payment Requests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {paymentRequests.map((request) => (
+                <div key={request.id} className="flex items-center justify-between border-b pb-3 last:border-b-0">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-medium">{request.description}</p>
+                      <Badge className={
+                        request.status === 'paid' ? 'bg-green-100 text-green-800' :
+                        request.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                        request.status === 'cancelled' ? 'bg-gray-100 text-gray-600' :
+                        'bg-yellow-100 text-yellow-800'
+                      }>
+                        {request.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Due: {formatDate(request.due_date)}
+                      {request.paid_at && ` • Paid: ${formatDateTime(request.paid_at)}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-lg">{formatCurrency(request.amount)}</p>
+                    {request.stripe_payment_link_url && request.status === 'pending' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => {
+                          navigator.clipboard.writeText(request.stripe_payment_link_url!);
+                          toast.success('Payment link copied to clipboard');
+                        }}
+                      >
+                        Copy Payment Link
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Special Requests */}
       {booking.special_requests && (

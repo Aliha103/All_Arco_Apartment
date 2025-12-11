@@ -129,6 +129,28 @@ export interface Refund {
   created_at: string;
 }
 
+export interface PaymentRequest {
+  id: string;
+  booking: string;
+  booking_id: string;
+  type: 'deposit' | 'remaining_balance' | 'additional_charge' | 'custom';
+  description: string;
+  amount: string | number;
+  currency: string;
+  due_date: string;
+  stripe_payment_link_id?: string;
+  stripe_payment_link_url?: string;
+  status: 'pending' | 'overdue' | 'paid' | 'cancelled';
+  paid_at?: string;
+  cancelled_at?: string;
+  guest_name?: string;
+  guest_email?: string;
+  is_overdue?: boolean;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Invoice types
 export interface Invoice {
   id: string;

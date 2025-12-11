@@ -529,25 +529,33 @@ def stripe_webhook(request):
 
         # Handle Payment Request (Payment Link) checkout
         if payment_request_id:
+            import logging
+            logger = logging.getLogger(__name__)
             try:
                 from .models import PaymentRequest
+                logger.info(f"[Webhook] Processing payment for payment_request_id: {payment_request_id}")
                 payment_request = PaymentRequest.objects.get(id=payment_request_id)
 
                 # Get payment intent ID from session
                 payment_intent_id = session.get('payment_intent')
+                logger.info(f"[Webhook] Payment intent ID: {payment_intent_id}")
 
                 # Mark as paid (will create Payment record, update booking financials, and deactivate link)
                 payment_request.mark_as_paid(stripe_payment_intent_id=payment_intent_id)
+                logger.info(f"[Webhook] Payment request {payment_request_id} marked as paid")
 
                 # Send confirmation email
                 try:
                     from apps.emails.services import send_payment_confirmation_email
                     send_payment_confirmation_email(payment_request)
-                except Exception:
-                    pass
+                    logger.info(f"[Webhook] Confirmation email sent for payment request {payment_request_id}")
+                except Exception as e:
+                    logger.error(f"[Webhook] Failed to send confirmation email: {str(e)}")
 
-            except PaymentRequest.DoesNotExist:
-                pass
+            except PaymentRequest.DoesNotExist as e:
+                logger.error(f"[Webhook] Payment request {payment_request_id} not found")
+            except Exception as e:
+                logger.error(f"[Webhook] Error processing payment request {payment_request_id}: {str(e)}", exc_info=True)
 
         # Handle regular booking checkout
         if booking_id:
