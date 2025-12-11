@@ -707,7 +707,17 @@ class PaymentRequestViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Create payment request and generate Stripe payment link"""
+        from decimal import Decimal
+
         payment_request = serializer.save(created_by=self.request.user)
+
+        # For additional_charge type, increase booking total_price and amount_due
+        # Other types (deposit, remaining_balance, custom) are parts of existing total
+        if payment_request.type == 'additional_charge':
+            booking = payment_request.booking
+            booking.total_price = Decimal(booking.total_price) + payment_request.amount
+            booking.amount_due = Decimal(booking.amount_due or booking.total_price) + payment_request.amount
+            booking.save(update_fields=['total_price', 'amount_due', 'updated_at'])
 
         # Generate Stripe payment link
         try:

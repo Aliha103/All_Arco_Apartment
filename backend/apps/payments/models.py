@@ -249,7 +249,15 @@ class PaymentRequest(models.Model):
     def cancel(self):
         """Cancel payment request and deactivate payment link"""
         from django.utils import timezone
+        from decimal import Decimal
         import stripe
+
+        # If additional_charge type and not yet paid, revert booking totals
+        if self.type == 'additional_charge' and self.status != 'paid':
+            booking = self.booking
+            booking.total_price = Decimal(booking.total_price) - self.amount
+            booking.amount_due = max(Decimal('0'), Decimal(booking.amount_due or booking.total_price) - self.amount)
+            booking.save(update_fields=['total_price', 'amount_due', 'updated_at'])
 
         self.status = 'cancelled'
         self.cancelled_at = timezone.now()
