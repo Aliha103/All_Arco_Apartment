@@ -181,6 +181,7 @@ export const api = {
     get: (id: string) => apiClient.get(`/invoices/${id}/`),
     create: (data: any) => apiClient.post('/invoices/', data),
     update: (id: string, data: any) => apiClient.patch(`/invoices/${id}/`, data),
+    delete: (id: string) => apiClient.delete(`/invoices/${id}/`),
     generatePDF: (id: string) => apiClient.post(`/invoices/${id}/generate_pdf/`),
     downloadPDF: (id: string) =>
       apiClient.get(`/invoices/${id}/download_pdf/`, { responseType: 'blob' }),
