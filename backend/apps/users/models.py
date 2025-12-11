@@ -32,6 +32,7 @@ class Permission(models.Model):
         ('team', 'Team & Roles'),
         ('gallery', 'Gallery Management'),
         ('reports', 'Reports & Logs'),
+        ('reviews', 'Review Management'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -840,8 +841,29 @@ def host_avatar_upload_path(instance, filename):
 
 
 class Review(models.Model):
-    """Public-facing review/testimonial."""
+    """
+    Public-facing review/testimonial with approval workflow.
 
+    Reviews can be submitted by guests via email link after checkout,
+    or manually created by staff. All guest-submitted reviews require
+    approval before appearing on the homepage.
+    """
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    OTA_CHOICES = [
+        ('website', 'Website'),
+        ('airbnb', 'Airbnb'),
+        ('booking_com', 'Booking.com'),
+        ('direct', 'Direct'),
+        ('other', 'Other'),
+    ]
+
+    # Basic review fields
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     guest_name = models.CharField(max_length=150)
     location = models.CharField(max_length=150, blank=True, default='')
@@ -852,6 +874,135 @@ class Review(models.Model):
     is_featured = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
+    # Approval workflow fields
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        db_index=True,
+        help_text='Review approval status'
+    )
+
+    # Booking relationship and OTA source
+    booking = models.ForeignKey(
+        'bookings.Booking',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviews',
+        help_text='Linked booking (if submitted via review request)'
+    )
+    ota_source = models.CharField(
+        max_length=20,
+        choices=OTA_CHOICES,
+        default='website',
+        help_text='Booking source (auto-populated from booking or manual)'
+    )
+
+    # Category ratings (6 Airbnb-standard categories, 0-10 scale)
+    rating_cleanliness = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        help_text='Cleanliness rating (0-10)'
+    )
+    rating_communication = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        help_text='Communication rating (0-10)'
+    )
+    rating_checkin = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        help_text='Check-in rating (0-10)'
+    )
+    rating_accuracy = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        help_text='Accuracy rating (0-10)'
+    )
+    rating_location = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        help_text='Location rating (0-10)'
+    )
+    rating_value = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        help_text='Value rating (0-10)'
+    )
+
+    # Submission tracking
+    submitted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='submitted_reviews',
+        help_text='User who submitted (guest or staff member)'
+    )
+
+    # Approval tracking
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_reviews',
+        help_text='Staff member who approved'
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When review was approved'
+    )
+
+    # Rejection tracking
+    rejected_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rejected_reviews',
+        help_text='Staff member who rejected'
+    )
+    rejected_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When review was rejected'
+    )
+    rejection_reason = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Internal reason for rejection (not shown to guests)'
+    )
+
+    # Edit tracking
+    edited_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='edited_reviews',
+        help_text='Staff member who last edited'
+    )
+    edited_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When review was last edited'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -861,10 +1012,55 @@ class Review(models.Model):
         indexes = [
             models.Index(fields=['is_active']),
             models.Index(fields=['is_featured']),
+            models.Index(fields=['status']),
+            models.Index(fields=['ota_source']),
+            models.Index(fields=['booking']),
         ]
+
+    def __str__(self):
+        return f"{self.guest_name} - {self.rating}/10 - {self.status}"
 
     def clean(self):
         if self.rating is None:
             raise ValidationError('Rating is required')
         if self.rating < 0 or self.rating > 10:
             raise ValidationError('Rating must be between 0 and 10')
+
+    def calculate_overall_rating(self):
+        """
+        Calculate overall rating as average of 6 category ratings.
+        Updates the rating field with the calculated average.
+        """
+        category_ratings = [
+            self.rating_cleanliness,
+            self.rating_communication,
+            self.rating_checkin,
+            self.rating_accuracy,
+            self.rating_location,
+            self.rating_value,
+        ]
+        # Filter out None values
+        valid_ratings = [r for r in category_ratings if r is not None]
+
+        if valid_ratings:
+            from decimal import Decimal
+            avg = sum(valid_ratings) / len(valid_ratings)
+            self.rating = Decimal(str(round(avg, 1)))
+
+    def can_be_edited_by(self, user):
+        """Check if user has permission to edit this review."""
+        if not user or not user.is_authenticated:
+            return False
+        return user.has_perm_code('reviews.edit')
+
+    def can_be_deleted_by(self, user):
+        """Check if user has permission to delete this review."""
+        if not user or not user.is_authenticated:
+            return False
+        return user.has_perm_code('reviews.delete')
+
+    def can_be_approved_by(self, user):
+        """Check if user has permission to approve/reject this review."""
+        if not user or not user.is_authenticated:
+            return False
+        return user.has_perm_code('reviews.approve')

@@ -252,13 +252,31 @@ class HostProfileSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """
+    Basic review serializer for public display (homepage).
+    Only includes approved, active reviews with essential fields.
+    """
+    category_ratings = serializers.SerializerMethodField()
+
     class Meta:
         model = Review
         fields = [
             'id', 'guest_name', 'location', 'rating', 'title', 'text',
-            'stay_date', 'is_featured', 'is_active', 'created_at', 'updated_at'
+            'stay_date', 'is_featured', 'is_active', 'created_at', 'updated_at',
+            'category_ratings'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_category_ratings(self, obj):
+        """Return category ratings as a dictionary."""
+        return {
+            'cleanliness': float(obj.rating_cleanliness) if obj.rating_cleanliness else None,
+            'communication': float(obj.rating_communication) if obj.rating_communication else None,
+            'checkin': float(obj.rating_checkin) if obj.rating_checkin else None,
+            'accuracy': float(obj.rating_accuracy) if obj.rating_accuracy else None,
+            'location': float(obj.rating_location) if obj.rating_location else None,
+            'value': float(obj.rating_value) if obj.rating_value else None,
+        }
 
     def validate_rating(self, value):
         if value is None:
@@ -266,3 +284,251 @@ class ReviewSerializer(serializers.ModelSerializer):
         if value < 0 or value > 10:
             raise serializers.ValidationError('Rating must be between 0 and 10')
         return value
+
+
+class ReviewDetailSerializer(serializers.ModelSerializer):
+    """
+    Detailed review serializer for PMS.
+    Includes all fields including approval workflow data.
+    """
+    category_ratings = serializers.SerializerMethodField()
+    submitted_by_name = serializers.SerializerMethodField()
+    approved_by_name = serializers.SerializerMethodField()
+    rejected_by_name = serializers.SerializerMethodField()
+    edited_by_name = serializers.SerializerMethodField()
+    booking_info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Review
+        fields = [
+            'id', 'guest_name', 'location', 'rating', 'title', 'text',
+            'stay_date', 'is_featured', 'is_active',
+            'status', 'ota_source',
+            'booking', 'booking_info',
+            'rating_cleanliness', 'rating_communication', 'rating_checkin',
+            'rating_accuracy', 'rating_location', 'rating_value',
+            'category_ratings',
+            'submitted_by', 'submitted_by_name',
+            'approved_by', 'approved_by_name', 'approved_at',
+            'rejected_by', 'rejected_by_name', 'rejected_at', 'rejection_reason',
+            'edited_by', 'edited_by_name', 'edited_at',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'created_at', 'updated_at',
+            'submitted_by', 'approved_by', 'approved_at',
+            'rejected_by', 'rejected_at', 'edited_by', 'edited_at'
+        ]
+
+    def get_category_ratings(self, obj):
+        """Return category ratings as a dictionary."""
+        return {
+            'cleanliness': float(obj.rating_cleanliness) if obj.rating_cleanliness else None,
+            'communication': float(obj.rating_communication) if obj.rating_communication else None,
+            'checkin': float(obj.rating_checkin) if obj.rating_checkin else None,
+            'accuracy': float(obj.rating_accuracy) if obj.rating_accuracy else None,
+            'location': float(obj.rating_location) if obj.rating_location else None,
+            'value': float(obj.rating_value) if obj.rating_value else None,
+        }
+
+    def get_submitted_by_name(self, obj):
+        return obj.submitted_by.get_full_name() if obj.submitted_by else None
+
+    def get_approved_by_name(self, obj):
+        return obj.approved_by.get_full_name() if obj.approved_by else None
+
+    def get_rejected_by_name(self, obj):
+        return obj.rejected_by.get_full_name() if obj.rejected_by else None
+
+    def get_edited_by_name(self, obj):
+        return obj.edited_by.get_full_name() if obj.edited_by else None
+
+    def get_booking_info(self, obj):
+        """Return basic booking information if linked."""
+        if obj.booking:
+            return {
+                'id': str(obj.booking.id),
+                'booking_code': obj.booking.booking_id,
+                'guest_email': obj.booking.guest_email,
+                'check_in_date': obj.booking.check_in_date,
+                'check_out_date': obj.booking.check_out_date,
+            }
+        return None
+
+
+class ReviewCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for manual review creation by staff.
+    Auto-approves and sets the staff member as both submitted_by and approved_by.
+    """
+    booking_id = serializers.UUIDField(required=False, allow_null=True, write_only=True)
+
+    class Meta:
+        model = Review
+        fields = [
+            'guest_name', 'location', 'title', 'text', 'stay_date',
+            'rating_cleanliness', 'rating_communication', 'rating_checkin',
+            'rating_accuracy', 'rating_location', 'rating_value',
+            'ota_source', 'booking_id', 'is_featured'
+        ]
+
+    def validate(self, data):
+        """Validate that all category ratings are provided."""
+        required_ratings = [
+            'rating_cleanliness', 'rating_communication', 'rating_checkin',
+            'rating_accuracy', 'rating_location', 'rating_value'
+        ]
+        for rating_field in required_ratings:
+            rating_value = data.get(rating_field)
+            if rating_value is None:
+                raise serializers.ValidationError(f'{rating_field} is required')
+            if rating_value < 0 or rating_value > 10:
+                raise serializers.ValidationError(f'{rating_field} must be between 0 and 10')
+        return data
+
+    def create(self, validated_data):
+        """Create review with auto-approval for staff-created reviews."""
+        from apps.bookings.models import Booking
+        from django.utils import timezone
+
+        booking_id = validated_data.pop('booking_id', None)
+        user = self.context['request'].user
+
+        # Create review instance
+        review = Review(**validated_data)
+
+        # Calculate overall rating from category ratings
+        review.calculate_overall_rating()
+
+        # Auto-approve staff-created reviews
+        review.status = 'approved'
+        review.submitted_by = user
+        review.approved_by = user
+        review.approved_at = timezone.now()
+        review.is_active = True
+
+        # Link to booking if provided
+        if booking_id:
+            try:
+                booking = Booking.objects.get(id=booking_id)
+                review.booking = booking
+                # Auto-populate OTA source from booking
+                if not validated_data.get('ota_source'):
+                    review.ota_source = booking.booking_source
+                # Mark booking as having a review
+                booking.review_submitted = True
+                booking.save(update_fields=['review_submitted'])
+            except Booking.DoesNotExist:
+                pass
+
+        review.save()
+        return review
+
+
+class ReviewSubmitSerializer(serializers.Serializer):
+    """
+    Serializer for public guest review submission via email link.
+    Creates review with status='pending' for approval.
+    """
+    token = serializers.CharField(required=True)
+    booking_code = serializers.CharField(required=True)
+    guest_name = serializers.CharField(max_length=150, required=True, min_length=2)
+    location = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    title = serializers.CharField(max_length=200, required=True, min_length=5)
+    text = serializers.CharField(required=True, min_length=50, max_length=2000)
+    rating_cleanliness = serializers.DecimalField(max_digits=3, decimal_places=1, required=True)
+    rating_communication = serializers.DecimalField(max_digits=3, decimal_places=1, required=True)
+    rating_checkin = serializers.DecimalField(max_digits=3, decimal_places=1, required=True)
+    rating_accuracy = serializers.DecimalField(max_digits=3, decimal_places=1, required=True)
+    rating_location = serializers.DecimalField(max_digits=3, decimal_places=1, required=True)
+    rating_value = serializers.DecimalField(max_digits=3, decimal_places=1, required=True)
+
+    def validate(self, data):
+        """Validate token, booking code, and ratings."""
+        from apps.bookings.models import Booking
+        from django.utils import timezone
+
+        token = data.get('token')
+        booking_code = data.get('booking_code')
+
+        # Validate token exists
+        try:
+            booking = Booking.objects.get(review_token=token)
+        except Booking.DoesNotExist:
+            raise serializers.ValidationError({'token': 'Invalid or expired review link'})
+
+        # Validate token not expired
+        if not booking.is_review_token_valid():
+            raise serializers.ValidationError({'token': 'This review link has expired'})
+
+        # Validate booking code matches
+        if booking.booking_id != booking_code.upper():
+            raise serializers.ValidationError({'booking_code': 'Incorrect booking code'})
+
+        # Validate not already submitted
+        if booking.review_submitted:
+            raise serializers.ValidationError({'token': 'You have already submitted a review for this booking'})
+
+        # Validate all category ratings are 0-10
+        rating_fields = ['rating_cleanliness', 'rating_communication', 'rating_checkin',
+                        'rating_accuracy', 'rating_location', 'rating_value']
+        for field in rating_fields:
+            value = data.get(field)
+            if value < 0 or value > 10:
+                raise serializers.ValidationError({field: 'Rating must be between 0 and 10'})
+
+        data['booking'] = booking
+        return data
+
+    def create(self, validated_data):
+        """Create review with status='pending' for approval."""
+        booking = validated_data.pop('booking')
+        validated_data.pop('token')
+        validated_data.pop('booking_code')
+
+        # Create review instance
+        review = Review(
+            guest_name=validated_data['guest_name'],
+            location=validated_data.get('location', ''),
+            title=validated_data['title'],
+            text=validated_data['text'],
+            stay_date=booking.check_in_date,
+            rating_cleanliness=validated_data['rating_cleanliness'],
+            rating_communication=validated_data['rating_communication'],
+            rating_checkin=validated_data['rating_checkin'],
+            rating_accuracy=validated_data['rating_accuracy'],
+            rating_location=validated_data['rating_location'],
+            rating_value=validated_data['rating_value'],
+            booking=booking,
+            ota_source=booking.booking_source,
+            status='pending',
+            is_active=False,  # Not visible until approved
+        )
+
+        # Calculate overall rating
+        review.calculate_overall_rating()
+        review.save()
+
+        # Mark booking as having submitted review
+        booking.review_submitted = True
+        booking.save(update_fields=['review_submitted'])
+
+        return review
+
+
+class ReviewApproveSerializer(serializers.Serializer):
+    """Serializer for approving a review."""
+    pass  # No additional fields needed
+
+
+class ReviewRejectSerializer(serializers.Serializer):
+    """Serializer for rejecting a review with reason."""
+    rejection_reason = serializers.CharField(
+        required=True,
+        min_length=10,
+        max_length=500,
+        error_messages={
+            'required': 'Rejection reason is required',
+            'min_length': 'Rejection reason must be at least 10 characters',
+        }
+    )

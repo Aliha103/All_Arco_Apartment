@@ -172,7 +172,31 @@ class Booking(models.Model):
     # For partial no-show: equals the date guest disappeared (remaining nights released)
     # Nights before this date are still considered occupied/unavailable
     released_from_date = models.DateField(null=True, blank=True)
-    
+
+    # Review request tracking (post-checkout review emails)
+    review_token = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text='UUID4 token for review submission link (sent in email)'
+    )
+    review_token_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Review token expiry (30 days from email send)'
+    )
+    review_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When review request email was sent'
+    )
+    review_submitted = models.BooleanField(
+        default=False,
+        help_text='Whether guest submitted a review for this booking'
+    )
+
     class Meta:
         db_table = 'bookings_booking'
         ordering = ['-check_in_date']
@@ -321,6 +345,70 @@ class Booking(models.Model):
 
         # All other active bookings block full range
         return (self.check_in_date, self.check_out_date)
+
+    def can_request_review(self):
+        """
+        Check if review request can be sent for this booking.
+
+        Returns True if:
+        - status == 'checked_out'
+        - review_submitted == False
+        - review_requested_at is None OR > 30 days ago (allow re-send)
+        """
+        if self.status != 'checked_out':
+            return False
+
+        if self.review_submitted:
+            return False
+
+        # Allow re-send if no previous request or request is old (30+ days)
+        if self.review_requested_at is None:
+            return True
+
+        from django.utils import timezone
+        from datetime import timedelta
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        return self.review_requested_at < thirty_days_ago
+
+    def generate_review_token(self):
+        """
+        Generate new UUID4 review token and set expiry.
+
+        Sets:
+        - review_token (new UUID4)
+        - review_token_expires_at (now + 30 days)
+        - review_requested_at (now)
+
+        Returns the generated token string.
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Generate new UUID4 token
+        self.review_token = str(uuid.uuid4())
+
+        # Set expiry to 30 days from now
+        self.review_token_expires_at = timezone.now() + timedelta(days=30)
+
+        # Set request timestamp
+        self.review_requested_at = timezone.now()
+
+        # Save the model
+        self.save(update_fields=['review_token', 'review_token_expires_at', 'review_requested_at'])
+
+        return self.review_token
+
+    def is_review_token_valid(self):
+        """
+        Check if review token exists and is not expired.
+
+        Returns True if token exists and expiry is in the future.
+        """
+        if not self.review_token or not self.review_token_expires_at:
+            return False
+
+        from django.utils import timezone
+        return self.review_token_expires_at > timezone.now()
 
 
 class BookingAttempt(models.Model):

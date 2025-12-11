@@ -12,7 +12,9 @@ from apps.bookings.models import Booking, BookingGuest
 from .serializers import (
     UserSerializer, UserCreateSerializer, LoginSerializer, GuestNoteSerializer,
     UserWithRoleSerializer, RoleSerializer, PermissionSerializer,
-    HostProfileSerializer, ReviewSerializer
+    HostProfileSerializer, ReviewSerializer, ReviewDetailSerializer,
+    ReviewCreateSerializer, ReviewSubmitSerializer, ReviewApproveSerializer,
+    ReviewRejectSerializer
 )
 from .permissions import HasPermission, IsSuperAdmin
 
@@ -495,20 +497,346 @@ class HostProfileViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    """Public reviews; only super admin can create/update/delete."""
-    serializer_class = ReviewSerializer
+    """
+    Review Management ViewSet with approval workflow.
+
+    Public endpoints:
+    - GET /api/reviews/ - List approved reviews (homepage display)
+    - POST /api/reviews/submit/ - Guest review submission via email link
+    - GET /api/reviews/verify-token/{token}/ - Verify review token
+
+    Authenticated endpoints (requires permissions):
+    - GET /api/reviews/ - List all reviews with filters (PMS)
+    - POST /api/reviews/ - Create review manually (staff)
+    - PATCH /api/reviews/{id}/ - Update review
+    - DELETE /api/reviews/{id}/ - Delete review
+    - POST /api/reviews/{id}/approve/ - Approve pending review
+    - POST /api/reviews/{id}/reject/ - Reject pending review
+    - POST /api/reviews/{id}/toggle-featured/ - Toggle featured status
+    - GET /api/reviews/statistics/ - Review statistics
+    """
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == 'list':
+            # PMS users get detailed serializer, public gets basic
+            if self.request.user.is_authenticated and self.request.user.has_perm_code('reviews.view'):
+                return ReviewDetailSerializer
+            return ReviewSerializer
+        elif self.action == 'retrieve':
+            if self.request.user.is_authenticated and self.request.user.has_perm_code('reviews.view'):
+                return ReviewDetailSerializer
+            return ReviewSerializer
+        elif self.action == 'create':
+            return ReviewCreateSerializer
+        elif self.action == 'submit':
+            return ReviewSubmitSerializer
+        elif self.action == 'approve':
+            return ReviewApproveSerializer
+        elif self.action == 'reject':
+            return ReviewRejectSerializer
+        return ReviewSerializer
 
     def get_permissions(self):
-        if self.request.method in SAFE_METHODS:
+        """Define permissions based on action."""
+        if self.action in ['list', 'retrieve']:
+            # Public can view approved reviews, authenticated with reviews.view can see all
             return [AllowAny()]
+        elif self.action in ['submit', 'verify_token']:
+            # Public guest submission and token verification
+            return [AllowAny()]
+        elif self.action == 'create':
+            # Manual creation requires reviews.create permission
+            return [IsAuthenticated(), HasPermission()]
+        elif self.action in ['approve', 'reject']:
+            # Approval/rejection requires reviews.approve permission
+            return [IsAuthenticated(), HasPermission()]
+        elif self.action in ['update', 'partial_update', 'toggle_featured']:
+            # Editing requires reviews.edit permission
+            return [IsAuthenticated(), HasPermission()]
+        elif self.action == 'destroy':
+            # Deletion requires reviews.delete permission
+            return [IsAuthenticated(), HasPermission()]
+        elif self.action == 'statistics':
+            # Statistics requires reviews.view permission
+            return [IsAuthenticated(), HasPermission()]
         return [IsSuperAdmin()]
 
+    @property
+    def required_permission(self):
+        """Return required permission for current action."""
+        permission_map = {
+            'create': 'reviews.create',
+            'update': 'reviews.edit',
+            'partial_update': 'reviews.edit',
+            'destroy': 'reviews.delete',
+            'approve': 'reviews.approve',
+            'reject': 'reviews.approve',
+            'toggle_featured': 'reviews.edit',
+            'statistics': 'reviews.view',
+        }
+        return permission_map.get(self.action)
+
     def get_queryset(self):
+        """
+        Return queryset based on user permissions.
+
+        Public (unauthenticated): Only approved + active reviews
+        Authenticated with reviews.view: All reviews with filters
+        """
         queryset = Review.objects.all()
-        if self.request.method in SAFE_METHODS:
-            queryset = queryset.filter(is_active=True)
-        # Public consumers typically want newest first, featured prioritized
-        return queryset.order_by('-is_featured', '-created_at')
+
+        # Public access: only approved and active reviews
+        if not self.request.user.is_authenticated or not self.request.user.has_perm_code('reviews.view'):
+            queryset = queryset.filter(status='approved', is_active=True)
+            return queryset.order_by('-is_featured', '-created_at')
+
+        # Authenticated PMS access: filter by query params
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        ota_source = self.request.query_params.get('ota_source')
+        if ota_source:
+            queryset = queryset.filter(ota_source=ota_source)
+
+        booking_id = self.request.query_params.get('booking_id')
+        if booking_id:
+            queryset = queryset.filter(booking_id=booking_id)
+
+        rating_min = self.request.query_params.get('rating')
+        if rating_min:
+            try:
+                queryset = queryset.filter(rating__gte=float(rating_min))
+            except ValueError:
+                pass
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(guest_name__icontains=search) |
+                Q(title__icontains=search) |
+                Q(text__icontains=search)
+            )
+
+        # Ordering
+        ordering = self.request.query_params.get('ordering', '-created_at')
+        queryset = queryset.order_by(ordering)
+
+        return queryset
+
+    @action(detail=False, methods=['post'], url_path='submit')
+    def submit(self, request):
+        """
+        Public endpoint for guest review submission via email link.
+
+        Validates token, booking code, and creates review with status='pending'.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        review = serializer.save()
+
+        return Response({
+            'id': str(review.id),
+            'message': 'Review submitted successfully and is pending approval',
+            'status': 'pending'
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='verify-token/(?P<token>[^/.]+)')
+    def verify_token(self, request, token=None):
+        """
+        Public endpoint to verify review token and booking code.
+
+        Returns booking details if valid, error message if not.
+        """
+        booking_code = request.query_params.get('booking_code', '').strip().upper()
+
+        if not booking_code:
+            return Response({
+                'valid': False,
+                'error': 'Booking code is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            booking = Booking.objects.get(review_token=token)
+        except Booking.DoesNotExist:
+            return Response({
+                'valid': False,
+                'error': 'Invalid or expired review link'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check token not expired
+        if not booking.is_review_token_valid():
+            return Response({
+                'valid': False,
+                'error': 'This review link has expired'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check booking code matches
+        if booking.booking_id != booking_code:
+            return Response({
+                'valid': False,
+                'error': 'Incorrect booking code'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check not already submitted
+        if booking.review_submitted:
+            return Response({
+                'valid': False,
+                'error': 'You have already submitted a review for this booking'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Return booking details for form pre-fill
+        return Response({
+            'valid': True,
+            'booking': {
+                'guest_name': booking.guest_name,
+                'guest_location': booking.guest_country or '',
+                'check_in_date': booking.check_in_date,
+                'check_out_date': booking.check_out_date,
+                'booking_code': booking.booking_id,
+            }
+        })
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """
+        Approve a pending review.
+
+        Sets status='approved', records approver, and makes review visible.
+        """
+        review = self.get_object()
+
+        from django.utils import timezone
+
+        # Update review status
+        review.status = 'approved'
+        review.approved_by = request.user
+        review.approved_at = timezone.now()
+        review.is_active = True
+
+        # Clear rejection fields if previously rejected
+        review.rejected_by = None
+        review.rejected_at = None
+        review.rejection_reason = None
+
+        review.save()
+
+        serializer = ReviewDetailSerializer(review)
+        return Response({
+            'message': 'Review approved successfully',
+            **serializer.data
+        })
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """
+        Reject a pending review with reason.
+
+        Sets status='rejected', records rejecter and reason, hides review.
+        """
+        review = self.get_object()
+
+        serializer = ReviewRejectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        from django.utils import timezone
+
+        # Update review status
+        review.status = 'rejected'
+        review.rejected_by = request.user
+        review.rejected_at = timezone.now()
+        review.rejection_reason = serializer.validated_data['rejection_reason']
+        review.is_active = False
+
+        # Clear approval fields if previously approved
+        review.approved_by = None
+        review.approved_at = None
+
+        review.save()
+
+        serializer = ReviewDetailSerializer(review)
+        return Response({
+            'message': 'Review rejected successfully',
+            **serializer.data
+        })
+
+    @action(detail=True, methods=['post'], url_path='toggle-featured')
+    def toggle_featured(self, request, pk=None):
+        """Toggle the is_featured status of a review."""
+        review = self.get_object()
+        review.is_featured = not review.is_featured
+        review.save(update_fields=['is_featured'])
+
+        return Response({
+            'id': str(review.id),
+            'is_featured': review.is_featured,
+            'message': 'Review featured status updated'
+        })
+
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """
+        Get review statistics for PMS dashboard.
+
+        Returns counts by status, OTA source, rating distribution, and averages.
+        """
+        from django.db.models import Count, Avg, Q
+        from datetime import datetime, timedelta
+
+        queryset = Review.objects.all()
+
+        # Total counts by status
+        total_reviews = queryset.count()
+        pending_count = queryset.filter(status='pending').count()
+        approved_count = queryset.filter(status='approved').count()
+        rejected_count = queryset.filter(status='rejected').count()
+
+        # Average rating (approved reviews only)
+        avg_rating = queryset.filter(status='approved').aggregate(
+            avg=Avg('rating')
+        )['avg'] or 0
+
+        # Reviews this month
+        this_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        reviews_this_month = queryset.filter(created_at__gte=this_month_start).count()
+
+        # By OTA source
+        by_ota_source = {}
+        for ota_choice in Review.OTA_CHOICES:
+            ota_code = ota_choice[0]
+            count = queryset.filter(ota_source=ota_code).count()
+            if count > 0:
+                by_ota_source[ota_code] = count
+
+        # By rating (5-star scale for display)
+        by_rating = {
+            '5_stars': queryset.filter(rating__gte=9.0).count(),  # 9.0-10.0 = 5 stars
+            '4_stars': queryset.filter(rating__gte=7.0, rating__lt=9.0).count(),  # 7.0-8.9 = 4 stars
+            '3_stars': queryset.filter(rating__gte=5.0, rating__lt=7.0).count(),  # 5.0-6.9 = 3 stars
+            '2_stars': queryset.filter(rating__gte=3.0, rating__lt=5.0).count(),  # 3.0-4.9 = 2 stars
+            '1_star': queryset.filter(rating__lt=3.0).count(),  # 0-2.9 = 1 star
+        }
+
+        return Response({
+            'total_reviews': total_reviews,
+            'pending_count': pending_count,
+            'approved_count': approved_count,
+            'rejected_count': rejected_count,
+            'average_rating': round(float(avg_rating), 1),
+            'reviews_this_month': reviews_this_month,
+            'by_ota_source': by_ota_source,
+            'by_rating': by_rating,
+        })
+
+    def perform_update(self, serializer):
+        """Track edits when review is updated."""
+        from django.utils import timezone
+        review = serializer.save(
+            edited_by=self.request.user,
+            edited_at=timezone.now()
+        )
+        return review
 
 
 # ============================================================================

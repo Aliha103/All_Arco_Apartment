@@ -83,12 +83,30 @@ export const api = {
     update: (id: string | number, data: any) => apiClient.patch(`/host-profile/${id}/`, data),
   },
 
-  // Public reviews
+  // Reviews (Public + PMS)
   reviews: {
+    // Public endpoints
     list: (params?: any) => apiClient.get('/reviews/', { params }),
+    get: (id: string) => apiClient.get(`/reviews/${id}/`),
+
+    // Guest submission (public, no auth)
+    submit: (data: any) => apiClient.post('/reviews/submit/', data),
+    verifyToken: (token: string, bookingCode: string) =>
+      apiClient.get(`/reviews/verify-token/${token}/`, { params: { booking_code: bookingCode } }),
+
+    // Staff management (requires permissions)
     create: (data: any) => apiClient.post('/reviews/', data),
     update: (id: string, data: any) => apiClient.patch(`/reviews/${id}/`, data),
     delete: (id: string) => apiClient.delete(`/reviews/${id}/`),
+
+    // Approval workflow
+    approve: (id: string) => apiClient.post(`/reviews/${id}/approve/`),
+    reject: (id: string, reason: string) =>
+      apiClient.post(`/reviews/${id}/reject/`, { rejection_reason: reason }),
+
+    // Additional actions
+    toggleFeatured: (id: string) => apiClient.post(`/reviews/${id}/toggle-featured/`),
+    statistics: () => apiClient.get('/reviews/statistics/'),
   },
 
   // Referral/Invitations

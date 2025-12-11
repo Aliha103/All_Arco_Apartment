@@ -32,6 +32,7 @@ import {
   Shield,
   SprayCan,
   Receipt,
+  Star,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -56,6 +57,7 @@ const navigation: NavigationItem[] = [
   { name: 'Invoices', href: '/pms/invoices', icon: FileText, permission: 'payments.view' },
   { name: 'Expenses', href: '/pms/expenses', icon: Receipt, permission: 'payments.view' },
   { name: 'Guests tree', href: '/pms/guests', icon: Users, permission: 'guests.view' },
+  { name: 'Reviews', href: '/pms/reviews', icon: Star, permission: 'reviews.view' },
   { name: 'Users', href: '/pms/users', icon: User, permission: 'team.view' },
   { name: 'Pricing', href: '/pms/pricing', icon: DollarSign, permission: 'pricing.view' },
   { name: 'Gallery', href: '/pms/gallery', icon: ImageIcon, permission: 'gallery.view' },

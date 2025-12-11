@@ -572,3 +572,93 @@ def send_payment_confirmation_email(payment_request):
         booking=payment_request.booking,
         sender_type='booking'
     )
+
+
+def send_review_request_email(booking):
+    """
+    Send review request email to guest after checkout.
+
+    Generates review token and sends email with unique review link.
+    Sent from support@allarcoapartment.com 1 day after checkout.
+
+    Args:
+        booking: Booking instance (status='checked_out')
+
+    Returns:
+        bool: True if email sent successfully
+    """
+    if not booking or not booking.guest_email:
+        return False
+
+    # Generate review token (30-day expiry)
+    review_token = booking.generate_review_token()
+
+    # Build review URL
+    frontend_host = getattr(settings, 'FRONTEND_URL', None) or 'https://www.allarcoapartment.com'
+    review_url = f"{frontend_host}/reviews/submit/{review_token}"
+
+    # Render template with context
+    from django.template.loader import render_to_string
+    context = {
+        'booking': booking,
+        'review_url': review_url,
+        'company': {
+            'email': 'support@allarcoapartment.com'
+        }
+    }
+
+    try:
+        html_body = render_to_string('emails/post_stay_thankyou.html', context)
+    except Exception:
+        # Fallback to inline HTML if template fails
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Thank You</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }}
+                .container {{ max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; }}
+                .content {{ padding: 30px; }}
+                .cta-button {{ display: inline-block; background: #0066cc; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; }}
+                .footer {{ background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>❤️ Thank You for Staying With Us!</h1>
+                </div>
+                <div class="content">
+                    <p>Dear {booking.guest_name},</p>
+                    <p>Thank you for choosing All'Arco Apartment for your stay in Venice! We hope you had a wonderful experience.</p>
+                    <p><strong>We'd Love Your Feedback!</strong></p>
+                    <p>Your review helps us improve and helps future guests make informed decisions. Would you mind taking a moment to share your experience?</p>
+                    <center style="margin: 30px 0;">
+                        <a href="{review_url}" class="cta-button">Leave a Review</a>
+                    </center>
+                    <p><strong>Come Back Soon!</strong></p>
+                    <p>We'd be delighted to host you again. As a returning guest, you'll receive a special discount on your next booking.</p>
+                    <p>If you have any feedback or concerns about your stay, please don't hesitate to reach out at support@allarcoapartment.com.</p>
+                    <p>Warmest regards,<br><strong>The All'Arco Apartment Team</strong></p>
+                </div>
+                <div class="footer">
+                    <p>All'Arco Apartment | Venice, Italy</p>
+                    <p style="font-size: 12px;">Booking ID: {booking.booking_id}</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+    return ZeptomailService.send_email(
+        to_email=booking.guest_email,
+        from_email='support@allarcoapartment.com',
+        from_name="All'Arco Apartment",
+        subject="How was your stay at All'Arco Apartment?",
+        html_body=html_body,
+        booking=booking,
+        sender_type='support'
+    )

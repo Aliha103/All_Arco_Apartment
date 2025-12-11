@@ -190,7 +190,12 @@ export default function ReviewsSection({ initialReviews = [], loading = false }:
     const load = async () => {
       setFetching(true);
       try {
-        const res = await api.reviews.list();
+        // Only fetch approved and active reviews, with featured first
+        const res = await api.reviews.list({
+          status: 'approved',
+          is_active: true,
+          ordering: '-is_featured,-created_at'
+        });
         setReviews(res.data || []);
       } catch (error) {
         console.error('Failed to load reviews', error);

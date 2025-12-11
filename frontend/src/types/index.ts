@@ -318,3 +318,120 @@ export interface HostProfile {
   review_count: number;
   updated_at: string;
 }
+
+// Review types
+export interface CategoryRatings {
+  cleanliness: number | null;
+  communication: number | null;
+  checkin: number | null;
+  accuracy: number | null;
+  location: number | null;
+  value: number | null;
+}
+
+export interface Review {
+  id: string;
+  guest_name: string;
+  location: string;
+  rating: number;
+  title: string;
+  text: string;
+  stay_date: string | null;
+  is_featured: boolean;
+  is_active: boolean;
+  category_ratings: CategoryRatings;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReviewDetailed extends Review {
+  status: 'pending' | 'approved' | 'rejected';
+  ota_source: 'website' | 'airbnb' | 'booking_com' | 'direct' | 'other';
+  booking: string | null;
+  booking_info: {
+    id: string;
+    booking_code: string;
+    guest_email: string;
+    check_in_date: string;
+    check_out_date: string;
+  } | null;
+  rating_cleanliness: number | null;
+  rating_communication: number | null;
+  rating_checkin: number | null;
+  rating_accuracy: number | null;
+  rating_location: number | null;
+  rating_value: number | null;
+  submitted_by: string | null;
+  submitted_by_name: string | null;
+  approved_by: string | null;
+  approved_by_name: string | null;
+  approved_at: string | null;
+  rejected_by: string | null;
+  rejected_by_name: string | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
+  edited_by: string | null;
+  edited_by_name: string | null;
+  edited_at: string | null;
+}
+
+export interface ReviewSubmitData {
+  token: string;
+  booking_code: string;
+  guest_name: string;
+  location: string;
+  title: string;
+  text: string;
+  rating_cleanliness: number;
+  rating_communication: number;
+  rating_checkin: number;
+  rating_accuracy: number;
+  rating_location: number;
+  rating_value: number;
+}
+
+export interface ReviewCreateData {
+  guest_name: string;
+  location: string;
+  title: string;
+  text: string;
+  rating_cleanliness: number;
+  rating_communication: number;
+  rating_checkin: number;
+  rating_accuracy: number;
+  rating_location: number;
+  rating_value: number;
+  stay_date: string;
+  ota_source: 'website' | 'airbnb' | 'booking_com' | 'direct' | 'other';
+  booking_id?: string;
+  is_featured?: boolean;
+}
+
+export interface ReviewStatistics {
+  total_reviews: number;
+  pending_count: number;
+  approved_count: number;
+  rejected_count: number;
+  average_rating: number;
+  reviews_this_month: number;
+  by_ota_source: Record<string, number>;
+  by_rating: {
+    '5_stars': number;
+    '4_stars': number;
+    '3_stars': number;
+    '2_stars': number;
+    '1_star': number;
+  };
+}
+
+export interface ReviewTokenVerification {
+  valid: boolean;
+  error?: string;
+  booking?: {
+    guest_name: string;
+    guest_location: string;
+    check_in_date: string;
+    check_out_date: string;
+    booking_code: string;
+  };
+}
