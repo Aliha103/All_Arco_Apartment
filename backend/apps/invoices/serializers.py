@@ -75,6 +75,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'created_by_name',
             'pdf_file'
         ]
+        extra_kwargs = {
+            'amount': {'required': False, 'allow_null': True},
+        }
 
     def get_guest_name(self, obj):
         """Get guest name from linked booking."""
@@ -162,10 +165,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        Ensure amount is set from booking total if not provided.
+        Ensure amount is set from line items or booking total if not provided.
         Prevent duplicate invoices/receipts of the same type for the same booking.
         Auto-generate line items if not provided.
         """
+        from decimal import Decimal
+
         booking = validated_data.get('booking')
         amount = validated_data.get('amount')
         doc_type = validated_data.get('type', 'receipt')
@@ -190,8 +195,17 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 'company': 'Company is required for invoice type documents'
             })
 
-        # Default amount from booking total_price when missing/zero
-        if booking and (amount is None or float(amount) == 0):
+        # Calculate amount from line_items if provided and amount is not set
+        if line_items and (amount is None or float(amount or 0) == 0):
+            total = Decimal('0')
+            for item in line_items:
+                # Support both 'total' and 'amount' fields
+                item_total = item.get('total', item.get('amount', 0))
+                if item_total:
+                    total += Decimal(str(item_total))
+            validated_data['amount'] = total
+        # Default amount from booking total_price when missing/zero and no line items
+        elif booking and (amount is None or float(amount or 0) == 0):
             validated_data['amount'] = booking.total_price
 
         # Set created_by from context if available
