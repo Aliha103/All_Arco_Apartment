@@ -221,11 +221,28 @@ class InvoiceSerializer(serializers.ModelSerializer):
         if request and hasattr(request, 'user'):
             validated_data['created_by'] = request.user
 
-        # Auto-set invoice status based on booking payment status
+        # Auto-set invoice status and payment method based on booking
         if booking and hasattr(booking, 'payment_status'):
             if booking.payment_status == 'paid':
                 validated_data['status'] = 'paid'
                 validated_data['paid_at'] = timezone.now()
+
+                # Get actual payment method from booking's payment records
+                latest_payment = booking.payments.filter(
+                    status='succeeded',
+                    kind='booking'
+                ).order_by('-paid_at').first()
+
+                if latest_payment and latest_payment.payment_method:
+                    # Map Stripe payment methods to invoice payment methods
+                    stripe_method = latest_payment.payment_method.lower()
+                    if 'card' in stripe_method:
+                        validated_data['payment_method'] = 'stripe'
+                    else:
+                        validated_data['payment_method'] = 'stripe'
+                # If no payment record found, assume cash/property payment
+                elif 'payment_method' not in validated_data:
+                    validated_data['payment_method'] = 'property'
             elif booking.payment_status == 'partially_paid':
                 validated_data['status'] = 'sent'
             # Otherwise keep default 'draft' status
