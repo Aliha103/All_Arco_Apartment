@@ -287,7 +287,7 @@ class InvoicePDFGenerator:
         if hasattr(self.booking, 'booking_id') and self.booking.booking_id:
             right_html += f'<font size=9 color=#666666><b>Booking:</b> {self.booking.booking_id}</font><br/>'
 
-        right_html += f'<font size=9 color=#666666><b>Check-in:</b> {self.booking.check_in.strftime("%b %d, %Y")} | <b>Check-out:</b> {self.booking.check_out.strftime("%b %d, %Y")}</font><br/>'
+        right_html += f'<font size=9 color=#666666><b>Check-in:</b> {self.booking.check_in_date.strftime("%b %d, %Y")} | <b>Check-out:</b> {self.booking.check_out_date.strftime("%b %d, %Y")}</font><br/>'
         right_html += f'<br/><br/>'
         right_html += f'<b><font size=11 color=#A68B5B>ALL\'ARCO APARTMENT</font></b><br/>'
         right_html += f'<font size=9 color=#333333>Via Castellana 61<br/>30174 Venice, Italy</font><br/>'
