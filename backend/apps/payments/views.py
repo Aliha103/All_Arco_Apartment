@@ -103,7 +103,15 @@ def create_checkout_session(request):
             {'error': 'No payment due for this booking'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
+    # Build cancel URL with all booking parameters to restore form state
+    cancel_url = (
+        f"{frontend_host}/book?cancelled=true&booking_id={booking.id}"
+        f"&checkIn={booking.check_in_date}&checkOut={booking.check_out_date}"
+        f"&adults={booking.adults}&children={booking.children}&infants={booking.infants}"
+        f"&step=guest"
+    )
+
     # Create Stripe Checkout Session
     try:
         session = stripe.checkout.Session.create(
@@ -131,7 +139,7 @@ def create_checkout_session(request):
                 f"{frontend_host}/booking/confirmation"
                 f"?session_id={{CHECKOUT_SESSION_ID}}&booking_id={booking.id}"
             ),
-            cancel_url=f"{frontend_host}/book",
+            cancel_url=cancel_url,
             customer_email=booking.guest_email,
             custom_text={
                 'submit': {
