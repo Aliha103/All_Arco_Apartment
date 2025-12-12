@@ -543,11 +543,13 @@ export default function BookingWidget() {
 
   // Handlers
   const handleGuestChange = useCallback((type: keyof GuestState, value: number) => {
+    console.log('🔧 handleGuestChange called:', { type, value });
     setGuests(prev => {
       const next = { ...prev };
 
       if (type === 'infants') {
         next.infants = Math.max(0, Math.min(CONFIG.guests.maxInfants, value));
+        console.log('✅ Updated infants:', next);
         return next;
       }
 
@@ -563,6 +565,7 @@ export default function BookingWidget() {
         toast.error('Maximum 5 guests total (adults + children).');
       }
 
+      console.log('✅ Updated guests:', next);
       return next;
     });
   }, []);
