@@ -52,6 +52,11 @@ export interface User {
   created_at: string;
   updated_at: string;
   last_login?: string;
+  // Referral fields
+  reference_code?: string;
+  referred_by_name?: string;
+  invited_count?: number;
+  referral_credits_earned?: number;
 }
 
 // Legacy User type (for backward compatibility during migration)
