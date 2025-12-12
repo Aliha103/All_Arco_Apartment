@@ -83,6 +83,10 @@ export interface Booking {
   check_out_date: string;
   nights: number;
   guests: number;
+  // Guest breakdown
+  adults?: number;
+  children?: number;
+  infants?: number;
   total_price: string;
   amount_due?: string;
   applied_credit?: string;

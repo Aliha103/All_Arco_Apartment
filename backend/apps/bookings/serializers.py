@@ -33,7 +33,8 @@ class BookingListSerializer(serializers.ModelSerializer):
             'id', 'booking_id', 'guest_name', 'guest_email', 'check_in_date',
             'check_out_date', 'nights', 'status', 'payment_status', 'total_price',
             'amount_due', 'applied_credit',
-            'booking_source', 'number_of_guests', 'guest_tax_code', 'created_at',
+            'booking_source', 'number_of_guests', 'adults', 'children', 'infants',
+            'guest_tax_code', 'created_at',
             'nightly_rate', 'cleaning_fee', 'tourist_tax'  # Added for invoice line items
         ]
         read_only_fields = fields
@@ -66,7 +67,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {'guest_name': {'required': False}}
         fields = [
             'id', 'user', 'guest_email', 'guest_name', 'guest_phone', 'guest_country', 'guest_address',
-            'check_in_date', 'check_out_date', 'number_of_guests',
+            'check_in_date', 'check_out_date', 'number_of_guests', 'adults', 'children', 'infants',
             'nightly_rate', 'cleaning_fee', 'tourist_tax', 'special_requests',
             'cancellation_policy',
             # write-only helpers
