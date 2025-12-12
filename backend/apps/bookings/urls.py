@@ -20,6 +20,8 @@ urlpatterns = [
     path('lookup/', views.public_booking_lookup, name='public-booking-lookup'),
     path('lookup/update/', views.public_booking_update, name='public-booking-update'),
     path('lookup/checkin/', views.public_booking_checkin, name='public-booking-checkin'),
+    # Claim booking endpoint (auth required)
+    path('claim/', views.claim_booking, name='claim-booking'),
     path('', include(router.urls)),
     path('', include(bookings_router.urls)),
 ]
