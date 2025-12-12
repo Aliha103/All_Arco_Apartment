@@ -613,13 +613,15 @@ export default function BookingWidget() {
   }, []);
 
   // Handle reservation - build URL with current state values
-  const handleReservation = useCallback(() => {
+  // NOTE: Not using useCallback to ensure we always have the latest state values
+  const handleReservation = () => {
     if (!dateRange?.from || !dateRange?.to) return;
     if (rangeHasBlockedNights(dateRange)) {
       toast.error('Selected dates include unavailable nights.');
       return;
     }
 
+    // Build params with current state values (always fresh, not from closure)
     const params = new URLSearchParams({
       checkIn: format(dateRange.from, 'yyyy-MM-dd'),
       checkOut: format(dateRange.to, 'yyyy-MM-dd'),
@@ -635,8 +637,16 @@ export default function BookingWidget() {
       params.set('promo', appliedPromo.code);
     }
 
+    console.log('🔍 Navigating with guest counts:', {
+      adults: guests.adults,
+      children: guests.children,
+      infants: guests.infants,
+      pet: hasPet,
+      url: `/book?${params.toString()}`
+    });
+
     router.push(`/book?${params.toString()}`);
-  }, [dateRange, guests, hasPet, appliedPromo, rangeHasBlockedNights, router]);
+  };
 
   return (
     <>
