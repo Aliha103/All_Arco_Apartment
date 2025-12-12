@@ -163,7 +163,7 @@ export default function RegisterPage() {
   useEffect(() => {
     if (isAuthenticated && user) {
       const isTeam = user.is_super_admin || user.is_team_member;
-      router.replace(isTeam ? '/pms' : '/dashboard');
+      router.replace(isTeam ? '/pms' : '/');
     }
   }, [isAuthenticated, user, router]);
 
@@ -284,7 +284,7 @@ export default function RegisterPage() {
         setUser(nextUser);
         setIsAuthenticated(true);
         const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
-        router.replace(isTeam ? '/pms' : '/dashboard');
+        router.replace(isTeam ? '/pms' : '/');
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Registration failed. Please try again.');

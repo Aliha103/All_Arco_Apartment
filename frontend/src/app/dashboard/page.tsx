@@ -3,13 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { generateUserId } from '@/lib/userId';
 
 /**
  * Legacy URL redirect page
- * Redirects /dashboard to appropriate user-specific URL:
+ * Redirects /dashboard to appropriate URL:
  * - Team members → /pms
- * - Guests → /u/{userId}/dashboard
+ * - Guests → / (homepage)
  */
 export default function DashboardRedirect() {
   const { user, isLoading } = useAuth();
@@ -27,9 +26,8 @@ export default function DashboardRedirect() {
           // Team members go to PMS
           router.replace('/pms');
         } else {
-          // Guests go to their user-specific dashboard
-          const userId = generateUserId(user);
-          router.replace(`/u/${userId}/dashboard`);
+          // Guests go to homepage
+          router.replace('/');
         }
       }
     }

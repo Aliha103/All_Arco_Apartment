@@ -99,7 +99,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (isAuthenticated && user) {
       const isTeam = user.is_super_admin || user.is_team_member;
-      router.replace(isTeam ? '/pms' : '/dashboard');
+      router.replace(isTeam ? '/pms' : '/');
     }
   }, [isAuthenticated, user, router]);
 
@@ -156,7 +156,7 @@ export default function LoginPage() {
         setUser(nextUser);
         setIsAuthenticated(true);
         const isTeam = nextUser.is_super_admin || nextUser.is_team_member;
-        router.replace(isTeam ? '/pms' : '/dashboard');
+        router.replace(isTeam ? '/pms' : '/');
       }
     } catch (err: any) {
       const message =
