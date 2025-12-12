@@ -52,10 +52,21 @@ def update_settings(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def calculate_price(request):
-    """Calculate booking price."""
+    """
+    Calculate booking price.
+
+    Query parameters:
+    - check_in: date (YYYY-MM-DD)
+    - check_out: date (YYYY-MM-DD)
+    - guests: int (total guests - adults + children)
+    - adults: int (optional, number of adults for city tax calculation)
+    - pet: boolean (whether booking includes pet)
+    """
     check_in = request.query_params.get('check_in')
     check_out = request.query_params.get('check_out')
     guests = int(request.query_params.get('guests', 1))
+    adults_param = request.query_params.get('adults')
+    adults = int(adults_param) if adults_param else None
     has_pet = request.query_params.get('pet', 'false').lower() in ('true', '1', 'yes')
 
     if not check_in or not check_out:
@@ -74,7 +85,9 @@ def calculate_price(request):
         )
 
     settings = Settings.get_settings()
-    pricing = settings.calculate_booking_price(check_in_date, check_out_date, guests, has_pet=has_pet)
+    pricing = settings.calculate_booking_price(
+        check_in_date, check_out_date, guests, has_pet=has_pet, adults=adults
+    )
 
     return Response(pricing)
 

@@ -51,8 +51,17 @@ class Settings(models.Model):
         settings, created = cls.objects.get_or_create(pk=1)
         return settings
     
-    def calculate_booking_price(self, check_in, check_out, guests, has_pet=False):
-        """Calculate total booking price."""
+    def calculate_booking_price(self, check_in, check_out, guests, has_pet=False, adults=None):
+        """
+        Calculate total booking price.
+
+        Args:
+            check_in: Check-in date
+            check_out: Check-out date
+            guests: Total number of guests (adults + children) for capacity/extra guest fees
+            has_pet: Whether booking includes a pet
+            adults: Number of adults (for city tax calculation). If not provided, uses guests.
+        """
         nights = (check_out - check_in).days
 
         # Get nightly rate (check for seasonal pricing)
@@ -61,8 +70,10 @@ class Settings(models.Model):
         # Calculate accommodation cost
         accommodation = nightly_rate * nights
 
-        # Calculate tourist tax
-        tourist_tax = self.tourist_tax_per_person_per_night * guests * nights
+        # Calculate tourist tax - ONLY for adults, not children/infants
+        # If adults not specified, fallback to guests for backward compatibility
+        adults_count = adults if adults is not None else guests
+        tourist_tax = self.tourist_tax_per_person_per_night * adults_count * nights
 
         # Calculate extra guest fee
         extra_guest_cost = 0

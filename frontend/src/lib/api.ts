@@ -225,8 +225,8 @@ export const api = {
   pricing: {
     getSettings: () => apiClient.get('/pricing/settings/'),
     updateSettings: (data: any) => apiClient.patch('/pricing/settings/', data),
-    calculatePrice: (checkIn: string, checkOut: string, guests: number, hasPet?: boolean) =>
-      apiClient.get('/pricing/calculate/', { params: { check_in: checkIn, check_out: checkOut, guests, pet: hasPet || false } }),
+    calculatePrice: (checkIn: string, checkOut: string, guests: number, hasPet?: boolean, adults?: number) =>
+      apiClient.get('/pricing/calculate/', { params: { check_in: checkIn, check_out: checkOut, guests, adults, pet: hasPet || false } }),
     listRules: (params?: any) => apiClient.get('/pricing/rules/', { params }),
     createRule: (data: any) => apiClient.post('/pricing/rules/', data),
     updateRule: (id: string, data: any) => apiClient.patch(`/pricing/rules/${id}/`, data),
