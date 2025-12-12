@@ -629,7 +629,7 @@ function BookingPageContent() {
 
         if (Object.keys(profileUpdates).length > 0) {
           try {
-            await api.users.updateProfile(profileUpdates);
+            await api.auth.updateProfile(profileUpdates);
           } catch (profileErr) {
             // Don't fail booking if profile update fails
             console.warn('Profile update failed:', profileErr);
