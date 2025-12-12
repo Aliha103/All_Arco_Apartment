@@ -21,7 +21,10 @@ import {
   Check,
   AlertCircle,
   ChevronLeft,
-  Cake
+  Cake,
+  Users,
+  Gift,
+  Copy
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -67,6 +70,7 @@ export default function ProfileSettingsPage() {
   const params = useParams();
   const [isEditing, setIsEditing] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   // Security: Verify userId in URL matches logged-in user
   const urlUserId = params.userId as string;
@@ -147,6 +151,19 @@ export default function ProfileSettingsPage() {
     };
     updateProfile.mutate(cleanedData);
   }, [updateProfile]);
+
+  // Copy referral code to clipboard
+  const handleCopyCode = useCallback(async () => {
+    if (user?.reference_code) {
+      try {
+        await navigator.clipboard.writeText(user.reference_code);
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  }, [user]);
 
   // Sync form with user data when it loads/changes (but NOT while editing)
   useEffect(() => {
@@ -513,11 +530,115 @@ export default function ProfileSettingsPage() {
                 </div>
               </motion.div>
 
-              {/* Security Settings */}
+              {/* Referrals & Credits */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: smoothEase, delay: 0.3 }}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+              >
+                <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#C4A572]/10 flex items-center justify-center flex-shrink-0">
+                      <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-[#C4A572]" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Referrals & Credits</h3>
+                      <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Share your code and earn rewards</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 sm:p-6 space-y-4">
+                  {/* Referral Code */}
+                  <div className="bg-gradient-to-br from-[#C4A572]/5 to-[#C4A572]/10 rounded-xl p-4 sm:p-5 border border-[#C4A572]/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-medium text-gray-700">Your Referral Code</p>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleCopyCode}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg text-[#C4A572] hover:bg-[#C4A572] hover:text-white transition-colors text-sm font-medium border border-[#C4A572]/20 touch-manipulation"
+                      >
+                        {copiedCode ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </motion.button>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 sm:p-4 border border-[#C4A572]/30">
+                      <p className="text-xl sm:text-2xl font-bold text-[#C4A572] text-center tracking-wider font-mono">
+                        {user?.reference_code || 'Loading...'}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2 text-center">
+                      Share this code with friends to earn €5 per night when they book!
+                    </p>
+                  </div>
+
+                  {/* Referral Stats Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    {/* People Referred */}
+                    <div className="flex items-start gap-3 p-3 sm:p-4 bg-blue-50 rounded-xl">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm text-blue-700 mb-0.5">People Referred</p>
+                        <p className="text-xl sm:text-2xl font-bold text-blue-900">
+                          {user?.invited_count || 0}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Credits Earned */}
+                    <div className="flex items-start gap-3 p-3 sm:p-4 bg-green-50 rounded-xl">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm text-green-700 mb-0.5">Credits Earned</p>
+                        <p className="text-xl sm:text-2xl font-bold text-green-900">
+                          €{user?.referral_credits_earned?.toFixed(2) || '0.00'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Referred By */}
+                    <div className="flex items-start gap-3 p-3 sm:p-4 bg-purple-50 rounded-xl sm:col-span-1 col-span-1">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                        <User className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm text-purple-700 mb-0.5">Referred By</p>
+                        <p className="text-sm sm:text-base font-semibold text-purple-900 truncate">
+                          {user?.referred_by_name || 'No referrer'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info Note */}
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-4">
+                    <p className="text-xs sm:text-sm text-blue-800">
+                      <strong>How it works:</strong> When someone signs up with your referral code and completes their booking checkout, both you and your friend earn €5 per night! Credits can be used on your next booking.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Security Settings */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: smoothEase, delay: 0.4 }}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
               >
                 <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
