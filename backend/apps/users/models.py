@@ -502,8 +502,8 @@ class User(AbstractUser):
 
         # Get earned credits that haven't expired
         earned_not_expired = self.referral_credits.filter(
-            status='earned',
-            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=timezone.now())
+            models.Q(status='earned') &
+            (models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=timezone.now()))
         ).aggregate(models.Sum('amount'))['amount__sum'] or 0
 
         spent = self.get_referral_credits_spent() or 0
