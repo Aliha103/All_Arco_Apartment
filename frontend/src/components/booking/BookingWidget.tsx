@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { DayPicker, DateRange } from 'react-day-picker';
 import { format, differenceInDays, addMonths, startOfDay } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Users,
   PawPrint,
@@ -377,6 +377,8 @@ interface BlockedRange {
 }
 
 export default function BookingWidget() {
+  const router = useRouter();
+
   // State
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState<GuestState>({ adults: 2, children: 0, infants: 0 });
@@ -610,10 +612,14 @@ export default function BookingWidget() {
     setPromoError(null);
   }, []);
 
-  // Build booking URL
-  const bookingUrl = useMemo(() => {
-    if (!dateRange?.from || !dateRange?.to) return '#';
-    if (rangeHasBlockedNights(dateRange)) return '#';
+  // Handle reservation - build URL with current state values
+  const handleReservation = useCallback(() => {
+    if (!dateRange?.from || !dateRange?.to) return;
+    if (rangeHasBlockedNights(dateRange)) {
+      toast.error('Selected dates include unavailable nights.');
+      return;
+    }
+
     const params = new URLSearchParams({
       checkIn: format(dateRange.from, 'yyyy-MM-dd'),
       checkOut: format(dateRange.to, 'yyyy-MM-dd'),
@@ -623,12 +629,14 @@ export default function BookingWidget() {
       pet: String(hasPet),
       step: 'guest',
     });
+
     // Include promo code if applied
     if (appliedPromo) {
       params.set('promo', appliedPromo.code);
     }
-    return `/book?${params.toString()}`;
-  }, [dateRange, guests, hasPet, appliedPromo, rangeHasBlockedNights]);
+
+    router.push(`/book?${params.toString()}`);
+  }, [dateRange, guests, hasPet, appliedPromo, rangeHasBlockedNights, router]);
 
   return (
     <>
@@ -916,9 +924,10 @@ export default function BookingWidget() {
 
             {/* Reserve Button - Compact */}
             <div className="px-5 py-4">
-              <Link
-                href={isValidBooking ? bookingUrl : '#'}
-                onClick={(e) => !isValidBooking && e.preventDefault()}
+              <button
+                type="button"
+                onClick={handleReservation}
+                disabled={!isValidBooking}
                 className={`block w-full py-3 rounded-xl font-semibold text-center text-base transition-all
                            focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation
                            ${isValidBooking
@@ -928,7 +937,7 @@ export default function BookingWidget() {
                 aria-disabled={!isValidBooking}
               >
                 {isValidBooking ? `Reserve · €${pricing?.total}` : 'Select dates'}
-              </Link>
+              </button>
 
               {/* Trust Badges - Compact */}
               <div className="flex justify-center gap-4 mt-3">
