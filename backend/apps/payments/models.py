@@ -197,30 +197,35 @@ class PaymentRequest(models.Model):
         from django.utils import timezone
         from decimal import Decimal
         import stripe
+        import uuid
 
         self.status = 'paid'
         self.paid_at = timezone.now()
         self.save(update_fields=['status', 'paid_at', 'updated_at'])
 
         # Create Payment record to track this in the payments system
-        if stripe_payment_intent_id:
-            try:
-                from apps.payments.models import Payment
-                Payment.objects.get_or_create(
-                    stripe_payment_intent_id=stripe_payment_intent_id,
-                    defaults={
-                        'booking': self.booking,
-                        'kind': 'custom',  # Payment from Payment Request
-                        'amount': self.amount,
-                        'currency': self.currency,
-                        'status': 'succeeded',
-                        'payment_method': 'card',
-                        'paid_at': timezone.now(),
-                    }
-                )
-            except Exception as e:
-                # Don't fail if payment record creation fails
-                print(f"Failed to create Payment record: {e}")
+        # Always create a Payment record (even for manual payments without Stripe)
+        try:
+            from apps.payments.models import Payment
+
+            # Use provided payment intent ID, or generate a unique one for manual payments
+            payment_intent_id = stripe_payment_intent_id or f"manual_{uuid.uuid4()}"
+
+            Payment.objects.get_or_create(
+                stripe_payment_intent_id=payment_intent_id,
+                defaults={
+                    'booking': self.booking,
+                    'kind': 'custom',  # Payment from Payment Request
+                    'amount': self.amount,
+                    'currency': self.currency,
+                    'status': 'succeeded',
+                    'payment_method': 'manual' if not stripe_payment_intent_id else 'card',
+                    'paid_at': timezone.now(),
+                }
+            )
+        except Exception as e:
+            # Don't fail if payment record creation fails
+            print(f"Failed to create Payment record: {e}")
 
         # Update booking's amount_due (reduce by payment amount)
         # This reflects that the guest has paid part of their balance

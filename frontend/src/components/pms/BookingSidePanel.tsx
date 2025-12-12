@@ -104,6 +104,8 @@ interface BookingData {
   tourist_tax?: number;
   total_price?: number;
   amount_paid?: number;
+  total_paid?: number;
+  balance_remaining?: number;
   manual_pricing_override?: boolean;
   custom_nightly_rate?: number;
   custom_cleaning_fee?: number;
@@ -372,8 +374,14 @@ export default function BookingSidePanel({
     },
   });
 
-  // Calculate amounts
+  // Calculate amounts - use backend calculated values if available, otherwise calculate from payments
   const paidAmount = useMemo(() => {
+    // Prioritize backend's total_paid calculation (includes all payment sources)
+    if (formData.total_paid !== undefined && formData.total_paid !== null) {
+      return Number(formData.total_paid);
+    }
+
+    // Fallback: calculate from payments array
     return payments.reduce((sum, payment) => {
       const status = (payment.status || '').toLowerCase();
       if (['succeeded', 'partially_refunded'].includes(status)) {
@@ -381,12 +389,19 @@ export default function BookingSidePanel({
       }
       return sum;
     }, 0);
-  }, [payments]);
+  }, [payments, formData.total_paid]);
 
   const balanceDue = useMemo(() => {
     if (!formData.total_price) return 0;
+
+    // Prioritize backend's balance_remaining calculation
+    if (formData.balance_remaining !== undefined && formData.balance_remaining !== null) {
+      return Number(formData.balance_remaining);
+    }
+
+    // Fallback: calculate from total and paid amount
     return Math.max(0, Number(formData.total_price) - paidAmount);
-  }, [formData.total_price, paidAmount]);
+  }, [formData.total_price, formData.balance_remaining, paidAmount]);
 
   // Calculate nights
   const nights = useMemo(() => {
