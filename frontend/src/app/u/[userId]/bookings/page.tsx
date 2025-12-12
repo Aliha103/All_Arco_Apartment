@@ -313,7 +313,9 @@ export default function BookingsPage() {
                               <span>•</span>
                               <span className="flex items-center gap-1">
                                 <Users className="w-4 h-4" />
-                                {booking.guests || 1} {booking.guests === 1 ? 'guest' : 'guests'}
+                                {booking.adults || 2} {(booking.adults || 2) === 1 ? 'adult' : 'adults'}
+                                {(booking.children || 0) > 0 && `, ${booking.children} ${booking.children === 1 ? 'child' : 'children'}`}
+                                {(booking.infants || 0) > 0 && `, ${booking.infants} ${booking.infants === 1 ? 'infant' : 'infants'}`}
                               </span>
                             </div>
                           </div>

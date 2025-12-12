@@ -58,6 +58,11 @@ class Booking(models.Model):
     check_out_date = models.DateField()
     nights = models.IntegerField(editable=False)
     number_of_guests = models.IntegerField(default=1)
+
+    # Guest breakdown (for display purposes)
+    adults = models.IntegerField(default=2, help_text='Number of adult guests (13+)')
+    children = models.IntegerField(default=0, help_text='Number of children (2-12)')
+    infants = models.IntegerField(default=0, help_text='Number of infants (0-2, free)')
     
     nightly_rate = models.DecimalField(max_digits=10, decimal_places=2)
     cleaning_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
