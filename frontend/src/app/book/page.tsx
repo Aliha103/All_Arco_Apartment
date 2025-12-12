@@ -634,6 +634,7 @@ function BookingPageContent() {
         })) : [],
         nightly_rate: parseFloat(String(displayPricing.nightly_rate || 0)) || 0,
         cleaning_fee: parseFloat(String(displayPricing.cleaning_fee || 0)) || 0,
+        pet_fee: parseFloat(String(displayPricing.pet_fee || 0)) || 0,
         tourist_tax: parseFloat(String(displayPricing.tourist_tax || 0)) || 0,
         applied_credit: appliedCredit > 0 ? Number(appliedCredit.toFixed(2)) : 0,
       };

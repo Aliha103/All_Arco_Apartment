@@ -362,6 +362,23 @@ export default function BookingsPage() {
                         <div className="text-right">
                           <p className="text-2xl font-bold text-gray-900">€{booking.total_price}</p>
                           <p className="text-xs text-gray-600">{booking.nights} {booking.nights === 1 ? 'night' : 'nights'}</p>
+                          {booking.payment_status === 'paid' && booking.amount_due && parseFloat(booking.amount_due) > 0 ? (
+                            <div className="mt-2 text-xs space-y-1">
+                              <div className="flex items-center gap-1 text-green-600">
+                                <Check className="w-3 h-3" />
+                                <span>€{(parseFloat(booking.total_price) - parseFloat(booking.amount_due)).toFixed(2)} paid online</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-amber-600">
+                                <Clock className="w-3 h-3" />
+                                <span>€{parseFloat(booking.amount_due).toFixed(2)} at property</span>
+                              </div>
+                            </div>
+                          ) : booking.payment_status === 'paid' ? (
+                            <p className="mt-1 text-xs text-green-600 flex items-center gap-1 justify-end">
+                              <Check className="w-3 h-3" />
+                              Paid in full
+                            </p>
+                          ) : null}
                         </div>
                         <button
                           onClick={() => router.push(`/booking/${booking.booking_id}`)}
