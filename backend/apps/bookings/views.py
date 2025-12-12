@@ -555,6 +555,14 @@ class BookingViewSet(viewsets.ModelViewSet):
                     f'EUR {booking.cleaning_fee:.2f}'
                 ])
 
+            if booking.pet_fee and booking.pet_fee > 0:
+                table_data.append([
+                    'Pet Cleaning Fee',
+                    '1',
+                    f'EUR {booking.pet_fee:.2f}',
+                    f'EUR {booking.pet_fee:.2f}'
+                ])
+
             if booking.tourist_tax:
                 tax_per_guest = float(booking.tourist_tax) / max(booking.number_of_guests, 1)
                 table_data.append([
