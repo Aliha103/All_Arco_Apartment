@@ -209,6 +209,19 @@ export default function ProfileSettingsPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isEditing, handleCancel]);
 
+  // Debug: Log user referral data
+  useEffect(() => {
+    if (user) {
+      console.log('User referral data:', {
+        email: user.email,
+        reference_code: user.reference_code,
+        referred_by_name: user.referred_by_name,
+        invited_count: user.invited_count,
+        referral_credits_earned: user.referral_credits_earned
+      });
+    }
+  }, [user]);
+
   // Loading state or not authenticated
   if (isLoading || !user || !isAuthorized) {
     return (
