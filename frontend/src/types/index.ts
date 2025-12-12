@@ -87,6 +87,8 @@ export interface Booking {
   adults?: number;
   children?: number;
   infants?: number;
+  // Proxy booking tracking
+  booked_for_someone_else?: boolean;
   total_price: string;
   amount_due?: string;
   applied_credit?: string;

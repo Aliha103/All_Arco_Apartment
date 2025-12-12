@@ -34,7 +34,7 @@ class BookingListSerializer(serializers.ModelSerializer):
             'check_out_date', 'nights', 'status', 'payment_status', 'total_price',
             'amount_due', 'applied_credit',
             'booking_source', 'number_of_guests', 'adults', 'children', 'infants',
-            'guest_tax_code', 'created_at',
+            'guest_tax_code', 'created_at', 'booked_for_someone_else',
             'nightly_rate', 'cleaning_fee', 'tourist_tax'  # Added for invoice line items
         ]
         read_only_fields = fields
@@ -61,6 +61,11 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         decimal_places=2,
         default=0
     )
+    booked_for_someone_else = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text='True if logged-in user is booking for someone else'
+    )
 
     class Meta:
         model = Booking
@@ -69,7 +74,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             'id', 'user', 'guest_email', 'guest_name', 'guest_phone', 'guest_country', 'guest_address',
             'check_in_date', 'check_out_date', 'number_of_guests', 'adults', 'children', 'infants',
             'nightly_rate', 'cleaning_fee', 'tourist_tax', 'special_requests',
-            'cancellation_policy',
+            'cancellation_policy', 'booked_for_someone_else',
             # write-only helpers
             'first_name', 'last_name', 'guest_details', 'applied_credit',
             # read-only outputs
