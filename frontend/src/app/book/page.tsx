@@ -242,6 +242,7 @@ function BookingPageContent() {
   const [[step, direction], setStepState] = useState<[Step, number]>([initialStep as Step, initialStep === 'guest' ? 1 : 0]);
   const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
   const [guestCounts, setGuestCounts] = useState({ adults: 2, children: 0, infants: 0 });
+  const [hasPet, setHasPet] = useState(false);
   const [guestInfo, setGuestInfo] = useState({
     first_name: '',
     last_name: '',
@@ -279,6 +280,7 @@ function BookingPageContent() {
     const adultsParam = searchParams.get('adults');
     const childrenParam = searchParams.get('children');
     const infantsParam = searchParams.get('infants');
+    const petParam = searchParams.get('pet');
 
     if (checkInParam) {
       setDates((prev) => ({ ...prev, checkIn: checkInParam }));
@@ -298,6 +300,11 @@ function BookingPageContent() {
         children: Math.max(0, children),
         infants: Math.max(0, infants),
       });
+    }
+
+    // Update pet status if parameter is present in URL
+    if (petParam !== null) {
+      setHasPet(petParam === 'true');
     }
   }, [searchParams]);
 
@@ -334,7 +341,8 @@ function BookingPageContent() {
   const { data: pricing, isLoading: calculatingPrice } = usePriceCalculation(
     dates.checkIn,
     dates.checkOut,
-    totalGuests
+    totalGuests,
+    hasPet
   );
 
   const { data: creditData } = useQuery({
@@ -1001,6 +1009,12 @@ function BookingPageContent() {
                           <span>Cleaning fee</span>
                           <span className="text-gray-900 font-semibold">{safeFormatCurrency(displayPricing.cleaning_fee)}</span>
                         </div>
+                        {parseFloat(displayPricing.pet_fee || '0') > 0 && (
+                          <div className="flex justify-between">
+                            <span>Pet fee</span>
+                            <span className="text-gray-900 font-semibold">{safeFormatCurrency(displayPricing.pet_fee)}</span>
+                          </div>
+                        )}
                         {parseFloat(displayPricing.extra_guest_fee || '0') > 0 && (
                           <div className="flex justify-between">
                             <span>Extra guest fee</span>

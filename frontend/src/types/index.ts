@@ -202,6 +202,7 @@ export interface PricingRule {
 export interface PriceCalculation {
   accommodation_total: string;
   cleaning_fee: string;
+  pet_fee: string;
   extra_guest_fee: string;
   tourist_tax: string;
   total: string;

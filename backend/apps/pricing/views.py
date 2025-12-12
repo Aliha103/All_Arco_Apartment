@@ -56,13 +56,14 @@ def calculate_price(request):
     check_in = request.query_params.get('check_in')
     check_out = request.query_params.get('check_out')
     guests = int(request.query_params.get('guests', 1))
-    
+    has_pet = request.query_params.get('pet', 'false').lower() in ('true', '1', 'yes')
+
     if not check_in or not check_out:
         return Response(
             {'error': 'check_in, check_out, and guests parameters required'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     try:
         check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
         check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
@@ -71,10 +72,10 @@ def calculate_price(request):
             {'error': 'Invalid date format. Use YYYY-MM-DD'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     settings = Settings.get_settings()
-    pricing = settings.calculate_booking_price(check_in_date, check_out_date, guests)
-    
+    pricing = settings.calculate_booking_price(check_in_date, check_out_date, guests, has_pet=has_pet)
+
     return Response(pricing)
 
 

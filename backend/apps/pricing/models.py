@@ -51,34 +51,37 @@ class Settings(models.Model):
         settings, created = cls.objects.get_or_create(pk=1)
         return settings
     
-    def calculate_booking_price(self, check_in, check_out, guests):
+    def calculate_booking_price(self, check_in, check_out, guests, has_pet=False):
         """Calculate total booking price."""
         nights = (check_out - check_in).days
-        
+
         # Get nightly rate (check for seasonal pricing)
         nightly_rate = self.get_rate_for_dates(check_in, check_out)
-        
+
         # Calculate accommodation cost
         accommodation = nightly_rate * nights
-        
+
         # Calculate tourist tax
         tourist_tax = self.tourist_tax_per_person_per_night * guests * nights
-        
+
         # Calculate extra guest fee
         extra_guest_cost = 0
         if guests > self.extra_guest_threshold:
             extra_guests = guests - self.extra_guest_threshold
             extra_guest_cost = self.extra_guest_fee * extra_guests * nights
-        
+
+        # Pet fee (only if has_pet=True)
+        pet_fee = float(self.pet_cleaning_fee) if has_pet else 0.0
+
         return {
             'nightly_rate': float(nightly_rate),
             'nights': nights,
-            'accommodation': float(accommodation),
+            'accommodation_total': float(accommodation),
             'cleaning_fee': float(self.cleaning_fee),
-            'pet_cleaning_fee': float(self.pet_cleaning_fee),
+            'pet_fee': pet_fee,
             'tourist_tax': float(tourist_tax),
             'extra_guest_fee': float(extra_guest_cost),
-            'total': float(accommodation + self.cleaning_fee + self.pet_cleaning_fee + tourist_tax + extra_guest_cost)
+            'total': float(accommodation + self.cleaning_fee + pet_fee + tourist_tax + extra_guest_cost)
         }
     
     def get_rate_for_dates(self, check_in, check_out):

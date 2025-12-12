@@ -18,12 +18,12 @@ export function useAvailability(checkIn?: string, checkOut?: string) {
   });
 }
 
-export function usePriceCalculation(checkIn?: string, checkOut?: string, guests?: number) {
+export function usePriceCalculation(checkIn?: string, checkOut?: string, guests?: number, hasPet?: boolean) {
   return useQuery<PriceCalculation>({
-    queryKey: ['price', checkIn, checkOut, guests],
+    queryKey: ['price', checkIn, checkOut, guests, hasPet],
     queryFn: async () => {
       if (!checkIn || !checkOut || !guests) throw new Error('Missing parameters');
-      const response = await api.pricing.calculatePrice(checkIn, checkOut, guests);
+      const response = await api.pricing.calculatePrice(checkIn, checkOut, guests, hasPet);
       return response.data;
     },
     enabled: !!checkIn && !!checkOut && !!guests,
