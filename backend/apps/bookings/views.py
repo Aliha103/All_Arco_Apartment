@@ -76,7 +76,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     - mark_no_show: bookings.mark_no_show
     """
     permission_classes = [IsAuthenticated]  # Will be upgraded to HasPermissionForAction after seeding
-    lookup_value_regex = r'[0-9a-f-]{36}'  # Ensure router does not treat other paths as booking IDs
+    lookup_value_regex = r'[0-9a-zA-Z-]+'  # Accept both UUIDs and booking_ids (e.g., ARCOM0WYCF)
 
     # Action-level permission mapping (for RBAC)
     action_permissions = {
@@ -101,6 +101,30 @@ class BookingViewSet(viewsets.ModelViewSet):
         elif self.action == 'create':
             return BookingCreateSerializer
         return BookingSerializer
+
+    def get_object(self):
+        """
+        Override to support lookup by both UUID (pk) and booking_id.
+        Tries UUID first, then falls back to booking_id lookup.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+
+        try:
+            # Try UUID lookup first
+            obj = queryset.get(**filter_kwargs)
+        except (Booking.DoesNotExist, ValueError):
+            # Fall back to booking_id lookup
+            try:
+                obj = queryset.get(booking_id__iexact=self.kwargs[lookup_url_kwarg])
+            except Booking.DoesNotExist:
+                from rest_framework.exceptions import NotFound
+                raise NotFound('Booking not found')
+
+        # Check object permissions
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     @action(detail=True, methods=['post'])
     def complete_checkin(self, request, pk=None):
