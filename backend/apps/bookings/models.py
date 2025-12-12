@@ -63,7 +63,13 @@ class Booking(models.Model):
     adults = models.IntegerField(default=2, help_text='Number of adult guests (13+)')
     children = models.IntegerField(default=0, help_text='Number of children (2-12)')
     infants = models.IntegerField(default=0, help_text='Number of infants (0-2, free)')
-    
+
+    # Proxy booking tracking
+    booked_for_someone_else = models.BooleanField(
+        default=False,
+        help_text='True if logged-in user booked for a different guest'
+    )
+
     nightly_rate = models.DecimalField(max_digits=10, decimal_places=2)
     cleaning_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tourist_tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)

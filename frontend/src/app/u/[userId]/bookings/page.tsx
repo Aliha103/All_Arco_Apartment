@@ -302,9 +302,17 @@ export default function BookingsPage() {
                             <Calendar className="w-6 h-6 text-[#C4A572]" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate mb-1">
-                              {booking.booking_id}
-                            </h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-semibold text-gray-900 truncate">
+                                {booking.booking_id}
+                              </h3>
+                              {booking.booked_for_someone_else && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">
+                                  <Users className="w-3 h-3" />
+                                  For {booking.guest_name.split(' ')[0]}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                               <span className="flex items-center gap-1">
                                 <MapPin className="w-4 h-4" />

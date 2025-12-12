@@ -599,6 +599,7 @@ function BookingPageContent() {
         guest_country: guestInfo.country,
         special_requests: specialRequestsCombined,
         cancellation_policy: cancellationOption === 'nonref' ? 'non_refundable' : 'flex_24h',
+        booked_for_someone_else: bookingForSomeoneElse,
         guest_details: guestDetailsEnabled ? guestDetails.map((g) => ({
           first_name: g.first_name,
           last_name: g.last_name,
