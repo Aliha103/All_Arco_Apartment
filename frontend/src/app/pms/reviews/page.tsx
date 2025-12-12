@@ -233,7 +233,7 @@ export default function ReviewsManagementPage() {
           iconColor="text-blue-600"
           iconBg="bg-blue-100"
           label="Average Rating"
-          value={stats.average_rating.toFixed(1)}
+          value={stats.average_rating ? Number(stats.average_rating).toFixed(1) : '0.0'}
         />
         <StatsCard
           icon={CheckCircle}
@@ -547,7 +547,9 @@ function ReviewRow({ review, index, canApprove, canEdit, canDelete }: ReviewRowP
         <td className="px-4 py-3">
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4 fill-[#C4A572] text-[#C4A572]" />
-            <span className="text-sm font-semibold text-gray-900">{review.rating.toFixed(1)}</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {review.rating ? Number(review.rating).toFixed(1) : '0.0'}
+            </span>
           </div>
         </td>
         <td className="px-4 py-3">
@@ -619,7 +621,9 @@ function ReviewCard({ review, index, canApprove, canEdit, canDelete }: ReviewRow
 
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 fill-[#C4A572] text-[#C4A572]" />
-            <span className="text-sm font-semibold text-gray-900">{review.rating.toFixed(1)}</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {review.rating ? Number(review.rating).toFixed(1) : '0.0'}
+            </span>
             <OTABadge source={review.ota_source} />
             <StatusBadge status={review.status} />
           </div>
@@ -883,7 +887,9 @@ function ReviewDetailModal({
               </div>
               <div className="flex items-center gap-1">
                 <Star className="w-5 h-5 fill-[#C4A572] text-[#C4A572]" />
-                <span className="text-xl font-bold text-gray-900">{review.rating.toFixed(1)}</span>
+                <span className="text-xl font-bold text-gray-900">
+                  {review.rating ? Number(review.rating).toFixed(1) : '0.0'}
+                </span>
               </div>
             </div>
           </DialogHeader>
@@ -936,7 +942,9 @@ function ReviewDetailModal({
                         <span className="text-sm text-gray-700 capitalize">{key}</span>
                         <div className="flex items-center gap-1">
                           <Star className="w-4 h-4 fill-[#C4A572] text-[#C4A572]" />
-                          <span className="text-sm font-semibold text-gray-900">{value.toFixed(1)}</span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {value ? Number(value).toFixed(1) : '0.0'}
+                          </span>
                         </div>
                       </div>
                     )
