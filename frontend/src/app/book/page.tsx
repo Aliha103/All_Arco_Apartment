@@ -371,7 +371,8 @@ function BookingPageContent() {
     dates.checkIn,
     dates.checkOut,
     totalGuests,
-    hasPet
+    hasPet,
+    guestCounts.adults  // Pass adults count for accurate city tax calculation
   );
 
   const { data: creditData } = useQuery({

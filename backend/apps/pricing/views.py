@@ -1,8 +1,10 @@
+import logging
+from datetime import datetime
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from datetime import datetime
 from apps.users.permissions import HasPermissionForAction, HasPermission
 from .models import Settings, PricingRule, Promotion, Voucher, PromoUsage
 from .serializers import (
@@ -52,24 +54,23 @@ def update_settings(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def calculate_price(request):
-    """Calculate booking price."""
-    import logging
+    """
+    Calculate booking price.
+
+    Query parameters:
+    - check_in: date (YYYY-MM-DD)
+    - check_out: date (YYYY-MM-DD)
+    - guests: int (total guests - adults + children)
+    - adults: int (optional, number of adults for city tax calculation)
+    - pet: boolean (whether booking includes pet)
+    """
     logger = logging.getLogger(__name__)
 
     try:
         check_in = request.query_params.get('check_in')
         check_out = request.query_params.get('check_out')
-
-        # Safely parse guests parameter
-        try:
-            guests = int(request.query_params.get('guests', 1))
-        except (ValueError, TypeError) as e:
-            logger.error(f"Invalid guests parameter: {request.query_params.get('guests')} - {e}")
-            return Response(
-                {'error': 'Invalid guests parameter'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+        guests_param = request.query_params.get('guests', 1)
+        adults_param = request.query_params.get('adults')
         has_pet = request.query_params.get('pet', 'false').lower() in ('true', '1', 'yes')
 
         if not check_in or not check_out:
@@ -77,6 +78,28 @@ def calculate_price(request):
                 {'error': 'check_in, check_out, and guests parameters required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Safely parse guests parameter
+        try:
+            guests = int(guests_param)
+        except (ValueError, TypeError) as e:
+            logger.error(f"Invalid guests parameter: {guests_param} - {e}")
+            return Response(
+                {'error': 'Invalid guests parameter'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Safely parse adults parameter if provided
+        adults = None
+        if adults_param:
+            try:
+                adults = int(adults_param)
+            except (ValueError, TypeError) as e:
+                logger.error(f"Invalid adults parameter: {adults_param} - {e}")
+                return Response(
+                    {'error': 'Invalid adults parameter'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         try:
             check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
@@ -89,7 +112,9 @@ def calculate_price(request):
             )
 
         settings = Settings.get_settings()
-        pricing = settings.calculate_booking_price(check_in_date, check_out_date, guests, has_pet=has_pet)
+        pricing = settings.calculate_booking_price(
+            check_in_date, check_out_date, guests, has_pet=has_pet, adults=adults
+        )
 
         return Response(pricing)
 
@@ -100,7 +125,6 @@ def calculate_price(request):
             {'error': 'Internal server error calculating price', 'detail': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
 
 class PricingRuleViewSet(viewsets.ModelViewSet):
     """ViewSet for pricing rules management."""
