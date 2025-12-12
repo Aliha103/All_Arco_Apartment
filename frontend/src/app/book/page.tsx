@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState, useCallback, useTransition, memo } from 'react';
+import { Suspense, useEffect, useMemo, useState, useCallback, useTransition, memo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { format, isAfter, isValid, parseISO } from 'date-fns';
@@ -275,6 +275,8 @@ function BookingPageContent() {
 
   // Track if we've initialized from URL params
   const [initializedFromUrl, setInitializedFromUrl] = useState(false);
+  // Track the URL params we initialized with to avoid overwriting with stale debounced values
+  const initialUrlGuestCounts = useRef<{adults: number, children: number, infants: number} | null>(null);
 
   // Prefill from query params
   useEffect(() => {
@@ -298,11 +300,15 @@ function BookingPageContent() {
       const children = Number(childrenParam || '0');
       const infants = Number(infantsParam || '0');
 
-      setGuestCounts({
+      const guestCountsFromUrl = {
         adults: Math.max(1, adults),
         children: Math.max(0, children),
         infants: Math.max(0, infants),
-      });
+      };
+
+      setGuestCounts(guestCountsFromUrl);
+      // Store the initial URL values to prevent overwriting with stale debounced values
+      initialUrlGuestCounts.current = guestCountsFromUrl;
     }
 
     // Update pet status if parameter is present in URL
@@ -320,6 +326,20 @@ function BookingPageContent() {
   // Only update URL after initial load to prevent overwriting URL params
   useEffect(() => {
     if (!initializedFromUrl) return; // Wait for URL params to be read first
+
+    // Skip URL update if debounced values DON'T match what we initialized from URL (they're stale from before init)
+    if (initialUrlGuestCounts.current &&
+        (debouncedGuests.adults !== initialUrlGuestCounts.current.adults ||
+         debouncedGuests.children !== initialUrlGuestCounts.current.children ||
+         debouncedGuests.infants !== initialUrlGuestCounts.current.infants)) {
+      // Debounced values haven't caught up to URL params yet, skip this stale update
+      return;
+    }
+
+    // Debounced values have caught up, clear the ref to allow future user-initiated updates
+    if (initialUrlGuestCounts.current) {
+      initialUrlGuestCounts.current = null;
+    }
 
     if (dates.checkIn || dates.checkOut || debouncedGuests.adults > 0) {
       updateURL({
