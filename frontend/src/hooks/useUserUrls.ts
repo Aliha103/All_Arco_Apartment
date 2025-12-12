@@ -26,7 +26,7 @@ export function useUserUrls() {
     return {
       profile: `/u/${userId}/profile`,
       messages: `/u/${userId}/messages`,
-      dashboard: isTeam ? `/u/${userId}/dashboard` : `/u/${userId}/bookings`,
+      dashboard: isTeam ? '/pms' : `/u/${userId}/bookings`,
       userId,
     };
   }, [user]);
