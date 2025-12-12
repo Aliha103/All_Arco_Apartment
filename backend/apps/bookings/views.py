@@ -579,6 +579,21 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             table_data.append(['', '', 'Total stay', f'EUR {total_stay:.2f}'])
             table_data.append(['', '', 'Charged now', f'EUR {due_now_val:.2f}'])
+
+            # Payment method row (latest succeeded booking payment)
+            latest_payment = booking.payments.filter(
+                kind='booking',
+                status='succeeded'
+            ).order_by('-paid_at').first()
+            if latest_payment:
+                method_raw = latest_payment.payment_method or 'Stripe'
+                method_label = method_raw.replace('_', ' ').title()
+                paid_when = latest_payment.paid_at.strftime('%b %d, %Y %H:%M') if latest_payment.paid_at else None
+                paid_text = method_label if method_label else 'Stripe'
+                if paid_when:
+                    paid_text = f"{paid_text} on {paid_when}"
+                table_data.append(['', '', 'Paid via', paid_text])
+
             table_data.append(['', '', 'City tax (pay at property)', f'EUR {city_tax_val:.2f}'])
 
             col_widths = [8*cm, 2*cm, 3*cm, 3*cm]
