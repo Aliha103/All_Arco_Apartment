@@ -281,6 +281,29 @@ function BookingPageContent() {
   // Track the URL params we initialized with to avoid overwriting with stale debounced values
   const initialUrlGuestCounts = useRef<{adults: number, children: number, infants: number} | null>(null);
 
+  // Handle cancelled checkout (user clicked back on Stripe page)
+  useEffect(() => {
+    const cancelled = searchParams.get('cancelled');
+    const bookingId = searchParams.get('booking_id');
+
+    if (cancelled === 'true' && bookingId) {
+      // Delete the abandoned booking
+      api.bookings.delete(bookingId).catch((err) => {
+        console.warn('Failed to delete abandoned booking:', err);
+      });
+
+      // Clean up URL (keep booking parameters, only remove cancelled flags)
+      const url = new URL(window.location.href);
+      url.searchParams.delete('cancelled');
+      url.searchParams.delete('booking_id');
+      window.history.replaceState({}, '', url.pathname + url.search);
+
+      toast.info('Payment cancelled. Your information has been saved - you can try again when ready.', {
+        duration: 4000,
+      });
+    }
+  }, [searchParams]);
+
   // Prefill from query params
   useEffect(() => {
     const checkInParam = sanitizeDate(searchParams.get('checkIn'));
@@ -447,8 +470,11 @@ function BookingPageContent() {
   const displayPricing = useMemo(() => {
     if (!correctedPricing) return null;
     const baseTotal = parseFloat(String(correctedPricing.total || 0)) || 0;
-    const discount = cancellationOption === 'nonref' ? baseTotal * 0.1 : 0;
-    const total_after_policy = baseTotal - discount;
+    const touristTax = parseFloat(String(correctedPricing.tourist_tax || 0)) || 0;
+    // Tourist tax is paid at property, not through Stripe
+    const totalWithoutTouristTax = baseTotal - touristTax;
+    const discount = cancellationOption === 'nonref' ? totalWithoutTouristTax * 0.1 : 0;
+    const total_after_policy = totalWithoutTouristTax - discount;
     return { ...correctedPricing, discount, total_after_policy };
   }, [correctedPricing, cancellationOption]);
 
