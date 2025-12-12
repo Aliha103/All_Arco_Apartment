@@ -619,7 +619,7 @@ export default function BookingSidePanel({
           {(formData.booking_id || formData.id) && (
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm font-semibold text-gray-700">
-                {formData.booking_id || generateArcoReference(formData.id)}
+                {formData.booking_id || (formData.id ? generateArcoReference(formData.id) : '')}
               </span>
               <button
                 onClick={handleCopyReference}
@@ -1354,6 +1354,96 @@ export default function BookingSidePanel({
             </Button>
           </div>
 
+          {/* Document Actions */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (bookingId) {
+                  const url = `/booking/${bookingId}/confirmation`;
+                  window.open(url, '_blank');
+                }
+              }}
+              size="sm"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              <Eye className="w-4 h-4 mr-1" />
+              View Confirmation
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (bookingId) {
+                  try {
+                    const response = await api.bookings.downloadPDF(bookingId);
+                    const blob = new Blob([response.data], { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `booking-${formData.booking_id || bookingId}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    toast.success('PDF downloaded successfully');
+                  } catch (error) {
+                    toast.error('Failed to download PDF');
+                  }
+                }
+              }}
+              size="sm"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              <Download className="w-4 h-4 mr-1" />
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (bookingId) {
+                  try {
+                    await api.bookings.sendEmail(bookingId);
+                    toast.success(`Confirmation email sent to ${formData.guest_email}`);
+                  } catch (error) {
+                    toast.error('Failed to send confirmation email');
+                  }
+                }
+              }}
+              size="sm"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              <Mail className="w-4 h-4 mr-1" />
+              Send PDF by Email
+            </Button>
+          </div>
+
+          {/* Guest Registration Actions */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (bookingId) {
+                  // Navigate to manual guest registration page
+                  window.location.href = `/check-in/${bookingId}`;
+                }
+              }}
+              size="sm"
+              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+            >
+              <UserPlus className="w-4 h-4 mr-1" />
+              Register Guests
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setOnlineCheckInModalOpen(true)}
+              size="sm"
+              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+            >
+              <Send className="w-4 h-4 mr-1" />
+              Send Check-in Link
+            </Button>
+          </div>
+
           {/* Status Action Buttons */}
           <div className="flex flex-wrap gap-2">
             {canCheckIn && (
@@ -1542,10 +1632,21 @@ export default function BookingSidePanel({
           <DialogHeader>
             <DialogTitle>Online Check-in</DialogTitle>
             <DialogDescription>
-              Share the online check-in link with your guest
+              Share the online check-in link with your guest. They can register their details and pay city tax online.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-800">
+                <strong>Guests can:</strong>
+              </p>
+              <ul className="text-xs text-blue-700 mt-1 space-y-1 ml-4 list-disc">
+                <li>Register all guest details</li>
+                <li>Upload ID documents</li>
+                <li>Pay city tax online via Stripe</li>
+                <li>Complete check-in remotely</li>
+              </ul>
+            </div>
             <div className="flex items-center gap-2">
               <Input
                 readOnly
