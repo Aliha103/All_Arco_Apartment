@@ -274,9 +274,9 @@ function BookingPageContent() {
   useEffect(() => {
     const checkInParam = sanitizeDate(searchParams.get('checkIn'));
     const checkOutParam = sanitizeDate(searchParams.get('checkOut'));
-    const adults = Number(searchParams.get('adults') || '0');
-    const children = Number(searchParams.get('children') || '0');
-    const infants = Number(searchParams.get('infants') || '0');
+    const adultsParam = searchParams.get('adults');
+    const childrenParam = searchParams.get('children');
+    const infantsParam = searchParams.get('infants');
 
     if (checkInParam) {
       setDates((prev) => ({ ...prev, checkIn: checkInParam }));
@@ -284,11 +284,17 @@ function BookingPageContent() {
     if (checkOutParam && (!checkInParam || !isAfter(parseISO(checkInParam), parseISO(checkOutParam)))) {
       setDates((prev) => ({ ...prev, checkOut: checkOutParam }));
     }
-    if (adults + children > 0) {
+
+    // Update guest counts if any parameter is present in URL
+    if (adultsParam !== null || childrenParam !== null || infantsParam !== null) {
+      const adults = Number(adultsParam || '2');
+      const children = Number(childrenParam || '0');
+      const infants = Number(infantsParam || '0');
+
       setGuestCounts({
-        adults: Math.max(1, adults || 0),
-        children: Math.max(0, children || 0),
-        infants: Math.max(0, infants || 0),
+        adults: Math.max(1, adults),
+        children: Math.max(0, children),
+        infants: Math.max(0, infants),
       });
     }
   }, [searchParams]);
