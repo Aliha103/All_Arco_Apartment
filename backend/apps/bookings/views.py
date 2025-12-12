@@ -703,9 +703,6 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
 
             elements.append(Paragraph("Thank you for choosing All'Arco Apartment Venice", footer_thanks_style))
-            elements.append(Paragraph("www.allarcoapartment.com", footer_info_style))
-            elements.append(Paragraph("Via Castellana 61, 30125 Venice, Italy", footer_info_style))
-            elements.append(Paragraph("Email: support@allarcoapartment.com", footer_info_style))
 
             # Build PDF
             doc.build(elements)
