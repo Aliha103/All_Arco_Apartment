@@ -253,11 +253,15 @@ def confirm_checkout_session(request):
                     payment.paid_at = timezone.now()
                 payment.save(update_fields=['status', 'amount', 'paid_at'])
 
-            # Update booking
-            booking.status = 'confirmed'
-            booking.payment_status = 'paid'
-            booking.amount_due = Decimal(booking.tourist_tax or 0)  # City tax remains due at property
-            booking.save(update_fields=['status', 'payment_status', 'amount_due'])
+            # Update booking - use queryset update to bypass editable=False restriction
+            tourist_tax_amount = Decimal(booking.tourist_tax or 0)
+            Booking.objects.filter(id=booking.id).update(
+                status='confirmed',
+                payment_status='paid',
+                amount_due=tourist_tax_amount
+            )
+            # Refresh booking instance to reflect changes
+            booking.refresh_from_db()
 
             # Send confirmation + receipt emails
             try:
@@ -601,11 +605,14 @@ def stripe_webhook(request):
                         kind='booking',
                     )
                     
-                    # Update booking status
-                    booking.status = 'confirmed'
-                    booking.payment_status = 'paid'
-                    booking.amount_due = Decimal(booking.tourist_tax or 0)
-                    booking.save(update_fields=['status', 'payment_status', 'amount_due'])
+                    # Update booking status - use queryset update to bypass editable=False restriction
+                    tourist_tax_amount = Decimal(booking.tourist_tax or 0)
+                    Booking.objects.filter(id=booking.id).update(
+                        status='confirmed',
+                        payment_status='paid',
+                        amount_due=tourist_tax_amount
+                    )
+                    booking.refresh_from_db()
 
                     BookingAttempt.objects.filter(stripe_session_id=session.get('id')).update(
                         status='paid',
