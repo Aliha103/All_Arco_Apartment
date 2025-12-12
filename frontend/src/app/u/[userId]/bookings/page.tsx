@@ -406,7 +406,7 @@ export default function BookingsPage() {
                           ) : null}
                         </div>
                         <button
-                          onClick={() => router.push(`/booking/${booking.booking_id}`)}
+                          onClick={() => router.push(`/booking/${booking.booking_id}/confirmation`)}
                           className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
                         >
                           View Details
