@@ -45,34 +45,6 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
     Primary guest must provide: first_name, last_name (in guest_name), email, phone, country
     """
-
-    class Meta:
-        model = Booking
-        extra_kwargs = {'guest_name': {'required': False}}
-        fields = [
-            'id', 'user', 'guest_email', 'guest_name', 'guest_phone', 'guest_country', 'guest_address',
-            'check_in_date', 'check_out_date', 'number_of_guests',
-            'nightly_rate', 'cleaning_fee', 'tourist_tax', 'special_requests',
-            'cancellation_policy',
-            # write-only helpers
-            'first_name', 'last_name', 'guest_details', 'applied_credit',
-            # read-only outputs
-            'booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable',
-        ]
-        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable']
-
-
-class BookingGuestPublicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BookingGuest
-        fields = [
-            'id', 'first_name', 'last_name', 'email', 'country_of_birth', 'date_of_birth',
-            'birth_province', 'birth_city', 'document_type', 'document_number',
-            'document_issue_country', 'document_issue_date', 'document_expire_date',
-            'document_issue_province', 'document_issue_city', 'relationship', 'is_primary',
-        ]
-        read_only_fields = fields
-
     first_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     last_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     guest_details = serializers.ListField(
@@ -88,6 +60,21 @@ class BookingGuestPublicSerializer(serializers.ModelSerializer):
         decimal_places=2,
         default=0
     )
+
+    class Meta:
+        model = Booking
+        extra_kwargs = {'guest_name': {'required': False}}
+        fields = [
+            'id', 'user', 'guest_email', 'guest_name', 'guest_phone', 'guest_country', 'guest_address',
+            'check_in_date', 'check_out_date', 'number_of_guests',
+            'nightly_rate', 'cleaning_fee', 'tourist_tax', 'special_requests',
+            'cancellation_policy',
+            # write-only helpers
+            'first_name', 'last_name', 'guest_details', 'applied_credit',
+            # read-only outputs
+            'booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable',
+        ]
+        read_only_fields = ['id', 'booking_id', 'nights', 'total_price', 'amount_due', 'is_non_refundable']
     
     def validate(self, data):
         # Validate dates
@@ -213,6 +200,19 @@ class BookingGuestPublicSerializer(serializers.ModelSerializer):
             )
 
         return booking
+
+
+class BookingGuestPublicSerializer(serializers.ModelSerializer):
+    """Public serializer for booking guest data (used in check-in resume)."""
+    class Meta:
+        model = BookingGuest
+        fields = [
+            'id', 'first_name', 'last_name', 'email', 'country_of_birth', 'date_of_birth',
+            'birth_province', 'birth_city', 'document_type', 'document_number',
+            'document_issue_country', 'document_issue_date', 'document_expire_date',
+            'document_issue_province', 'document_issue_city', 'relationship', 'is_primary',
+        ]
+        read_only_fields = fields
 
 
 class BlockedDateSerializer(serializers.ModelSerializer):
