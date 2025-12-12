@@ -72,6 +72,7 @@ class Booking(models.Model):
 
     nightly_rate = models.DecimalField(max_digits=10, decimal_places=2)
     cleaning_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    pet_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Pet cleaning fee')
     tourist_tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
     applied_credit = models.DecimalField(
@@ -266,6 +267,7 @@ class Booking(models.Model):
         base_total = (
             (self.nightly_rate * self.nights) +
             self.cleaning_fee +
+            self.pet_fee +
             self.tourist_tax
         )
 
@@ -288,6 +290,7 @@ class Booking(models.Model):
         base_total = (
             (self.nightly_rate * self.nights) +
             self.cleaning_fee +
+            self.pet_fee +
             self.tourist_tax
         )
         discount_amount = Decimal('0')
@@ -299,6 +302,7 @@ class Booking(models.Model):
             'nights': self.nights,
             'accommodation': float(self.nightly_rate * self.nights),
             'cleaning_fee': float(self.cleaning_fee),
+            'pet_fee': float(self.pet_fee),
             'tourist_tax': float(self.tourist_tax),
             'discount': float(discount_amount),
             'total': float(self.total_price),
