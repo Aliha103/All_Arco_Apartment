@@ -32,6 +32,7 @@ import { calculateNights, formatCurrency } from '@/lib/utils';
 import SiteNav from '../components/SiteNav';
 import SiteFooter from '../components/SiteFooter';
 import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/hooks/useAuth';
 
 type Step = 'plan' | 'guest';
 
@@ -256,7 +257,9 @@ function BookingPageContent() {
   const [cancellationOption, setCancellationOption] = useState<'flex' | 'nonref'>('flex');
   const [applyCredits, setApplyCredits] = useState(false);
   const [creditToUse, setCreditToUse] = useState(0);
+  const [bookingForSomeoneElse, setBookingForSomeoneElse] = useState(false);
   const { isAuthenticated } = useAuthStore();
+  const { user } = useAuth();
 
   // Sync URL params
   const updateURL = useCallback((params: Record<string, string>) => {
@@ -351,6 +354,44 @@ function BookingPageContent() {
       });
     }
   }, [dates.checkIn, dates.checkOut, debouncedGuests, updateURL, initializedFromUrl]);
+
+  // Auto-fill guest info from user profile when logged in (skip if booking for someone else)
+  useEffect(() => {
+    if (user && step === 'guest' && !bookingForSomeoneElse) {
+      setGuestInfo(prev => ({
+        first_name: prev.first_name || user.first_name || '',
+        last_name: prev.last_name || user.last_name || '',
+        guest_email: prev.guest_email || user.email || '',
+        guest_phone: prev.guest_phone || user.phone || '',
+        country: prev.country || user.country || '',
+        special_requests: prev.special_requests || '',
+      }));
+    }
+  }, [user, step, bookingForSomeoneElse]);
+
+  // Clear guest info when toggling "book for someone else"
+  useEffect(() => {
+    if (bookingForSomeoneElse && user) {
+      setGuestInfo({
+        first_name: '',
+        last_name: '',
+        guest_email: '',
+        guest_phone: '',
+        country: '',
+        special_requests: '',
+      });
+    } else if (!bookingForSomeoneElse && user && step === 'guest') {
+      // Re-fill with user data when unchecking
+      setGuestInfo(prev => ({
+        first_name: prev.first_name || user.first_name || '',
+        last_name: prev.last_name || user.last_name || '',
+        guest_email: prev.guest_email || user.email || '',
+        guest_phone: prev.guest_phone || user.phone || '',
+        country: prev.country || user.country || '',
+        special_requests: prev.special_requests || '',
+      }));
+    }
+  }, [bookingForSomeoneElse, user, step]);
 
   const totalGuests = useMemo(
     () => Math.max(1, guestCounts.adults + guestCounts.children),
@@ -577,6 +618,24 @@ function BookingPageContent() {
         return;
       }
 
+      // Update user profile with booking details if logged in and booking for themselves
+      if (user && isAuthenticated && !bookingForSomeoneElse) {
+        const profileUpdates: Record<string, string> = {};
+        if (guestInfo.first_name && !user.first_name) profileUpdates.first_name = guestInfo.first_name;
+        if (guestInfo.last_name && !user.last_name) profileUpdates.last_name = guestInfo.last_name;
+        if (guestInfo.guest_phone && !user.phone) profileUpdates.phone = guestInfo.guest_phone;
+        if (guestInfo.country && !user.country) profileUpdates.country = guestInfo.country;
+
+        if (Object.keys(profileUpdates).length > 0) {
+          try {
+            await api.users.updateProfile(profileUpdates);
+          } catch (profileErr) {
+            // Don't fail booking if profile update fails
+            console.warn('Profile update failed:', profileErr);
+          }
+        }
+      }
+
       const bookingAmountDue = parseFloat(String(booking.amount_due ?? 0)) || 0;
       if (bookingAmountDue <= 0.01) {
         toast.success('Booking created. No payment due.');
@@ -610,7 +669,7 @@ function BookingPageContent() {
       console.error('Booking failed:', error);
       toast.error('Failed to create booking. Please try again.');
     }
-  }, [dates, totalGuests, guestInfo, guestDetails, guestDetailsEnabled, displayPricing, appliedCredit, cancellationOption, router, createBooking, createCheckout]);
+  }, [dates, totalGuests, guestInfo, guestDetails, guestDetailsEnabled, displayPricing, appliedCredit, cancellationOption, router, createBooking, createCheckout, user, isAuthenticated, bookingForSomeoneElse, guestCounts.adults, guestCounts.children, guestCounts.infants]);
 
   const isProcessing = createBooking.isPending || createCheckout.isPending;
 
@@ -759,6 +818,33 @@ function BookingPageContent() {
                       className="space-y-5"
                       aria-busy={isProcessing}
                     >
+                      {/* Book for someone else toggle (only shown if logged in) */}
+                      {isAuthenticated && user && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="rounded-xl border border-blue-200 bg-blue-50 p-4"
+                        >
+                          <label className="flex items-start gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={bookingForSomeoneElse}
+                              onChange={(e) => setBookingForSomeoneElse(e.target.checked)}
+                              disabled={isProcessing}
+                              className="w-5 h-5 mt-0.5 accent-[#C4A572] cursor-pointer"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-blue-900">Book for someone else</p>
+                              <p className="text-xs text-blue-700 mt-1">
+                                {bookingForSomeoneElse
+                                  ? "Enter the guest's details below. The booking will be linked to your account."
+                                  : "Check this if you're booking for a friend, family member, or colleague."}
+                              </p>
+                            </div>
+                          </label>
+                        </motion.div>
+                      )}
+
                       <div className="grid sm:grid-cols-2 gap-4">
                         <motion.div className="space-y-2" whileHover={{ scale: 1.01 }}>
                           <Label htmlFor="guest_first" className="text-gray-800 font-medium">First name</Label>
