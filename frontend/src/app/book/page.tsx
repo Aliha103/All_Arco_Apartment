@@ -237,7 +237,9 @@ function BookingPageContent() {
   const prefersReducedMotion = useReducedMotion();
   const [isPending, startTransition] = useTransition();
 
-  const [[step, direction], setStepState] = useState<[Step, number]>(['plan', 0]);
+  // Initialize step from URL parameter (if coming from homepage with step=guest, start at guest step)
+  const initialStep = searchParams.get('step') === 'guest' ? 'guest' : 'plan';
+  const [[step, direction], setStepState] = useState<[Step, number]>([initialStep as Step, initialStep === 'guest' ? 1 : 0]);
   const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
   const [guestCounts, setGuestCounts] = useState({ adults: 2, children: 0, infants: 0 });
   const [guestInfo, setGuestInfo] = useState({
@@ -296,14 +298,6 @@ function BookingPageContent() {
         children: Math.max(0, children),
         infants: Math.max(0, infants),
       });
-    }
-  }, [searchParams]);
-
-  // Allow deep link to guest step (from homepage reserve)
-  useEffect(() => {
-    const stepParam = searchParams.get('step');
-    if (stepParam === 'guest') {
-      setStepState(['guest', 1]);
     }
   }, [searchParams]);
 
