@@ -136,6 +136,9 @@ export const api = {
     // Public booking lookup (no auth required)
     lookup: (confirmation: string, email: string) =>
       apiClient.post('/bookings/lookup/', { confirmation, email }),
+    // Claim booking (link to user account)
+    claimBooking: (confirmation: string, email: string) =>
+      apiClient.post('/bookings/claim/', { confirmation, email }),
     lookupUpdate: (confirmation: string, email: string, updates: any) =>
       apiClient.post('/bookings/lookup/update/', { confirmation, email, updates }),
     lookupCheckin: (confirmation: string, email: string, guests: any[]) =>

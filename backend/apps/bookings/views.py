@@ -1543,3 +1543,70 @@ def public_booking_checkin(request):
         'guests': created_guests,
         'booking_id': booking.booking_id
     })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def claim_booking(request):
+    """
+    Link an existing booking to the authenticated user's account.
+
+    Verifies confirmation ID and email match before linking.
+    User must be authenticated and the email must match their account email.
+
+    Request body:
+    - confirmation: string (booking_id like ARCO-XXXXXX)
+    - email: string (guest email for verification)
+
+    Returns success message with booking details on successful claim.
+    """
+    confirmation = request.data.get('confirmation', '').strip().upper()
+    email = request.data.get('email', '').strip().lower()
+
+    if not confirmation or not email:
+        return Response(
+            {'error': 'Both confirmation number and email are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Verify email matches logged-in user
+    if email != request.user.email.lower():
+        return Response(
+            {'error': 'Email must match your account email'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    # Find booking
+    try:
+        booking = Booking.objects.get(
+            booking_id__iexact=confirmation,
+            guest_email__iexact=email
+        )
+    except Booking.DoesNotExist:
+        return Response(
+            {'error': 'No booking found with this confirmation ID and email'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Check if already linked to a user
+    if booking.user and booking.user != request.user:
+        return Response(
+            {'error': 'This booking is already linked to another account'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Link booking to user
+    if not booking.user:
+        booking.user = request.user
+        booking.save(update_fields=['user', 'updated_at'])
+
+    return Response({
+        'message': 'Booking successfully linked to your account',
+        'booking': {
+            'id': str(booking.id),
+            'booking_id': booking.booking_id,
+            'check_in_date': booking.check_in_date.isoformat(),
+            'check_out_date': booking.check_out_date.isoformat(),
+            'status': booking.status,
+        }
+    })
