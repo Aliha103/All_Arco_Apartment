@@ -132,6 +132,7 @@ function ConfirmationContent() {
   const guestCount = (booking as any).number_of_guests ?? (booking as any).guests;
   const nightlyRate = Number((booking as any).nightly_rate ?? 0) || 0;
   const cleaningFee = Number((booking as any).cleaning_fee ?? 0) || 0;
+  const petFee = Number((booking as any).pet_fee ?? 0) || 0;
   const touristTax = Number((booking as any).tourist_tax ?? 0) || 0;
   const appliedCredit = Number((booking as any).applied_credit ?? 0) || 0;
   const stayAmount = nightlyRate * (booking.nights || 0);
@@ -324,6 +325,12 @@ function ConfirmationContent() {
                       <span className="text-gray-700">Cleaning</span>
                       <span className="font-semibold text-gray-900">{formatCurrency(cleaningFee)}</span>
                     </div>
+                    {petFee > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Pet fee</span>
+                        <span className="font-semibold text-gray-900">{formatCurrency(petFee)}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-gray-700">Tourist tax</span>
                       <span className="font-semibold text-gray-900">{formatCurrency(touristTax)}</span>
