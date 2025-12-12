@@ -226,26 +226,6 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
         <td className="px-4 py-3">
           <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_price)}</span>
         </td>
-        <td className="px-4 py-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreHorizontal className="w-4 h-4 text-gray-700" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('view', booking); }}>
-                <Eye className="w-4 h-4 mr-2 text-gray-700" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('cancel', booking); }} className="text-rose-600">
-                <Ban className="w-4 h-4 mr-2" />
-                Cancel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </td>
       </tr>
 
       {/* Mobile/Tablet Card View */}
@@ -258,24 +238,6 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
                 {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3 text-gray-400" />}
               </button>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="w-4 h-4 text-gray-700" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('view', booking); }}>
-                  <Eye className="w-4 h-4 mr-2 text-gray-700" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('cancel', booking); }} className="text-rose-600">
-                  <Ban className="w-4 h-4 mr-2" />
-                  Cancel
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
           <div>
@@ -978,7 +940,6 @@ export default function BookingsPage() {
                             <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
                             <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Payment</th>
                             <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Total</th>
-                            <th className="px-4 py-3"></th>
                           </tr>
                         </thead>
                         <tbody>
