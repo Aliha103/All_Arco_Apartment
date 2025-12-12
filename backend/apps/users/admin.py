@@ -45,7 +45,7 @@ class RoleAdmin(admin.ModelAdmin):
     readonly_fields = ['slug', 'created_at', 'updated_at']
 
     def member_count(self, obj):
-        return obj.members.count()
+        return obj.users.count()
     member_count.short_description = 'Members'
 
 
