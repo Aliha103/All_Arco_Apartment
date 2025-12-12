@@ -23,14 +23,65 @@ from .permissions import HasPermission, IsSuperAdmin
 @permission_classes([AllowAny])
 def register_view(request):
     """User registration endpoint."""
+    import logging
+    from django.db import IntegrityError
+
+    logger = logging.getLogger(__name__)
+
     serializer = UserCreateSerializer(data=request.data)
     if serializer.is_valid():
-        user = serializer.save()
-        login(request, user)
-        return Response(
-            UserSerializer(user).data,
-            status=status.HTTP_201_CREATED
-        )
+        try:
+            user = serializer.save()
+            login(request, user)
+
+            # Log successful registration (info level)
+            logger.info(
+                f"User registered successfully: {user.email}",
+                extra={
+                    'user_id': str(user.id),
+                    'email': user.email,
+                    'ip_address': request.META.get('REMOTE_ADDR'),
+                }
+            )
+
+            return Response(
+                UserSerializer(user).data,
+                status=status.HTTP_201_CREATED
+            )
+
+        except IntegrityError as e:
+            # Database constraint violation (duplicate email/username despite validation)
+            logger.error(
+                f"Registration IntegrityError: {str(e)}",
+                extra={
+                    'email': request.data.get('email'),
+                    'error': str(e),
+                    'ip_address': request.META.get('REMOTE_ADDR'),
+                },
+                exc_info=True
+            )
+            return Response(
+                {'error': 'An account with this email already exists.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        except Exception as e:
+            # Catch any other unexpected errors
+            logger.error(
+                f"Unexpected registration error: {str(e)}",
+                extra={
+                    'email': request.data.get('email'),
+                    'error_type': type(e).__name__,
+                    'error': str(e),
+                    'ip_address': request.META.get('REMOTE_ADDR'),
+                },
+                exc_info=True
+            )
+            return Response(
+                {'error': 'An error occurred during registration. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

@@ -29,7 +29,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'first_name', 'last_name', 'phone', 'country', 'date_of_birth', 'invitation_code', 'role']
+        fields = ['email', 'password', 'first_name', 'last_name', 'phone', 'country', 'date_of_birth', 'invitation_code']
 
     def validate_invitation_code(self, value):
         """Validate that the invitation code exists if provided."""
@@ -52,9 +52,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
             last_name=validated_data['last_name'],
             phone=validated_data.get('phone', ''),
             country=validated_data.get('country', ''),
-            date_of_birth=validated_data.get('date_of_birth'),
-            role=validated_data.get('role', 'guest')
+            date_of_birth=validated_data.get('date_of_birth')
         )
+        # legacy_role defaults to 'guest' automatically via model default
 
         # Handle invitation code
         if invitation_code:
