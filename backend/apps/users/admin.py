@@ -1,18 +1,19 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, GuestNote, Role, Permission, HostProfile, ReferralCreditUsage
+from .models import User, GuestNote, Role, Permission, HostProfile, ReferralCredit, ReferralCreditUsage
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ['email', 'first_name', 'last_name', 'assigned_role', 'is_active', 'created_at']
+    list_display = ['email', 'first_name', 'last_name', 'assigned_role', 'reference_code', 'invited_count_display', 'credits_earned_display', 'is_active', 'created_at']
     list_filter = ['assigned_role', 'legacy_role', 'is_active', 'created_at']
-    search_fields = ['email', 'first_name', 'last_name']
+    search_fields = ['email', 'first_name', 'last_name', 'reference_code']
     ordering = ['-created_at']
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal Info', {'fields': ('first_name', 'last_name', 'phone')}),
+        ('Personal Info', {'fields': ('first_name', 'last_name', 'phone', 'country', 'date_of_birth')}),
+        ('Referral Info', {'fields': ('reference_code', 'referred_by')}),
         ('Role & Permissions', {'fields': ('assigned_role', 'legacy_role', 'is_active', 'is_staff', 'is_superuser')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
@@ -23,6 +24,16 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('email', 'first_name', 'last_name', 'password1', 'password2', 'assigned_role'),
         }),
     )
+
+    readonly_fields = ['reference_code', 'date_joined', 'last_login']
+
+    def invited_count_display(self, obj):
+        return obj.get_invited_count()
+    invited_count_display.short_description = 'People Referred'
+
+    def credits_earned_display(self, obj):
+        return f"€{obj.get_referral_credits_earned()}"
+    credits_earned_display.short_description = 'Credits Earned'
 
 
 @admin.register(Role)
@@ -77,9 +88,36 @@ class HostProfileAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(ReferralCredit)
+class ReferralCreditAdmin(admin.ModelAdmin):
+    list_display = ['referrer', 'referred_user', 'amount', 'nights', 'status', 'booking', 'created_at', 'earned_at']
+    list_filter = ['status', 'created_at', 'earned_at']
+    search_fields = ['referrer__email', 'referrer__first_name', 'referrer__last_name',
+                     'referred_user__email', 'referred_user__first_name', 'referred_user__last_name',
+                     'booking__booking_id']
+    readonly_fields = ['created_at', 'earned_at']
+    ordering = ['-created_at']
+
+    fieldsets = (
+        ('Referral Information', {
+            'fields': ('referrer', 'referred_user', 'booking')
+        }),
+        ('Credit Details', {
+            'fields': ('amount', 'nights', 'status')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'earned_at')
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('referrer', 'referred_user', 'booking')
+
+
 @admin.register(ReferralCreditUsage)
 class ReferralCreditUsageAdmin(admin.ModelAdmin):
-    list_display = ['user', 'booking', 'amount', 'created_at']
+    list_display = ['user', 'booking', 'amount', 'note', 'created_at']
     list_filter = ['created_at']
-    search_fields = ['user__email', 'booking__booking_id']
+    search_fields = ['user__email', 'booking__booking_id', 'note']
     readonly_fields = ['created_at']
+    ordering = ['-created_at']
