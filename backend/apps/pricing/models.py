@@ -53,6 +53,8 @@ class Settings(models.Model):
     
     def calculate_booking_price(self, check_in, check_out, guests, has_pet=False):
         """Calculate total booking price."""
+        from decimal import Decimal
+
         nights = (check_out - check_in).days
 
         # Get nightly rate (check for seasonal pricing)
@@ -65,20 +67,20 @@ class Settings(models.Model):
         tourist_tax = self.tourist_tax_per_person_per_night * guests * nights
 
         # Calculate extra guest fee
-        extra_guest_cost = 0
+        extra_guest_cost = Decimal('0')
         if guests > self.extra_guest_threshold:
             extra_guests = guests - self.extra_guest_threshold
             extra_guest_cost = self.extra_guest_fee * extra_guests * nights
 
-        # Pet fee (only if has_pet=True)
-        pet_fee = float(self.pet_cleaning_fee) if has_pet else 0.0
+        # Pet fee (only if has_pet=True) - keep as Decimal for arithmetic
+        pet_fee = self.pet_cleaning_fee if has_pet else Decimal('0')
 
         return {
             'nightly_rate': float(nightly_rate),
             'nights': nights,
             'accommodation_total': float(accommodation),
             'cleaning_fee': float(self.cleaning_fee),
-            'pet_fee': pet_fee,
+            'pet_fee': float(pet_fee),
             'tourist_tax': float(tourist_tax),
             'extra_guest_fee': float(extra_guest_cost),
             'total': float(accommodation + self.cleaning_fee + pet_fee + tourist_tax + extra_guest_cost)
