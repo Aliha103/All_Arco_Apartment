@@ -53,30 +53,53 @@ def update_settings(request):
 @permission_classes([AllowAny])
 def calculate_price(request):
     """Calculate booking price."""
-    check_in = request.query_params.get('check_in')
-    check_out = request.query_params.get('check_out')
-    guests = int(request.query_params.get('guests', 1))
-    has_pet = request.query_params.get('pet', 'false').lower() in ('true', '1', 'yes')
-
-    if not check_in or not check_out:
-        return Response(
-            {'error': 'check_in, check_out, and guests parameters required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    import logging
+    logger = logging.getLogger(__name__)
 
     try:
-        check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
-        check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
-    except ValueError:
+        check_in = request.query_params.get('check_in')
+        check_out = request.query_params.get('check_out')
+
+        # Safely parse guests parameter
+        try:
+            guests = int(request.query_params.get('guests', 1))
+        except (ValueError, TypeError) as e:
+            logger.error(f"Invalid guests parameter: {request.query_params.get('guests')} - {e}")
+            return Response(
+                {'error': 'Invalid guests parameter'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        has_pet = request.query_params.get('pet', 'false').lower() in ('true', '1', 'yes')
+
+        if not check_in or not check_out:
+            return Response(
+                {'error': 'check_in, check_out, and guests parameters required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+            check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
+        except ValueError as e:
+            logger.error(f"Invalid date format: {check_in}, {check_out} - {e}")
+            return Response(
+                {'error': 'Invalid date format. Use YYYY-MM-DD'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        settings = Settings.get_settings()
+        pricing = settings.calculate_booking_price(check_in_date, check_out_date, guests, has_pet=has_pet)
+
+        return Response(pricing)
+
+    except Exception as e:
+        # Catch any unexpected errors and log them
+        logger.error(f"Error calculating price: {str(e)}", exc_info=True)
         return Response(
-            {'error': 'Invalid date format. Use YYYY-MM-DD'},
-            status=status.HTTP_400_BAD_REQUEST
+            {'error': 'Internal server error calculating price', 'detail': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-    settings = Settings.get_settings()
-    pricing = settings.calculate_booking_price(check_in_date, check_out_date, guests, has_pet=has_pet)
-
-    return Response(pricing)
 
 
 class PricingRuleViewSet(viewsets.ModelViewSet):
