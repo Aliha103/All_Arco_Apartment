@@ -101,11 +101,13 @@ interface BookingData {
   payment_method?: string;
   nightly_rate?: number;
   cleaning_fee?: number;
+  pet_fee?: number;
   tourist_tax?: number;
   total_price?: number;
   amount_paid?: number;
   total_paid?: number;
   balance_remaining?: number;
+  applied_credit?: number;
   manual_pricing_override?: boolean;
   custom_nightly_rate?: number;
   custom_cleaning_fee?: number;
@@ -745,24 +747,54 @@ export default function BookingSidePanel({
         </div>
 
         {/* Pricing */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg border p-4">
-            <Label className="text-xs text-gray-600 mb-2 block">Pricing</Label>
-            <p className="text-sm text-gray-800">
-              Nightly: {formatCurrency(formData.nightly_rate || 0)} × {formData.nights || nights} nights
-            </p>
-            <p className="text-sm text-gray-800">Cleaning: {formatCurrency(formData.cleaning_fee || 0)}</p>
-            <p className="text-sm text-gray-800">Tourist Tax: {formatCurrency(formData.tourist_tax || 0)}</p>
-          </div>
-          <div className="bg-white rounded-lg border p-4">
-            <Label className="text-xs text-gray-600 mb-2 block">Totals</Label>
-            <p className="font-semibold text-lg text-gray-900">
-              Total: {formatCurrency(formData.total_price || 0)}
-            </p>
-            <p className="text-sm text-emerald-700 mt-1">Paid: {formatCurrency(paidAmount)}</p>
-            <p className={`text-sm ${balanceDue > 0 ? 'text-rose-700' : 'text-gray-700'}`}>
-              Balance: {formatCurrency(balanceDue)}
-            </p>
+        <div className="bg-white rounded-lg border p-4">
+          <Label className="text-xs text-gray-600 mb-3 block">Pricing Breakdown</Label>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-800">
+              <span>Nightly: {formatCurrency(formData.nightly_rate || 0)} × {formData.nights || nights} nights</span>
+              <span className="font-medium">{formatCurrency((formData.nightly_rate || 0) * (formData.nights || nights))}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-800">
+              <span>Cleaning</span>
+              <span className="font-medium">{formatCurrency(formData.cleaning_fee || 0)}</span>
+            </div>
+            {formData.pet_fee && formData.pet_fee > 0 && (
+              <div className="flex justify-between text-sm text-gray-800">
+                <span>Pet cleaning</span>
+                <span className="font-medium">{formatCurrency(formData.pet_fee)}</span>
+              </div>
+            )}
+            {/* Calculate custom payments total from payments array with kind='custom' */}
+            {payments.filter(p => p.kind === 'custom' && p.status === 'succeeded').length > 0 && (
+              <div className="flex justify-between text-sm text-blue-700">
+                <span>Custom payments</span>
+                <span className="font-medium">
+                  {formatCurrency(payments.filter(p => p.kind === 'custom' && p.status === 'succeeded').reduce((sum, p) => sum + Number(p.amount || 0), 0))}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm text-gray-800">
+              <span>Tourist Tax</span>
+              <span className="font-medium">{formatCurrency(formData.tourist_tax || 0)}</span>
+            </div>
+            <div className="border-t pt-2 mt-2 flex justify-between font-semibold text-gray-900">
+              <span>Total</span>
+              <span className="text-lg">{formatCurrency((formData.total_price || 0) + payments.filter(p => p.kind === 'custom' && p.status === 'succeeded').reduce((sum, p) => sum + Number(p.amount || 0), 0))}</span>
+            </div>
+            {formData.applied_credit && formData.applied_credit > 0 && (
+              <div className="flex justify-between text-sm text-emerald-700 -mt-1">
+                <span>Credit applied</span>
+                <span className="font-medium">-{formatCurrency(formData.applied_credit)}</span>
+              </div>
+            )}
+            <div className="border-t pt-2 flex justify-between text-sm">
+              <span className="text-gray-600">Paid online</span>
+              <span className="font-medium text-emerald-700">{formatCurrency(paidAmount)}</span>
+            </div>
+            <div className="flex justify-between text-sm font-semibold">
+              <span className={balanceDue > 0 ? 'text-rose-700' : 'text-gray-900'}>Balance</span>
+              <span className={balanceDue > 0 ? 'text-rose-700' : 'text-gray-900'}>{formatCurrency(balanceDue)}</span>
+            </div>
           </div>
         </div>
 
