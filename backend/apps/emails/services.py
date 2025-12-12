@@ -220,22 +220,30 @@ def send_online_checkin_completed(booking):
 def send_payment_receipt(payment):
     """Send payment receipt email."""
     booking = payment.booking
+    formatted_date = payment.paid_at.strftime('%B %d, %Y at %I:%M %p') if payment.paid_at else 'Recently'
 
     html_body = f"""
     <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: #2563eb;">Payment Receipt</h1>
+                <h1 style="color: #10b981;">✓ Payment Confirmed</h1>
                 <p>Dear {booking.guest_name},</p>
-                <p>Thank you for your payment. Here are the details:</p>
+                <p>Your payment has been successfully processed through Stripe. Here are the details:</p>
 
-                <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h2 style="margin-top: 0;">Payment Details</h2>
+                <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h2 style="margin-top: 0; color: #059669;">Payment Details</h2>
                     <p><strong>Amount Paid:</strong> €{payment.amount}</p>
-                    <p><strong>Payment Method:</strong> {payment.payment_method}</p>
-                    <p><strong>Transaction ID:</strong> {payment.stripe_payment_intent_id}</p>
-                    <p><strong>Date:</strong> {payment.paid_at}</p>
+                    <p><strong>Payment Method:</strong> Stripe ({payment.payment_method or 'card'})</p>
+                    <p><strong>Payment ID:</strong> {payment.stripe_payment_intent_id}</p>
+                    <p><strong>Date & Time:</strong> {formatted_date}</p>
+                    <p><strong>Booking Reference:</strong> {booking.booking_id}</p>
                 </div>
+
+                <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p style="margin: 0;"><strong>Remaining Balance:</strong> €{booking.amount_due} (city tax to be paid at property)</p>
+                </div>
+
+                <p>Your payment has been securely processed. You can view your booking details anytime in your account dashboard.</p>
 
                 <p>Best regards,<br>All'Arco Apartment Team</p>
             </div>
@@ -247,7 +255,7 @@ def send_payment_receipt(payment):
         to_email=booking.guest_email,
         from_email='reservation@allarcoapartment.com',
         from_name="All'Arco Apartment",
-        subject=f"Payment Receipt - All'Arco Apartment {booking.booking_id}",
+        subject=f"Payment Confirmed - All'Arco Apartment {booking.booking_id}",
         html_body=html_body,
         booking=booking
     )

@@ -26,6 +26,8 @@ class BookingSerializer(serializers.ModelSerializer):
 
 class BookingListSerializer(serializers.ModelSerializer):
     """Minimal serializer for booking lists."""
+    payment_method = serializers.SerializerMethodField()
+    payment_timestamp = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -35,9 +37,20 @@ class BookingListSerializer(serializers.ModelSerializer):
             'amount_due', 'applied_credit',
             'booking_source', 'number_of_guests', 'adults', 'children', 'infants',
             'guest_tax_code', 'created_at', 'booked_for_someone_else',
-            'nightly_rate', 'cleaning_fee', 'pet_fee', 'tourist_tax'  # Added for invoice line items
+            'nightly_rate', 'cleaning_fee', 'pet_fee', 'tourist_tax',  # Added for invoice line items
+            'payment_method', 'payment_timestamp',  # Payment info from latest payment
         ]
         read_only_fields = fields
+
+    def get_payment_method(self, obj):
+        """Get payment method from latest booking payment."""
+        payment = obj.payments.filter(kind='booking', status='succeeded').order_by('-paid_at').first()
+        return 'Stripe' if payment else None
+
+    def get_payment_timestamp(self, obj):
+        """Get payment timestamp from latest booking payment."""
+        payment = obj.payments.filter(kind='booking', status='succeeded').order_by('-paid_at').first()
+        return payment.paid_at.isoformat() if payment and payment.paid_at else None
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):
