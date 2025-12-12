@@ -273,6 +273,9 @@ function BookingPageContent() {
     });
   }, [router]);
 
+  // Track if we've initialized from URL params
+  const [initializedFromUrl, setInitializedFromUrl] = useState(false);
+
   // Prefill from query params
   useEffect(() => {
     const checkInParam = sanitizeDate(searchParams.get('checkIn'));
@@ -306,12 +309,18 @@ function BookingPageContent() {
     if (petParam !== null) {
       setHasPet(petParam === 'true');
     }
+
+    // Mark as initialized after first load
+    setInitializedFromUrl(true);
   }, [searchParams]);
 
   // Debounce guest counts for URL update
   const debouncedGuests = useDebounce(guestCounts, 500);
 
+  // Only update URL after initial load to prevent overwriting URL params
   useEffect(() => {
+    if (!initializedFromUrl) return; // Wait for URL params to be read first
+
     if (dates.checkIn || dates.checkOut || debouncedGuests.adults > 0) {
       updateURL({
         checkIn: dates.checkIn,
@@ -321,7 +330,7 @@ function BookingPageContent() {
         infants: debouncedGuests.infants.toString(),
       });
     }
-  }, [dates.checkIn, dates.checkOut, debouncedGuests, updateURL]);
+  }, [dates.checkIn, dates.checkOut, debouncedGuests, updateURL, initializedFromUrl]);
 
   const totalGuests = useMemo(
     () => Math.max(1, guestCounts.adults + guestCounts.children),
@@ -519,6 +528,9 @@ function BookingPageContent() {
         check_in_date: dates.checkIn,
         check_out_date: dates.checkOut,
         number_of_guests: totalGuests,
+        adults: guestCounts.adults,
+        children: guestCounts.children,
+        infants: guestCounts.infants,
         guest_name: `${guestInfo.first_name} ${guestInfo.last_name}`.trim(),
         guest_email: guestInfo.guest_email,
         guest_phone: guestInfo.guest_phone,
