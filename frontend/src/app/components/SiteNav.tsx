@@ -186,7 +186,7 @@ const SiteNav = ({ solid = false }: SiteNavProps) => {
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Book Now - Desktop & Tablet */}
               <Link
-                href="/book"
+                href="/#book"
                 className="hidden sm:flex px-4 lg:px-6 py-2 lg:py-2.5 text-sm font-semibold
                   bg-[#C4A572] text-white rounded-full
                   hover:bg-[#B39562] hover:shadow-lg hover:shadow-[#C4A572]/20
