@@ -31,6 +31,7 @@ import {
   ChevronRight,
   ArrowRight,
   ArrowLeft,
+  MoreHorizontal,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -46,6 +47,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -1338,200 +1346,196 @@ export default function BookingSidePanel({
       const canUndoCheckIn = formData.status === 'checked_in';
 
       return (
-        <div className="border-t px-6 py-4 bg-gray-50 space-y-3">
-          {/* Primary Action Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none">
-              Close
-            </Button>
-            <Button
-              onClick={() => setMode('edit')}
-              disabled={!!formData.status && ['checked_out', 'cancelled', 'no_show'].includes(formData.status)}
-              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <EditIcon className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-          </div>
+        <div className="border-t px-6 py-4 bg-gray-50 flex flex-wrap items-center justify-between gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <MoreHorizontal className="w-4 h-4" />
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMode('edit');
+                }}
+                disabled={!!formData.status && ['checked_out', 'cancelled', 'no_show'].includes(formData.status)}
+              >
+                <EditIcon className="w-4 h-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
 
-          {/* Document Actions */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (bookingId) {
-                  const url = `/booking/${bookingId}/confirmation`;
-                  window.open(url, '_blank');
-                }
-              }}
-              size="sm"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-            >
-              <Eye className="w-4 h-4 mr-1" />
-              View Confirmation
-            </Button>
-            <Button
-              variant="outline"
-              onClick={async () => {
-                if (bookingId) {
-                  try {
-                    const response = await api.bookings.downloadPDF(bookingId);
-                    const blob = new Blob([response.data], { type: 'application/pdf' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `booking-${formData.booking_id || bookingId}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    toast.success('PDF downloaded successfully');
-                  } catch (error) {
-                    toast.error('Failed to download PDF');
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (bookingId) {
+                    const url = `/booking/${bookingId}/confirmation`;
+                    window.open(url, '_blank');
                   }
-                }
-              }}
-              size="sm"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-            >
-              <Download className="w-4 h-4 mr-1" />
-              Download PDF
-            </Button>
-            <Button
-              variant="outline"
-              onClick={async () => {
-                if (bookingId) {
-                  try {
-                    await api.bookings.sendEmail(bookingId);
-                    toast.success(`Confirmation email sent to ${formData.guest_email}`);
-                  } catch (error) {
-                    toast.error('Failed to send confirmation email');
+                }}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Confirmation
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (bookingId) {
+                    try {
+                      const response = await api.bookings.downloadPDF(bookingId);
+                      const blob = new Blob([response.data], { type: 'application/pdf' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `booking-${formData.booking_id || bookingId}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                      toast.success('PDF downloaded successfully');
+                    } catch (error) {
+                      toast.error('Failed to download PDF');
+                    }
                   }
-                }
-              }}
-              size="sm"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-            >
-              <Mail className="w-4 h-4 mr-1" />
-              Send PDF by Email
-            </Button>
-          </div>
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (bookingId) {
+                    try {
+                      await api.bookings.sendEmail(bookingId);
+                      toast.success(`Confirmation email sent to ${formData.guest_email}`);
+                    } catch (error) {
+                      toast.error('Failed to send confirmation email');
+                    }
+                  }
+                }}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Send PDF by Email
+              </DropdownMenuItem>
 
-          {/* Guest Registration Actions */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (bookingId) {
-                  // Navigate to manual guest registration page
-                  window.location.href = `/check-in/${bookingId}`;
-                }
-              }}
-              size="sm"
-              className="border-purple-300 text-purple-700 hover:bg-purple-50"
-            >
-              <UserPlus className="w-4 h-4 mr-1" />
-              Register Guests
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setOnlineCheckInModalOpen(true)}
-              size="sm"
-              className="border-purple-300 text-purple-700 hover:bg-purple-50"
-            >
-              <Send className="w-4 h-4 mr-1" />
-              Send Check-in Link
-            </Button>
-          </div>
+              <DropdownMenuSeparator />
 
-          {/* Status Action Buttons */}
-          <div className="flex flex-wrap gap-2">
-            {canCheckIn && (
-              <Button
-                variant="outline"
-                disabled={statusUpdating}
-                onClick={() => handleStatusUpdate('checked_in')}
-                size="sm"
-                className="border-violet-300 text-violet-700 hover:bg-violet-50"
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (bookingId) {
+                    window.location.href = `/check-in/${bookingId}`;
+                  }
+                }}
               >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                {statusUpdating ? 'Updating...' : 'Check-in'}
-              </Button>
-            )}
-            {canUndoCheckIn && (
-              <Button
-                variant="outline"
-                disabled={statusUpdating}
-                onClick={() => handleStatusUpdate('confirmed')}
-                size="sm"
-                className="border-orange-400 text-orange-700 hover:bg-orange-50"
+                <UserPlus className="w-4 h-4 mr-2" />
+                Register Guests
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOnlineCheckInModalOpen(true);
+                }}
               >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                {statusUpdating ? 'Updating...' : 'Undo Check-in'}
-              </Button>
-            )}
-            {canCheckOut && (
-              <Button
-                variant="outline"
-                disabled={statusUpdating || balanceDue > 0}
-                onClick={() => handleStatusUpdate('checked_out')}
-                size="sm"
-                className="border-gray-400 text-gray-700 hover:bg-gray-100"
-                title={balanceDue > 0 ? 'Cannot check out with outstanding balance' : ''}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                {statusUpdating ? 'Updating...' : 'Check-out'}
-              </Button>
-            )}
-            {canMarkNoShow && (
-              <Button
-                variant="outline"
-                disabled={statusUpdating}
-                onClick={() => handleStatusUpdate('no_show')}
-                size="sm"
-                className="border-slate-400 text-slate-700 hover:bg-slate-100"
-              >
-                <Ban className="w-4 h-4 mr-1" />
-                {statusUpdating ? 'Updating...' : 'No Show'}
-              </Button>
-            )}
-            {canUndoNoShow && (
-              <Button
-                variant="outline"
-                disabled={statusUpdating}
-                onClick={() => handleStatusUpdate('confirmed')}
-                size="sm"
-                className="border-green-400 text-green-700 hover:bg-green-50"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                {statusUpdating ? 'Updating...' : 'Undo No Show'}
-              </Button>
-            )}
-            {canUndoCancel && (
-              <Button
-                variant="outline"
-                disabled={statusUpdating}
-                onClick={() => handleStatusUpdate('confirmed')}
-                size="sm"
-                className="border-green-400 text-green-700 hover:bg-green-50"
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                {statusUpdating ? 'Updating...' : 'Undo Cancellation'}
-              </Button>
-            )}
-            {canCancel && (
-              <Button
-                variant="outline"
-                disabled={statusUpdating}
-                onClick={() => handleStatusUpdate('cancelled')}
-                size="sm"
-                className="border-rose-400 text-rose-700 hover:bg-rose-50"
-              >
-                <XCircle className="w-4 h-4 mr-1" />
-                {statusUpdating ? 'Updating...' : 'Cancel Booking'}
-              </Button>
-            )}
-          </div>
+                <Send className="w-4 h-4 mr-2" />
+                Send Check-in Link
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              {canCheckIn && (
+                <DropdownMenuItem
+                  disabled={statusUpdating}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate('checked_in');
+                  }}
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {statusUpdating ? 'Updating…' : 'Check-in'}
+                </DropdownMenuItem>
+              )}
+              {canUndoCheckIn && (
+                <DropdownMenuItem
+                  disabled={statusUpdating}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate('confirmed');
+                  }}
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {statusUpdating ? 'Updating…' : 'Undo Check-in'}
+                </DropdownMenuItem>
+              )}
+              {canCheckOut && (
+                <DropdownMenuItem
+                  disabled={statusUpdating || balanceDue > 0}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate('checked_out');
+                  }}
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {statusUpdating ? 'Updating…' : 'Check-out'}
+                </DropdownMenuItem>
+              )}
+              {canMarkNoShow && (
+                <DropdownMenuItem
+                  disabled={statusUpdating}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate('no_show');
+                  }}
+                >
+                  <Ban className="w-4 h-4 mr-2" />
+                  {statusUpdating ? 'Updating…' : 'No Show'}
+                </DropdownMenuItem>
+              )}
+              {canUndoNoShow && (
+                <DropdownMenuItem
+                  disabled={statusUpdating}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate('confirmed');
+                  }}
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {statusUpdating ? 'Updating…' : 'Undo No Show'}
+                </DropdownMenuItem>
+              )}
+              {canUndoCancel && (
+                <DropdownMenuItem
+                  disabled={statusUpdating}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate('confirmed');
+                  }}
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {statusUpdating ? 'Updating…' : 'Undo Cancellation'}
+                </DropdownMenuItem>
+              )}
+              {canCancel && (
+                <DropdownMenuItem
+                  disabled={statusUpdating}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate('cancelled');
+                  }}
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  {statusUpdating ? 'Updating…' : 'Cancel Booking'}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       );
     }
