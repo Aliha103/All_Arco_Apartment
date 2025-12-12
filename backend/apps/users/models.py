@@ -483,6 +483,7 @@ class User(AbstractUser):
         """
         Get total referral credits earned from invitations.
         Returns sum of all credits from completed bookings of invited guests.
+        Includes ALL earned credits (both active and expired) for historical tracking.
         """
         return self.referral_credits.filter(
             status='earned'
@@ -493,10 +494,20 @@ class User(AbstractUser):
         return self.credit_usages.aggregate(models.Sum('amount'))['amount__sum'] or 0
 
     def get_available_credits(self):
-        """Earned credits minus spent credits (never below zero)."""
-        earned = self.get_referral_credits_earned() or 0
+        """
+        Get available credits (earned, not expired, not spent).
+        Credits expire 90 days after being earned.
+        """
+        from django.utils import timezone
+
+        # Get earned credits that haven't expired
+        earned_not_expired = self.referral_credits.filter(
+            status='earned',
+            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=timezone.now())
+        ).aggregate(models.Sum('amount'))['amount__sum'] or 0
+
         spent = self.get_referral_credits_spent() or 0
-        remaining = earned - spent
+        remaining = earned_not_expired - spent
         return remaining if remaining > 0 else 0
 
 
@@ -758,6 +769,7 @@ class ReferralCredit(models.Model):
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     earned_at = models.DateTimeField(null=True, blank=True)  # When booking was completed
+    expires_at = models.DateTimeField(null=True, blank=True)  # When credit expires (90 days after earned)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -785,13 +797,30 @@ class ReferralCredit(models.Model):
     def __str__(self):
         return f"€{self.amount} credit for {self.referrer.get_full_name()} (from {self.referred_user.get_full_name()})"
 
-    def mark_earned(self):
-        """Mark credit as earned when booking is completed."""
+    @property
+    def is_expired(self):
+        """Check if credit has expired (90 days after earned_at)."""
         from django.utils import timezone
+
+        if self.status != 'earned':
+            # Only earned credits can expire
+            return False
+
+        if not self.expires_at:
+            # No expiration date set (legacy credits)
+            return False
+
+        return timezone.now() > self.expires_at
+
+    def mark_earned(self):
+        """Mark credit as earned when booking is completed. Sets expiration to 90 days from earned date."""
+        from django.utils import timezone
+        from datetime import timedelta
 
         self.status = 'earned'
         self.earned_at = timezone.now()
-        self.save(update_fields=['status', 'earned_at', 'updated_at'])
+        self.expires_at = self.earned_at + timedelta(days=90)  # Credit expires after 90 days
+        self.save(update_fields=['status', 'earned_at', 'expires_at', 'updated_at'])
 
     def mark_cancelled(self):
         """Mark credit as cancelled if booking is cancelled."""

@@ -90,12 +90,12 @@ class HostProfileAdmin(admin.ModelAdmin):
 
 @admin.register(ReferralCredit)
 class ReferralCreditAdmin(admin.ModelAdmin):
-    list_display = ['referrer', 'referred_user', 'amount', 'nights', 'status', 'booking', 'created_at', 'earned_at']
-    list_filter = ['status', 'created_at', 'earned_at']
+    list_display = ['referrer', 'referred_user', 'amount', 'nights', 'status', 'expires_at', 'is_expired_display', 'booking', 'created_at', 'earned_at']
+    list_filter = ['status', 'created_at', 'earned_at', 'expires_at']
     search_fields = ['referrer__email', 'referrer__first_name', 'referrer__last_name',
                      'referred_user__email', 'referred_user__first_name', 'referred_user__last_name',
                      'booking__booking_id']
-    readonly_fields = ['created_at', 'earned_at']
+    readonly_fields = ['created_at', 'earned_at', 'is_expired_display']
     ordering = ['-created_at']
 
     fieldsets = (
@@ -105,10 +105,19 @@ class ReferralCreditAdmin(admin.ModelAdmin):
         ('Credit Details', {
             'fields': ('amount', 'nights', 'status')
         }),
-        ('Timestamps', {
-            'fields': ('created_at', 'earned_at')
+        ('Timestamps & Expiration', {
+            'fields': ('created_at', 'earned_at', 'expires_at', 'is_expired_display')
         }),
     )
+
+    def is_expired_display(self, obj):
+        if obj.is_expired:
+            return "✗ Expired"
+        elif obj.status == 'earned' and obj.expires_at:
+            return "✓ Active"
+        else:
+            return "-"
+    is_expired_display.short_description = 'Expiration Status'
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('referrer', 'referred_user', 'booking')
