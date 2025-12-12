@@ -545,8 +545,8 @@ export default function BookingSidePanel({
   };
 
   const handleCopyReference = () => {
-    if (formData.id) {
-      const ref = generateArcoReference(formData.id);
+    const ref = formData.booking_id || (formData.id ? generateArcoReference(formData.id) : '');
+    if (ref) {
       navigator.clipboard.writeText(ref);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -616,10 +616,10 @@ export default function BookingSidePanel({
       <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
         <div>
           <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          {formData.id && (
+          {(formData.booking_id || formData.id) && (
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm font-semibold text-gray-700">
-                {generateArcoReference(formData.id)}
+                {formData.booking_id || generateArcoReference(formData.id)}
               </span>
               <button
                 onClick={handleCopyReference}
