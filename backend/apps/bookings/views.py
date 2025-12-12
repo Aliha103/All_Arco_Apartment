@@ -107,19 +107,33 @@ class BookingViewSet(viewsets.ModelViewSet):
         Override to support lookup by both UUID (pk) and booking_id.
         Tries UUID first, then falls back to booking_id lookup.
         """
+        import uuid
+        from rest_framework.exceptions import NotFound
+        from django.core.exceptions import ValidationError
+
         queryset = self.filter_queryset(self.get_queryset())
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+        lookup_value = self.kwargs[lookup_url_kwarg]
 
+        # Check if the lookup value is a valid UUID format
         try:
-            # Try UUID lookup first
-            obj = queryset.get(**filter_kwargs)
-        except (Booking.DoesNotExist, ValueError):
-            # Fall back to booking_id lookup
+            uuid.UUID(lookup_value)
+            is_uuid = True
+        except (ValueError, AttributeError):
+            is_uuid = False
+
+        if is_uuid:
+            # Try UUID lookup
             try:
-                obj = queryset.get(booking_id__iexact=self.kwargs[lookup_url_kwarg])
+                filter_kwargs = {self.lookup_field: lookup_value}
+                obj = queryset.get(**filter_kwargs)
             except Booking.DoesNotExist:
-                from rest_framework.exceptions import NotFound
+                raise NotFound('Booking not found')
+        else:
+            # Try booking_id lookup
+            try:
+                obj = queryset.get(booking_id__iexact=lookup_value)
+            except Booking.DoesNotExist:
                 raise NotFound('Booking not found')
 
         # Check object permissions
