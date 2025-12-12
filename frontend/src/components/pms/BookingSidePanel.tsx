@@ -619,7 +619,7 @@ export default function BookingSidePanel({
           {(formData.booking_id || formData.id) && (
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm font-semibold text-gray-700">
-                {formData.booking_id || generateArcoReference(formData.id)}
+                {formData.booking_id || generateArcoReference(formData.id || '')}
               </span>
               <button
                 onClick={handleCopyReference}
