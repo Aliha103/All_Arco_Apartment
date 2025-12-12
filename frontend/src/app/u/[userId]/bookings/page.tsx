@@ -17,7 +17,8 @@ import {
   Edit,
   AlertCircle,
   Plus,
-  Mail
+  Mail,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -364,20 +365,44 @@ export default function BookingsPage() {
                           <p className="text-xs text-gray-600">{booking.nights} {booking.nights === 1 ? 'night' : 'nights'}</p>
                           {booking.payment_status === 'paid' && booking.amount_due && parseFloat(booking.amount_due) > 0 ? (
                             <div className="mt-2 text-xs space-y-1">
-                              <div className="flex items-center gap-1 text-green-600">
+                              <div className="flex items-center gap-1 text-green-600 justify-end">
                                 <Check className="w-3 h-3" />
                                 <span>€{(parseFloat(booking.total_price) - parseFloat(booking.amount_due)).toFixed(2)} paid online</span>
                               </div>
-                              <div className="flex items-center gap-1 text-amber-600">
+                              <div className="flex items-center gap-1 text-amber-600 justify-end">
                                 <Clock className="w-3 h-3" />
                                 <span>€{parseFloat(booking.amount_due).toFixed(2)} at property</span>
                               </div>
+                              {(booking as any).payment_method === 'Stripe' && (
+                                <div className="flex items-center gap-1 text-blue-600 justify-end mt-1">
+                                  <CreditCard className="w-3 h-3" />
+                                  <span className="font-medium">Paid by Stripe</span>
+                                  {(booking as any).payment_timestamp && (
+                                    <span className="text-gray-500 ml-1">
+                                      • {new Date((booking as any).payment_timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           ) : booking.payment_status === 'paid' ? (
-                            <p className="mt-1 text-xs text-green-600 flex items-center gap-1 justify-end">
-                              <Check className="w-3 h-3" />
-                              Paid in full
-                            </p>
+                            <div className="mt-1 text-xs space-y-1">
+                              <p className="text-green-600 flex items-center gap-1 justify-end">
+                                <Check className="w-3 h-3" />
+                                Paid in full
+                              </p>
+                              {(booking as any).payment_method === 'Stripe' && (
+                                <p className="text-blue-600 flex items-center gap-1 justify-end">
+                                  <CreditCard className="w-3 h-3" />
+                                  <span className="font-medium">Paid by Stripe</span>
+                                  {(booking as any).payment_timestamp && (
+                                    <span className="text-gray-500 ml-1">
+                                      • {new Date((booking as any).payment_timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
                           ) : null}
                         </div>
                         <button
