@@ -51,7 +51,9 @@ export default function TeamPage() {
     queryKey: ['roles'],
     queryFn: async () => {
       const response = await api.users.roles.list();
-      return response.data;
+      const data = response.data;
+      // Ensure we always return an array
+      return Array.isArray(data) ? data : (data?.results || []);
     },
     enabled: hasPermission('roles.manage'),
   });
@@ -617,13 +619,14 @@ export default function TeamPage() {
             <DialogTitle>Assign Permissions: {selectedRole?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {permissions && Object.entries(permissions).map(([group, perms]: [string, any]) => (
-              <div key={group} className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-3 capitalize">
-                  {group.replace('_', ' ')}
-                </h3>
-                <div className="space-y-2">
-                  {perms.map((perm: any) => (
+            {permissions && typeof permissions === 'object' && Object.keys(permissions).length > 0 ? (
+              Object.entries(permissions).map(([group, perms]: [string, any]) => (
+                <div key={group} className="border rounded-lg p-4">
+                  <h3 className="font-semibold mb-3 capitalize">
+                    {group.replace('_', ' ')}
+                  </h3>
+                  <div className="space-y-2">
+                    {Array.isArray(perms) && perms.map((perm: any) => (
                     <div key={perm.code} className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -647,10 +650,13 @@ export default function TeamPage() {
                         </span>
                       </Label>
                     </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-center py-8 text-gray-600">No permissions available. Please seed RBAC data first.</p>
+            )}
           </div>
           <DialogFooter>
             <Button
