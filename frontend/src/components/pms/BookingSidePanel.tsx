@@ -404,17 +404,28 @@ export default function BookingSidePanel({
     }, 0);
   }, [payments, formData.total_paid]);
 
+  // Calculate custom payments total from paid payment requests
+  const customPaymentsTotal = useMemo(() => {
+    return paymentRequests
+      .filter(pr => pr.status === 'paid')
+      .reduce((sum, pr) => sum + Number(pr.amount || 0), 0);
+  }, [paymentRequests]);
+
+  // Calculate actual total including custom payments
+  const totalWithCustomPayments = useMemo(() => {
+    return (formData.total_price || 0) + customPaymentsTotal;
+  }, [formData.total_price, customPaymentsTotal]);
+
   const balanceDue = useMemo(() => {
     if (!formData.total_price) return 0;
 
-    // Prioritize backend's balance_remaining calculation
-    if (formData.balance_remaining !== undefined && formData.balance_remaining !== null) {
-      return Number(formData.balance_remaining);
-    }
+    // Calculate balance including custom payments: (base_total + custom_payments) - credit - paid
+    const total = totalWithCustomPayments;
+    const credit = formData.applied_credit || 0;
+    const balance = total - credit - paidAmount;
 
-    // Fallback: calculate from total and paid amount
-    return Math.max(0, Number(formData.total_price) - paidAmount);
-  }, [formData.total_price, formData.balance_remaining, paidAmount]);
+    return Math.max(0, balance);
+  }, [totalWithCustomPayments, formData.applied_credit, paidAmount]);
 
   // Calculate nights
   const nights = useMemo(() => {
@@ -783,11 +794,11 @@ export default function BookingSidePanel({
               </div>
             )}
             {/* Calculate custom payments total from payment requests with status='paid' */}
-            {paymentRequests.filter(pr => pr.status === 'paid').length > 0 && (
+            {customPaymentsTotal > 0 && (
               <div className="flex justify-between text-sm text-blue-700">
                 <span>Custom payments</span>
                 <span className="font-medium">
-                  {formatCurrency(paymentRequests.filter(pr => pr.status === 'paid').reduce((sum, pr) => sum + Number(pr.amount || 0), 0))}
+                  {formatCurrency(customPaymentsTotal)}
                 </span>
               </div>
             )}
@@ -797,7 +808,7 @@ export default function BookingSidePanel({
             </div>
             <div className="border-t pt-2 mt-2 flex justify-between font-semibold text-gray-900">
               <span>Total</span>
-              <span className="text-lg">{formatCurrency((formData.total_price || 0) + paymentRequests.filter(pr => pr.status === 'paid').reduce((sum, pr) => sum + Number(pr.amount || 0), 0))}</span>
+              <span className="text-lg">{formatCurrency(totalWithCustomPayments)}</span>
             </div>
             {formData.applied_credit && formData.applied_credit > 0 && (
               <div className="flex justify-between text-sm text-emerald-700 -mt-1">

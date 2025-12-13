@@ -410,6 +410,14 @@ class BookingViewSet(viewsets.ModelViewSet):
         try:
             booking = self.get_object()
 
+            # Fetch payment requests for custom payments
+            from apps.payments.models import PaymentRequest
+            custom_payments = PaymentRequest.objects.filter(
+                booking=booking,
+                status='paid'
+            )
+            custom_payments_total = sum(float(pr.amount or 0) for pr in custom_payments)
+
             # Create PDF buffer
             buffer = BytesIO()
             doc = SimpleDocTemplate(
@@ -601,6 +609,14 @@ class BookingViewSet(viewsets.ModelViewSet):
                     f'EUR {booking.pet_fee:.2f}'
                 ])
 
+            if custom_payments_total > 0:
+                table_data.append([
+                    'Custom Payments',
+                    '1',
+                    f'EUR {custom_payments_total:.2f}',
+                    f'EUR {custom_payments_total:.2f}'
+                ])
+
             if booking.tourist_tax:
                 tax_per_guest = float(booking.tourist_tax) / max(booking.number_of_guests, 1)
                 table_data.append([
@@ -611,11 +627,20 @@ class BookingViewSet(viewsets.ModelViewSet):
                 ])
 
             # Total rows
-            total_stay = float(booking.total_price or 0)
+            base_total = float(booking.total_price or 0)
+            total_with_custom = base_total + custom_payments_total
             city_tax_val = float(booking.tourist_tax or 0)
-            due_now_val = max(total_stay - city_tax_val, 0)
+            due_now_val = max(total_with_custom - city_tax_val, 0)
 
-            table_data.append(['', '', 'Total stay', f'EUR {total_stay:.2f}'])
+            # Show applied credit if present
+            applied_credit = float(booking.applied_credit or 0)
+            if applied_credit > 0:
+                table_data.append(['', '', 'Subtotal', f'EUR {total_with_custom:.2f}'])
+                table_data.append(['', '', 'Credit applied', f'EUR -{applied_credit:.2f}'])
+                total_with_custom = total_with_custom - applied_credit
+                due_now_val = max(total_with_custom - city_tax_val, 0)
+
+            table_data.append(['', '', 'Total', f'EUR {total_with_custom:.2f}'])
 
             # Payment method row (latest succeeded booking payment)
             latest_payment = booking.payments.filter(
@@ -1185,7 +1210,16 @@ def booking_statistics(request):
     # Revenue statistics (all active bookings this month, regardless of payment status)
     # Include confirmed, paid, checked_in, and checked_out bookings for revenue
     revenue_bookings = month_bookings.filter(status__in=['confirmed', 'paid', 'checked_in', 'checked_out'])
-    total_revenue = revenue_bookings.aggregate(Sum('total_price'))['total_price__sum'] or 0
+    base_revenue = revenue_bookings.aggregate(Sum('total_price'))['total_price__sum'] or 0
+
+    # Add custom payments to total revenue
+    from apps.payments.models import PaymentRequest
+    custom_payments_total = PaymentRequest.objects.filter(
+        booking__in=revenue_bookings,
+        status='paid'
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    total_revenue = base_revenue + custom_payments_total
 
     # Calculate occupied nights for occupancy rate (use same statuses as revenue for consistency)
     occupied_nights = 0
