@@ -557,9 +557,10 @@ class TeamViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_team_member():
             return User.objects.none()
 
+        # Show all non-guest users (team members with any role)
         return User.objects.filter(
             Q(legacy_role__in=['team', 'admin']) |
-            Q(assigned_role__slug__in=['team', 'admin'])
+            Q(assigned_role__isnull=False) & ~Q(assigned_role__slug='guest')
         ).select_related('assigned_role', 'compensation').order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
@@ -591,6 +592,13 @@ class TeamViewSet(viewsets.ModelViewSet):
             role = Role.objects.get(id=data['assigned_role_id'])
         except Role.DoesNotExist:
             return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prevent accidentally assigning Super Admin role (requires explicit confirmation)
+        # Super Admin should only be assigned by upgrading existing admins, not through team invitation
+        if role.is_super_admin and not request.data.get('confirm_super_admin'):
+            return Response({
+                'error': 'Cannot assign Super Admin role through team invitation. Please assign a different role or upgrade an existing admin.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         # Create user
         user = User.objects.create_user(
