@@ -169,6 +169,9 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
   const arcoRef = booking.booking_id;
   const [copied, setCopied] = useState(false);
 
+  // Check if online check-in is completed (has guest details)
+  const hasGuestDetails = booking.guests && booking.guests.length > 0;
+
   const handleCopy = () => {
     copyToClipboard(arcoRef);
     setCopied(true);
@@ -179,7 +182,7 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
     <>
       {/* Desktop Table Row */}
       <tr
-        className="border-b hover:bg-gray-50 hidden xl:table-row cursor-pointer"
+        className="border-b hover:bg-blue-50/50 hidden xl:table-row cursor-pointer transition-colors duration-150"
         onClick={() => onAction('view', booking)}
       >
         <td className="px-4 py-3">
@@ -213,10 +216,18 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
           </span>
         </td>
         <td className="px-4 py-3">
-          <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
-            <StatusIcon className="w-3 h-3 mr-1" />
-            {statusConfig.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
+              <StatusIcon className="w-3 h-3 mr-1" />
+              {statusConfig.label}
+            </Badge>
+            {hasGuestDetails && (
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border text-xs font-semibold">
+                <User className="w-3 h-3 mr-1" />
+                Details
+              </Badge>
+            )}
+          </div>
         </td>
         <td className="px-4 py-3">
           <Badge className={`${paymentConfig.color} border text-xs font-semibold capitalize`}>
@@ -249,7 +260,7 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
       </tr>
 
       {/* Mobile/Tablet Card View */}
-      <div className="xl:hidden border-b p-4 hover:bg-gray-50 cursor-pointer" onClick={() => onAction('view', booking)}>
+      <div className="xl:hidden border-b p-4 hover:bg-blue-50/50 cursor-pointer transition-all duration-200 active:scale-[0.99]" onClick={() => onAction('view', booking)}>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 group">
@@ -297,7 +308,7 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
           </div>
 
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge className={`${statusConfig.color} border text-xs font-semibold`}>
                 <StatusIcon className="w-3 h-3 mr-1" />
                 {statusConfig.label}
@@ -305,6 +316,12 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
               <Badge className={`${paymentConfig.color} border text-xs font-semibold capitalize`}>
                 {paymentConfig.label}
               </Badge>
+              {hasGuestDetails && (
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 border text-xs font-semibold">
+                  <User className="w-3 h-3 mr-1" />
+                  Details
+                </Badge>
+              )}
             </div>
             <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_with_custom || booking.total_price)}</span>
           </div>
@@ -813,63 +830,68 @@ export default function BookingsPage() {
         {view === 'list' && (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+            >
+              <Card className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow duration-200">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase">Total Bookings</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Bookings</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
                     </div>
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <CalendarIcon className="w-5 h-5 text-blue-600" />
+                    <div className="p-3 bg-blue-100 rounded-xl">
+                      <CalendarIcon className="w-6 h-6 text-blue-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-l-4 border-l-rose-500 hover:shadow-lg transition-shadow duration-200">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase">Canceled</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{stats.cancelled}</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Canceled</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{stats.cancelled}</p>
                     </div>
-                    <div className="p-3 bg-rose-50 rounded-lg">
-                      <XCircle className="w-5 h-5 text-rose-600" />
+                    <div className="p-3 bg-rose-100 rounded-xl">
+                      <XCircle className="w-6 h-6 text-rose-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-l-4 border-l-emerald-500 hover:shadow-lg transition-shadow duration-200">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase">Confirmed</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{stats.confirmed}</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Confirmed</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{stats.confirmed}</p>
                     </div>
-                    <div className="p-3 bg-emerald-50 rounded-lg">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <div className="p-3 bg-emerald-100 rounded-xl">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-l-4 border-l-amber-500 hover:shadow-lg transition-shadow duration-200">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase">No Show</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{stats.noShow}</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">No Show</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">{stats.noShow}</p>
                     </div>
-                    <div className="p-3 bg-amber-50 rounded-lg">
-                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <div className="p-3 bg-amber-100 rounded-xl">
+                      <AlertTriangle className="w-6 h-6 text-amber-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
 
             {/* Search & Filters */}
             <Card>
@@ -968,17 +990,17 @@ export default function BookingsPage() {
                     {/* Desktop Table View */}
                     <div className="hidden xl:block overflow-x-auto">
                       <table className="w-full">
-                        <thead className="bg-gray-50 border-b">
+                        <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b-2 border-gray-200">
                           <tr>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">ARCO Reference</th>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guest</th>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Dates</th>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Source</th>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Guests</th>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Payment</th>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Total</th>
-                            <th className="px-4 py-3"></th>
+                            <th className="px-4 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">ARCO Reference</th>
+                            <th className="px-4 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Guest</th>
+                            <th className="px-4 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Dates</th>
+                            <th className="px-4 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Source</th>
+                            <th className="px-4 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Guests</th>
+                            <th className="px-4 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Payment</th>
+                            <th className="px-4 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Total</th>
+                            <th className="px-4 py-4"></th>
                           </tr>
                         </thead>
                         <tbody>
