@@ -316,6 +316,25 @@ export default function ReportsPage() {
     paymentsError
   });
 
+  // Debug condition check
+  const shouldShowContent = !isLoading && metrics && allBookings && allBookings.length > 0;
+  console.log('[Reports] Should show content?', shouldShowContent, {
+    notLoading: !isLoading,
+    hasMetrics: !!metrics,
+    hasAllBookings: !!allBookings,
+    hasLength: allBookings && allBookings.length > 0,
+    metricsData: metrics ? 'exists' : 'null'
+  });
+
+  if (metrics) {
+    console.log('[Reports] Metrics values:', {
+      totalRevenue: metrics.totalRevenue,
+      totalExpenses: metrics.totalExpenses,
+      totalProfit: metrics.totalProfit,
+      bookingsCount: metrics.bookingsCount
+    });
+  }
+
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
