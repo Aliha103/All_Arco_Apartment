@@ -7,7 +7,7 @@ import {
   TrendingUp, TrendingDown, Euro, Receipt, Home,
   Calendar, Download, Filter, X, ChevronDown,
   Building2, PieChart, BarChart3, LineChart as LineChartIcon,
-  Sparkles, DollarSign, CreditCard, Banknote, Clock
+  Sparkles, DollarSign, CreditCard, Banknote, Clock, RefreshCw
 } from 'lucide-react';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPie, Pie,
@@ -88,8 +88,8 @@ export default function ReportsPage() {
     };
   }, [dateFilter, selectedYear, customDateRange]);
 
-  // Fetch all bookings
-  const { data: allBookings, isLoading: bookingsLoading } = useQuery({
+  // Fetch all bookings with real-time updates every 30 seconds
+  const { data: allBookings, isLoading: bookingsLoading, refetch: refetchBookings } = useQuery({
     queryKey: ['all-bookings-reports', dateRange],
     queryFn: async () => {
       const response = await api.bookings.list();
@@ -100,10 +100,12 @@ export default function ReportsPage() {
         return checkIn >= new Date(dateRange.start_date) && checkIn <= new Date(dateRange.end_date);
       });
     },
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true, // Refresh when user returns to tab
   });
 
-  // Fetch expenses
-  const { data: expenses, isLoading: expensesLoading } = useQuery({
+  // Fetch expenses with real-time updates
+  const { data: expenses, isLoading: expensesLoading, refetch: refetchExpenses } = useQuery({
     queryKey: ['expenses-reports', dateRange],
     queryFn: async () => {
       const response = await api.expenses.list({
@@ -112,7 +114,16 @@ export default function ReportsPage() {
       });
       return response.data.results || response.data;
     },
+    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true,
   });
+
+  // Manual refresh function
+  const handleRefresh = async () => {
+    toast.info('Refreshing data...');
+    await Promise.all([refetchBookings(), refetchExpenses()]);
+    toast.success('Data refreshed successfully!');
+  };
 
   // Calculate comprehensive metrics
   const metrics = useMemo(() => {
@@ -298,13 +309,23 @@ export default function ReportsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-[#C4A572] to-[#B39562] shadow-lg">
-            <BarChart3 className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-[#C4A572] to-[#B39562] shadow-lg">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Financial Analytics</h1>
+              <p className="text-gray-600">Comprehensive reports & insights</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Financial Analytics</h1>
-            <p className="text-gray-600">Comprehensive reports & insights</p>
+          {/* Real-time indicator */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+            <div className="relative">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <div className="absolute inset-0 w-2 h-2 bg-green-500 rounded-full animate-ping" />
+            </div>
+            <span className="text-xs font-medium text-green-700">Live Data</span>
           </div>
         </div>
       </motion.div>
@@ -338,6 +359,15 @@ export default function ReportsPage() {
 
               {/* Actions */}
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleRefresh}
+                  className="h-10 gap-2"
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
@@ -429,8 +459,32 @@ export default function ReportsPage() {
         </div>
       )}
 
+      {/* Empty State */}
+      {!isLoading && (!allBookings || allBookings.length === 0) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-20"
+        >
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+            <BarChart3 className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Data Available</h3>
+          <p className="text-gray-600 mb-6">
+            No bookings found for the selected date range.<br />
+            Try adjusting your filters or select a different time period.
+          </p>
+          <Button
+            onClick={() => setDateFilter('all')}
+            className="bg-[#C4A572] hover:bg-[#B39562]"
+          >
+            View All Time Data
+          </Button>
+        </motion.div>
+      )}
+
       {/* Content */}
-      {!isLoading && metrics && (
+      {!isLoading && metrics && allBookings && allBookings.length > 0 && (
         <>
           {/* Key Metrics */}
           <motion.div
@@ -440,47 +494,56 @@ export default function ReportsPage() {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
           >
             {/* Total Revenue */}
-            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#C4A572]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CardHeader className="pb-3">
+            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#C4A572]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <CardHeader className="pb-3 relative z-10">
                 <CardTitle className="text-sm text-gray-600 flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
                   Total Revenue
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative z-10">
                 <p className="text-3xl font-bold text-gray-900">{formatCurrency(metrics.totalRevenue)}</p>
-                <p className="text-sm text-gray-500 mt-1">{metrics.bookingsCount} bookings</p>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-sm text-gray-500">{metrics.bookingsCount} bookings</p>
+                  {metrics.avgBookingValue > 0 && (
+                    <p className="text-xs text-gray-400">Avg: {formatCurrency(metrics.avgBookingValue)}</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
             {/* Total Expenses */}
-            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CardHeader className="pb-3">
+            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <CardHeader className="pb-3 relative z-10">
                 <CardTitle className="text-sm text-gray-600 flex items-center gap-2">
                   <Receipt className="w-4 h-4" />
                   Total Expenses
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative z-10">
                 <p className="text-3xl font-bold text-red-600">{formatCurrency(metrics.totalExpenses)}</p>
-                {metrics.pendingExpenses > 0 && (
-                  <p className="text-sm text-orange-600 mt-1">{formatCurrency(metrics.pendingExpenses)} pending</p>
-                )}
+                <div className="mt-2">
+                  {metrics.pendingExpenses > 0 ? (
+                    <p className="text-sm text-orange-600">{formatCurrency(metrics.pendingExpenses)} pending</p>
+                  ) : (
+                    <p className="text-sm text-gray-500">All expenses approved</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
             {/* Net Profit */}
-            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CardHeader className="pb-3">
+            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <CardHeader className="pb-3 relative z-10">
                 <CardTitle className="text-sm text-gray-600 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
                   Net Profit
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative z-10">
                 <p className={`text-3xl font-bold ${metrics.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(metrics.totalProfit)}
                 </p>
@@ -489,15 +552,15 @@ export default function ReportsPage() {
             </Card>
 
             {/* City Tax */}
-            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CardHeader className="pb-3">
+            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <CardHeader className="pb-3 relative z-10">
                 <CardTitle className="text-sm text-gray-600 flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
                   City Tax
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative z-10">
                 <p className="text-3xl font-bold text-blue-600">{formatCurrency(metrics.cityTaxRevenue)}</p>
                 <p className="text-sm text-gray-500 mt-1">Tourist tax collected</p>
               </CardContent>
