@@ -126,8 +126,10 @@ export default function TeamPage() {
   // Role management mutations
   const createRole = useMutation({
     mutationFn: async (data: any) => {
+      // Generate slug from name if not provided
+      const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       // First create the role
-      const response = await api.users.roles.create(data);
+      const response = await api.users.roles.create({ ...data, slug });
       return response.data;
     },
     onSuccess: async (roleData) => {
@@ -153,8 +155,10 @@ export default function TeamPage() {
 
   const updateRole = useMutation({
     mutationFn: async ({ id, data, permissions }: { id: string; data: any; permissions: string[] }) => {
+      // Generate slug from name if not provided
+      const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       // First update the role
-      await api.users.roles.update(id, data);
+      await api.users.roles.update(id, { ...data, slug });
       // Then update permissions
       await api.users.roles.assignPermissions(id, permissions);
       return { id };
