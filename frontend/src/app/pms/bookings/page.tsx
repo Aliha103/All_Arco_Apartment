@@ -224,7 +224,7 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
           </Badge>
         </td>
         <td className="px-4 py-3">
-          <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_price)}</span>
+          <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_with_custom || booking.total_price)}</span>
         </td>
       </tr>
 
@@ -268,7 +268,7 @@ const BookingRow = memo(({ booking, isSelected, onSelect, onAction }: BookingRow
                 {paymentConfig.label}
               </Badge>
             </div>
-            <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_price)}</span>
+            <span className="font-bold text-sm text-gray-900">{formatCurrency(booking.total_with_custom || booking.total_price)}</span>
           </div>
 
           <div className="flex items-center gap-2">
