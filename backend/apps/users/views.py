@@ -740,6 +740,93 @@ class TeamViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Update team member details and optionally compensation.
+        Accepts: assigned_role_id, is_active, activation_start_date, activation_end_date,
+        compensation_type + related fields.
+        """
+        # Permission check
+        if not (request.user.is_super_admin() or request.user.legacy_role == 'admin'):
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        from .models_compensation import TeamCompensation
+        from .models import Role
+        from django.db import connection
+        import logging
+
+        user = self.get_object()
+        payload = request.data
+
+        try:
+            with transaction.atomic():
+                # Update basic fields
+                if 'assigned_role_id' in payload:
+                    try:
+                        role = Role.objects.get(id=payload['assigned_role_id'])
+                    except Role.DoesNotExist:
+                        return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+                    user.assigned_role = role
+                    user.legacy_role = 'team' if not role.is_super_admin else 'admin'
+
+                if 'is_active' in payload:
+                    user.is_active = bool(payload.get('is_active'))
+
+                if 'activation_start_date' in payload:
+                    user.activation_start_date = payload.get('activation_start_date') or None
+                if 'activation_end_date' in payload:
+                    user.activation_end_date = payload.get('activation_end_date') or None
+
+                user.save()
+
+                # Update compensation if provided and table exists
+                compensation_type = payload.get('compensation_type')
+                comp_table_exists = 'users_teamcompensation' in connection.introspection.table_names()
+                if compensation_type and comp_table_exists:
+                    comp_defaults = {
+                        'compensation_type': compensation_type,
+                        'notes': payload.get('notes', ''),
+                        'is_active': True,
+                        'salary_method': None,
+                        'fixed_amount_per_checkout': None,
+                        'percentage_on_base_price': None,
+                        'profit_share_timing': None,
+                        'profit_share_percentage': None,
+                    }
+
+                    if compensation_type == 'salary':
+                        comp_defaults.update({
+                            'salary_method': payload.get('salary_method'),
+                            'fixed_amount_per_checkout': payload.get('fixed_amount_per_checkout'),
+                            'percentage_on_base_price': payload.get('percentage_on_base_price'),
+                        })
+                    elif compensation_type == 'profit_share':
+                        comp_defaults.update({
+                            'profit_share_timing': payload.get('profit_share_timing'),
+                            'profit_share_percentage': payload.get('profit_share_percentage'),
+                        })
+
+                    comp_obj, _ = TeamCompensation.objects.update_or_create(
+                        user=user,
+                        defaults=comp_defaults
+                    )
+                    comp_obj.full_clean()
+                    comp_obj.save()
+                elif compensation_type and not comp_table_exists:
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        "Compensation table missing during update; skipped compensation for %s", user.email
+                    )
+
+            # Reload with relations
+            user = User.objects.select_related('assigned_role', 'compensation').get(id=user.id)
+            from .serializers import TeamMemberSerializer
+            return Response(TeamMemberSerializer(user).data)
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error("Failed to update team member %s: %s", user.email, str(e), exc_info=True)
+            return Response({'error': 'Failed to update team member'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         # Send invitation email with password setup token for new users only
         try:
             if is_new_user:
