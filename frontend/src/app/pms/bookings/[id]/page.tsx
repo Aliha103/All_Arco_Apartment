@@ -572,9 +572,9 @@ export default function BookingDetailPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const link = `/booking/checkin?confirmation=${encodeURIComponent(booking.booking_id || '')}&email=${encodeURIComponent(booking.guest_email || '')}`;
-                  toast.error('Please register all guests before check-in.');
-                  if (booking.booking_id && booking.guest_email) {
+                  const link = `/booking/${encodeURIComponent(booking.booking_id || '')}/check-in`;
+                  toast.info('Opening check-in form for guest registration.');
+                  if (booking.booking_id) {
                     window.open(link, '_blank');
                   }
                 }}

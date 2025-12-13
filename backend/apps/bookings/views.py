@@ -418,10 +418,36 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def send_email(self, request, pk=None):
-        """Send booking confirmation email."""
+        """Send booking confirmation or check-in email manually."""
         booking = self.get_object()
-        # TODO: Implement email sending
-        return Response({'message': 'Email sent successfully'})
+        email_type = request.data.get('type', 'confirmation')  # 'confirmation' or 'checkin'
+
+        try:
+            if email_type == 'checkin':
+                # Send online check-in prompt
+                success = send_online_checkin_prompt(booking)
+                if success:
+                    return Response({'message': 'Check-in email sent successfully to ' + booking.guest_email})
+                else:
+                    return Response(
+                        {'error': 'Failed to send check-in email. Please check email configuration.'},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+            else:
+                # Send booking confirmation
+                success = send_booking_confirmation(booking)
+                if success:
+                    return Response({'message': 'Confirmation email sent successfully to ' + booking.guest_email})
+                else:
+                    return Response(
+                        {'error': 'Failed to send confirmation email. Please check email configuration.'},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to send email: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['get'], url_path='download-pdf')
     def download_pdf(self, request, pk=None):
