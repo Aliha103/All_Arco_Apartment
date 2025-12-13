@@ -398,14 +398,18 @@ export default function BookingSidePanel({
 
   // Calculate custom payments total from paid payment requests
   const customPaymentsTotal = useMemo(() => {
-    return paymentRequests
+    const total = paymentRequests
       .filter(pr => pr.status === 'paid')
       .reduce((sum, pr) => sum + Number(pr.amount || 0), 0);
+    console.log('🔍 DEBUG customPaymentsTotal:', total, 'paymentRequests:', paymentRequests);
+    return total;
   }, [paymentRequests]);
 
   // Calculate actual total including custom payments
   const totalWithCustomPayments = useMemo(() => {
-    return (formData.total_price || 0) + customPaymentsTotal;
+    const total = (formData.total_price || 0) + customPaymentsTotal;
+    console.log('🔍 DEBUG totalWithCustomPayments:', total, '= base:', formData.total_price, '+ custom:', customPaymentsTotal);
+    return total;
   }, [formData.total_price, customPaymentsTotal]);
 
   const balanceDue = useMemo(() => {
