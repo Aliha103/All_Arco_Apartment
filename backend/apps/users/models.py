@@ -5,6 +5,9 @@ from django.db import models
 from django.db.models.functions import Lower
 from django.core.exceptions import ValidationError
 
+# Import compensation models
+from .models_compensation import TeamCompensation
+
 
 # ============================================================================
 # RBAC (Role-Based Access Control) Models
@@ -294,6 +297,18 @@ class User(AbstractUser):
     )
 
     is_active = models.BooleanField(default=True)
+
+    # Account activation period for team members
+    activation_start_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date when team member account becomes active'
+    )
+    activation_end_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date when team member account expires'
+    )
 
     # Invitation/Referral System
     reference_code = models.CharField(
