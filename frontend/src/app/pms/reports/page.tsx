@@ -89,46 +89,70 @@ export default function ReportsPage() {
   }, [dateFilter, selectedYear, customDateRange]);
 
   // Fetch all bookings with real-time updates every 30 seconds
-  const { data: allBookings, isLoading: bookingsLoading, refetch: refetchBookings } = useQuery({
+  const { data: allBookings, isLoading: bookingsLoading, error: bookingsError, refetch: refetchBookings } = useQuery({
     queryKey: ['all-bookings-reports', dateRange],
     queryFn: async () => {
-      const response = await api.bookings.list();
-      const bookings = response.data.results || response.data;
-      // Filter by date range
-      return bookings.filter((b: any) => {
-        const checkIn = new Date(b.check_in_date);
-        return checkIn >= new Date(dateRange.start_date) && checkIn <= new Date(dateRange.end_date);
-      });
+      try {
+        const response = await api.bookings.list();
+        const bookings = response.data.results || response.data;
+        console.log('[Reports] Fetched bookings:', bookings.length);
+        // Filter by date range
+        const filtered = bookings.filter((b: any) => {
+          const checkIn = new Date(b.check_in_date);
+          return checkIn >= new Date(dateRange.start_date) && checkIn <= new Date(dateRange.end_date);
+        });
+        console.log('[Reports] Filtered bookings:', filtered.length, 'for range:', dateRange);
+        return filtered;
+      } catch (error) {
+        console.error('[Reports] Bookings fetch error:', error);
+        throw error;
+      }
     },
     refetchInterval: 30000, // Refresh every 30 seconds
     refetchOnWindowFocus: true, // Refresh when user returns to tab
   });
 
   // Fetch expenses with real-time updates
-  const { data: expenses, isLoading: expensesLoading, refetch: refetchExpenses } = useQuery({
+  const { data: expenses, isLoading: expensesLoading, error: expensesError, refetch: refetchExpenses } = useQuery({
     queryKey: ['expenses-reports', dateRange],
     queryFn: async () => {
-      const response = await api.expenses.list({
-        date_from: dateRange.start_date,
-        date_to: dateRange.end_date,
-      });
-      return response.data.results || response.data;
+      try {
+        const response = await api.expenses.list({
+          date_from: dateRange.start_date,
+          date_to: dateRange.end_date,
+        });
+        const expensesData = response.data.results || response.data;
+        console.log('[Reports] Fetched expenses:', expensesData.length);
+        return expensesData;
+      } catch (error) {
+        console.error('[Reports] Expenses fetch error:', error);
+        // Return empty array on error instead of throwing
+        return [];
+      }
     },
     refetchInterval: 30000, // Refresh every 30 seconds
     refetchOnWindowFocus: true,
   });
 
   // Fetch actual payments (Stripe payments) to include in revenue
-  const { data: payments, isLoading: paymentsLoading, refetch: refetchPayments } = useQuery({
+  const { data: payments, isLoading: paymentsLoading, error: paymentsError, refetch: refetchPayments } = useQuery({
     queryKey: ['payments-reports', dateRange],
     queryFn: async () => {
-      const response = await api.payments.list();
-      const allPayments = response.data.results || response.data;
-      // Filter payments by date
-      return allPayments.filter((p: any) => {
-        const paymentDate = new Date(p.created_at);
-        return paymentDate >= new Date(dateRange.start_date) && paymentDate <= new Date(dateRange.end_date);
-      });
+      try {
+        const response = await api.payments.list();
+        const allPayments = response.data.results || response.data;
+        // Filter payments by date
+        const filtered = allPayments.filter((p: any) => {
+          const paymentDate = new Date(p.created_at);
+          return paymentDate >= new Date(dateRange.start_date) && paymentDate <= new Date(dateRange.end_date);
+        });
+        console.log('[Reports] Fetched payments:', allPayments.length, 'filtered:', filtered.length);
+        return filtered;
+      } catch (error) {
+        console.error('[Reports] Payments fetch error:', error);
+        // Return empty array on error instead of throwing
+        return [];
+      }
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
@@ -273,6 +297,24 @@ export default function ReportsPage() {
   }, [allBookings, expenses, payments]);
 
   const isLoading = bookingsLoading || expensesLoading || paymentsLoading;
+
+  // Log for debugging
+  console.log('[Reports] Status:', {
+    isLoading,
+    bookingsLoading,
+    expensesLoading,
+    paymentsLoading,
+    hasBookings: !!allBookings,
+    bookingsCount: allBookings?.length,
+    hasExpenses: !!expenses,
+    expensesCount: expenses?.length,
+    hasPayments: !!payments,
+    paymentsCount: payments?.length,
+    hasMetrics: !!metrics,
+    bookingsError,
+    expensesError,
+    paymentsError
+  });
 
   // Format currency
   const formatCurrency = (amount: number) => {
