@@ -379,16 +379,6 @@ export default function OTAManagementPage() {
               <Upload className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">iCal Sync</span>
             </Button>
-            <Button
-              onClick={() => {
-                setSelectedBooking(null);
-                setIsCreateModalOpen(true);
-              }}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Add OTA Booking</span>
-            </Button>
           </div>
         </div>
       </motion.div>
@@ -1584,9 +1574,9 @@ function ICalSourcesList({ sources }: ICalSourcesListProps) {
           <div>
             <CardTitle className="text-lg">iCal Sync Sources</CardTitle>
             <CardDescription>
-              Manage your OTA calendar synchronization
+              Streamlined OTA calendar synchronization for zero overbookings.
               <span className="block text-xs text-green-600 mt-1">
-                <strong>Auto-sync:</strong> Calendars sync every 15 minutes automatically to keep bookings up-to-date
+                <strong>Auto-sync:</strong> Calendars refresh every 30 seconds to keep bookings in lockstep.
               </span>
             </CardDescription>
           </div>
