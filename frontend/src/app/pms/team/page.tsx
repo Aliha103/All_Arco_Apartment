@@ -426,7 +426,7 @@ export default function TeamPage() {
                       </TableCell>
                       <TableCell>{role.member_count || 0}</TableCell>
                       <TableCell>
-                        {!role.is_super_admin && (
+                        {!role.is_super_admin ? (
                           <div className="flex gap-2">
                             <Button
                               variant="outline"
@@ -441,7 +441,6 @@ export default function TeamPage() {
                                 setIsEditingRole(true);
                                 setIsRoleModalOpen(true);
                               }}
-                              disabled={role.is_system}
                             >
                               Edit
                             </Button>
@@ -449,15 +448,21 @@ export default function TeamPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => {
+                                if ((role.member_count || 0) > 0) {
+                                  toast.error(`Cannot delete role "${role.name}" - it has ${role.member_count} assigned member(s). Please reassign them first.`);
+                                  return;
+                                }
                                 if (confirm(`Delete role "${role.name}"? This cannot be undone.`)) {
                                   deleteRole.mutate(role.id!);
                                 }
                               }}
-                              disabled={role.is_system || (role.member_count || 0) > 0}
+                              disabled={(role.member_count || 0) > 0}
                             >
                               Delete
                             </Button>
                           </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">Protected</span>
                         )}
                       </TableCell>
                     </TableRow>
