@@ -27,6 +27,7 @@ export default function TeamPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [isRoleDetailsModalOpen, setIsRoleDetailsModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isEditingRole, setIsEditingRole] = useState(false);
@@ -560,6 +561,16 @@ export default function TeamPage() {
                         {!role.is_super_admin ? (
                           <div className="flex gap-2">
                             <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedRole(role);
+                                setIsRoleDetailsModalOpen(true);
+                              }}
+                            >
+                              View
+                            </Button>
+                            <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
@@ -1053,6 +1064,114 @@ export default function TeamPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Details Modal - Shows ONLY selected permissions */}
+      <Dialog open={isRoleDetailsModalOpen} onOpenChange={setIsRoleDetailsModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedRole?.name}
+              {selectedRole?.is_system && (
+                <Badge variant="secondary" className="ml-2">System</Badge>
+              )}
+            </DialogTitle>
+            {selectedRole?.description && (
+              <p className="text-sm text-gray-600 mt-2">{selectedRole.description}</p>
+            )}
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Role Stats */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-sm text-gray-600">Team Members</p>
+                <p className="text-2xl font-bold">{selectedRole?.member_count || 0}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Permissions</p>
+                <p className="text-2xl font-bold">{selectedRole?.permission_codes?.length || 0}</p>
+              </div>
+            </div>
+
+            {/* Selected Permissions Only */}
+            <div>
+              <h3 className="font-semibold text-lg mb-4">Permissions</h3>
+
+              {selectedRole && selectedRole.permission_codes && selectedRole.permission_codes.length > 0 ? (
+                <div className="space-y-4">
+                  {permissions && typeof permissions === 'object' && Object.entries(permissions).map(([group, perms]: [string, any]) => {
+                    // Filter to show ONLY selected permissions for this group
+                    const selectedInGroup = Array.isArray(perms)
+                      ? perms.filter((p: any) => selectedRole.permission_codes?.includes(p.code))
+                      : [];
+
+                    // Hide group if no permissions selected
+                    if (selectedInGroup.length === 0) {
+                      return null;
+                    }
+
+                    return (
+                      <div key={group} className="border rounded-lg p-4 bg-white">
+                        <h4 className="font-semibold capitalize text-sm mb-3 text-gray-700">
+                          {group.replace(/_/g, ' ')}
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            {selectedInGroup.length}
+                          </Badge>
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {selectedInGroup.map((perm: any) => (
+                            <div key={perm.code} className="flex items-start gap-2 p-2 bg-blue-50 rounded border border-blue-200">
+                              <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-mono text-xs text-blue-700 font-semibold">{perm.code}</div>
+                                <div className="text-xs text-gray-700 mt-0.5">{perm.description}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 border rounded-lg bg-gray-50">
+                  No permissions assigned to this role
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsRoleDetailsModalOpen(false);
+                setSelectedRole(null);
+              }}
+            >
+              Close
+            </Button>
+            {selectedRole && !selectedRole.is_super_admin && (
+              <Button
+                onClick={() => {
+                  setIsRoleDetailsModalOpen(false);
+                  setRoleFormData({
+                    name: selectedRole.name,
+                    description: selectedRole.description || '',
+                  });
+                  setSelectedPermissions(selectedRole.permission_codes || []);
+                  setIsEditingRole(true);
+                  setIsRoleModalOpen(true);
+                }}
+              >
+                Edit Role
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
