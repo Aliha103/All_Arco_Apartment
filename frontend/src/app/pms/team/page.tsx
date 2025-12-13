@@ -72,6 +72,15 @@ export default function TeamPage() {
     first_name: '',
     last_name: '',
     assigned_role_id: '',
+    activation_start_date: '',
+    activation_end_date: '',
+    compensation_type: '' as '' | 'salary' | 'profit_share',
+    salary_method: '' as '' | 'per_checkout' | 'percentage_base_price',
+    fixed_amount_per_checkout: '',
+    percentage_on_base_price: '',
+    profit_share_timing: '' as '' | 'before_expenses' | 'after_expenses' | 'after_expenses_and_salaries',
+    profit_share_percentage: '',
+    notes: '',
   });
 
   const [editFormData, setEditFormData] = useState({
@@ -91,7 +100,21 @@ export default function TeamPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       setIsInviteModalOpen(false);
-      setInviteFormData({ email: '', first_name: '', last_name: '', assigned_role_id: '' });
+      setInviteFormData({
+        email: '',
+        first_name: '',
+        last_name: '',
+        assigned_role_id: '',
+        activation_start_date: '',
+        activation_end_date: '',
+        compensation_type: '',
+        salary_method: '',
+        fixed_amount_per_checkout: '',
+        percentage_on_base_price: '',
+        profit_share_timing: '',
+        profit_share_percentage: '',
+        notes: '',
+      });
       toast.success('Team member invited successfully. Invitation email sent.');
     },
     onError: (error: any) => {
