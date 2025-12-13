@@ -8,7 +8,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0026_alter_role_is_super_admin'),  # Adjust this to your latest migration
+        ('users', '0021_referralcredit_expires_at'),
     ]
 
     operations = [
