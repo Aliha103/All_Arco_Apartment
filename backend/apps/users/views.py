@@ -1173,11 +1173,13 @@ class RoleViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated])
 def seed_rbac_data(request):
     """
-    Seed initial permissions and roles.
+    Seed initial permissions and Super Admin role.
 
     This endpoint creates:
-    - All system permissions organized by feature groups
-    - Default system roles (Super Admin, Front Desk, Accounting, Housekeeping)
+    - All system permissions organized by feature groups (bookings, payments, guests, pricing, team, reports)
+    - Super Admin role (has all permissions implicitly)
+
+    Super Admin can then create custom roles manually with specific permissions.
 
     Can only be run by superuser or existing super admin.
     Safe to run multiple times (idempotent).
@@ -1259,6 +1261,8 @@ def seed_rbac_data(request):
                 created_permissions.append(code)
 
         # Define default roles with their permissions
+        # Only Super Admin is created by default
+        # Super Admin can create custom roles manually with specific permissions
         roles_data = [
             {
                 'name': 'Super Admin',
@@ -1266,42 +1270,7 @@ def seed_rbac_data(request):
                 'description': 'Full system access with all permissions',
                 'is_system': True,
                 'is_super_admin': True,
-                'permissions': []  # Has all implicitly
-            },
-            {
-                'name': 'Front Desk',
-                'slug': 'front_desk',
-                'description': 'Manage bookings, guests, and check-ins',
-                'is_system': True,
-                'is_super_admin': False,
-                'permissions': [
-                    'bookings.view', 'bookings.create', 'bookings.update',
-                    'bookings.cancel', 'bookings.mark_no_show',
-                    'guests.view', 'guests.update', 'guests.notes',
-                    'payments.view', 'pricing.view',
-                ]
-            },
-            {
-                'name': 'Accounting',
-                'slug': 'accounting',
-                'description': 'Manage payments, refunds, and financial reports',
-                'is_system': True,
-                'is_super_admin': False,
-                'permissions': [
-                    'bookings.view', 'guests.view',
-                    'payments.view', 'payments.create', 'payments.refund', 'payments.export',
-                    'pricing.view', 'reports.view', 'reports.export',
-                ]
-            },
-            {
-                'name': 'Housekeeping',
-                'slug': 'housekeeping',
-                'description': 'View bookings and check-in/out status',
-                'is_system': True,
-                'is_super_admin': False,
-                'permissions': [
-                    'bookings.view', 'guests.view',
-                ]
+                'permissions': []  # Has all permissions implicitly
             },
         ]
 
