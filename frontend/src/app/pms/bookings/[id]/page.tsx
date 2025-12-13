@@ -52,6 +52,7 @@ export default function BookingDetailPage() {
     queryFn: async () => {
       const response = await api.bookings.get(bookingId);
       return response.data as Booking & {
+        alloggiati_submitted?: boolean;
         internal_notes?: string;
         created_by_name?: string;
         user_id?: string;
