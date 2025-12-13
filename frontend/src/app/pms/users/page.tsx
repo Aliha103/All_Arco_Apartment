@@ -81,30 +81,30 @@ export default function UsersPage() {
   }, [guestUsers, guestSearch]);
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-8 bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-6 py-4 shadow-sm">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Users</h1>
-          <p className="text-gray-600 mt-1">Manage team members and view guest profiles</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Users</h1>
+          <p className="text-slate-600 mt-1">Manage guest profiles</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <UsersIcon className="w-4 h-4" />
-          <span className="font-medium">{filteredGuestUsers.length} guests</span>
+        <div className="flex items-center gap-2 text-sm text-slate-700 bg-slate-100 border border-slate-200 rounded-lg px-3 py-1">
+          <UsersIcon className="w-4 h-4 text-slate-800" />
+          <span className="font-semibold text-slate-900">{filteredGuestUsers.length} guests</span>
         </div>
       </div>
 
       {/* Guests Section */}
-      <Card className="shadow-sm border-gray-200">
-        <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-teal-50">
-          <div className="flex items-center justify-between">
+      <Card className="shadow-sm border-slate-200 bg-white">
+        <CardHeader className="border-b bg-slate-100">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-100 rounded-lg">
+              <div className="p-2 bg-emerald-100 rounded-lg shadow-inner">
                 <UserCircle2 className="w-5 h-5 text-emerald-700" />
               </div>
               <div>
-                <CardTitle className="text-xl">Guest Profiles</CardTitle>
-                <p className="text-sm text-gray-600 mt-0.5">
+                <CardTitle className="text-xl text-slate-900">Guest Profiles</CardTitle>
+                <p className="text-sm text-slate-600 mt-0.5">
                   {filteredGuestUsers.length} {filteredGuestUsers.length === 1 ? 'guest' : 'guests'}
                 </p>
               </div>
@@ -121,7 +121,7 @@ export default function UsersPage() {
                   placeholder="Search guests by name or email..."
                   value={guestSearch}
                   onChange={(e) => setGuestSearch(e.target.value)}
-                  className="pl-10 bg-gray-50 border-gray-200"
+                  className="pl-10 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -132,18 +132,18 @@ export default function UsersPage() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-3" />
-                <p className="text-sm text-gray-600">Loading guest profiles...</p>
+                <p className="text-sm text-slate-600">Loading guest profiles...</p>
               </div>
             </div>
           ) : filteredGuestUsers.length === 0 ? (
             <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                <UserCircle2 className="w-8 h-8 text-gray-400" />
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                <UserCircle2 className="w-8 h-8 text-slate-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
                 {guestSearch ? 'No matching guests found' : 'No guests yet'}
               </h3>
-              <p className="text-gray-600 max-w-md mx-auto">
+              <p className="text-slate-600 max-w-md mx-auto">
                 {guestSearch
                   ? 'Try adjusting your search criteria'
                   : 'Guest profiles will appear here once they make bookings'}
@@ -154,24 +154,24 @@ export default function UsersPage() {
               {filteredGuestUsers.map((guest) => (
                 <div
                   key={guest.id}
-                  className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-emerald-300 hover:shadow-sm transition-all"
+                  className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-lg hover:border-emerald-300 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center">
-                      <UserCircle2 className="w-7 h-7 text-emerald-700" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-50 to-teal-100 rounded-full flex items-center justify-center border border-emerald-200">
+                      <UserCircle2 className="w-7 h-7 text-emerald-800" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="font-semibold text-slate-900">
                         {guest.first_name} {guest.last_name}
                       </h4>
                       <div className="flex items-center gap-4 mt-1">
                         <div className="flex items-center gap-1.5">
-                          <Mail className="w-3 h-3 text-gray-400" />
-                          <span className="text-sm text-gray-600">{guest.email}</span>
+                          <Mail className="w-3 h-3 text-slate-400" />
+                          <span className="text-sm text-slate-700">{guest.email}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3 h-3 text-gray-400" />
-                          <span className="text-sm text-gray-600">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          <span className="text-sm text-slate-700">
                             {guest.total_bookings || 0} {guest.total_bookings === 1 ? 'booking' : 'bookings'}
                           </span>
                         </div>
@@ -179,7 +179,11 @@ export default function UsersPage() {
                     </div>
                   </div>
                   <Link href={`/pms/guests/${guest.id}`}>
-                    <Button variant="outline" size="sm" className="hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-200 text-slate-800 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                    >
                       <Eye className="w-4 h-4 mr-2" />
                       View Profile
                     </Button>
