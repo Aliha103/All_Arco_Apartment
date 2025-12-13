@@ -448,11 +448,30 @@ class Booking(models.Model):
     def get_balance_remaining(self):
         """
         Calculate the remaining balance for this booking.
-        Formula: total_price - total_paid
+        Formula: (total_price + custom_payments) - applied_credit - total_paid
         """
         from decimal import Decimal
+        from apps.payments.models import PaymentRequest
+
+        # Get base total
+        base_total = Decimal(str(self.total_price))
+
+        # Add custom payments (paid payment requests)
+        custom_payments = PaymentRequest.objects.filter(
+            booking=self,
+            status='paid'
+        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+
+        # Calculate total with custom payments
+        total_with_custom = base_total + custom_payments
+
+        # Subtract credit and paid amount
+        credit = Decimal(str(self.applied_credit or 0))
         total_paid = Decimal(str(self.get_total_paid()))
-        return float(max(self.total_price - total_paid, Decimal('0')))
+
+        balance = total_with_custom - credit - total_paid
+
+        return float(max(balance, Decimal('0')))
 
 
 class BookingAttempt(models.Model):
