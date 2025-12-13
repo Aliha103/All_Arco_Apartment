@@ -652,6 +652,9 @@ class TeamViewSet(viewsets.ModelViewSet):
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to send team invitation email to {user.email}: {str(e)}")
 
+        # Reload user with all relationships for serialization
+        user = User.objects.select_related('assigned_role', 'compensation').get(id=user.id)
+
         return Response(
             TeamMemberSerializer(user).data,
             status=status.HTTP_201_CREATED
