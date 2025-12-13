@@ -583,8 +583,11 @@ class TeamViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
+        email = data['email'].strip().lower()
+        first_name = data['first_name']
+        last_name = data['last_name']
 
-        # Generate random password for invitation
+        # Generate random password for invitation (for new users)
         temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
 
         # Get the assigned role
@@ -593,61 +596,89 @@ class TeamViewSet(viewsets.ModelViewSet):
         except Role.DoesNotExist:
             return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create user
         try:
             with transaction.atomic():
-                user = User.objects.create_user(
-                    email=data['email'].strip().lower(),
-                    username=data['email'].strip().lower(),
-                    password=temp_password,
-                    first_name=data['first_name'],
-                    last_name=data['last_name'],
-                    assigned_role=role,
-                    is_active=True,
-                    activation_start_date=data.get('activation_start_date'),
-                    activation_end_date=data.get('activation_end_date')
-                )
+                user = User.objects.filter(email__iexact=email).select_related('compensation').first()
 
-                # Create compensation if provided
+                # Upsert user: promote existing guest to team, or create fresh
+                if user:
+                    user.first_name = first_name
+                    user.last_name = last_name
+                    user.assigned_role = role
+                    user.legacy_role = 'team' if not role.is_super_admin else 'admin'
+                    user.activation_start_date = data.get('activation_start_date')
+                    user.activation_end_date = data.get('activation_end_date')
+                    user.is_active = True
+                    user.save(update_fields=[
+                        'first_name', 'last_name', 'assigned_role', 'legacy_role',
+                        'activation_start_date', 'activation_end_date', 'is_active', 'updated_at'
+                    ])
+                    is_new_user = False
+                else:
+                    user = User.objects.create_user(
+                        email=email,
+                        username=email,
+                        password=temp_password,
+                        first_name=first_name,
+                        last_name=last_name,
+                        assigned_role=role,
+                        is_active=True,
+                        activation_start_date=data.get('activation_start_date'),
+                        activation_end_date=data.get('activation_end_date')
+                    )
+                    is_new_user = True
+
+                # Create or update compensation if provided
                 compensation_type = data.get('compensation_type')
                 if compensation_type:
-                    compensation_data = {
-                        'user': user,
+                    comp_defaults = {
                         'compensation_type': compensation_type,
                         'notes': data.get('notes', ''),
-                        'is_active': True
+                        'is_active': True,
+                        'salary_method': None,
+                        'fixed_amount_per_checkout': None,
+                        'percentage_on_base_price': None,
+                        'profit_share_timing': None,
+                        'profit_share_percentage': None,
                     }
 
                     if compensation_type == 'salary':
-                        compensation_data['salary_method'] = data.get('salary_method')
-                        compensation_data['fixed_amount_per_checkout'] = data.get('fixed_amount_per_checkout')
-                        compensation_data['percentage_on_base_price'] = data.get('percentage_on_base_price')
+                        comp_defaults.update({
+                            'salary_method': data.get('salary_method'),
+                            'fixed_amount_per_checkout': data.get('fixed_amount_per_checkout'),
+                            'percentage_on_base_price': data.get('percentage_on_base_price'),
+                        })
                     elif compensation_type == 'profit_share':
-                        compensation_data['profit_share_timing'] = data.get('profit_share_timing')
-                        compensation_data['profit_share_percentage'] = data.get('profit_share_percentage')
+                        comp_defaults.update({
+                            'profit_share_timing': data.get('profit_share_timing'),
+                            'profit_share_percentage': data.get('profit_share_percentage'),
+                        })
 
-                    compensation = TeamCompensation(**compensation_data)
-                    compensation.full_clean()  # Validate
+                    compensation, _created = TeamCompensation.objects.update_or_create(
+                        user=user,
+                        defaults=comp_defaults,
+                    )
+                    compensation.full_clean()
                     compensation.save()
         except IntegrityError:
-            return Response({'error': 'A user with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'A user with this email already exists and could not be updated.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"Failed to create compensation for user {data.get('email')}: {str(e)}", exc_info=True)
+            logger.error(f"Failed to create/update team member for {email}: {str(e)}", exc_info=True)
             return Response(
                 {'error': f'Failed to create team member: {str(e)}. Please ensure database migrations are up to date.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # Send invitation email with password setup token
+        # Send invitation email with password setup token for new users only
         try:
-            # Generate password setup token (reuses password reset token system)
-            setup_token = PasswordResetToken.create_token(user)
+            if is_new_user:
+                setup_token = PasswordResetToken.create_token(user)
 
-            # Send invitation email from support@allarcoapartment.com
-            from apps.emails.services import send_team_invitation
-            send_team_invitation(user, setup_token.token)
+                # Send invitation email from support@allarcoapartment.com
+                from apps.emails.services import send_team_invitation
+                send_team_invitation(user, setup_token.token)
         except Exception as e:
             # Log error but don't fail the user creation
             import logging
