@@ -26,8 +26,9 @@ stripe==11.4.1
 # Image processing (required for ImageField)
 Pillow==11.1.0
 
-# Emails
+# Emails & iCal
 requests==2.32.3
+icalendar==6.1.0
 
 # PDF Generation
 weasyprint==63.1

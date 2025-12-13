@@ -1251,6 +1251,12 @@ def seed_rbac_data(request):
             ('reports.audit_logs', 'reports', 'View system audit logs'),
             ('reports.financial', 'reports', 'View financial reports'),
             ('reports.advanced', 'reports', 'Access advanced analytics'),
+
+            # OTA Management
+            ('ota.view', 'ota', 'View OTA bookings and settings'),
+            ('ota.manage', 'ota', 'Manage OTA bookings and iCal sources'),
+            ('ota.sync', 'ota', 'Sync iCal calendars from OTA platforms'),
+            ('ota.export', 'ota', 'Export calendar to share with OTAs'),
         ]
 
         # Create permissions

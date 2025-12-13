@@ -22,6 +22,12 @@ urlpatterns = [
     path('lookup/checkin/', views.public_booking_checkin, name='public-booking-checkin'),
     # Claim booking endpoint (auth required)
     path('claim/', views.claim_booking, name='claim-booking'),
+    # iCal export/import and OTA management
+    path('ical/export/', views.export_ical_calendar, name='ical-export'),
+    path('ical/sources/', views.ical_sources_list, name='ical-sources'),
+    path('ical/sources/<uuid:source_id>/sync/', views.sync_ical_source, name='sync-ical-source'),
+    path('ical/sources/<uuid:source_id>/', views.delete_ical_source, name='delete-ical-source'),
+    path('ical/sync-all/', views.sync_all_ical_sources, name='sync-all-ical-sources'),
     path('', include(router.urls)),
     path('', include(bookings_router.urls)),
 ]
