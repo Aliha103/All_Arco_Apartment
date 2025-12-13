@@ -406,14 +406,18 @@ export default function BookingSidePanel({
 
   // Calculate custom payments total from paid payment requests
   const customPaymentsTotal = useMemo(() => {
-    return paymentRequests
+    const total = paymentRequests
       .filter(pr => pr.status === 'paid')
       .reduce((sum, pr) => sum + Number(pr.amount || 0), 0);
+    console.log('🔍 DEBUG customPaymentsTotal:', total, 'paymentRequests:', paymentRequests);
+    return total;
   }, [paymentRequests]);
 
   // Calculate actual total including custom payments
   const totalWithCustomPayments = useMemo(() => {
-    return (formData.total_price || 0) + customPaymentsTotal;
+    const total = (formData.total_price || 0) + customPaymentsTotal;
+    console.log('🔍 DEBUG totalWithCustomPayments:', total, '= base:', formData.total_price, '+ custom:', customPaymentsTotal);
+    return total;
   }, [formData.total_price, customPaymentsTotal]);
 
   const balanceDue = useMemo(() => {
@@ -423,6 +427,8 @@ export default function BookingSidePanel({
     const total = totalWithCustomPayments;
     const credit = formData.applied_credit || 0;
     const balance = total - credit - paidAmount;
+
+    console.log('🔍 DEBUG balanceDue:', Math.max(0, balance), '= total:', total, '- credit:', credit, '- paid:', paidAmount);
 
     return Math.max(0, balance);
   }, [totalWithCustomPayments, formData.applied_credit, paidAmount]);
@@ -438,6 +444,8 @@ export default function BookingSidePanel({
   // Initialize data when booking is fetched
   useEffect(() => {
     if (bookingData && (mode === 'view' || mode === 'edit')) {
+      console.log('🔍 DEBUG bookingData fetched:', bookingData);
+      console.log('🔍 DEBUG bookingData.total_price:', bookingData.total_price);
       setFormData(bookingData);
       setInitialData(bookingData);
     }
@@ -453,7 +461,9 @@ export default function BookingSidePanel({
   // Update payment requests when fetched
   useEffect(() => {
     if (paymentRequestsData) {
-      setPaymentRequests(Array.isArray(paymentRequestsData) ? paymentRequestsData : []);
+      const requests = Array.isArray(paymentRequestsData) ? paymentRequestsData : [];
+      console.log('🔍 DEBUG paymentRequestsData fetched:', requests);
+      setPaymentRequests(requests);
     }
   }, [paymentRequestsData]);
 
@@ -808,7 +818,10 @@ export default function BookingSidePanel({
             </div>
             <div className="border-t pt-2 mt-2 flex justify-between font-semibold text-gray-900">
               <span>Total</span>
-              <span className="text-lg">{formatCurrency(totalWithCustomPayments)}</span>
+              <span className="text-lg">{(() => {
+                console.log('🔍 DEBUG Rendering Total - totalWithCustomPayments:', totalWithCustomPayments);
+                return formatCurrency(totalWithCustomPayments);
+              })()}</span>
             </div>
             {formData.applied_credit && formData.applied_credit > 0 && (
               <div className="flex justify-between text-sm text-emerald-700 -mt-1">
