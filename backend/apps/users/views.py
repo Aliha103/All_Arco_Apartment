@@ -574,12 +574,20 @@ class TeamViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         """
-        List team members. If the compensation table is missing (migration not applied),
-        return a clear error instead of a 500. Fall back to a minimal payload if any
-        unexpected error occurs so the UI keeps working.
+        List team members with defensive fallbacks:
+        - If compensation table is missing, return 503 with a clear message.
+        - If any unexpected error happens, return a minimal payload instead of 500.
         """
         try:
-            return super().list(request, *args, **kwargs)
+            queryset = self.filter_queryset(self.get_queryset())
+
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
         except DatabaseError as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -589,7 +597,6 @@ class TeamViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         except Exception as e:
-            # Last-resort fallback: return a minimal set of users to avoid hard 500s
             import logging
             logger = logging.getLogger(__name__)
             logger.error("Team listing failed unexpectedly: %s", str(e), exc_info=True)
