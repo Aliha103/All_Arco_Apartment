@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.alloggiati',
     'apps.cleaning',
     'apps.expenses',
+    'apps.notifications',
 ]
 
 MIDDLEWARE = [

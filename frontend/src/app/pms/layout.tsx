@@ -35,6 +35,7 @@ import {
   Star,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { NotificationBell } from '@/components/pms/NotificationBell';
 
 // Smooth easing
 const smoothEase = [0.22, 1, 0.36, 1] as const;
@@ -260,6 +261,9 @@ export default function PMSLayout({ children }: { children: React.ReactNode }) {
                 <Home className="w-4 h-4" />
                 View Site
               </Link>
+
+              {/* Notification Bell */}
+              <NotificationBell />
 
               {/* User Dropdown */}
               <div className="relative" ref={dropdownRef}>
