@@ -415,7 +415,7 @@ export default function BookingSidePanel({
 
   // Calculate actual total including custom payments
   const totalWithCustomPayments = useMemo(() => {
-    const total = (formData.total_price || 0) + customPaymentsTotal;
+    const total = Number(formData.total_price || 0) + Number(customPaymentsTotal);
     console.log('🔍 DEBUG totalWithCustomPayments:', total, '= base:', formData.total_price, '+ custom:', customPaymentsTotal);
     return total;
   }, [formData.total_price, customPaymentsTotal]);
