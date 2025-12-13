@@ -470,6 +470,67 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
         
         return queryset.order_by('-created_at')
     
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Retrieve a specific guest with booking statistics and history.
+        """
+        if not request.user.is_team_member():
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        guest_id = kwargs.get('pk')
+
+        # Try to get registered user
+        try:
+            user = User.objects.get(id=guest_id)
+            guest_email = user.email
+            guest_data = {
+                'id': str(user.id),
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'phone': user.phone,
+                'created_at': user.created_at,
+                'is_active': user.is_active,
+            }
+        except (User.DoesNotExist, ValueError):
+            # Not a registered user ID, might be booking-{id} or bookingguest-{id}
+            return Response({'error': 'Guest not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get all bookings for this guest
+        bookings = Booking.objects.filter(
+            Q(user=user) | Q(guest_email__iexact=guest_email)
+        ).select_related('user').order_by('-check_in_date')
+
+        # Calculate statistics including custom payments
+        total_bookings = bookings.count()
+
+        # Calculate total spent including custom payments
+        from apps.payments.models import PaymentRequest
+        from django.db.models import Sum
+        base_spent = sum(float(b.total_price or 0) for b in bookings)
+        custom_payments = PaymentRequest.objects.filter(
+            booking__in=bookings,
+            status='paid'
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        total_spent = base_spent + float(custom_payments)
+
+        total_nights = sum(b.nights or 0 for b in bookings)
+        last_booking = bookings.first()
+
+        # Add statistics to guest data
+        guest_data.update({
+            'total_bookings': total_bookings,
+            'total_spent': str(total_spent),
+            'total_nights': total_nights,
+            'last_booking_date': last_booking.check_in_date if last_booking else None,
+        })
+
+        # Serialize booking history
+        from apps.bookings.serializers import BookingListSerializer
+        guest_data['bookings'] = BookingListSerializer(bookings, many=True).data
+
+        return Response(guest_data)
+
     @action(detail=True, methods=['get'])
     def notes(self, request, pk=None):
         """Get notes for a specific guest."""
