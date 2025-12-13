@@ -175,7 +175,12 @@ export default function ReportsPage() {
 
     // OTA commission calculations
     const otaCommissions = paidBookings.reduce((sum: number, b: any) => sum + parseFloat(b.ota_commission_amount || 0), 0);
-    const netRevenue = totalRevenue - otaCommissions;
+
+    // Operational Revenue Calculation
+    // Total Revenue includes cleaning + city tax (for investors to see gross income)
+    // But Operational Revenue excludes pass-through amounts (cleaning, city tax)
+    const operationalRevenue = totalRevenue - cityTaxRevenue - cleaningRevenue;
+    const netRevenue = operationalRevenue - otaCommissions;
 
     // Expense calculations (only approved)
     const approvedExpenses = expenses.filter((e: any) => e.status === 'approved');
@@ -183,9 +188,10 @@ export default function ReportsPage() {
     const pendingExpenses = expenses.filter((e: any) => e.status === 'pending')
       .reduce((sum: number, e: any) => sum + parseFloat(e.amount || 0), 0);
 
-    // Profit calculation
+    // Profit calculation (Net Revenue - Expenses)
+    // Profit excludes cleaning fees and city tax as they're pass-through amounts
     const totalProfit = netRevenue - totalExpenses;
-    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+    const profitMargin = operationalRevenue > 0 ? (totalProfit / operationalRevenue) * 100 : 0;
 
     // OTA breakdown
     const otaBreakdown: { [key: string]: { revenue: number; commission: number; bookings: number } } = {};
@@ -246,6 +252,7 @@ export default function ReportsPage() {
 
     return {
       totalRevenue,
+      operationalRevenue,
       netRevenue,
       totalExpenses,
       pendingExpenses,
@@ -524,7 +531,7 @@ export default function ReportsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6"
           >
             {/* Total Revenue */}
             <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group relative">
@@ -543,6 +550,22 @@ export default function ReportsPage() {
                     <p className="text-xs text-gray-400">Avg: {formatCurrency(metrics.avgBookingValue)}</p>
                   )}
                 </div>
+                <p className="text-xs text-gray-400 mt-1">Includes cleaning & city tax</p>
+              </CardContent>
+            </Card>
+
+            {/* Operational Revenue */}
+            <Card className="border-2 hover:shadow-xl transition-all duration-300 overflow-hidden group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <CardHeader className="pb-3 relative z-10">
+                <CardTitle className="text-sm text-gray-600 flex items-center gap-2">
+                  <Banknote className="w-4 h-4" />
+                  Operational Revenue
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <p className="text-3xl font-bold text-purple-600">{formatCurrency(metrics.operationalRevenue)}</p>
+                <p className="text-xs text-gray-400 mt-2">Excludes pass-through amounts</p>
               </CardContent>
             </Card>
 
@@ -596,6 +619,41 @@ export default function ReportsPage() {
               <CardContent className="relative z-10">
                 <p className="text-3xl font-bold text-blue-600">{formatCurrency(metrics.cityTaxRevenue)}</p>
                 <p className="text-sm text-gray-500 mt-1">Tourist tax collected</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Revenue Breakdown Explanation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mb-6"
+          >
+            <Card className="border border-blue-100 bg-blue-50/30">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Revenue Structure</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-700 font-medium">Total Revenue ({formatCurrency(metrics.totalRevenue)})</p>
+                        <p className="text-gray-600 text-xs mt-1">All income including cleaning & city tax</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-700 font-medium">Operational Revenue ({formatCurrency(metrics.operationalRevenue)})</p>
+                        <p className="text-gray-600 text-xs mt-1">After removing pass-through amounts ({formatCurrency(metrics.cleaningRevenue + metrics.cityTaxRevenue)})</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-700 font-medium">Net Profit ({formatCurrency(metrics.totalProfit)})</p>
+                        <p className="text-gray-600 text-xs mt-1">After expenses & commissions</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
