@@ -495,60 +495,65 @@ export default function OTAManagementPage() {
       </div>
 
       {/* iCal Export URL Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.5 }}
-      >
-        <Card className="border border-blue-200 bg-blue-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg border border-blue-200">
-                <Link2 className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-blue-900 mb-1">
-                  Share Your Calendar with OTAs
-                </h3>
-                <p className="text-xs text-blue-700 mb-3">
-                  Share this iCal URL with Airbnb, Booking.com, and other OTA platforms to prevent double bookings. They'll automatically see your blocked dates.
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border border-blue-200 px-3 py-2">
-                    <input
-                      type="text"
-                      value={exportCalendarUrl}
-                      readOnly
-                      className="flex-1 text-sm text-gray-700 bg-transparent outline-none"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={copyExportUrl}
-                      className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
-                    >
-                      {exportUrlCopied ? (
-                        <>
-                          <Check className="w-4 h-4 mr-1" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-1" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.5 }}
+        >
+          <Card className="border border-blue-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 shadow-sm">
+            <CardContent className="pt-6 pb-5">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-100 rounded-lg border border-blue-200">
+                    <Link2 className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-blue-900">
+                      Share Your Calendar with OTAs
+                    </h3>
+                    <p className="text-xs text-blue-700">
+                      Send this read-only iCal link to Airbnb, Booking.com, and others to prevent double bookings.
+                    </p>
                   </div>
                 </div>
-                <p className="text-xs text-blue-600 mt-2">
-                  <strong>Auto-updates:</strong> This calendar syncs in real-time. OTAs will see your bookings immediately.
-                </p>
+
+                <div className="flex-1 flex flex-col gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                    <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border border-blue-200 px-3 py-2 focus-within:ring-2 focus-within:ring-blue-200">
+                      <input
+                        type="text"
+                        value={exportCalendarUrl}
+                        readOnly
+                        className="flex-1 text-sm text-gray-800 bg-transparent outline-none"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={copyExportUrl}
+                        className="h-9 text-blue-700 hover:text-blue-800 hover:bg-blue-100"
+                      >
+                        {exportUrlCopied ? (
+                          <>
+                            <Check className="w-4 h-4 mr-1" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-1" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    <strong>Auto-updates:</strong> We sync instantly; most OTAs refresh your feed within 30–60 seconds.
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
       {/* Tabs */}
       <motion.div
