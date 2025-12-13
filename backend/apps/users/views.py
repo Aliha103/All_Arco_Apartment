@@ -559,11 +559,18 @@ class TeamViewSet(viewsets.ModelViewSet):
             return User.objects.none()
 
         # Treat anyone with a non-guest assigned role (or legacy team/admin) as team
-        return User.objects.filter(
+        queryset = User.objects.filter(
             Q(legacy_role__in=['team', 'admin']) |
             (Q(assigned_role__isnull=False) & ~Q(assigned_role__slug='guest')) |
             Q(assigned_role__slug__in=['team', 'admin'])
-        ).select_related('assigned_role', 'compensation').order_by('-created_at')
+        ).select_related('assigned_role')
+
+        # Only select_related compensation if the table exists (avoid migrations error)
+        from django.db import connection
+        if 'users_teamcompensation' in connection.introspection.table_names():
+            queryset = queryset.select_related('compensation')
+
+        return queryset.order_by('-created_at')
 
     def list(self, request, *args, **kwargs):
         """
@@ -709,7 +716,12 @@ class TeamViewSet(viewsets.ModelViewSet):
             logger.error(f"Failed to send team invitation email to {user.email}: {str(e)}")
 
         # Reload user with all relationships for serialization
-        user = User.objects.select_related('assigned_role', 'compensation').get(id=user.id)
+        # Check if compensation table exists before trying to select it
+        from django.db import connection
+        if 'users_teamcompensation' in connection.introspection.table_names():
+            user = User.objects.select_related('assigned_role', 'compensation').get(id=user.id)
+        else:
+            user = User.objects.select_related('assigned_role').get(id=user.id)
 
         return Response(
             TeamMemberSerializer(user).data,
