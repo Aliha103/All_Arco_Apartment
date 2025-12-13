@@ -342,6 +342,118 @@ export default function BookingDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Guest Family Tree - Document Details */}
+        {hasGuestDetails && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Guest Family Tree (Document Details)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {((booking as any).guests || []).map((guest: any, index: number) => (
+                <div key={guest.id || index} className="border-l-4 border-[#C4A572] pl-4 pb-4 last:pb-0">
+                  {/* Guest Header */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge className={guest.is_primary ? 'bg-[#C4A572] text-white' : 'bg-gray-200 text-gray-700'}>
+                      {guest.is_primary ? 'Primary Guest' : `Guest ${index + 1}`}
+                    </Badge>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {guest.first_name} {guest.last_name}
+                    </h3>
+                  </div>
+
+                  {/* Personal Information */}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</p>
+                      <p className="text-sm font-medium text-gray-900">{guest.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Date of Birth</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {guest.date_of_birth ? formatDate(guest.date_of_birth) : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Country of Birth</p>
+                      <p className="text-sm font-medium text-gray-900">{guest.country_of_birth || 'N/A'}</p>
+                    </div>
+                    {guest.birth_city && (
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Birth City</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {guest.birth_city}{guest.birth_province ? `, ${guest.birth_province}` : ''}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Document Information */}
+                  {guest.document_type && (
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-sm font-semibold text-gray-700 mb-3">Document Information</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Document Type</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {guest.document_type === 'passport' ? 'Passport' :
+                             guest.document_type === 'id_card' ? 'ID Card' :
+                             guest.document_type === 'drivers_license' ? "Driver's License" :
+                             guest.document_type}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Document Number</p>
+                          <p className="text-sm font-medium text-gray-900 font-mono">{guest.document_number || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Issue Country</p>
+                          <p className="text-sm font-medium text-gray-900">{guest.document_issue_country || 'N/A'}</p>
+                        </div>
+                        {guest.document_issue_city && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Issue City</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {guest.document_issue_city}{guest.document_issue_province ? `, ${guest.document_issue_province}` : ''}
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Issue Date</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {guest.document_issue_date ? formatDate(guest.document_issue_date) : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Expiry Date</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {guest.document_expire_date ? formatDate(guest.document_expire_date) : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Alloggiati Submission Status */}
+                  {guest.is_primary && (
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-500">
+                        Alloggiati Status: {booking.alloggiati_submitted ?
+                          <span className="text-green-600 font-semibold">✓ Submitted</span> :
+                          <span className="text-orange-600 font-semibold">Pending Submission</span>
+                        }
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {((booking as any).guests || []).length === 0 && (
+                <p className="text-center py-4 text-gray-600">No guest details available</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Booking Details */}
         <Card>
           <CardHeader>
