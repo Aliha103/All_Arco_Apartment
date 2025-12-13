@@ -113,6 +113,44 @@ class Booking(models.Model):
         help_text='Source of the booking (Airbnb, Booking.com, website, etc.)'
     )
 
+    # OTA-specific fields
+    ota_platform = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text='OTA platform name (Airbnb, Booking.com, Expedia, etc.)'
+    )
+    ota_confirmation_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='OTA platform confirmation/booking number'
+    )
+    ota_commission_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        help_text='OTA commission percentage'
+    )
+    ota_commission_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='Calculated OTA commission amount'
+    )
+    ical_uid = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        unique=True,
+        db_index=True,
+        help_text='Unique identifier from iCal feed (for synced bookings)'
+    )
+    synced_from_ical = models.BooleanField(
+        default=False,
+        help_text='Whether this booking was imported from an iCal feed'
+    )
+
     special_requests = models.TextField(blank=True, null=True)
     internal_notes = models.TextField(blank=True, null=True)
     
@@ -622,6 +660,65 @@ class BookingGuest(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class ICalSource(models.Model):
+    """
+    iCal feed sources from OTA platforms for automatic booking synchronization.
+    """
+    SYNC_STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('error', 'Error'),
+        ('paused', 'Paused'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ota_name = models.CharField(
+        max_length=50,
+        help_text='OTA platform name (Airbnb, Booking.com, etc.)'
+    )
+    ical_url = models.URLField(
+        max_length=500,
+        help_text='iCal feed URL from the OTA platform'
+    )
+    sync_status = models.CharField(
+        max_length=20,
+        choices=SYNC_STATUS_CHOICES,
+        default='active'
+    )
+    last_synced = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Last time this feed was successfully synced'
+    )
+    last_sync_error = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Error message from last failed sync'
+    )
+    bookings_count = models.IntegerField(
+        default=0,
+        help_text='Number of bookings synced from this source'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='ical_sources_created'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'bookings_icalsource'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['sync_status']),
+            models.Index(fields=['last_synced']),
+        ]
+
+    def __str__(self):
+        return f"{self.ota_name} iCal Source"
 
 
 class BlockedDate(models.Model):

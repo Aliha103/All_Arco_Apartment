@@ -1690,3 +1690,168 @@ def claim_booking(request):
             'status': booking.status,
         }
     })
+
+
+# ==============================================================================
+# iCal Export & OTA Management
+# ==============================================================================
+
+@api_view(['GET'])
+def export_ical_calendar(request):
+    """
+    Export all bookings as an iCal calendar (.ics file).
+    This URL can be shared with OTA platforms to prevent overbooking.
+    
+    Public endpoint - no authentication required.
+    """
+    from .ical_utils import generate_ical_calendar
+    from django.http import HttpResponse
+    
+    # Get all active bookings (not cancelled, not checked_out)
+    bookings = Booking.objects.exclude(status__in=['cancelled', 'checked_out'])
+    
+    # Generate iCal data
+    ical_data = generate_ical_calendar(bookings)
+    
+    # Return as downloadable .ics file
+    response = HttpResponse(ical_data, content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="all-arco-apartment.ics"'
+    return response
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def ical_sources_list(request):
+    """
+    List all iCal sources or create a new one.
+    """
+    from .models import ICalSource
+    from rest_framework.permissions import IsAuthenticated
+    
+    if request.method == 'GET':
+        sources = ICalSource.objects.all()
+        data = []
+        for source in sources:
+            data.append({
+                'id': str(source.id),
+                'ota_name': source.ota_name,
+                'ical_url': source.ical_url,
+                'sync_status': source.sync_status,
+                'last_synced': source.last_synced.isoformat() if source.last_synced else None,
+                'last_sync_error': source.last_sync_error,
+                'bookings_count': source.bookings_count,
+                'created_at': source.created_at.isoformat(),
+            })
+        return Response(data)
+    
+    elif request.method == 'POST':
+        ota_name = request.data.get('ota_name')
+        ical_url = request.data.get('ical_url')
+        
+        if not ota_name or not ical_url:
+            return Response(
+                {'error': 'ota_name and ical_url are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create source
+        source = ICalSource.objects.create(
+            ota_name=ota_name,
+            ical_url=ical_url,
+            created_by=request.user
+        )
+        
+        return Response({
+            'id': str(source.id),
+            'ota_name': source.ota_name,
+            'ical_url': source.ical_url,
+            'sync_status': source.sync_status,
+            'message': 'iCal source created successfully'
+        }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def sync_ical_source(request, source_id):
+    """
+    Manually trigger sync for a specific iCal source.
+    """
+    from .models import ICalSource
+    from .ical_utils import fetch_and_sync_ical_source
+    
+    try:
+        source = ICalSource.objects.get(id=source_id)
+    except ICalSource.DoesNotExist:
+        return Response(
+            {'error': 'iCal source not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    try:
+        result = fetch_and_sync_ical_source(source)
+        return Response({
+            'message': 'Sync completed successfully',
+            **result
+        })
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def sync_all_ical_sources(request):
+    """
+    Sync all active iCal sources.
+    """
+    from .models import ICalSource
+    from .ical_utils import fetch_and_sync_ical_source
+    
+    sources = ICalSource.objects.filter(sync_status='active')
+    
+    results = {
+        'total_sources': sources.count(),
+        'successful': 0,
+        'failed': 0,
+        'details': []
+    }
+    
+    for source in sources:
+        try:
+            sync_result = fetch_and_sync_ical_source(source)
+            results['successful'] += 1
+            results['details'].append({
+                'ota_name': source.ota_name,
+                'status': 'success',
+                **sync_result
+            })
+        except Exception as e:
+            results['failed'] += 1
+            results['details'].append({
+                'ota_name': source.ota_name,
+                'status': 'error',
+                'error': str(e)
+            })
+    
+    return Response(results)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_ical_source(request, source_id):
+    """
+    Delete an iCal source.
+    """
+    from .models import ICalSource
+    
+    try:
+        source = ICalSource.objects.get(id=source_id)
+        source.delete()
+        return Response({'message': 'iCal source deleted successfully'})
+    except ICalSource.DoesNotExist:
+        return Response(
+            {'error': 'iCal source not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )

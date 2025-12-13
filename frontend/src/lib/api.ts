@@ -320,13 +320,12 @@ export const api = {
 
   // iCal Sources
   icalSources: {
-    list: () => apiClient.get('/ota/ical-sources/'),
-    get: (id: string) => apiClient.get(`/ota/ical-sources/${id}/`),
-    create: (data: any) => apiClient.post('/ota/ical-sources/', data),
-    update: (id: string, data: any) => apiClient.patch(`/ota/ical-sources/${id}/`, data),
-    delete: (id: string) => apiClient.delete(`/ota/ical-sources/${id}/`),
-    sync: (id: string) => apiClient.post(`/ota/ical-sources/${id}/sync/`),
-    syncAll: () => apiClient.post('/ota/ical-sources/sync-all/'),
+    list: () => apiClient.get('/bookings/ical/sources/'),
+    create: (data: any) => apiClient.post('/bookings/ical/sources/', data),
+    delete: (id: string) => apiClient.delete(`/bookings/ical/sources/${id}/`),
+    sync: (id: string) => apiClient.post(`/bookings/ical/sources/${id}/sync/`),
+    syncAll: () => apiClient.post('/bookings/ical/sync-all/'),
+    exportCalendar: () => '/api/bookings/ical/export/', // Public URL
   },
 
   // Alloggiati (Italian Police Reporting)
