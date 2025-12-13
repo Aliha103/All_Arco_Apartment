@@ -265,17 +265,17 @@ export const api = {
       delete: (id: string) => apiClient.delete(`/team/${id}/`),
     },
     roles: {
-      list: () => apiClient.get('/users/roles/'),
-      get: (id: string) => apiClient.get(`/users/roles/${id}/`),
-      create: (data: any) => apiClient.post('/users/roles/', data),
-      update: (id: string, data: any) => apiClient.patch(`/users/roles/${id}/`, data),
-      delete: (id: string) => apiClient.delete(`/users/roles/${id}/`),
+      list: () => apiClient.get('/roles/'),
+      get: (id: string) => apiClient.get(`/roles/${id}/`),
+      create: (data: any) => apiClient.post('/roles/', data),
+      update: (id: string, data: any) => apiClient.patch(`/roles/${id}/`, data),
+      delete: (id: string) => apiClient.delete(`/roles/${id}/`),
       assignPermissions: (id: string, permissionCodes: string[]) =>
-        apiClient.post(`/users/roles/${id}/assign-permissions/`, { permission_codes: permissionCodes }),
+        apiClient.post(`/roles/${id}/assign-permissions/`, { permission_codes: permissionCodes }),
     },
     permissions: {
-      list: () => apiClient.get('/users/permissions/'),
-      byGroup: () => apiClient.get('/users/permissions/by-group/'),
+      list: () => apiClient.get('/permissions/'),
+      byGroup: () => apiClient.get('/permissions/by-group/'),
     },
   },
 
