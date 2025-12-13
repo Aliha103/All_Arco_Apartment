@@ -541,37 +541,98 @@ class GuestViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class TeamViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing team members (admin only)."""
-    serializer_class = UserSerializer
+    """ViewSet for managing team members with compensation support."""
     permission_classes = [IsAuthenticated]
-    
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == 'create':
+            from .serializers import TeamMemberInviteSerializer
+            return TeamMemberInviteSerializer
+        from .serializers import TeamMemberSerializer
+        return TeamMemberSerializer
+
     def get_queryset(self):
         # Only admin can view/manage team
         if not self.request.user.is_team_member():
             return User.objects.none()
-        
+
         return User.objects.filter(
             Q(legacy_role__in=['team', 'admin']) |
             Q(assigned_role__slug__in=['team', 'admin'])
-        ).order_by('-created_at')
-    
+        ).select_related('assigned_role', 'compensation').order_by('-created_at')
+
     def create(self, request, *args, **kwargs):
+        """Create team member with compensation configuration."""
         # Only admin can create team members
         if not (request.user.is_super_admin() or request.user.legacy_role == 'admin'):
             return Response(
                 {'error': 'Permission denied'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
-        serializer = UserCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            # TODO: Send invitation email
-            return Response(
-                UserSerializer(user).data,
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        from .serializers import TeamMemberInviteSerializer, TeamMemberSerializer
+        from .models_compensation import TeamCompensation
+        from .models import Role
+        import random
+        import string
+
+        serializer = TeamMemberInviteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+
+        # Generate random password for invitation
+        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+
+        # Get the assigned role
+        try:
+            role = Role.objects.get(id=data['assigned_role_id'])
+        except Role.DoesNotExist:
+            return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create user
+        user = User.objects.create_user(
+            email=data['email'].strip().lower(),
+            username=data['email'].strip().lower(),
+            password=temp_password,
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            assigned_role=role,
+            is_active=True,
+            activation_start_date=data.get('activation_start_date'),
+            activation_end_date=data.get('activation_end_date')
+        )
+
+        # Create compensation if provided
+        compensation_type = data.get('compensation_type')
+        if compensation_type:
+            compensation_data = {
+                'user': user,
+                'compensation_type': compensation_type,
+                'notes': data.get('notes', ''),
+                'is_active': True
+            }
+
+            if compensation_type == 'salary':
+                compensation_data['salary_method'] = data.get('salary_method')
+                compensation_data['fixed_amount_per_checkout'] = data.get('fixed_amount_per_checkout')
+                compensation_data['percentage_on_base_price'] = data.get('percentage_on_base_price')
+            elif compensation_type == 'profit_share':
+                compensation_data['profit_share_timing'] = data.get('profit_share_timing')
+                compensation_data['profit_share_percentage'] = data.get('profit_share_percentage')
+
+            compensation = TeamCompensation(**compensation_data)
+            compensation.full_clean()  # Validate
+            compensation.save()
+
+        # TODO: Send invitation email with temporary password
+
+        return Response(
+            TeamMemberSerializer(user).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 # ============================================================================
