@@ -179,9 +179,20 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         try:
             if hasattr(obj, 'compensation'):
                 return TeamCompensationSerializer(obj.compensation).data
-        except TeamCompensation.DoesNotExist:
+        except Exception:
             pass
         return None
+
+    def to_representation(self, instance):
+        """
+        Safely serialize even if related tables are missing (migrations pending).
+        """
+        try:
+            return super().to_representation(instance)
+        except Exception:
+            data = super().to_representation(instance)
+            data['compensation'] = None
+            return data
 
 
 class TeamMemberInviteSerializer(serializers.Serializer):
