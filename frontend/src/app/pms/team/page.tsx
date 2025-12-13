@@ -27,9 +27,9 @@ export default function TeamPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [isEditingRole, setIsEditingRole] = useState(false);
 
   // Permission check - requires roles.manage or team.view
   useEffect(() => {
@@ -125,11 +125,25 @@ export default function TeamPage() {
 
   // Role management mutations
   const createRole = useMutation({
-    mutationFn: (data: any) => api.users.roles.create(data),
-    onSuccess: () => {
+    mutationFn: async (data: any) => {
+      // First create the role
+      const response = await api.users.roles.create(data);
+      return response.data;
+    },
+    onSuccess: async (roleData) => {
+      // Then assign permissions if any selected
+      if (selectedPermissions.length > 0) {
+        try {
+          await api.users.roles.assignPermissions(roleData.id, selectedPermissions);
+        } catch (error) {
+          console.error('Failed to assign permissions:', error);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsRoleModalOpen(false);
       setRoleFormData({ name: '', description: '' });
+      setSelectedPermissions([]);
+      setIsEditingRole(false);
       toast.success('Role created successfully');
     },
     onError: (error: any) => {
@@ -138,11 +152,20 @@ export default function TeamPage() {
   });
 
   const updateRole = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => api.users.roles.update(id, data),
+    mutationFn: async ({ id, data, permissions }: { id: string; data: any; permissions: string[] }) => {
+      // First update the role
+      await api.users.roles.update(id, data);
+      // Then update permissions
+      await api.users.roles.assignPermissions(id, permissions);
+      return { id };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsRoleModalOpen(false);
       setSelectedRole(null);
+      setRoleFormData({ name: '', description: '' });
+      setSelectedPermissions([]);
+      setIsEditingRole(false);
       toast.success('Role updated successfully');
     },
     onError: (error: any) => {
@@ -158,21 +181,6 @@ export default function TeamPage() {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to delete role');
-    },
-  });
-
-  const assignPermissions = useMutation({
-    mutationFn: ({ roleId, permissionCodes }: { roleId: string; permissionCodes: string[] }) =>
-      api.users.roles.assignPermissions(roleId, permissionCodes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      setIsPermissionModalOpen(false);
-      setSelectedRole(null);
-      setSelectedPermissions([]);
-      toast.success('Permissions updated successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to update permissions');
     },
   });
 
@@ -275,7 +283,11 @@ export default function TeamPage() {
         <CardHeader className="border-b bg-slate-100">
           <div className="flex items-center justify-between">
             <CardTitle className="text-slate-900">Team Members ({teamMembers?.length || 0})</CardTitle>
-            <Button onClick={() => setIsInviteModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button
+              onClick={() => setIsInviteModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={!canManageRoles}
+            >
               Invite Team Member
             </Button>
           </div>
@@ -352,7 +364,16 @@ export default function TeamPage() {
           <CardHeader className="border-b bg-slate-100">
             <div className="flex items-center justify-between">
               <CardTitle className="text-slate-900">Roles ({roles?.length || 0})</CardTitle>
-              <Button onClick={() => setIsRoleModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button
+                onClick={() => {
+                  setSelectedRole(null);
+                  setRoleFormData({ name: '', description: '' });
+                  setSelectedPermissions([]);
+                  setIsEditingRole(false);
+                  setIsRoleModalOpen(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 Create Role
               </Button>
             </div>
@@ -384,53 +405,65 @@ export default function TeamPage() {
                       <TableCell className="text-sm text-slate-600">
                         {role.description || 'No description'}
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedRole(role);
-                            setSelectedPermissions(role.permission_codes || []);
-                            setIsPermissionModalOpen(true);
-                          }}
-                          disabled={role.is_super_admin}
-                        >
-                          {role.is_super_admin
-                            ? 'All Permissions'
-                            : `${role.permission_codes?.length || 0} permissions`}
-                        </Button>
+                      <TableCell className="max-w-md">
+                        {role.is_super_admin ? (
+                          <Badge variant="destructive">All Permissions</Badge>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {role.permission_codes && role.permission_codes.length > 0 ? (
+                              <>
+                                {role.permission_codes.slice(0, 3).map((code) => (
+                                  <Badge key={code} variant="outline" className="text-xs">
+                                    {code}
+                                  </Badge>
+                                ))}
+                                {role.permission_codes.length > 3 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{role.permission_codes.length - 3} more
+                                  </Badge>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-sm text-gray-500">No permissions</span>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>{role.member_count || 0}</TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedRole(role);
-                              setRoleFormData({
-                                name: role.name,
-                                description: role.description || '',
-                              });
-                              setIsRoleModalOpen(true);
-                            }}
-                            disabled={role.is_system}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm(`Delete role "${role.name}"? This cannot be undone.`)) {
-                                deleteRole.mutate(role.id!);
-                              }
-                            }}
-                            disabled={role.is_system || (role.member_count || 0) > 0}
-                          >
-                            Delete
-                          </Button>
-                        </div>
+                        {!role.is_super_admin && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedRole(role);
+                                setRoleFormData({
+                                  name: role.name,
+                                  description: role.description || '',
+                                });
+                                setSelectedPermissions(role.permission_codes || []);
+                                setIsEditingRole(true);
+                                setIsRoleModalOpen(true);
+                              }}
+                              disabled={role.is_system}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`Delete role "${role.name}"? This cannot be undone.`)) {
+                                  deleteRole.mutate(role.id!);
+                                }
+                              }}
+                              disabled={role.is_system || (role.member_count || 0) > 0}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -558,7 +591,7 @@ export default function TeamPage() {
 
       {/* Role Create/Edit Modal */}
       <Dialog open={isRoleModalOpen} onOpenChange={setIsRoleModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedRole ? 'Edit Role' : 'Create Role'}</DialogTitle>
           </DialogHeader>
@@ -566,32 +599,126 @@ export default function TeamPage() {
             onSubmit={(e) => {
               e.preventDefault();
               if (selectedRole) {
-                updateRole.mutate({ id: selectedRole.id!, data: roleFormData });
+                updateRole.mutate({
+                  id: selectedRole.id!,
+                  data: roleFormData,
+                  permissions: selectedPermissions
+                });
               } else {
                 createRole.mutate(roleFormData);
               }
             }}
-            className="space-y-4"
+            className="space-y-6"
           >
-            <div className="space-y-2">
-              <Label>Role Name</Label>
-              <Input
-                type="text"
-                value={roleFormData.name}
-                onChange={(e) => setRoleFormData({ ...roleFormData, name: e.target.value })}
-                placeholder="e.g., Front Desk, Accounting"
-                required
-              />
+            {/* Role Details */}
+            <div className="space-y-4 border-b pb-4">
+              <h3 className="font-semibold text-lg">Role Details</h3>
+              <div className="space-y-2">
+                <Label>Role Name</Label>
+                <Input
+                  type="text"
+                  value={roleFormData.name}
+                  onChange={(e) => setRoleFormData({ ...roleFormData, name: e.target.value })}
+                  placeholder="e.g., Front Desk, Accounting"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input
+                  type="text"
+                  value={roleFormData.description}
+                  onChange={(e) => setRoleFormData({ ...roleFormData, description: e.target.value })}
+                  placeholder="Brief description of this role"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Input
-                type="text"
-                value={roleFormData.description}
-                onChange={(e) => setRoleFormData({ ...roleFormData, description: e.target.value })}
-                placeholder="Brief description of this role"
-              />
+
+            {/* Permissions Selection */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg">Permissions</h3>
+                <div className="text-sm text-gray-600">
+                  {selectedPermissions.length} permission{selectedPermissions.length !== 1 ? 's' : ''} selected
+                </div>
+              </div>
+
+              {permissions && typeof permissions === 'object' && Object.keys(permissions).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(permissions).map(([group, perms]: [string, any]) => (
+                    <div key={group} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold capitalize text-sm">
+                          {group.replace(/_/g, ' ')}
+                        </h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-6"
+                          onClick={() => {
+                            const groupPerms = Array.isArray(perms) ? perms.map((p: any) => p.code) : [];
+                            const allSelected = groupPerms.every((code: string) =>
+                              selectedPermissions.includes(code)
+                            );
+                            if (allSelected) {
+                              // Deselect all in group
+                              setSelectedPermissions(
+                                selectedPermissions.filter((c) => !groupPerms.includes(c))
+                              );
+                            } else {
+                              // Select all in group
+                              setSelectedPermissions([
+                                ...selectedPermissions.filter((c) => !groupPerms.includes(c)),
+                                ...groupPerms,
+                              ]);
+                            }
+                          }}
+                        >
+                          {Array.isArray(perms) &&
+                           perms.every((p: any) => selectedPermissions.includes(p.code))
+                            ? 'Deselect All'
+                            : 'Select All'}
+                        </Button>
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {Array.isArray(perms) && perms.map((perm: any) => (
+                          <div key={perm.code} className="flex items-start gap-2">
+                            <input
+                              type="checkbox"
+                              id={`${group}-${perm.code}`}
+                              checked={selectedPermissions.includes(perm.code)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedPermissions([...selectedPermissions, perm.code]);
+                                } else {
+                                  setSelectedPermissions(
+                                    selectedPermissions.filter((c) => c !== perm.code)
+                                  );
+                                }
+                              }}
+                              className="mt-1 w-4 h-4"
+                            />
+                            <Label
+                              htmlFor={`${group}-${perm.code}`}
+                              className="cursor-pointer flex-1 font-normal"
+                            >
+                              <div className="font-mono text-xs text-blue-600">{perm.code}</div>
+                              <div className="text-xs text-gray-600">{perm.description}</div>
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center py-8 text-gray-600 border rounded-lg">
+                  No permissions available. Please seed RBAC data first.
+                </p>
+              )}
             </div>
+
             <DialogFooter>
               <Button
                 type="button"
@@ -600,92 +727,20 @@ export default function TeamPage() {
                   setIsRoleModalOpen(false);
                   setSelectedRole(null);
                   setRoleFormData({ name: '', description: '' });
+                  setSelectedPermissions([]);
+                  setIsEditingRole(false);
                 }}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={createRole.isPending || updateRole.isPending}>
-                {selectedRole ? 'Save Changes' : 'Create Role'}
+                {createRole.isPending || updateRole.isPending ? 'Saving...' : (selectedRole ? 'Save Changes' : 'Create Role')}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Permission Assignment Modal */}
-      <Dialog open={isPermissionModalOpen} onOpenChange={setIsPermissionModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Assign Permissions: {selectedRole?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {permissions && typeof permissions === 'object' && Object.keys(permissions).length > 0 ? (
-              Object.entries(permissions).map(([group, perms]: [string, any]) => (
-                <div key={group} className="border rounded-lg p-4">
-                  <h3 className="font-semibold mb-3 capitalize">
-                    {group.replace('_', ' ')}
-                  </h3>
-                  <div className="space-y-2">
-                    {Array.isArray(perms) && perms.map((perm: any) => (
-                    <div key={perm.code} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id={perm.code}
-                        checked={selectedPermissions.includes(perm.code)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedPermissions([...selectedPermissions, perm.code]);
-                          } else {
-                            setSelectedPermissions(
-                              selectedPermissions.filter((c) => c !== perm.code)
-                            );
-                          }
-                        }}
-                        className="w-4 h-4"
-                      />
-                      <Label htmlFor={perm.code} className="cursor-pointer flex-1">
-                        <span className="font-mono text-sm">{perm.code}</span>
-                        <span className="text-xs text-gray-600 ml-2">
-                          - {perm.description}
-                        </span>
-                      </Label>
-                    </div>
-                    ))}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center py-8 text-gray-600">No permissions available. Please seed RBAC data first.</p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setIsPermissionModalOpen(false);
-                setSelectedRole(null);
-                setSelectedPermissions([]);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (selectedRole) {
-                  assignPermissions.mutate({
-                    roleId: selectedRole.id!,
-                    permissionCodes: selectedPermissions,
-                  });
-                }
-              }}
-              disabled={assignPermissions.isPending}
-            >
-              Save Permissions
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
