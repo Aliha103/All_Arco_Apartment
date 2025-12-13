@@ -608,24 +608,35 @@ class TeamViewSet(viewsets.ModelViewSet):
         # Create compensation if provided
         compensation_type = data.get('compensation_type')
         if compensation_type:
-            compensation_data = {
-                'user': user,
-                'compensation_type': compensation_type,
-                'notes': data.get('notes', ''),
-                'is_active': True
-            }
+            try:
+                compensation_data = {
+                    'user': user,
+                    'compensation_type': compensation_type,
+                    'notes': data.get('notes', ''),
+                    'is_active': True
+                }
 
-            if compensation_type == 'salary':
-                compensation_data['salary_method'] = data.get('salary_method')
-                compensation_data['fixed_amount_per_checkout'] = data.get('fixed_amount_per_checkout')
-                compensation_data['percentage_on_base_price'] = data.get('percentage_on_base_price')
-            elif compensation_type == 'profit_share':
-                compensation_data['profit_share_timing'] = data.get('profit_share_timing')
-                compensation_data['profit_share_percentage'] = data.get('profit_share_percentage')
+                if compensation_type == 'salary':
+                    compensation_data['salary_method'] = data.get('salary_method')
+                    compensation_data['fixed_amount_per_checkout'] = data.get('fixed_amount_per_checkout')
+                    compensation_data['percentage_on_base_price'] = data.get('percentage_on_base_price')
+                elif compensation_type == 'profit_share':
+                    compensation_data['profit_share_timing'] = data.get('profit_share_timing')
+                    compensation_data['profit_share_percentage'] = data.get('profit_share_percentage')
 
-            compensation = TeamCompensation(**compensation_data)
-            compensation.full_clean()  # Validate
-            compensation.save()
+                compensation = TeamCompensation(**compensation_data)
+                compensation.full_clean()  # Validate
+                compensation.save()
+            except Exception as e:
+                # If compensation creation fails, delete the user and return error
+                user.delete()
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to create compensation for user {user.email}: {str(e)}")
+                return Response(
+                    {'error': f'Failed to create team member compensation: {str(e)}. Please ensure the database migration has been run.'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
         # Send invitation email with password setup token
         try:
