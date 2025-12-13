@@ -575,7 +575,8 @@ class TeamViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         """
         List team members. If the compensation table is missing (migration not applied),
-        return a clear error instead of a 500.
+        return a clear error instead of a 500. Fall back to a minimal payload if any
+        unexpected error occurs so the UI keeps working.
         """
         try:
             return super().list(request, *args, **kwargs)
@@ -586,6 +587,27 @@ class TeamViewSet(viewsets.ModelViewSet):
             return Response(
                 {'error': 'Team data not available. Please run database migrations (compensation tables).'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        except Exception as e:
+            # Last-resort fallback: return a minimal set of users to avoid hard 500s
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Team listing failed unexpectedly: %s", str(e), exc_info=True)
+
+            safe_qs = User.objects.filter(
+                Q(legacy_role__in=['team', 'admin']) |
+                (Q(assigned_role__isnull=False) & ~Q(assigned_role__slug='guest')) |
+                Q(assigned_role__slug__in=['team', 'admin'])
+            ).values(
+                'id', 'email', 'first_name', 'last_name', 'is_active',
+                'legacy_role', 'assigned_role__name', 'assigned_role__slug'
+            )
+            return Response(
+                {
+                    'results': list(safe_qs),
+                    'warning': 'Full team data unavailable due to an error. Check server logs.'
+                },
+                status=status.HTTP_200_OK
             )
 
     def create(self, request, *args, **kwargs):
