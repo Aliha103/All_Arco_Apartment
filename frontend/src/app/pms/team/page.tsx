@@ -453,15 +453,32 @@ export default function TeamPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => {
+                                // Check if user has permission to delete
+                                const isSuperAdmin = user?.is_super_admin || (user as any)?.role_info?.is_super_admin;
+
+                                // If not super admin and role is system, block
+                                if (!isSuperAdmin && role.is_system) {
+                                  toast.error(`Cannot delete system role "${role.name}" - only Super Admin can delete system roles`);
+                                  return;
+                                }
+
+                                // Check member count
                                 if ((role.member_count || 0) > 0) {
                                   toast.error(`Cannot delete role "${role.name}" - it has ${role.member_count} assigned member(s). Please reassign them first.`);
                                   return;
                                 }
-                                if (confirm(`Delete role "${role.name}"? This cannot be undone.`)) {
+
+                                // Confirm deletion
+                                const warningMsg = role.is_system
+                                  ? `Delete SYSTEM role "${role.name}"? This is a protected system role. This action cannot be undone.`
+                                  : `Delete role "${role.name}"? This cannot be undone.`;
+
+                                if (confirm(warningMsg)) {
                                   deleteRole.mutate(role.id!);
                                 }
                               }}
                               disabled={(role.member_count || 0) > 0}
+                              className={role.is_system && !(user?.is_super_admin || (user as any)?.role_info?.is_super_admin) ? 'opacity-50 cursor-not-allowed' : ''}
                             >
                               Delete
                             </Button>

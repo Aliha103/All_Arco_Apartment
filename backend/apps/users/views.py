@@ -1076,15 +1076,24 @@ class RoleViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """Delete role with validation and audit logging."""
-        # Validate role can be deleted
-        if not instance.can_be_deleted():
-            from rest_framework.exceptions import ValidationError
-            if instance.is_system:
-                raise ValidationError({'error': 'Cannot delete system roles'})
-            elif instance.get_member_count() > 0:
-                raise ValidationError({
-                    'error': f'Cannot delete role with {instance.get_member_count()} assigned members'
-                })
+        from rest_framework.exceptions import ValidationError
+
+        # Super Admin role cannot be deleted by anyone
+        if instance.is_super_admin:
+            raise ValidationError({'error': 'Cannot delete Super Admin role'})
+
+        # Check if role has assigned members (cannot delete if it does)
+        if instance.get_member_count() > 0:
+            raise ValidationError({
+                'error': f'Cannot delete role with {instance.get_member_count()} assigned members'
+            })
+
+        # Check if user is Super Admin
+        is_super_admin = self.request.user.is_super_admin()
+
+        # Non-Super Admin users cannot delete system roles
+        if instance.is_system and not is_super_admin:
+            raise ValidationError({'error': 'Cannot delete system roles - only Super Admin can delete system roles'})
 
         # Store data for audit log
         role_data = {
