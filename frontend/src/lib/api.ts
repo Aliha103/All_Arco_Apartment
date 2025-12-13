@@ -331,9 +331,9 @@ export const api = {
   // Alloggiati (Italian Police Reporting)
   alloggiati: {
     getAccount: () => apiClient.get('/alloggiati/account/'),
-    saveCredentials: (data: { username: string; password: string }) =>
+    saveCredentials: (data: { username: string; password?: string; wskey: string }) =>
       apiClient.post('/alloggiati/account/save_credentials/', data),
-    refreshToken: () => apiClient.post('/alloggiati/account/refresh_token/'),
+    testConnection: () => apiClient.post('/alloggiati/account/test_connection/'),
     submitToPolice: (bookingId: string) =>
       apiClient.post(`/alloggiati/submit/${bookingId}/`),
     generatePDF: (bookingId: string) =>

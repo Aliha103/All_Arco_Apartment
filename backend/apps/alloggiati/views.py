@@ -35,46 +35,88 @@ class AlloggiatiAccountViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'])
     def save_credentials(self, request):
         """
-        Save Alloggiati Web credentials (username/password).
-        Note: Password is sent in the request but stored only temporarily in env or hashed.
+        Save Alloggiati Web credentials.
+
+        Accepts:
+        - username (required)
+        - password (optional)
+        - wskey (required) - Web Service Key from Alloggiati portal
+
+        The WSKEY is the primary authentication method. It must be generated
+        from the Alloggiati Web portal under Account → "Chiave Web Service".
         """
         username = request.data.get('username')
         password = request.data.get('password')
+        wskey = request.data.get('wskey')
 
-        if not username or not password:
+        if not username:
             return Response(
-                {"error": "Both username and password are required"},
+                {"error": "Username is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not wskey:
+            return Response(
+                {"error": "WSKEY is required. Generate it from Alloggiati Web portal (Account → Chiave Web Service)"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         # Get or create the account
         account = AlloggiatiAccount.objects.first()
         if not account:
-            account = AlloggiatiAccount.objects.create(username=username)
-        else:
-            account.username = username
-            account.save()
+            account = AlloggiatiAccount.objects.create()
 
-        # Store password in environment variable temporarily for this request
-        # Note: In production, consider encrypting and storing in database
-        import os
-        os.environ['ALLOGGIATI_USERNAME'] = username
-        os.environ['ALLOGGIATI_PASSWORD'] = password
+        # Update credentials
+        account.username = username
+        account.wskey = wskey
+        if password:
+            # TODO: Encrypt password before storing
+            account.password = password
+        account.save()
+
+        # Test the connection immediately
+        client = AlloggiatiClient(account=account)
+        result = client.test_connection()
 
         serializer = AlloggiatiAccountSerializer(account)
-        return Response({
-            "message": "Credentials saved successfully",
-            "account": serializer.data
-        })
+
+        if result.get("success"):
+            return Response({
+                "message": "Credentials saved and tested successfully!",
+                "test_result": result.get("message"),
+                "account": serializer.data
+            })
+        else:
+            return Response({
+                "message": "Credentials saved but connection test failed",
+                "error": result.get("error"),
+                "account": serializer.data
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
-    def refresh_token(self, request):
-        account, _ = AlloggiatiAccount.objects.get_or_create(pk=AlloggiatiAccount.objects.first() or None)
+    def test_connection(self, request):
+        """
+        Test connection to Alloggiati Web Services using saved credentials.
+        """
+        account = AlloggiatiAccount.objects.first()
+        if not account or not account.has_credentials():
+            return Response(
+                {"error": "No credentials configured. Please save your credentials first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         client = AlloggiatiClient(account=account)
-        result = client.fetch_token()
+        result = client.test_connection()
+
         if result.get("success"):
-            return Response({"message": "Token fetched", "token": result.get("token")})
-        return Response({"error": result.get("error"), "raw_response": result.get("raw_response")}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "message": result.get("message"),
+                "connected": True
+            })
+        return Response(
+            {"error": result.get("error"), "connected": False},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 @api_view(['POST'])
