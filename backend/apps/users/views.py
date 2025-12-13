@@ -1242,10 +1242,15 @@ def seed_rbac_data(request):
             # Roles
             ('roles.manage', 'team', 'Manage roles and permissions'),
 
-            # Reports
-            ('reports.view', 'reports', 'View reports and analytics'),
-            ('reports.export', 'reports', 'Export reports'),
-            ('reports.audit_logs', 'reports', 'View audit logs'),
+            # Reports & Analytics
+            ('reports.view', 'reports', 'View reports and analytics dashboard'),
+            ('reports.create', 'reports', 'Create custom reports'),
+            ('reports.edit', 'reports', 'Edit saved reports'),
+            ('reports.delete', 'reports', 'Delete saved reports'),
+            ('reports.export', 'reports', 'Export reports (CSV, PDF, Excel)'),
+            ('reports.audit_logs', 'reports', 'View system audit logs'),
+            ('reports.financial', 'reports', 'View financial reports'),
+            ('reports.advanced', 'reports', 'Access advanced analytics'),
         ]
 
         # Create permissions
