@@ -6,7 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.contrib.auth import login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, transaction, DatabaseError
 from django.db.models import Q
 from .models import User, GuestNote, Role, Permission, PasswordResetToken, HostProfile, Review
 from apps.bookings.models import Booking, BookingGuest
@@ -564,6 +564,22 @@ class TeamViewSet(viewsets.ModelViewSet):
             Q(assigned_role__isnull=False) |
             Q(assigned_role__slug__in=['team', 'admin'])
         ).select_related('assigned_role', 'compensation').order_by('-created_at')
+
+    def list(self, request, *args, **kwargs):
+        """
+        List team members. If the compensation table is missing (migration not applied),
+        return a clear error instead of a 500.
+        """
+        try:
+            return super().list(request, *args, **kwargs)
+        except DatabaseError as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Team listing failed, likely due to missing migrations: %s", str(e), exc_info=True)
+            return Response(
+                {'error': 'Team data not available. Please run database migrations (compensation tables).'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
 
     def create(self, request, *args, **kwargs):
         """Create team member with compensation configuration."""
