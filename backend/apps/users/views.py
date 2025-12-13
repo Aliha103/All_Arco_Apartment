@@ -1304,63 +1304,78 @@ def seed_rbac_data(request):
     with transaction.atomic():
         # Define all permissions
         permissions_data = [
+            # Dashboard
+            ('dashboard.view', 'dashboard', 'View PMS dashboard with statistics and analytics'),
+
             # Bookings
-            ('bookings.view', 'bookings', 'View bookings and calendar'),
-            ('bookings.create', 'bookings', 'Create new bookings'),
-            ('bookings.update', 'bookings', 'Update booking details'),
+            ('bookings.view', 'bookings', 'View bookings'),
+            ('bookings.create', 'bookings', 'Create bookings'),
+            ('bookings.update', 'bookings', 'Update bookings'),
             ('bookings.delete', 'bookings', 'Delete bookings'),
             ('bookings.cancel', 'bookings', 'Cancel bookings'),
             ('bookings.mark_no_show', 'bookings', 'Mark bookings as no-show'),
 
+            # Calendar
+            ('calendar.view', 'calendar', 'View calendar'),
+            ('calendar.block_dates', 'calendar', 'Block dates on calendar'),
+
             # Payments
-            ('payments.view', 'payments', 'View payments and invoices'),
-            ('payments.create', 'payments', 'Process payments'),
-            ('payments.refund', 'payments', 'Issue refunds'),
-            ('payments.export', 'payments', 'Export payment reports'),
+            ('payments.view', 'payments', 'View payments'),
+            ('payments.create', 'payments', 'Create payments'),
+            ('payments.refund', 'payments', 'Process refunds'),
+            ('payments.export', 'payments', 'Export payment data'),
+
+            # Invoices
+            ('invoices.view', 'invoices', 'Can view invoices and receipts'),
+            ('invoices.create', 'invoices', 'Can create new invoices and receipts'),
+            ('invoices.update', 'invoices', 'Update invoices'),
+            ('invoices.edit', 'invoices', 'Can edit invoice settings (Note: invoices themselves are immutable after creation)'),
+            ('invoices.delete', 'invoices', 'Can delete invoices and receipts'),
+            ('invoices.send', 'invoices', 'Can send invoices via email'),
+            ('invoices.cancel', 'invoices', 'Cancel invoices'),
+
+            # Expenses
+            ('expenses.view', 'expenses', 'Can view expenses and statistics'),
+            ('expenses.create', 'expenses', 'Can create new expense records'),
+            ('expenses.edit', 'expenses', 'Can edit existing expenses'),
+            ('expenses.delete', 'expenses', 'Can delete expense records'),
+            ('expenses.approve', 'expenses', 'Can approve or reject expenses'),
 
             # Guests
-            ('guests.view', 'guests', 'View guest information'),
-            ('guests.update', 'guests', 'Update guest details'),
-            ('guests.notes', 'guests', 'Add/view guest notes'),
+            ('guests.view', 'guests', 'View guest profiles'),
+            ('guests.update', 'guests', 'Update guest profiles'),
+            ('guests.notes', 'guests', 'Manage guest notes'),
             ('guests.export', 'guests', 'Export guest data'),
 
             # Pricing
             ('pricing.view', 'pricing', 'View pricing settings'),
             ('pricing.update', 'pricing', 'Update pricing settings'),
             ('pricing.rules_manage', 'pricing', 'Manage pricing rules'),
-            ('pricing.settings.view', 'pricing', 'View pricing settings'),
-            ('pricing.settings.edit', 'pricing', 'Edit pricing settings'),
-            ('pricing.rules.view', 'pricing', 'View pricing rules'),
-            ('pricing.rules.manage', 'pricing', 'Manage pricing rules'),
-            ('pricing.promotions.view', 'pricing', 'View promotions'),
-            ('pricing.promotions.manage', 'pricing', 'Manage promotions'),
-            ('pricing.vouchers.view', 'pricing', 'View vouchers'),
-            ('pricing.vouchers.manage', 'pricing', 'Manage vouchers'),
+
+            # Gallery
+            ('gallery.view', 'gallery', 'View gallery images'),
+            ('gallery.manage', 'gallery', 'Manage gallery images'),
+
+            # Reviews
+            ('reviews.view', 'reviews', 'Can view all reviews (pending, approved, rejected)'),
+            ('reviews.create', 'reviews', 'Can manually create reviews (staff-created reviews)'),
+            ('reviews.edit', 'reviews', 'Can edit existing reviews'),
+            ('reviews.delete', 'reviews', 'Can permanently delete reviews'),
+            ('reviews.approve', 'reviews', 'Can approve or reject pending reviews'),
 
             # Team
             ('team.view', 'team', 'View team members'),
             ('team.invite', 'team', 'Invite team members'),
-            ('team.update', 'team', 'Update team member details'),
+            ('team.update', 'team', 'Update team members'),
             ('team.deactivate', 'team', 'Deactivate team members'),
 
             # Roles
             ('roles.manage', 'team', 'Manage roles and permissions'),
 
             # Reports & Analytics
-            ('reports.view', 'reports', 'View reports and analytics dashboard'),
-            ('reports.create', 'reports', 'Create custom reports'),
-            ('reports.edit', 'reports', 'Edit saved reports'),
-            ('reports.delete', 'reports', 'Delete saved reports'),
-            ('reports.export', 'reports', 'Export reports (CSV, PDF, Excel)'),
-            ('reports.audit_logs', 'reports', 'View system audit logs'),
-            ('reports.financial', 'reports', 'View financial reports'),
-            ('reports.advanced', 'reports', 'Access advanced analytics'),
-
-            # OTA Management
-            ('ota.view', 'ota', 'View OTA bookings and settings'),
-            ('ota.manage', 'ota', 'Manage OTA bookings and iCal sources'),
-            ('ota.sync', 'ota', 'Sync iCal calendars from OTA platforms'),
-            ('ota.export', 'ota', 'Export calendar to share with OTAs'),
+            ('reports.view', 'reports', 'View reports'),
+            ('reports.export', 'reports', 'Export reports'),
+            ('reports.audit_logs', 'reports', 'View audit logs'),
         ]
 
         # Create permissions
