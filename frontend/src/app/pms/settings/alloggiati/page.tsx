@@ -58,7 +58,7 @@ export default function AlloggiatiPage() {
 
   // Save credentials mutation
   const saveCredentialsMutation = useMutation({
-    mutationFn: (data: { username: string; password?: string; wskey: string }) =>
+    mutationFn: (data: { username: string; password: string; wskey: string }) =>
       api.alloggiati.saveCredentials(data),
     onMutate: () => {
       setIsConfiguring(true);
@@ -100,15 +100,16 @@ export default function AlloggiatiPage() {
       toast.error('Please enter your username');
       return;
     }
+    if (!password.trim()) {
+      toast.error('Please enter your password');
+      return;
+    }
     if (!wskey.trim()) {
       toast.error('Please enter your WSKEY');
       return;
     }
 
-    const data: any = { username, wskey };
-    if (password.trim()) {
-      data.password = password;
-    }
+    const data = { username: username.trim(), wskey: wskey.trim(), password: password.trim() };
 
     saveCredentialsMutation.mutate(data);
   };
@@ -143,22 +144,32 @@ export default function AlloggiatiPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
               <Shield className="w-7 h-7 text-blue-600" />
-              Alloggiati Web Integration
-            </h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Italian Police guest reporting system (Polizia di Stato)
+              <h1 className="text-2xl font-bold text-gray-900">Alloggiati Web Integration</h1>
+            </div>
+            <p className="text-sm text-gray-700">
+              Italian State Police guest reporting with secure, automated WSKEY authentication.
             </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Badge variant="outline" className="bg-white text-blue-700 border-blue-200">
+                <Zap className="w-3 h-3 mr-1" />
+                Auto-refresh every 30s
+              </Badge>
+              <Badge variant="outline" className="bg-white text-gray-700 border-gray-200">
+                <Lock className="w-3 h-3 mr-1" />
+                Encrypted credentials
+              </Badge>
+            </div>
           </div>
           {getConnectionBadge()}
         </div>
@@ -252,12 +263,12 @@ export default function AlloggiatiPage() {
                 <p className="text-xs text-gray-500">The username you use to login to Alloggiati Web portal</p>
               </div>
 
-              {/* Password Field (Optional) */}
+              {/* Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-gray-900 font-medium flex items-center gap-2">
                   <Lock className="w-4 h-4 text-gray-600" />
                   Password
-                  <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+                  <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
                   <Input
@@ -265,7 +276,7 @@ export default function AlloggiatiPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Your Alloggiati Web password (optional)"
+                    placeholder="Your Alloggiati Web password"
                     className="text-gray-900 pr-10"
                     disabled={isConfiguring}
                   />
@@ -277,7 +288,7 @@ export default function AlloggiatiPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">Stored securely, only used for WSKEY regeneration if needed</p>
+                <p className="text-xs text-gray-500">Required for authentication. Encrypted at rest and only used for WSKEY regeneration/testing.</p>
               </div>
 
               {/* WSKEY Field */}
@@ -314,7 +325,7 @@ export default function AlloggiatiPage() {
               <div className="flex items-center gap-3 pt-2">
                 <Button
                   onClick={handleSaveCredentials}
-                  disabled={isConfiguring || !username.trim() || !wskey.trim()}
+                  disabled={isConfiguring || !username.trim() || !password.trim() || !wskey.trim()}
                   className="bg-blue-600 hover:bg-blue-700"
                   size="lg"
                 >
