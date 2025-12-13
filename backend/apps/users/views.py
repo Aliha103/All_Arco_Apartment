@@ -561,7 +561,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         # Treat anyone with a non-guest assigned role (or legacy team/admin) as team
         return User.objects.filter(
             Q(legacy_role__in=['team', 'admin']) |
-            Q(assigned_role__isnull=False) |
+            (Q(assigned_role__isnull=False) & ~Q(assigned_role__slug='guest')) |
             Q(assigned_role__slug__in=['team', 'admin'])
         ).select_related('assigned_role', 'compensation').order_by('-created_at')
 
@@ -614,6 +614,11 @@ class TeamViewSet(viewsets.ModelViewSet):
         except Role.DoesNotExist:
             return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Prevent accidental super-admin assignment without explicit confirmation flag
+        if role.is_super_admin and not request.data.get('confirm_super_admin'):
+            return Response({
+                'error': 'Cannot assign Super Admin role through team invitation. Please confirm explicitly or choose another role.'
+            }, status=status.HTTP_400_BAD_REQUEST)
         try:
             with transaction.atomic():
                 user = User.objects.filter(email__iexact=email).select_related('compensation').first()
