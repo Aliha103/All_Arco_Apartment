@@ -1438,24 +1438,34 @@ export default function BookingCheckInPage() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4">
                         <Button
                           variant="outline"
-                          onClick={onSaveDraft}
-                          disabled={saving}
-                          className="h-12 px-6 border-gray-300"
+                          onClick={() => setStep(2)}
+                          className="h-12 px-6 border-2"
                         >
-                          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                          Save as draft
+                          <ChevronDown className="w-5 h-5 mr-2 rotate-90" />
+                          Edit guest details
                         </Button>
-                        <Button
-                          onClick={onFinish}
-                          disabled={saving}
-                          className="h-12 px-10 bg-[#C4A572] hover:bg-[#B39562] text-white text-base font-semibold shadow-xl transition-all disabled:opacity-60"
-                        >
-                          {saving ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}
-                          Finish check-in
-                        </Button>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={onSaveDraft}
+                            disabled={saving}
+                            className="h-12 px-6 border-gray-300"
+                          >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            Save as draft
+                          </Button>
+                          <Button
+                            onClick={onFinish}
+                            disabled={saving}
+                            className="h-12 px-10 bg-[#C4A572] hover:bg-[#B39562] text-white text-base font-semibold shadow-xl transition-all disabled:opacity-60"
+                          >
+                            {saving ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}
+                            Finish check-in
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
