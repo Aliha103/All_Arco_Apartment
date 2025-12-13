@@ -206,51 +206,6 @@ const STATUS_CONFIG = {
 };
 
 // ============================================================================
-// Mock Data (Replace with real API)
-// ============================================================================
-
-const MOCK_BOOKINGS: OTABooking[] = [
-  {
-    id: '1',
-    ota_name: 'Airbnb',
-    ota_booking_number: 'ABNB-2024-001',
-    first_name: 'John',
-    last_name: 'Smith',
-    email: 'john@example.com',
-    mobile_number: '+1234567890',
-    adults: 2,
-    children: 1,
-    infants: 0,
-    check_in_date: '2024-12-15',
-    check_out_date: '2024-12-18',
-    room_price: 600,
-    cleaning_fee: 50,
-    city_tax: 30,
-    extras: 20,
-    total_amount: 700,
-    paid_amount: 500,
-    to_pay_amount: 200,
-    applied_discount: 0,
-    ota_fee: 105,
-    currency: 'EUR',
-    status: 'confirmed',
-    created_at: '2024-12-01T10:00:00Z',
-    updated_at: '2024-12-01T10:00:00Z',
-  },
-];
-
-const MOCK_ICAL_SOURCES: ICalSource[] = [
-  {
-    id: '1',
-    ota_name: 'Airbnb',
-    ical_url: 'https://airbnb.com/calendar/ical/...',
-    last_synced: '2024-12-02T10:00:00Z',
-    sync_status: 'active',
-    bookings_count: 12,
-  },
-];
-
-// ============================================================================
 // Main Component
 // ============================================================================
 
@@ -273,18 +228,49 @@ export default function OTAManagementPage() {
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['ota-bookings'],
     queryFn: async () => {
-      // TODO: Replace with real API call
-      // const response = await api.otaBookings.list();
-      // return response.data;
-      return MOCK_BOOKINGS;
+      const response = await api.bookings.list();
+      const allBookings = response.data.results || response.data;
+      // Filter only OTA bookings (bookings with ota_platform set)
+      return allBookings
+        .filter((b: any) => b.ota_platform)
+        .map((b: any) => ({
+          id: b.id || b.booking_id,
+          ota_name: b.ota_platform,
+          ota_booking_number: b.ota_confirmation_code || b.booking_id,
+          first_name: b.guest_name?.split(' ')[0] || '',
+          last_name: b.guest_name?.split(' ').slice(1).join(' ') || '',
+          email: b.email,
+          mobile_number: b.mobile_number,
+          date_of_birth: b.date_of_birth,
+          adults: b.adults || 2,
+          children: b.children || 0,
+          infants: b.infants || 0,
+          check_in_date: b.check_in_date,
+          check_out_date: b.check_out_date,
+          room_price: parseFloat(b.total_price) || 0,
+          cleaning_fee: parseFloat(b.cleaning_fee) || 0,
+          city_tax: parseFloat(b.city_tax) || 0,
+          extras: 0,
+          total_amount: parseFloat(b.total_price) || 0,
+          paid_amount: parseFloat(b.paid_amount) || 0,
+          to_pay_amount: parseFloat(b.amount_due) || 0,
+          applied_discount: 0,
+          ota_fee: parseFloat(b.ota_commission_amount) || 0,
+          currency: b.currency || 'EUR',
+          status: b.status || 'confirmed',
+          ical_uid: b.ical_uid,
+          notes: b.notes,
+          created_at: b.created_at,
+          updated_at: b.updated_at,
+        }));
     },
   });
 
   const { data: icalSources = [] } = useQuery({
     queryKey: ['ical-sources'],
     queryFn: async () => {
-      // TODO: Replace with real API call
-      return MOCK_ICAL_SOURCES;
+      const response = await api.icalSources.list();
+      return response.data;
     },
   });
 
@@ -330,11 +316,11 @@ export default function OTAManagementPage() {
 
   const statistics = useMemo(() => {
     const totalBookings = bookings.length;
-    const totalRevenue = bookings.reduce((sum, b) => sum + b.total_amount, 0);
-    const totalPaid = bookings.reduce((sum, b) => sum + b.paid_amount, 0);
-    const totalToPay = bookings.reduce((sum, b) => sum + b.to_pay_amount, 0);
-    const totalOTAFees = bookings.reduce((sum, b) => sum + b.ota_fee, 0);
-    const activeBookings = bookings.filter((b) => b.status === 'confirmed' || b.status === 'checked_in').length;
+    const totalRevenue = bookings.reduce((sum: number, b: OTABooking) => sum + b.total_amount, 0);
+    const totalPaid = bookings.reduce((sum: number, b: OTABooking) => sum + b.paid_amount, 0);
+    const totalToPay = bookings.reduce((sum: number, b: OTABooking) => sum + b.to_pay_amount, 0);
+    const totalOTAFees = bookings.reduce((sum: number, b: OTABooking) => sum + b.ota_fee, 0);
+    const activeBookings = bookings.filter((b: OTABooking) => b.status === 'confirmed' || b.status === 'checked_in').length;
 
     return {
       totalBookings,
@@ -584,9 +570,18 @@ export default function OTAManagementPage() {
                             setSelectedBooking(booking);
                             setIsCreateModalOpen(true);
                           }}
-                          onDelete={(booking) => {
-                            // TODO: Implement delete
-                            toast.success('Booking deleted');
+                          onDelete={async (booking) => {
+                            if (confirm(`Delete OTA booking ${booking.ota_booking_number}? This cannot be undone.`)) {
+                              try {
+                                await api.bookings.delete(booking.id);
+                                queryClient.invalidateQueries({ queryKey: ['ota-bookings'] });
+                                queryClient.invalidateQueries({ queryKey: ['bookings'] });
+                                queryClient.invalidateQueries({ queryKey: ['calendar'] });
+                                toast.success('OTA booking deleted successfully');
+                              } catch (error: any) {
+                                toast.error(error.response?.data?.message || 'Failed to delete booking');
+                              }
+                            }
                           }}
                         />
                       ))}
@@ -905,7 +900,7 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
     };
   }, [formData]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validation
     if (!formData.ota_name || !formData.ota_booking_number || !formData.first_name ||
         !formData.last_name || !formData.check_in_date || !formData.check_out_date ||
@@ -916,10 +911,7 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
 
     // Prepare data for API with calculated values
     const submitData = {
-      ota_name: formData.ota_name,
-      ota_booking_number: formData.ota_booking_number,
-      first_name: formData.first_name,
-      last_name: formData.last_name,
+      guest_name: `${formData.first_name} ${formData.last_name}`,
       email: formData.email || undefined,
       mobile_number: formData.mobile_number || undefined,
       date_of_birth: formData.date_of_birth || undefined,
@@ -928,24 +920,36 @@ function OTABookingModal({ isOpen, onClose, booking }: OTABookingModalProps) {
       infants: Number.parseInt(formData.infants, 10) || 0,
       check_in_date: formData.check_in_date,
       check_out_date: formData.check_out_date,
-      room_price: parseFloat(formData.room_price) || 0,
+      total_price: calculatedTotals.guestPays,
       cleaning_fee: parseFloat(formData.cleaning_fee) || 0,
       city_tax: parseFloat(formData.city_tax) || 0,
-      extras: parseFloat(formData.extras) || 0,
-      applied_discount: parseFloat(formData.applied_discount) || 0,
-      ota_fee: calculatedTotals.otaCommission, // Calculated commission amount
       paid_amount: parseFloat(formData.paid_amount) || 0,
-      total_amount: calculatedTotals.guestPays, // Guest pays amount
-      to_pay_amount: calculatedTotals.toPayAmount,
+      amount_due: calculatedTotals.toPayAmount,
       currency: formData.currency,
       notes: formData.notes || undefined,
+      ota_platform: formData.ota_name,
+      ota_confirmation_code: formData.ota_booking_number,
+      ota_commission_percent: parseFloat(formData.ota_commission_percent) || 0,
+      ota_commission_amount: calculatedTotals.otaCommission,
+      status: 'confirmed',
+      source: 'ota',
     };
 
-    // TODO: Implement API call
-    // When API is implemented: await api.otaBookings.create(submitData);
-    toast.success(booking ? 'OTA booking updated' : 'OTA booking created');
-    queryClient.invalidateQueries({ queryKey: ['ota-bookings'] });
-    onClose();
+    try {
+      if (booking) {
+        await api.bookings.update(booking.id, submitData);
+        toast.success('OTA booking updated successfully');
+      } else {
+        await api.bookings.create(submitData);
+        toast.success('OTA booking created successfully');
+      }
+      queryClient.invalidateQueries({ queryKey: ['ota-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      onClose();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || `Failed to ${booking ? 'update' : 'create'} booking`);
+    }
   };
 
   return (
@@ -1480,6 +1484,17 @@ function ICalSourcesList({ sources }: ICalSourcesListProps) {
     },
   });
 
+  const deleteSource = useMutation({
+    mutationFn: (id: string) => api.icalSources.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ical-sources'] });
+      toast.success('iCal source removed successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete iCal source');
+    },
+  });
+
   const handleSync = (id: string) => {
     setSyncingId(id);
     syncSource.mutate(id);
@@ -1488,6 +1503,12 @@ function ICalSourcesList({ sources }: ICalSourcesListProps) {
   const handleSyncAll = () => {
     setSyncingAll(true);
     syncAllSources.mutate();
+  };
+
+  const handleDelete = (id: string, otaName: string) => {
+    if (confirm(`Remove iCal source for ${otaName}? Bookings synced from this source will remain.`)) {
+      deleteSource.mutate(id);
+    }
   };
 
   return (
@@ -1552,24 +1573,34 @@ function ICalSourcesList({ sources }: ICalSourcesListProps) {
                       Last synced: {formatDate(source.last_synced)} · {source.bookings_count} bookings
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSync(source.id)}
-                    disabled={syncingId === source.id}
-                  >
-                    {syncingId === source.id ? (
-                      <>
-                        <div className="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Syncing...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-3.5 h-3.5 mr-1.5" />
-                        Sync Now
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSync(source.id)}
+                      disabled={syncingId === source.id}
+                    >
+                      {syncingId === source.id ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Syncing...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3.5 h-3.5 mr-1.5" />
+                          Sync
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:bg-red-50"
+                      onClick={() => handleDelete(source.id, source.ota_name)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
