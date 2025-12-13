@@ -339,13 +339,17 @@ class BookingGuestSerializer(serializers.ModelSerializer):
 
 
 class BookingGuestListSerializer(serializers.ModelSerializer):
-    """Minimal serializer for guest lists."""
+    """Serializer for guest lists with complete document information."""
 
     class Meta:
         model = BookingGuest
         fields = [
             'id', 'is_primary', 'first_name', 'last_name', 'email',
-            'date_of_birth', 'country_of_birth', 'document_type'
+            'date_of_birth', 'country_of_birth', 'birth_province', 'birth_city',
+            'relationship',
+            'document_type', 'document_number', 'document_issue_date', 'document_expire_date',
+            'document_issue_country', 'document_issue_province', 'document_issue_city',
+            'note', 'parent_guest', 'created_at', 'updated_at'
         ]
         read_only_fields = fields
 
