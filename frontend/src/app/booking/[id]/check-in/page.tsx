@@ -231,25 +231,53 @@ export default function BookingCheckInPage() {
       const g = guests[i];
       const isPrimary = i === 0;
       const needDocProvince = (g.country_of_birth === 'Italy') || (g.document_issue_country === 'Italy');
-      if (!g.first_name.trim() || !g.last_name.trim()) {
+
+      if (!g.first_name?.trim() || !g.last_name?.trim()) {
         toast.error(`Guest ${i + 1}: first and last name are required.`);
         return;
       }
-      if (!isPrimary && !g.relationship) {
+      if (!isPrimary && !g.relationship?.trim()) {
         toast.error(`Guest ${i + 1}: relationship to primary guest is required.`);
         return;
       }
-      if (!g.country_of_birth) {
+      if (!g.country_of_birth?.trim()) {
         toast.error(`Guest ${i + 1}: country of birth is required.`);
         return;
       }
-      if (!g.date_of_birth) {
+      if (!g.date_of_birth?.trim()) {
         toast.error(`Guest ${i + 1}: date of birth is required.`);
         return;
       }
+
       if (isPrimary) {
-        if (!g.document_type || !g.document_number || !g.document_issue_country || !g.document_issue_date || !g.document_expire_date) {
-          toast.error('Primary guest: document type, number, issue/expiry dates, and issue country are required.');
+        // Debug log to see what values we have
+        console.log('Primary guest document data:', {
+          document_type: g.document_type,
+          document_number: g.document_number,
+          document_issue_country: g.document_issue_country,
+          document_issue_date: g.document_issue_date,
+          document_expire_date: g.document_expire_date,
+        });
+
+        // Check each field individually to provide specific error messages
+        if (!g.document_type?.trim()) {
+          toast.error(`Primary guest: document type is required. Current value: "${g.document_type || 'empty'}"`);
+          return;
+        }
+        if (!g.document_number?.trim()) {
+          toast.error(`Primary guest: document number is required. Current value: "${g.document_number || 'empty'}"`);
+          return;
+        }
+        if (!g.document_issue_country?.trim()) {
+          toast.error(`Primary guest: document issue country is required. Current value: "${g.document_issue_country || 'empty'}"`);
+          return;
+        }
+        if (!g.document_issue_date?.trim()) {
+          toast.error(`Primary guest: document issue date is required. Current value: "${g.document_issue_date || 'empty'}"`);
+          return;
+        }
+        if (!g.document_expire_date?.trim()) {
+          toast.error(`Primary guest: document expiry date is required. Current value: "${g.document_expire_date || 'empty'}"`);
           return;
         }
         if (needDocProvince) {
