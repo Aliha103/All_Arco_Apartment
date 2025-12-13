@@ -234,20 +234,20 @@ export default function TeamPage() {
   const canManageRoles = hasPermission('roles.manage');
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Team & Roles</h1>
-        <p className="text-gray-600">Manage team members, roles, and permissions</p>
+    <div className="bg-slate-50 min-h-screen p-1">
+      <div className="mb-8 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h1 className="text-3xl font-bold mb-2 text-slate-900">Team & Roles</h1>
+        <p className="text-slate-600">Manage team members, roles, and permissions</p>
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 border-b">
+      <div className="mb-6 border-b border-slate-200">
         <div className="flex gap-4">
           <button
             className={`px-4 py-2 font-medium border-b-2 ${
               activeTab === 'team'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+                ? 'border-blue-600 text-blue-700 bg-white rounded-t-md'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('team')}
           >
@@ -255,15 +255,15 @@ export default function TeamPage() {
           </button>
           {canManageRoles && (
             <button
-              className={`px-4 py-2 font-medium border-b-2 ${
-                activeTab === 'roles'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-              onClick={() => setActiveTab('roles')}
-            >
-              Roles ({roles?.length || 0})
-            </button>
+            className={`px-4 py-2 font-medium border-b-2 ${
+              activeTab === 'roles'
+                ? 'border-blue-600 text-blue-700 bg-white rounded-t-md'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+            onClick={() => setActiveTab('roles')}
+          >
+            Roles ({roles?.length || 0})
+          </button>
           )}
         </div>
       </div>
@@ -271,18 +271,18 @@ export default function TeamPage() {
       {/* Team Members Tab */}
       {activeTab === 'team' && (
 
-      <Card>
-        <CardHeader>
+      <Card className="border border-slate-200 shadow-sm bg-white">
+        <CardHeader className="border-b bg-slate-100">
           <div className="flex items-center justify-between">
-            <CardTitle>Team Members ({teamMembers?.length || 0})</CardTitle>
-            <Button onClick={() => setIsInviteModalOpen(true)}>
+            <CardTitle className="text-slate-900">Team Members ({teamMembers?.length || 0})</CardTitle>
+            <Button onClick={() => setIsInviteModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
               Invite Team Member
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {teamMembers && teamMembers.length > 0 ? (
-            <Table>
+            <Table className="text-slate-800">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -296,21 +296,21 @@ export default function TeamPage() {
               <TableBody>
                 {teamMembers.map((member: any) => (
                   <TableRow key={member.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-slate-900">
                       {member.first_name} {member.last_name}
                     </TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-slate-700">{member.email}</TableCell>
+                    <TableCell className="text-slate-700">
                       <Badge variant={getRoleBadgeColor(member.role)}>
                         {member.role}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-slate-700">
                       <Badge variant={member.is_active ? 'success' : 'secondary'}>
                         {member.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-slate-600">
                       {member.last_login ? formatDate(member.last_login) : 'Never'}
                     </TableCell>
                     <TableCell>
@@ -348,18 +348,18 @@ export default function TeamPage() {
 
       {/* Roles Tab */}
       {activeTab === 'roles' && canManageRoles && (
-        <Card>
-          <CardHeader>
+        <Card className="border border-slate-200 shadow-sm bg-white">
+          <CardHeader className="border-b bg-slate-100">
             <div className="flex items-center justify-between">
-              <CardTitle>Roles ({roles?.length || 0})</CardTitle>
-              <Button onClick={() => setIsRoleModalOpen(true)}>
+              <CardTitle className="text-slate-900">Roles ({roles?.length || 0})</CardTitle>
+              <Button onClick={() => setIsRoleModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
                 Create Role
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {roles && roles.length > 0 ? (
-              <Table>
+            <Table className="text-slate-800">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
@@ -381,7 +381,7 @@ export default function TeamPage() {
                           <Badge variant="destructive" className="ml-2">Super Admin</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">
+                      <TableCell className="text-sm text-slate-600">
                         {role.description || 'No description'}
                       </TableCell>
                       <TableCell>
