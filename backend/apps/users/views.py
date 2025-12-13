@@ -558,10 +558,18 @@ class TeamViewSet(viewsets.ModelViewSet):
             return User.objects.none()
 
         # Show all non-guest users (team members with any role)
-        return User.objects.filter(
+        queryset = User.objects.filter(
             Q(legacy_role__in=['team', 'admin']) |
             Q(assigned_role__isnull=False) & ~Q(assigned_role__slug='guest')
-        ).select_related('assigned_role', 'compensation').order_by('-created_at')
+        ).select_related('assigned_role')
+
+        # Only select_related compensation if the table exists
+        # (Migration may not have run yet in production)
+        from django.db import connection
+        if 'users_teamcompensation' in connection.introspection.table_names():
+            queryset = queryset.select_related('compensation')
+
+        return queryset.order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
         """Create team member with compensation configuration."""
@@ -613,9 +621,12 @@ class TeamViewSet(viewsets.ModelViewSet):
             activation_end_date=data.get('activation_end_date')
         )
 
-        # Create compensation if provided
+        # Create compensation if provided and table exists
         compensation_type = data.get('compensation_type')
-        if compensation_type:
+        from django.db import connection
+        compensation_table_exists = 'users_teamcompensation' in connection.introspection.table_names()
+
+        if compensation_type and compensation_table_exists:
             try:
                 compensation_data = {
                     'user': user,
@@ -645,6 +656,11 @@ class TeamViewSet(viewsets.ModelViewSet):
                     {'error': f'Failed to create team member compensation: {str(e)}. Please ensure the database migration has been run.'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
+        elif compensation_type and not compensation_table_exists:
+            # Table doesn't exist yet - log warning but don't fail
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Compensation table does not exist. Team member {user.email} created without compensation. Run migration: python manage.py migrate users")
 
         # Send invitation email with password setup token
         try:
@@ -661,7 +677,12 @@ class TeamViewSet(viewsets.ModelViewSet):
             logger.error(f"Failed to send team invitation email to {user.email}: {str(e)}")
 
         # Reload user with all relationships for serialization
-        user = User.objects.select_related('assigned_role', 'compensation').get(id=user.id)
+        # Check if compensation table exists before trying to select it
+        from django.db import connection
+        if 'users_teamcompensation' in connection.introspection.table_names():
+            user = User.objects.select_related('assigned_role', 'compensation').get(id=user.id)
+        else:
+            user = User.objects.select_related('assigned_role').get(id=user.id)
 
         return Response(
             TeamMemberSerializer(user).data,
