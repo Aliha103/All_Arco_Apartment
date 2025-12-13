@@ -658,9 +658,12 @@ class TeamViewSet(viewsets.ModelViewSet):
                     )
                     is_new_user = True
 
-                # Create or update compensation if provided
+                # Create or update compensation if provided and table exists
                 compensation_type = data.get('compensation_type')
-                if compensation_type:
+                from django.db import connection
+                compensation_table_exists = 'users_teamcompensation' in connection.introspection.table_names()
+
+                if compensation_type and compensation_table_exists:
                     comp_defaults = {
                         'compensation_type': compensation_type,
                         'notes': data.get('notes', ''),
@@ -690,6 +693,13 @@ class TeamViewSet(viewsets.ModelViewSet):
                     )
                     compensation.full_clean()
                     compensation.save()
+                elif compensation_type and not compensation_table_exists:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        "Compensation table missing; created team member %s without compensation. Run migrations to enable compensation.",
+                        user.email,
+                    )
         except IntegrityError:
             return Response({'error': 'A user with this email already exists and could not be updated.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
