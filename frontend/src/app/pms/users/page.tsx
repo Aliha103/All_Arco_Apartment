@@ -62,6 +62,21 @@ export default function UsersPage() {
 
   // Filter guest users and remove duplicates by email
   const filteredGuestUsers = useMemo(() => {
+    const uniqueGuests = guestUsers.reduce((acc, guest) => {
+      const existing = acc.find(g => g.email === guest.email);
+      if (!existing) {
+        acc.push(guest);
+      }
+      return acc;
+    }, [] as GuestUser[]);
+
+    if (!guestSearch) return uniqueGuests;
+    const search = guestSearch.toLowerCase();
+    return uniqueGuests.filter(guest =>
+      `${guest.first_name} ${guest.last_name}`.toLowerCase().includes(search) ||
+      guest.email.toLowerCase().includes(search)
+    );
+  }, [guestUsers, guestSearch]);
 
   const TeamMembersCard = () => (
     <Card className="shadow-sm border-gray-200">
@@ -98,178 +113,6 @@ export default function UsersPage() {
             </div>
           </div>
         )}
-
-        {teamLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-600">Loading team members...</p>
-            </div>
-          </div>
-        ) : filteredTeamUsers.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-              <UsersIcon className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {teamSearch ? 'No matching team members' : 'No team members yet'}
-            </h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              {teamSearch
-                ? 'Try adjusting your search criteria'
-                : 'Add team members to collaborate on managing your property'}
-            </p>
-            {!teamSearch && (
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Your First Team Member
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredTeamUsers.map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                    <UserCircle2 className="w-7 h-7 text-blue-700" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">
-                      {user.first_name} {user.last_name}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Mail className="w-3 h-3 text-gray-400" />
-                      <span className="text-sm text-gray-600">{user.email}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {user.role_name || 'Team Member'}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const GuestProfilesCard = () => (
-    <Card className="shadow-sm border-gray-200">
-      <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-teal-50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <UserCircle2 className="w-5 h-5 text-emerald-700" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">Guest Profiles</CardTitle>
-              <p className="text-sm text-gray-600 mt-0.5">
-                {filteredGuestUsers.length} {filteredGuestUsers.length === 1 ? 'guest' : 'guests'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-6">
-        {guestUsers.length > 0 && (
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search guests by name or email..."
-                value={guestSearch}
-                onChange={(e) => setGuestSearch(e.target.value)}
-                className="pl-10 bg-gray-50 border-gray-200"
-              />
-            </div>
-          </div>
-        )}
-
-        {guestsLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-600">Loading guest profiles...</p>
-            </div>
-          </div>
-        ) : filteredGuestUsers.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-              <UserCircle2 className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {guestSearch ? 'No matching guests found' : 'No guests yet'}
-            </h3>
-            <p className="text-gray-600 max-w-md mx-auto">
-              {guestSearch
-                ? 'Try adjusting your search criteria'
-                : 'Guest profiles will appear here once they make bookings'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredGuestUsers.map((guest) => (
-              <div
-                key={guest.id}
-                className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-emerald-300 hover:shadow-sm transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center">
-                    <UserCircle2 className="w-7 h-7 text-emerald-700" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">
-                      {guest.first_name} {guest.last_name}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Mail className="w-3 h-3 text-gray-400" />
-                      <span className="text-sm text-gray-600">{guest.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                      <Calendar className="w-3 h-3 text-gray-400" />
-                      <span>{guest.total_bookings || 0} booking{(guest.total_bookings || 0) === 1 ? '' : 's'}</span>
-                    </div>
-                  </div>
-                </div>
-                <Link
-                  href={`/pms/users/${guest.id}`}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-1"
-                >
-                  View Profile
-                  <Eye className="w-4 h-4" />
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-    // First, remove duplicates by email
-    const uniqueGuests = guestUsers.reduce((acc, guest) => {
-      const existing = acc.find(g => g.email === guest.email);
-      if (!existing) {
-        acc.push(guest);
-      }
-      return acc;
-    }, [] as GuestUser[]);
-
-    // Then apply search filter
-    if (!guestSearch) return uniqueGuests;
-    const search = guestSearch.toLowerCase();
-    return uniqueGuests.filter(guest =>
-      `${guest.first_name} ${guest.last_name}`.toLowerCase().includes(search) ||
-      guest.email.toLowerCase().includes(search)
-    );
-  }, [guestUsers, guestSearch]);
 
   return (
     <div className="space-y-6 pb-8">
