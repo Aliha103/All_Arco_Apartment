@@ -152,7 +152,7 @@ class TeamMemberSerializer(serializers.ModelSerializer):
     """Enhanced serializer for team members with compensation and activation dates."""
     role_name = serializers.SerializerMethodField()
     assigned_role_name = serializers.SerializerMethodField()
-    compensation = TeamCompensationSerializer(read_only=True)
+    compensation = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -172,6 +172,15 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         """Get assigned role name."""
         if obj.assigned_role:
             return obj.assigned_role.name
+        return None
+
+    def get_compensation(self, obj):
+        """Get compensation data if exists, otherwise return None."""
+        try:
+            if hasattr(obj, 'compensation'):
+                return TeamCompensationSerializer(obj.compensation).data
+        except TeamCompensation.DoesNotExist:
+            pass
         return None
 
 
