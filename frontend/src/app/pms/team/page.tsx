@@ -213,7 +213,49 @@ export default function TeamPage() {
 
   const handleInviteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    inviteTeamMember.mutate(inviteFormData);
+
+    // Clean the form data - remove empty strings and convert to null for optional fields
+    const cleanedData: any = {
+      email: inviteFormData.email,
+      first_name: inviteFormData.first_name,
+      last_name: inviteFormData.last_name,
+      assigned_role_id: inviteFormData.assigned_role_id,
+    };
+
+    // Add optional fields only if they have values
+    if (inviteFormData.activation_start_date) {
+      cleanedData.activation_start_date = inviteFormData.activation_start_date;
+    }
+    if (inviteFormData.activation_end_date) {
+      cleanedData.activation_end_date = inviteFormData.activation_end_date;
+    }
+    if (inviteFormData.compensation_type) {
+      cleanedData.compensation_type = inviteFormData.compensation_type;
+
+      if (inviteFormData.compensation_type === 'salary') {
+        if (inviteFormData.salary_method) {
+          cleanedData.salary_method = inviteFormData.salary_method;
+        }
+        if (inviteFormData.fixed_amount_per_checkout) {
+          cleanedData.fixed_amount_per_checkout = inviteFormData.fixed_amount_per_checkout;
+        }
+        if (inviteFormData.percentage_on_base_price) {
+          cleanedData.percentage_on_base_price = inviteFormData.percentage_on_base_price;
+        }
+      } else if (inviteFormData.compensation_type === 'profit_share') {
+        if (inviteFormData.profit_share_timing) {
+          cleanedData.profit_share_timing = inviteFormData.profit_share_timing;
+        }
+        if (inviteFormData.profit_share_percentage) {
+          cleanedData.profit_share_percentage = inviteFormData.profit_share_percentage;
+        }
+      }
+    }
+    if (inviteFormData.notes) {
+      cleanedData.notes = inviteFormData.notes;
+    }
+
+    inviteTeamMember.mutate(cleanedData);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -317,63 +359,125 @@ export default function TeamPage() {
         </CardHeader>
         <CardContent>
           {teamMembers && teamMembers.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {teamMembers.map((member: any) => (
-                  <TableRow key={member.id}>
-                    <TableCell className="font-medium">
-                      {member.first_name} {member.last_name}
-                    </TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeColor(member.role)}>
-                        {member.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={member.is_active ? 'success' : 'secondary'}>
-                        {member.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {member.last_login ? formatDate(member.last_login) : 'Never'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(member)}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeactivate(member)}
-                        >
-                          {member.is_active ? 'Deactivate' : 'Activate'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(member)}
-                          disabled={member.id === user.id}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Activation Period</TableHead>
+                    <TableHead>Compensation</TableHead>
+                    <TableHead>Last Login</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {teamMembers.map((member: any) => {
+                    const compensation = member.compensation;
+                    const hasActivationPeriod = member.activation_start_date || member.activation_end_date;
+
+                    // Format compensation summary
+                    let compensationSummary = 'Not configured';
+                    if (compensation) {
+                      if (compensation.compensation_type === 'salary') {
+                        if (compensation.salary_method === 'per_checkout') {
+                          compensationSummary = `€${compensation.fixed_amount_per_checkout} per checkout`;
+                        } else if (compensation.salary_method === 'percentage_base_price') {
+                          compensationSummary = `${compensation.percentage_on_base_price}% of base price`;
+                        }
+                      } else if (compensation.compensation_type === 'profit_share') {
+                        const timingMap: Record<string, string> = {
+                          'before_expenses': 'before expenses',
+                          'after_expenses': 'after expenses',
+                          'after_expenses_and_salaries': 'after expenses + salaries'
+                        };
+                        compensationSummary = `${compensation.profit_share_percentage}% profit (${timingMap[compensation.profit_share_timing] || compensation.profit_share_timing})`;
+                      }
+                    }
+
+                    return (
+                      <TableRow key={member.id}>
+                        <TableCell className="font-medium">
+                          {member.first_name} {member.last_name}
+                        </TableCell>
+                        <TableCell>{member.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleBadgeColor(member.role)}>
+                            {member.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={member.is_active ? 'success' : 'secondary'}>
+                            {member.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {hasActivationPeriod ? (
+                            <div className="text-sm">
+                              {member.activation_start_date && (
+                                <div className="text-gray-700">
+                                  From: {formatDate(member.activation_start_date)}
+                                </div>
+                              )}
+                              {member.activation_end_date && (
+                                <div className="text-gray-700">
+                                  Till: {formatDate(member.activation_end_date)}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-500">No period set</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm max-w-[200px]">
+                            {compensation ? (
+                              <>
+                                <Badge variant="outline" className="mb-1">
+                                  {compensation.compensation_type === 'salary' ? 'Salary' : 'Profit Share'}
+                                </Badge>
+                                <div className="text-xs text-gray-600 break-words">
+                                  {compensationSummary}
+                                </div>
+                              </>
+                            ) : (
+                              <span className="text-gray-500">Not configured</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {member.last_login ? formatDate(member.last_login) : 'Never'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleEdit(member)}>
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeactivate(member)}
+                            >
+                              {member.is_active ? 'Deactivate' : 'Activate'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(member)}
+                              disabled={member.id === user.id}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
             <p className="text-center py-8 text-gray-600">No team members yet</p>
           )}
@@ -522,61 +626,228 @@ export default function TeamPage() {
 
       {/* Invite Team Member Modal */}
       <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Invite Team Member</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleInviteSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Email Address</Label>
-              <Input
-                type="email"
-                value={inviteFormData.email}
-                onChange={(e) => setInviteFormData({ ...inviteFormData, email: e.target.value })}
-                placeholder="email@example.com"
-                required
-              />
+          <form onSubmit={handleInviteSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4 border-b pb-4">
+              <h3 className="font-semibold text-sm text-gray-700">Basic Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>First Name</Label>
+                  <Input
+                    type="text"
+                    value={inviteFormData.first_name}
+                    onChange={(e) => setInviteFormData({ ...inviteFormData, first_name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Last Name</Label>
+                  <Input
+                    type="text"
+                    value={inviteFormData.last_name}
+                    onChange={(e) => setInviteFormData({ ...inviteFormData, last_name: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Email Address</Label>
+                <Input
+                  type="email"
+                  value={inviteFormData.email}
+                  onChange={(e) => setInviteFormData({ ...inviteFormData, email: e.target.value })}
+                  placeholder="email@example.com"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <select
+                  className="w-full px-3 py-2 border rounded-lg"
+                  value={inviteFormData.assigned_role_id}
+                  onChange={(e) => setInviteFormData({ ...inviteFormData, assigned_role_id: e.target.value })}
+                  required
+                >
+                  <option value="">Select a role...</option>
+                  {roles?.map((role: Role) => (
+                    <option key={role.id} value={role.id || ''}>
+                      {role.name}
+                      {role.is_super_admin && ' (Full Access)'}
+                    </option>
+                  ))}
+                </select>
+                {inviteFormData.assigned_role_id && (
+                  <p className="text-xs text-gray-600 mt-1">
+                    {roles?.find((r: Role) => r.id === inviteFormData.assigned_role_id)?.description}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>First Name</Label>
-              <Input
-                type="text"
-                value={inviteFormData.first_name}
-                onChange={(e) => setInviteFormData({ ...inviteFormData, first_name: e.target.value })}
-                required
-              />
+
+            {/* Account Activation Period */}
+            <div className="space-y-4 border-b pb-4">
+              <h3 className="font-semibold text-sm text-gray-700">Account Activation Period</h3>
+              <p className="text-xs text-gray-600">Set the period when this team member account will be active</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Activation From</Label>
+                  <Input
+                    type="date"
+                    value={inviteFormData.activation_start_date}
+                    onChange={(e) => setInviteFormData({ ...inviteFormData, activation_start_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Activation Till</Label>
+                  <Input
+                    type="date"
+                    value={inviteFormData.activation_end_date}
+                    onChange={(e) => setInviteFormData({ ...inviteFormData, activation_end_date: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Last Name</Label>
-              <Input
-                type="text"
-                value={inviteFormData.last_name}
-                onChange={(e) => setInviteFormData({ ...inviteFormData, last_name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <select
-                className="w-full px-3 py-2 border rounded-lg"
-                value={inviteFormData.assigned_role_id}
-                onChange={(e) => setInviteFormData({ ...inviteFormData, assigned_role_id: e.target.value })}
-                required
-              >
-                <option value="">Select a role...</option>
-                {roles?.map((role: Role) => (
-                  <option key={role.id} value={role.id || ''}>
-                    {role.name}
-                    {role.is_super_admin && ' (Full Access)'}
-                  </option>
-                ))}
-              </select>
-              {inviteFormData.assigned_role_id && (
-                <p className="text-xs text-gray-600 mt-1">
-                  {roles?.find((r: Role) => r.id === inviteFormData.assigned_role_id)?.description}
-                </p>
+
+            {/* Compensation Configuration */}
+            <div className="space-y-4 border-b pb-4">
+              <h3 className="font-semibold text-sm text-gray-700">Compensation Configuration</h3>
+              <div className="space-y-2">
+                <Label>Compensation Type</Label>
+                <select
+                  className="w-full px-3 py-2 border rounded-lg"
+                  value={inviteFormData.compensation_type}
+                  onChange={(e) => setInviteFormData({
+                    ...inviteFormData,
+                    compensation_type: e.target.value as '' | 'salary' | 'profit_share',
+                    // Reset fields when switching type
+                    salary_method: '',
+                    fixed_amount_per_checkout: '',
+                    percentage_on_base_price: '',
+                    profit_share_timing: '',
+                    profit_share_percentage: '',
+                  })}
+                >
+                  <option value="">No compensation (optional)</option>
+                  <option value="salary">Salary Based</option>
+                  <option value="profit_share">Profit Share</option>
+                </select>
+              </div>
+
+              {/* Salary Configuration */}
+              {inviteFormData.compensation_type === 'salary' && (
+                <div className="space-y-4 mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-sm text-blue-900">Salary Configuration</h4>
+                  <div className="space-y-2">
+                    <Label>Salary Method</Label>
+                    <select
+                      className="w-full px-3 py-2 border rounded-lg"
+                      value={inviteFormData.salary_method}
+                      onChange={(e) => setInviteFormData({
+                        ...inviteFormData,
+                        salary_method: e.target.value as '' | 'per_checkout' | 'percentage_base_price',
+                        // Reset amounts when switching method
+                        fixed_amount_per_checkout: '',
+                        percentage_on_base_price: '',
+                      })}
+                      required
+                    >
+                      <option value="">Select method...</option>
+                      <option value="per_checkout">Fixed Salary Per Check-out</option>
+                      <option value="percentage_base_price">Percentage on Base Price</option>
+                    </select>
+                  </div>
+
+                  {inviteFormData.salary_method === 'per_checkout' && (
+                    <div className="space-y-2">
+                      <Label>Fixed Amount Per Check-out (€)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={inviteFormData.fixed_amount_per_checkout}
+                        onChange={(e) => setInviteFormData({ ...inviteFormData, fixed_amount_per_checkout: e.target.value })}
+                        placeholder="e.g., 50.00"
+                        required
+                      />
+                      <p className="text-xs text-gray-600">Amount paid per guest check-out</p>
+                    </div>
+                  )}
+
+                  {inviteFormData.salary_method === 'percentage_base_price' && (
+                    <div className="space-y-2">
+                      <Label>Percentage on Base Price (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={inviteFormData.percentage_on_base_price}
+                        onChange={(e) => setInviteFormData({ ...inviteFormData, percentage_on_base_price: e.target.value })}
+                        placeholder="e.g., 10.00"
+                        required
+                      />
+                      <p className="text-xs text-gray-600">Percentage of base price (after commission, discount, voucher, promotion, credit)</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Profit Share Configuration */}
+              {inviteFormData.compensation_type === 'profit_share' && (
+                <div className="space-y-4 mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="font-medium text-sm text-green-900">Profit Share Configuration</h4>
+                  <div className="space-y-2">
+                    <Label>Profit Share Timing</Label>
+                    <select
+                      className="w-full px-3 py-2 border rounded-lg"
+                      value={inviteFormData.profit_share_timing}
+                      onChange={(e) => setInviteFormData({
+                        ...inviteFormData,
+                        profit_share_timing: e.target.value as '' | 'before_expenses' | 'after_expenses' | 'after_expenses_and_salaries'
+                      })}
+                      required
+                    >
+                      <option value="">Select timing...</option>
+                      <option value="before_expenses">Before Expenses</option>
+                      <option value="after_expenses">After Expenses</option>
+                      <option value="after_expenses_and_salaries">After Expenses + Salaries</option>
+                    </select>
+                    <p className="text-xs text-gray-600">When to calculate the profit share</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Profit Share Percentage (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={inviteFormData.profit_share_percentage}
+                      onChange={(e) => setInviteFormData({ ...inviteFormData, profit_share_percentage: e.target.value })}
+                      placeholder="e.g., 15.00"
+                      required
+                    />
+                    <p className="text-xs text-gray-600">Percentage of profit to share</p>
+                  </div>
+                </div>
               )}
             </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label>Internal Notes (Optional)</Label>
+              <textarea
+                className="w-full px-3 py-2 border rounded-lg min-h-[80px]"
+                value={inviteFormData.notes}
+                onChange={(e) => setInviteFormData({ ...inviteFormData, notes: e.target.value })}
+                placeholder="Add any internal notes about compensation arrangement..."
+              />
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsInviteModalOpen(false)}>
                 Cancel
