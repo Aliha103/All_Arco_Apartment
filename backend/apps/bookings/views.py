@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from apps.users.permissions import HasPermissionForAction
 from django.db.models import Q, Count, Sum
 from django.db import transaction
 from django.utils import timezone
@@ -76,7 +77,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     - cancel: bookings.cancel
     - mark_no_show: bookings.mark_no_show
     """
-    permission_classes = [IsAuthenticated]  # Will be upgraded to HasPermissionForAction after seeding
+    permission_classes = [HasPermissionForAction]
     lookup_value_regex = r'[0-9a-zA-Z-]+'  # Accept both UUIDs and booking_ids (e.g., ARCOM0WYCF)
 
     # Action-level permission mapping (for RBAC)
