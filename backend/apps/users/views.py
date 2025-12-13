@@ -558,8 +558,10 @@ class TeamViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_team_member():
             return User.objects.none()
 
+        # Treat anyone with a non-guest assigned role (or legacy team/admin) as team
         return User.objects.filter(
             Q(legacy_role__in=['team', 'admin']) |
+            Q(assigned_role__isnull=False) |
             Q(assigned_role__slug__in=['team', 'admin'])
         ).select_related('assigned_role', 'compensation').order_by('-created_at')
 
