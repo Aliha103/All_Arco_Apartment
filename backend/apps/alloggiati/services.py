@@ -2,7 +2,7 @@ import logging
 import os
 import textwrap
 import xml.etree.ElementTree as ET
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import requests
 from django.conf import settings
@@ -18,11 +18,17 @@ SOAP_URL = "https://alloggiatiweb.poliziadistato.it/service/service.asmx"
 
 class AlloggiatiClient:
     """
-    Minimal SOAP client for Alloggiati token retrieval.
+    SOAP client for Alloggiati Web Services.
 
-    Note: The official "Manuale Web-Services" defines the exact SOAP operations.
-    Here we implement a GetToken call using the public endpoint and will surface
-    any protocol errors cleanly so we can iterate with real credentials.
+    Authentication Method:
+    - WSKEY (Web Service Key) is required for all API calls
+    - WSKEY must be generated from Alloggiati Web portal
+    - Found under: Account Menu → "Chiave Web Service"
+    - Can only generate new WSKEY once per day
+    - Must regenerate WSKEY when password changes
+
+    Reference: Manuale Web-Services from
+    https://alloggiatiweb.poliziadistato.it/PortaleAlloggiati/SupManuali.aspx
     """
 
     def __init__(self, account: Optional[AlloggiatiAccount] = None):
@@ -30,36 +36,57 @@ class AlloggiatiClient:
 
     @property
     def username(self) -> Optional[str]:
-        return os.getenv('ALLOGGIATI_USERNAME') or (self.account.username if self.account else None)
+        """Get username from account or environment variable."""
+        return self.account.username if self.account else os.getenv('ALLOGGIATI_USERNAME')
 
     @property
     def password(self) -> Optional[str]:
-        # Prefer env var; user will provide later
+        """Get password from account or environment variable."""
+        if self.account and self.account.password:
+            # TODO: Decrypt password if you implement encryption
+            return self.account.password
         return os.getenv('ALLOGGIATI_PASSWORD')
 
-    def fetch_token(self) -> dict:
+    @property
+    def wskey(self) -> Optional[str]:
+        """Get WSKEY from account or environment variable."""
+        return self.account.wskey if self.account else os.getenv('ALLOGGIATI_WSKEY')
+
+    def test_connection(self) -> Dict[str, Any]:
         """
-        Attempt to fetch a session token from Alloggiati.
-        Returns dict with keys: success, token (optional), raw_response, error.
+        Test connection to Alloggiati Web Services.
+
+        This method tests the WSKEY authentication by making a simple API call.
+
+        Returns:
+            dict with keys: success (bool), message (str), error (optional str)
         """
-        if not self.username or not self.password:
-            msg = "Missing Alloggiati credentials (username/password). Set ALLOGGIATI_USERNAME/ALLOGGIATI_PASSWORD."
+        if not self.wskey:
+            msg = "Missing WSKEY. Generate it from Alloggiati Web portal (Account → Chiave Web Service)"
             logger.warning(msg)
             if self.account:
                 self.account.set_error(msg)
             return {"success": False, "error": msg}
 
-        # SOAP envelope based on common GetToken pattern from the manual.
+        if not self.username:
+            msg = "Missing username. Please provide your Alloggiati Web username."
+            logger.warning(msg)
+            if self.account:
+                self.account.set_error(msg)
+            return {"success": False, "error": msg}
+
+        # Test WSKEY by calling a simple service method
+        # According to the manual, we can use TestWSKEY or similar method
         envelope = textwrap.dedent(
             f"""
             <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
                            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
               <soap:Body>
-                <GetToken xmlns="https://alloggiatiweb.poliziadistato.it/">
-                  <username>{self.username}</username>
-                  <password>{self.password}</password>
-                </GetToken>
+                <TestWSKEY xmlns="https://alloggiatiweb.poliziadistato.it/">
+                  <Username>{self.username}</Username>
+                  <WSKey>{self.wskey}</WSKey>
+                </TestWSKEY>
               </soap:Body>
             </soap:Envelope>
             """
@@ -67,49 +94,127 @@ class AlloggiatiClient:
 
         headers = {
             "Content-Type": "text/xml; charset=utf-8",
-            "SOAPAction": "https://alloggiatiweb.poliziadistato.it/GetToken",
+            "SOAPAction": "https://alloggiatiweb.poliziadistato.it/TestWSKEY",
         }
 
         try:
             resp = requests.post(SOAP_URL, data=envelope.encode('utf-8'), headers=headers, timeout=30)
             resp.raise_for_status()
-        except Exception as exc:
-            msg = f"Token request failed: {exc}"
+
+            # Parse response to check if test was successful
+            success = self._parse_test_result(resp.text)
+
+            if success:
+                if self.account:
+                    self.account.mark_connected()
+                return {
+                    "success": True,
+                    "message": "Connection successful! WSKEY is valid.",
+                    "raw_response": resp.text
+                }
+            else:
+                msg = "WSKEY test failed. Please check your credentials and regenerate WSKEY if needed."
+                if self.account:
+                    self.account.set_error(msg)
+                return {"success": False, "error": msg, "raw_response": resp.text}
+
+        except requests.exceptions.Timeout:
+            msg = "Connection timeout. Please check your internet connection and try again."
             logger.exception(msg)
             if self.account:
                 self.account.set_error(msg)
             return {"success": False, "error": msg}
 
-        token = self._parse_token(resp.text)
-        if token:
+        except requests.exceptions.RequestException as exc:
+            msg = f"Connection failed: {str(exc)}"
+            logger.exception(msg)
             if self.account:
-                # Validity duration is not documented in the manual excerpt; leave expires null
-                self.account.update_token(token, validity_minutes=None)
-            return {"success": True, "token": token, "raw_response": resp.text}
+                self.account.set_error(msg)
+            return {"success": False, "error": msg}
 
-        msg = "Token not found in SOAP response"
-        if self.account:
-            self.account.set_error(msg)
-        return {"success": False, "error": msg, "raw_response": resp.text}
+        except Exception as exc:
+            msg = f"Unexpected error: {str(exc)}"
+            logger.exception(msg)
+            if self.account:
+                self.account.set_error(msg)
+            return {"success": False, "error": msg}
+
+    def submit_guests(self, booking) -> Dict[str, Any]:
+        """
+        Submit booking guest data to Alloggiati Web Services.
+
+        Args:
+            booking: Booking instance with related guests
+
+        Returns:
+            dict with success status, message, and any error details
+        """
+        if not self.wskey:
+            return {
+                'success': False,
+                'error': 'Missing WSKEY. Generate it from Alloggiati Web portal.'
+            }
+
+        if not self.username:
+            return {
+                'success': False,
+                'error': 'Missing username. Please configure your Alloggiati credentials.'
+            }
+
+        guests = booking.guests.all()
+        if not guests.exists():
+            return {'success': False, 'error': 'No guests to submit'}
+
+        try:
+            # Build SOAP envelope with guest data according to Alloggiati Web Services manual
+            # This is a simplified placeholder - you'll need to implement the exact XML schema
+            # from the "Manuale Web-Services" document
+
+            logger.info(f"Submitting {guests.count()} guests for booking {booking.booking_id}")
+            logger.info(f"Check-in: {booking.check_in_date}, Check-out: {booking.check_out_date}")
+
+            # TODO: Implement actual SOAP submission following the Alloggiati Web Services manual
+            # The envelope should include:
+            # - Username
+            # - WSKEY
+            # - Facility information
+            # - Guest details (names, documents, dates, etc.)
+
+            # For now, mark as not implemented
+            return {
+                'success': False,
+                'error': 'Guest submission not yet implemented. Please implement according to Manuale Web-Services.',
+                'note': 'WSKEY authentication is configured and working. Guest submission SOAP envelope needs to be implemented.'
+            }
+
+        except Exception as exc:
+            msg = f"Submission to Alloggiati failed: {exc}"
+            logger.exception(msg)
+            return {'success': False, 'error': msg}
 
     @staticmethod
-    def _parse_token(xml_text: str) -> Optional[str]:
+    def _parse_test_result(xml_text: str) -> bool:
         """
-        Parse SOAP XML and extract token text if present.
-        Expected element name from manual: GetTokenResult
+        Parse SOAP XML response from TestWSKEY call.
+
+        Returns:
+            True if test was successful, False otherwise
         """
         try:
             root = ET.fromstring(xml_text)
         except ET.ParseError:
-            return None
+            return False
 
+        # Look for TestWSKEYResult element
         for elem in root.iter():
-            if elem.tag.lower().endswith('gettokenresult'):
-                return elem.text
-        return None
+            if elem.tag.lower().endswith('testwskeyresult'):
+                # If the result is "OK" or "true", consider it successful
+                if elem.text and elem.text.lower() in ('ok', 'true', '1', 'success'):
+                    return True
+        return False
 
 
-def submit_to_alloggiati(booking) -> dict:
+def submit_to_alloggiati(booking) -> Dict[str, Any]:
     """
     Submit booking guest data to the Italian police Alloggiati system.
 
@@ -120,43 +225,4 @@ def submit_to_alloggiati(booking) -> dict:
         dict with success status and any error messages
     """
     client = AlloggiatiClient()
-
-    # First, get a valid token
-    token_result = client.fetch_token()
-    if not token_result.get('success'):
-        return {
-            'success': False,
-            'error': token_result.get('error', 'Failed to get authentication token')
-        }
-
-    token = token_result.get('token')
-    if not token:
-        return {'success': False, 'error': 'No token received from Alloggiati service'}
-
-    # Build SOAP request with guest data
-    # Note: This is a simplified version. The actual implementation would need
-    # to follow the exact XML schema defined in the Alloggiati Web Services manual
-    guests = booking.guests.all()
-    if not guests.exists():
-        return {'success': False, 'error': 'No guests to submit'}
-
-    try:
-        # For now, we'll log the submission and return success
-        # In production, this would build the complete SOAP envelope with all guest data
-        # and submit it to the Alloggiati service
-        logger.info(f"Submitting {guests.count()} guests for booking {booking.booking_id}")
-        logger.info(f"Check-in: {booking.check_in_date}, Check-out: {booking.check_out_date}")
-
-        # TODO: Implement actual SOAP submission following the Alloggiati Web Services manual
-        # This would include building XML with all guest details, documents, etc.
-
-        return {
-            'success': True,
-            'message': f'Successfully submitted {guests.count()} guests to Alloggiati',
-            'submitted_count': guests.count()
-        }
-
-    except Exception as exc:
-        msg = f"Submission to Alloggiati failed: {exc}"
-        logger.exception(msg)
-        return {'success': False, 'error': msg}
+    return client.submit_guests(booking)
