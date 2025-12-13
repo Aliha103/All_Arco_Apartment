@@ -381,6 +381,16 @@ export const api = {
       apiClient.post(`/expenses/${id}/reject/`, { reason }),
     statistics: () => apiClient.get('/expenses/statistics/'),
   },
+
+  // Notifications
+  notifications: {
+    list: (params?: any) => apiClient.get('/notifications/', { params }),
+    unreadCount: () => apiClient.get('/notifications/unread-count/'),
+    markAsRead: (id: string) => apiClient.post(`/notifications/${id}/read/`),
+    markAllAsRead: () => apiClient.post('/notifications/mark-all-read/'),
+    delete: (id: string) => apiClient.delete(`/notifications/${id}/delete/`),
+    clearAll: () => apiClient.delete('/notifications/clear/'),
+  },
 };
 
 export default api;

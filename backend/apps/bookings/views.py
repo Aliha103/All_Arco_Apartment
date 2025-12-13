@@ -12,6 +12,7 @@ from .serializers import (
     BlockedDateSerializer
 )
 from apps.emails.services import send_online_checkin_prompt, send_booking_confirmation
+from apps.notifications.services import NotificationService
 
 
 def check_dates_available(check_in_date, check_out_date, exclude_booking_id=None):
@@ -332,6 +333,18 @@ class BookingViewSet(viewsets.ModelViewSet):
                 except Exception:
                     pass
 
+            # Send notifications to team members about new booking
+            try:
+                NotificationService.notify_team_booking_confirmed(booking)
+            except Exception:
+                pass
+
+            # Send confirmation email to guest
+            try:
+                NotificationService.send_guest_email(booking, 'confirmed')
+            except Exception:
+                pass
+
         return booking
 
     def perform_update(self, serializer):
@@ -378,6 +391,28 @@ class BookingViewSet(viewsets.ModelViewSet):
                 booking=updated_booking,
                 status='pending'
             ).update(status='earned', earned_at=timezone.now())
+
+        # Send notifications based on status changes
+        if old_status != 'cancelled' and updated_booking.status == 'cancelled':
+            # Booking was cancelled - send cancellation notifications
+            try:
+                NotificationService.notify_team_booking_cancelled(updated_booking)
+            except Exception:
+                pass
+            try:
+                NotificationService.send_guest_email(updated_booking, 'cancelled')
+            except Exception:
+                pass
+        elif old_status != updated_booking.status or 'check_in_date' in serializer.validated_data or 'check_out_date' in serializer.validated_data:
+            # Booking was modified (status change or date change) - send modification notifications
+            try:
+                NotificationService.notify_team_booking_modified(updated_booking, old_status)
+            except Exception:
+                pass
+            try:
+                NotificationService.send_guest_email(updated_booking, 'modified')
+            except Exception:
+                pass
 
         return updated_booking
 
@@ -860,7 +895,18 @@ class BookingViewSet(viewsets.ModelViewSet):
                 user_agent=request.META.get('HTTP_USER_AGENT', '')[:255]
             )
 
-        # TODO: Send cancellation email to guest
+        # Send notifications to team members about cancellation
+        try:
+            NotificationService.notify_team_booking_cancelled(booking)
+        except Exception:
+            pass
+
+        # Send cancellation email to guest
+        try:
+            NotificationService.send_guest_email(booking, 'cancelled')
+        except Exception:
+            pass
+
         # TODO: Process refund if applicable
 
         serializer = self.get_serializer(booking)
@@ -1379,7 +1425,13 @@ class BlockedDateViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        blocked_date = serializer.save(created_by=self.request.user)
+
+        # Send notifications to team members about blocked dates
+        try:
+            NotificationService.notify_team_date_blocked(blocked_date, self.request.user)
+        except Exception:
+            pass
 
 
 # ============================================================================

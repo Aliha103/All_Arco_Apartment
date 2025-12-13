@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/alloggiati/', include('apps.alloggiati.urls')),
     path('api/cleaning/', include('apps.cleaning.urls')),
     path('api/expenses/', include('apps.expenses.urls')),
+    path('api/notifications/', include('apps.notifications.urls')),
     path('api/', include('apps.users.urls')),  # For /api/guests/ and /api/team/
 ]
 
