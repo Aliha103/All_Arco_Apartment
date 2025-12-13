@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, GuestNote, Role, Permission, HostProfile, ReferralCredit, ReferralCreditUsage
+from django.db import models
+from .models import User, GuestNote, Role, Permission, HostProfile, ReferralCredit, ReferralCreditUsage, TeamMember
 
 
 @admin.register(User)
@@ -34,6 +35,21 @@ class UserAdmin(BaseUserAdmin):
     def credits_earned_display(self, obj):
         return f"€{obj.get_referral_credits_earned()}"
     credits_earned_display.short_description = 'Credits Earned'
+
+
+@admin.register(TeamMember)
+class TeamMemberAdmin(admin.ModelAdmin):
+    list_display = ['email', 'first_name', 'last_name', 'assigned_role', 'is_active', 'created_at']
+    list_filter = ['assigned_role', 'legacy_role', 'is_active', 'created_at']
+    search_fields = ['email', 'first_name', 'last_name']
+    ordering = ['-created_at']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(
+            models.Q(legacy_role__in=['team', 'admin']) |
+            models.Q(assigned_role__isnull=False)
+        ).select_related('assigned_role')
 
 
 @admin.register(Role)

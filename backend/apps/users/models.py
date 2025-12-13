@@ -874,6 +874,14 @@ class ReferralCreditUsage(models.Model):
         return f"€{self.amount} used by {self.user.email} on {self.booking.booking_id}"
 
 
+# Proxy model to expose team members separately in admin
+class TeamMember(User):
+    class Meta:
+        proxy = True
+        verbose_name = 'Team Member'
+        verbose_name_plural = 'Team Members'
+
+
 # ============================================================================
 # Host Profile & Reviews
 # ============================================================================
