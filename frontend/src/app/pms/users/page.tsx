@@ -88,113 +88,11 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Users</h1>
           <p className="text-gray-600 mt-1">Manage team members and view guest profiles</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <UsersIcon className="w-4 h-4" />
-            <span className="font-medium">{teamUsers.length} team</span>
-            <span className="text-gray-400">•</span>
-            <span className="font-medium">{filteredGuestUsers.length} guests</span>
-          </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <UsersIcon className="w-4 h-4" />
+          <span className="font-medium">{filteredGuestUsers.length} guests</span>
         </div>
       </div>
-
-      {/* Team Members Section */}
-      <Card className="shadow-sm border-gray-200">
-        <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <UsersIcon className="w-5 h-5 text-blue-700" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">Team Members</CardTitle>
-                <p className="text-sm text-gray-600 mt-0.5">
-                  {filteredTeamUsers.length} {filteredTeamUsers.length === 1 ? 'member' : 'members'}
-                </p>
-              </div>
-            </div>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <UserPlus className="w-4 h-4 mr-2" />
-              Add Member
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          {/* Search */}
-          {teamUsers.length > 0 && (
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search team members by name, email, or role..."
-                  value={teamSearch}
-                  onChange={(e) => setTeamSearch(e.target.value)}
-                  className="pl-10 bg-gray-50 border-gray-200"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Content */}
-          {teamLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-                <p className="text-sm text-gray-600">Loading team members...</p>
-              </div>
-            </div>
-          ) : filteredTeamUsers.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                <UsersIcon className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {teamSearch ? 'No matching team members' : 'No team members yet'}
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                {teamSearch
-                  ? 'Try adjusting your search criteria'
-                  : 'Add team members to collaborate on managing your property'}
-              </p>
-              {!teamSearch && (
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add Your First Team Member
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredTeamUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                      <UserCircle2 className="w-7 h-7 text-blue-700" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">
-                        {user.first_name} {user.last_name}
-                      </h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Mail className="w-3 h-3 text-gray-400" />
-                        <span className="text-sm text-gray-600">{user.email}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {user.role_name || 'Team Member'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Guests Section */}
       <Card className="shadow-sm border-gray-200">
