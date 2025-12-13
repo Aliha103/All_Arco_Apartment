@@ -627,7 +627,19 @@ class TeamViewSet(viewsets.ModelViewSet):
             compensation.full_clean()  # Validate
             compensation.save()
 
-        # TODO: Send invitation email with temporary password
+        # Send invitation email with password setup token
+        try:
+            # Generate password setup token (reuses password reset token system)
+            setup_token = PasswordResetToken.create_token(user)
+
+            # Send invitation email from support@allarcoapartment.com
+            from apps.emails.services import send_team_invitation
+            send_team_invitation(user, setup_token.token)
+        except Exception as e:
+            # Log error but don't fail the user creation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send team invitation email to {user.email}: {str(e)}")
 
         return Response(
             TeamMemberSerializer(user).data,
