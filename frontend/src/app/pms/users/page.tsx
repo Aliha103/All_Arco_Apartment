@@ -3,20 +3,12 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Search, Users as UsersIcon, UserPlus, Mail, Calendar, Eye, Loader2, UserCircle2 } from 'lucide-react';
+import { Search, Users as UsersIcon, Mail, Calendar, Eye, Loader2, UserCircle2 } from 'lucide-react';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-
-interface TeamUser {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role_name?: string;
-}
 
 interface GuestUser {
   id: string;
@@ -27,16 +19,7 @@ interface GuestUser {
 }
 
 export default function UsersPage() {
-  const [teamSearch, setTeamSearch] = useState('');
   const [guestSearch, setGuestSearch] = useState('');
-
-  const { data: teamData, isLoading: teamLoading } = useQuery({
-    queryKey: ['team-users'],
-    queryFn: async () => {
-      const res = await api.users.team.list();
-      return res.data.results || res.data || [];
-    },
-  });
 
   const { data: guestsData, isLoading: guestsLoading } = useQuery({
     queryKey: ['guest-users'],
@@ -46,19 +29,7 @@ export default function UsersPage() {
     },
   });
 
-  const teamUsers: TeamUser[] = useMemo(() => teamData || [], [teamData]);
   const guestUsers: GuestUser[] = useMemo(() => guestsData || [], [guestsData]);
-
-  // Filter team users
-  const filteredTeamUsers = useMemo(() => {
-    if (!teamSearch) return teamUsers;
-    const search = teamSearch.toLowerCase();
-    return teamUsers.filter(user =>
-      `${user.first_name} ${user.last_name}`.toLowerCase().includes(search) ||
-      user.email.toLowerCase().includes(search) ||
-      user.role_name?.toLowerCase().includes(search)
-    );
-  }, [teamUsers, teamSearch]);
 
   // Filter guest users and remove duplicates by email
   const filteredGuestUsers = useMemo(() => {
