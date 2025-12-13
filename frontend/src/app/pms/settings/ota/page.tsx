@@ -42,6 +42,9 @@ import {
   Euro,
   Percent,
   CreditCard,
+  Copy,
+  Check,
+  Link2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -218,8 +221,21 @@ export default function OTAManagementPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isICalModalOpen, setIsICalModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<OTABooking | null>(null);
+  const [exportUrlCopied, setExportUrlCopied] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
+
+  // iCal Export URL
+  const exportCalendarUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${api.icalSources.exportCalendar()}`
+    : '';
+
+  const copyExportUrl = () => {
+    navigator.clipboard.writeText(exportCalendarUrl);
+    setExportUrlCopied(true);
+    toast.success('iCal export URL copied to clipboard');
+    setTimeout(() => setExportUrlCopied(false), 2000);
+  };
 
   // ============================================================================
   // Data Fetching
@@ -488,11 +504,67 @@ export default function OTAManagementPage() {
         </motion.div>
       </div>
 
-      {/* Tabs */}
+      {/* iCal Export URL Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.5 }}
+      >
+        <Card className="border border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-blue-100 rounded-lg border border-blue-200">
+                <Link2 className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-blue-900 mb-1">
+                  Share Your Calendar with OTAs
+                </h3>
+                <p className="text-xs text-blue-700 mb-3">
+                  Share this iCal URL with Airbnb, Booking.com, and other OTA platforms to prevent double bookings. They'll automatically see your blocked dates.
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border border-blue-200 px-3 py-2">
+                    <input
+                      type="text"
+                      value={exportCalendarUrl}
+                      readOnly
+                      className="flex-1 text-sm text-gray-700 bg-transparent outline-none"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={copyExportUrl}
+                      className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                    >
+                      {exportUrlCopied ? (
+                        <>
+                          <Check className="w-4 h-4 mr-1" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 mr-1" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  <strong>Auto-updates:</strong> This calendar syncs in real-time. OTAs will see your bookings immediately.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Tabs */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.6 }}
       >
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
@@ -546,17 +618,11 @@ export default function OTAManagementPage() {
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Building2 className="w-12 h-12 text-gray-400 mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">No OTA bookings found</h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-gray-600">
                       {search || statusFilter.length > 0 || otaFilter !== 'all'
-                        ? 'Try adjusting your filters'
-                        : 'Add your first OTA booking to get started'}
+                        ? 'Try adjusting your filters or sync your iCal sources to import OTA bookings'
+                        : 'Sync iCal feeds from your OTA platforms to automatically import bookings'}
                     </p>
-                    {!search && statusFilter.length === 0 && otaFilter === 'all' && (
-                      <Button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add OTA Booking
-                      </Button>
-                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1517,7 +1583,12 @@ function ICalSourcesList({ sources }: ICalSourcesListProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg">iCal Sync Sources</CardTitle>
-            <CardDescription>Manage your OTA calendar synchronization</CardDescription>
+            <CardDescription>
+              Manage your OTA calendar synchronization
+              <span className="block text-xs text-green-600 mt-1">
+                <strong>Auto-sync:</strong> Calendars sync every 15 minutes automatically to keep bookings up-to-date
+              </span>
+            </CardDescription>
           </div>
           {sources.length > 0 && (
             <Button
@@ -1533,7 +1604,7 @@ function ICalSourcesList({ sources }: ICalSourcesListProps) {
               ) : (
                 <>
                   <Download className="w-4 h-4 mr-2" />
-                  Sync All
+                  Sync All Now
                 </>
               )}
             </Button>
@@ -1681,6 +1752,9 @@ function ICalSyncModal({ isOpen, onClose }: ICalSyncModalProps) {
 
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800 mb-2">
+              <strong>Auto-Sync:</strong> Bookings sync automatically every 15 minutes to keep your calendar up-to-date.
+            </p>
             <p className="text-sm text-blue-800">
               <strong>Note:</strong> Once added, bookings from this iCal feed will automatically sync to your calendar and block those dates to prevent double bookings.
             </p>
