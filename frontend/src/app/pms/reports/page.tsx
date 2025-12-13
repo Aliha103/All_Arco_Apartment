@@ -118,16 +118,32 @@ export default function ReportsPage() {
     refetchOnWindowFocus: true,
   });
 
+  // Fetch actual payments (Stripe payments) to include in revenue
+  const { data: payments, isLoading: paymentsLoading, refetch: refetchPayments } = useQuery({
+    queryKey: ['payments-reports', dateRange],
+    queryFn: async () => {
+      const response = await api.payments.list();
+      const allPayments = response.data.results || response.data;
+      // Filter payments by date
+      return allPayments.filter((p: any) => {
+        const paymentDate = new Date(p.created_at);
+        return paymentDate >= new Date(dateRange.start_date) && paymentDate <= new Date(dateRange.end_date);
+      });
+    },
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
+  });
+
   // Manual refresh function
   const handleRefresh = async () => {
     toast.info('Refreshing data...');
-    await Promise.all([refetchBookings(), refetchExpenses()]);
+    await Promise.all([refetchBookings(), refetchExpenses(), refetchPayments()]);
     toast.success('Data refreshed successfully!');
   };
 
   // Calculate comprehensive metrics
   const metrics = useMemo(() => {
-    if (!allBookings || !expenses) return null;
+    if (!allBookings || !expenses || !payments) return null;
 
     // Include all bookings that have generated revenue (paid, partial, or partially_refunded)
     // Exclude only unpaid and fully refunded bookings
@@ -137,8 +153,17 @@ export default function ReportsPage() {
       b.payment_status === 'partially_refunded'
     );
 
-    // Revenue calculations
-    const totalRevenue = paidBookings.reduce((sum: number, b: any) => sum + parseFloat(b.total_price || 0), 0);
+    // Calculate revenue from actual Stripe payments (succeeded and partially_refunded)
+    const succeededPayments = payments.filter((p: any) =>
+      p.status === 'succeeded' || p.status === 'partially_refunded'
+    );
+    const paymentsRevenue = succeededPayments.reduce((sum: number, p: any) => sum + parseFloat(p.amount || 0), 0);
+
+    // Revenue calculations from bookings
+    const bookingsRevenue = paidBookings.reduce((sum: number, b: any) => sum + parseFloat(b.total_price || 0), 0);
+
+    // Total revenue combines booking revenue and additional payments
+    const totalRevenue = bookingsRevenue + paymentsRevenue;
     const cityTaxRevenue = paidBookings.reduce((sum: number, b: any) => sum + parseFloat(b.tourist_tax || 0), 0);
     const cleaningRevenue = paidBookings.reduce((sum: number, b: any) =>
       sum + parseFloat(b.cleaning_fee || 0) + parseFloat(b.pet_fee || 0), 0);
@@ -235,10 +260,12 @@ export default function ReportsPage() {
       monthlyTrends,
       bookingsCount: paidBookings.length,
       avgBookingValue: paidBookings.length > 0 ? totalRevenue / paidBookings.length : 0,
+      paymentsCount: succeededPayments.length,
+      paymentsRevenue,
     };
-  }, [allBookings, expenses]);
+  }, [allBookings, expenses, payments]);
 
-  const isLoading = bookingsLoading || expensesLoading;
+  const isLoading = bookingsLoading || expensesLoading || paymentsLoading;
 
   // Format currency
   const formatCurrency = (amount: number) => {
