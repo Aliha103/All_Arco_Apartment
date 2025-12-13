@@ -471,14 +471,27 @@ export default function PMSDashboard() {
     ].filter(item => item.value > 0);
   }, [dashboardData]);
 
-  // Payment status data from real bookings
+  // Payment status data from real bookings - calculate dynamically from total_paid vs total_price
   const paymentStatusData = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const counts: Record<string, number> = { paid: 0, partial: 0, unpaid: 0 };
     bookingsArray.forEach((b: any) => {
-      const status = (b.payment_status || 'unpaid').toLowerCase();
-      counts[status] = (counts[status] || 0) + 1;
+      // Skip cancelled bookings
+      if (b.status === 'cancelled') return;
+
+      const totalPrice = Number(b.total_price || 0);
+      const totalPaid = Number(b.total_paid || 0);
+
+      // Determine payment status based on amounts
+      if (totalPaid >= totalPrice && totalPrice > 0) {
+        counts['paid'] = (counts['paid'] || 0) + 1;
+      } else if (totalPaid > 0) {
+        counts['partial'] = (counts['partial'] || 0) + 1;
+      } else {
+        counts['unpaid'] = (counts['unpaid'] || 0) + 1;
+      }
     });
-    const entries = Object.entries(counts);
+
+    const entries = Object.entries(counts).filter(([_, value]) => value > 0);
     const palette = [COLORS.success, COLORS.warning, COLORS.error, COLORS.info, COLORS.purple];
     return entries.map(([name, value], idx) => ({
       name: name.replace('_', ' '),
