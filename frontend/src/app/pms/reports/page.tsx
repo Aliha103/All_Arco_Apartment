@@ -129,7 +129,13 @@ export default function ReportsPage() {
   const metrics = useMemo(() => {
     if (!allBookings || !expenses) return null;
 
-    const paidBookings = allBookings.filter((b: any) => b.payment_status === 'paid');
+    // Include all bookings that have generated revenue (paid, partial, or partially_refunded)
+    // Exclude only unpaid and fully refunded bookings
+    const paidBookings = allBookings.filter((b: any) =>
+      b.payment_status === 'paid' ||
+      b.payment_status === 'partial' ||
+      b.payment_status === 'partially_refunded'
+    );
 
     // Revenue calculations
     const totalRevenue = paidBookings.reduce((sum: number, b: any) => sum + parseFloat(b.total_price || 0), 0);
