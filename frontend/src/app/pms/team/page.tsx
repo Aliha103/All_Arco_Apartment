@@ -448,6 +448,10 @@ export default function TeamPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => {
+                                if (role.is_system) {
+                                  toast.error(`Cannot delete system role "${role.name}" - system roles are protected`);
+                                  return;
+                                }
                                 if ((role.member_count || 0) > 0) {
                                   toast.error(`Cannot delete role "${role.name}" - it has ${role.member_count} assigned member(s). Please reassign them first.`);
                                   return;
@@ -456,7 +460,7 @@ export default function TeamPage() {
                                   deleteRole.mutate(role.id!);
                                 }
                               }}
-                              disabled={(role.member_count || 0) > 0}
+                              disabled={role.is_system || (role.member_count || 0) > 0}
                             >
                               Delete
                             </Button>
