@@ -28,6 +28,7 @@ class BookingListSerializer(serializers.ModelSerializer):
     """Minimal serializer for booking lists."""
     payment_method = serializers.SerializerMethodField()
     payment_timestamp = serializers.SerializerMethodField()
+    total_with_custom = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -39,6 +40,7 @@ class BookingListSerializer(serializers.ModelSerializer):
             'guest_tax_code', 'created_at', 'booked_for_someone_else',
             'nightly_rate', 'cleaning_fee', 'pet_fee', 'tourist_tax',  # Added for invoice line items
             'payment_method', 'payment_timestamp',  # Payment info from latest payment
+            'total_with_custom',  # Total including custom payments
         ]
         read_only_fields = fields
 
@@ -51,6 +53,19 @@ class BookingListSerializer(serializers.ModelSerializer):
         """Get payment timestamp from latest booking payment."""
         payment = obj.payments.filter(kind='booking', status='succeeded').order_by('-paid_at').first()
         return payment.paid_at.isoformat() if payment and payment.paid_at else None
+
+    def get_total_with_custom(self, obj):
+        """Get total price including custom payments from paid payment requests."""
+        from apps.payments.models import PaymentRequest
+        from django.db.models import Sum
+
+        base_total = float(obj.total_price or 0)
+        custom_payments = PaymentRequest.objects.filter(
+            booking=obj,
+            status='paid'
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+        return base_total + float(custom_payments)
 
 
 class BookingCreateSerializer(serializers.ModelSerializer):
