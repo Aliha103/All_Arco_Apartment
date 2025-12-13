@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User, GuestNote, Role, Permission, HostProfile, Review
+from .models_compensation import TeamCompensation
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -103,6 +104,170 @@ class GuestNoteSerializer(serializers.ModelSerializer):
         if obj.created_by:
             return obj.created_by.get_full_name()
         return None
+
+
+# ============================================================================
+# Team Compensation Serializers
+# ============================================================================
+
+class TeamCompensationSerializer(serializers.ModelSerializer):
+    """Serializer for TeamCompensation model."""
+
+    class Meta:
+        model = TeamCompensation
+        fields = [
+            'id', 'user', 'compensation_type',
+            'salary_method', 'fixed_amount_per_checkout', 'percentage_on_base_price',
+            'profit_share_timing', 'profit_share_percentage',
+            'notes', 'is_active', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        """Validate compensation configuration."""
+        compensation_type = data.get('compensation_type')
+
+        if compensation_type == 'salary':
+            salary_method = data.get('salary_method')
+            if not salary_method:
+                raise serializers.ValidationError({'salary_method': 'Salary method is required for salary-based compensation'})
+
+            if salary_method == 'per_checkout' and not data.get('fixed_amount_per_checkout'):
+                raise serializers.ValidationError({'fixed_amount_per_checkout': 'Fixed amount is required for per-checkout salary'})
+
+            if salary_method == 'percentage_base_price' and not data.get('percentage_on_base_price'):
+                raise serializers.ValidationError({'percentage_on_base_price': 'Percentage is required for percentage-based salary'})
+
+        elif compensation_type == 'profit_share':
+            if not data.get('profit_share_timing'):
+                raise serializers.ValidationError({'profit_share_timing': 'Profit share timing is required'})
+
+            if not data.get('profit_share_percentage'):
+                raise serializers.ValidationError({'profit_share_percentage': 'Profit share percentage is required'})
+
+        return data
+
+
+class TeamMemberSerializer(serializers.ModelSerializer):
+    """Enhanced serializer for team members with compensation and activation dates."""
+    role_name = serializers.SerializerMethodField()
+    assigned_role_name = serializers.SerializerMethodField()
+    compensation = TeamCompensationSerializer(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'phone',
+            'role', 'assigned_role_id', 'role_name', 'assigned_role_name',
+            'is_active', 'activation_start_date', 'activation_end_date',
+            'compensation', 'created_at', 'updated_at', 'last_login'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'last_login']
+
+    def get_role_name(self, obj):
+        """Get role name for display."""
+        return obj.role_name
+
+    def get_assigned_role_name(self, obj):
+        """Get assigned role name."""
+        if obj.assigned_role:
+            return obj.assigned_role.name
+        return None
+
+
+class TeamMemberInviteSerializer(serializers.Serializer):
+    """Serializer for inviting team members with compensation configuration."""
+    email = serializers.EmailField(required=True)
+    first_name = serializers.CharField(required=True, max_length=50)
+    last_name = serializers.CharField(required=True, max_length=50)
+    assigned_role_id = serializers.UUIDField(required=True)
+
+    # Activation period
+    activation_start_date = serializers.DateField(required=False, allow_null=True)
+    activation_end_date = serializers.DateField(required=False, allow_null=True)
+
+    # Compensation configuration
+    compensation_type = serializers.ChoiceField(
+        choices=['salary', 'profit_share'],
+        required=False,
+        allow_null=True
+    )
+
+    # Salary fields
+    salary_method = serializers.ChoiceField(
+        choices=['per_checkout', 'percentage_base_price'],
+        required=False,
+        allow_null=True
+    )
+    fixed_amount_per_checkout = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        allow_null=True
+    )
+    percentage_on_base_price = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        required=False,
+        allow_null=True
+    )
+
+    # Profit share fields
+    profit_share_timing = serializers.ChoiceField(
+        choices=['before_expenses', 'after_expenses', 'after_expenses_and_salaries'],
+        required=False,
+        allow_null=True
+    )
+    profit_share_percentage = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        required=False,
+        allow_null=True
+    )
+
+    notes = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, data):
+        """Validate invitation data."""
+        # Validate activation dates
+        if data.get('activation_start_date') and data.get('activation_end_date'):
+            if data['activation_end_date'] <= data['activation_start_date']:
+                raise serializers.ValidationError({
+                    'activation_end_date': 'End date must be after start date'
+                })
+
+        # Validate compensation if provided
+        compensation_type = data.get('compensation_type')
+        if compensation_type:
+            if compensation_type == 'salary':
+                salary_method = data.get('salary_method')
+                if not salary_method:
+                    raise serializers.ValidationError({
+                        'salary_method': 'Salary method is required for salary-based compensation'
+                    })
+
+                if salary_method == 'per_checkout' and not data.get('fixed_amount_per_checkout'):
+                    raise serializers.ValidationError({
+                        'fixed_amount_per_checkout': 'Fixed amount is required for per-checkout salary'
+                    })
+
+                if salary_method == 'percentage_base_price' and not data.get('percentage_on_base_price'):
+                    raise serializers.ValidationError({
+                        'percentage_on_base_price': 'Percentage is required for percentage-based salary'
+                    })
+
+            elif compensation_type == 'profit_share':
+                if not data.get('profit_share_timing'):
+                    raise serializers.ValidationError({
+                        'profit_share_timing': 'Profit share timing is required'
+                    })
+
+                if not data.get('profit_share_percentage'):
+                    raise serializers.ValidationError({
+                        'profit_share_percentage': 'Profit share percentage is required'
+                    })
+
+        return data
 
 
 # ============================================================================
