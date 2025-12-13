@@ -254,6 +254,7 @@ export default function BookingSidePanel({
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
   const [payments, setPayments] = useState<any[]>([]);
+  const [paymentRequests, setPaymentRequests] = useState<any[]>([]);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [onlineCheckInModalOpen, setOnlineCheckInModalOpen] = useState(false);
   const [manualPricingEnabled, setManualPricingEnabled] = useState(false);
@@ -275,6 +276,16 @@ export default function BookingSidePanel({
     queryKey: ['payments', bookingId],
     queryFn: async () => {
       const response = await api.payments.list({ booking: bookingId });
+      return response.data?.results || response.data || [];
+    },
+    enabled: !!bookingId && isOpen,
+  });
+
+  // Fetch payment requests (for view/edit mode)
+  const { data: paymentRequestsData } = useQuery({
+    queryKey: ['payment-requests', bookingId],
+    queryFn: async () => {
+      const response = await api.paymentRequests.list({ booking: bookingId });
       return response.data?.results || response.data || [];
     },
     enabled: !!bookingId && isOpen,
@@ -419,6 +430,13 @@ export default function BookingSidePanel({
       setPayments(Array.isArray(paymentsData) ? paymentsData : []);
     }
   }, [paymentsData]);
+
+  // Update payment requests when fetched
+  useEffect(() => {
+    if (paymentRequestsData) {
+      setPaymentRequests(Array.isArray(paymentRequestsData) ? paymentRequestsData : []);
+    }
+  }, [paymentRequestsData]);
 
   // Reset mode when initialMode changes or when panel opens
   useEffect(() => {
@@ -756,12 +774,12 @@ export default function BookingSidePanel({
                 <span className="font-medium">{formatCurrency(formData.pet_fee)}</span>
               </div>
             )}
-            {/* Calculate custom payments total from payments array with kind='custom' */}
-            {payments.filter(p => p.kind === 'custom' && p.status === 'succeeded').length > 0 && (
+            {/* Calculate custom payments total from payment requests with status='paid' */}
+            {paymentRequests.filter(pr => pr.status === 'paid').length > 0 && (
               <div className="flex justify-between text-sm text-blue-700">
                 <span>Custom payments</span>
                 <span className="font-medium">
-                  {formatCurrency(payments.filter(p => p.kind === 'custom' && p.status === 'succeeded').reduce((sum, p) => sum + Number(p.amount || 0), 0))}
+                  {formatCurrency(paymentRequests.filter(pr => pr.status === 'paid').reduce((sum, pr) => sum + Number(pr.amount || 0), 0))}
                 </span>
               </div>
             )}
@@ -771,7 +789,7 @@ export default function BookingSidePanel({
             </div>
             <div className="border-t pt-2 mt-2 flex justify-between font-semibold text-gray-900">
               <span>Total</span>
-              <span className="text-lg">{formatCurrency((formData.total_price || 0) + payments.filter(p => p.kind === 'custom' && p.status === 'succeeded').reduce((sum, p) => sum + Number(p.amount || 0), 0))}</span>
+              <span className="text-lg">{formatCurrency((formData.total_price || 0) + paymentRequests.filter(pr => pr.status === 'paid').reduce((sum, pr) => sum + Number(pr.amount || 0), 0))}</span>
             </div>
             {formData.applied_credit && formData.applied_credit > 0 && (
               <div className="flex justify-between text-sm text-emerald-700 -mt-1">
